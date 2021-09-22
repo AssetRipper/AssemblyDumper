@@ -8,12 +8,12 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Logger.Info("Pass 7: Apply Inheritance");
-			
+
 
 			foreach (var pair in SharedState.ClassDictionary)
 			{
 				if (Pass04_ExtractDependentNodeTrees.primitives.Contains(pair.Key))
-					return;
+					continue;
 				if (string.IsNullOrEmpty(pair.Value.Base))
 				{
 					SharedState.TypeDictionary[pair.Key].BaseType = CommonTypeGetter.UnityObjectBaseDefinition;
