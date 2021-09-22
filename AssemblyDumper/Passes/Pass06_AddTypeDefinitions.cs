@@ -14,7 +14,9 @@ namespace AssemblyDumper.Passes
 			var assembly = SharedState.Assembly;
 			foreach (var entry in SharedState.Info.Classes)
 			{
-				assembly.CreateType(entry);
+				var typeDef = assembly.CreateType(entry);
+				if(typeDef != null)
+					SharedState.TypeDictionary.Add(entry.Name, typeDef);
 			}
 		}
 

@@ -1,37 +1,28 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace AssemblyDumper.Passes
 {
 	public static class Pass07_ApplyInheritance
-	{/*
+	{
 		public static void DoPass()
 		{
 			Logger.Info("Pass 7: Apply Inheritance");
-			foreach (var pair in SharedState.TypeInformationDictionary)
-			{
-				var runtimeType = pair.Value.RuntimeType;
-				if (runtimeType != null && runtimeType.Base != null)
-				{
-					try
-					{
-						var baseType = SharedState.TypeInformationDictionary[runtimeType.Base.Name];
-						pair.Value.BaseType = baseType;
-						baseType.Derived.Add(pair.Value);
-					}
-					catch(KeyNotFoundException)
-					{
-						Logger.Info($"{runtimeType.Base.Name} was not present in the dictionary");
-					}
-				}
-			}
+			
 
-			foreach (var pair in SharedState.TypeInformationDictionary)
+			foreach (var pair in SharedState.ClassDictionary)
 			{
-				if (pair.Value.BaseType != null)
+				if (Pass04_ExtractDependentNodeTrees.primitives.Contains(pair.Key))
+					return;
+				if (string.IsNullOrEmpty(pair.Value.Base))
 				{
-					pair.Value.Definition.BaseType = pair.Value.BaseType.Definition;
+					SharedState.TypeDictionary[pair.Key].BaseType = CommonTypeGetter.UnityObjectBaseDefinition;
+				}
+				else
+				{
+					SharedState.TypeDictionary[pair.Key].BaseType = SharedState.TypeDictionary[pair.Value.Base];
 				}
 			}
-		}*/
+		}
 	}
 }

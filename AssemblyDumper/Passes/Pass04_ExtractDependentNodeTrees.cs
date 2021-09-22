@@ -6,7 +6,7 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass04_ExtractDependentNodeTrees
 	{
-		readonly static string[] primitives =
+		public readonly static string[] primitives =
 		{
 			"Array",
 			"bool",

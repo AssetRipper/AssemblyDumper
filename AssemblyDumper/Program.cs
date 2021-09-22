@@ -13,7 +13,7 @@ namespace AssemblyDumper
 				Pass00_Initialize.DoPass();
 
 				Pass06_AddTypeDefinitions.DoPass();
-				//Pass07_ApplyInheritance.DoPass();
+				Pass07_ApplyInheritance.DoPass();
 				//Pass08_AddDefaultConstructors.DoPass();
 				
 				Pass99_SaveAssembly.DoPass();

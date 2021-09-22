@@ -1,4 +1,5 @@
 ﻿using AssemblyDumper.Utils;
+using AssetRipper.Core;
 using AssetRipper.Core.Attributes;
 using Mono.Cecil;
 
@@ -50,6 +51,8 @@ namespace AssemblyDumper
 		public static TypeReference RegisterAssetTypeAttributeDefinition { get; private set; }
 		public static MethodReference RegisterAssetTypeAttributeConstructor { get; private set; }
 
+		public static TypeReference UnityObjectBaseDefinition { get; private set; }
+
 
 		public static void Initialize(ModuleDefinition module)
 		{
@@ -95,6 +98,7 @@ namespace AssemblyDumper
 			RegisterAssetTypeAttributeDefinition = module.ImportCommonType<RegisterAssetTypeAttribute>();
 			RegisterAssetTypeAttributeConstructor = module.ImportConstructor<RegisterAssetTypeAttribute>(3);
 
+			UnityObjectBaseDefinition = module.ImportCommonType<UnityObjectBase>();
 		}
 
 		public static TypeReference ImportCommonType(this ModuleDefinition module, string typeFullName)

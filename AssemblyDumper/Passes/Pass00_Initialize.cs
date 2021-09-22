@@ -3,6 +3,7 @@ using Mono.Cecil;
 using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace AssemblyDumper.Passes
 {
@@ -28,6 +29,7 @@ namespace AssemblyDumper.Passes
 			using JsonTextReader reader = new JsonTextReader(sr);
 			JsonSerializer serializer = new JsonSerializer();
 			SharedState.Info = serializer.Deserialize<UnityInfo>(reader);
+			SharedState.ClassDictionary = SharedState.Info.Classes.ToDictionary(x => x.Name, x => x);
 
 			AssemblyNameDefinition assemblyName = new AssemblyNameDefinition(AssemblyFileName, currentGeneratedVersion);
 			AssemblyDefinition assembly = AssemblyDefinition.CreateAssembly(assemblyName, AssemblyFileName, ModuleKind.Dll);

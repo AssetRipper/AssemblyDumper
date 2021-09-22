@@ -9,6 +9,7 @@ namespace AssemblyDumper
 		public static AssemblyDefinition Assembly { get; set; }
 		public static UnityInfo Info { get; set; }
 		public static Dictionary<string, TypeDefinition> TypeDictionary { get; } = new Dictionary<string, TypeDefinition>();
+		public static Dictionary<string, UnityClass> ClassDictionary { get; set; }
 
 
 		//Namespaces
