@@ -7,9 +7,9 @@ path_to_CollectionsLibrary="./AssemblyDumper/Libraries/System.Collections.dll"
 mkdir "./Output"
 
 generate() {
-	i=$1
-	echo Generating from $i...
-	./AssemblyDumper/bin/Release/net6/AssemblyDumper --output ./Output --runtime ./AssemblyDumper/Libraries/System.Runtime.dll --collections ./AssemblyDumper/Libraries/System.Collections.dll ./TypeTreeDumps/InfoJson/$i
+	j=$1
+	echo Generating from $j...
+	./AssemblyDumper/bin/Release/net6/AssemblyDumper --output ./Output --runtime ./AssemblyDumper/Libraries/System.Runtime.dll --collections ./AssemblyDumper/Libraries/System.Collections.dll ./TypeTreeDumps/InfoJson/$j
 }
 
 cd ./TypeTreeDumps/InfoJson
