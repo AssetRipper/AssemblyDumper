@@ -41,7 +41,7 @@ namespace AssemblyDumper.Passes
 						{
 							var releaseOnlyFieldDef = new FieldDefinition(releaseField.Name, FieldAttributes.Public, releaseOnlyFieldType);
 							releaseOnlyFieldDef.AddCustomAttribute(CommonTypeGetter.ReleaseOnlyAttributeConstructor);
-
+							releaseOnlyFieldDef.AddReleaseFlagAttribute(releaseField.MetaFlag);
 							type.Fields.Add(releaseOnlyFieldDef);
 						}
 
@@ -68,9 +68,13 @@ namespace AssemblyDumper.Passes
 						continue; //Skip field, can't resolve type.
 
 					var fieldDef = new FieldDefinition(editorField.Name, FieldAttributes.Public, fieldType);
+					
 					if (!isInReleaseToo)
 						fieldDef.AddCustomAttribute(CommonTypeGetter.EditorOnlyAttributeConstructor);
+					else
+						fieldDef.AddReleaseFlagAttribute(releaseField.MetaFlag);
 
+					fieldDef.AddEditorFlagAttribute(editorField.MetaFlag);
 					type.Fields.Add(fieldDef);
 				}
 			}
@@ -139,6 +143,20 @@ namespace AssemblyDumper.Passes
 			}
 
 			return type.Module.ImportReference(fieldType);
+		}
+
+		private static void AddReleaseFlagAttribute(this FieldDefinition _this, int flags)
+		{
+			var attrDef = new CustomAttribute(CommonTypeGetter.ReleaseMetaFlagsAttributeConstructor);
+			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(CommonTypeGetter.TransferMetaFlagsDefinition, flags));
+			_this.CustomAttributes.Add(attrDef);
+		}
+
+		private static void AddEditorFlagAttribute(this FieldDefinition _this, int flags)
+		{
+			var attrDef = new CustomAttribute(CommonTypeGetter.EditorMetaFlagsAttributeConstructor);
+			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(CommonTypeGetter.TransferMetaFlagsDefinition, flags));
+			_this.CustomAttributes.Add(attrDef);
 		}
 
 		private static void AddCustomAttribute(this FieldDefinition _this, MethodReference constructor)

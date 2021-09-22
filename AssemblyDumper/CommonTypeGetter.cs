@@ -24,26 +24,14 @@ namespace AssemblyDumper
 		public static TypeReference ReleaseOnlyAttributeDefinition { get; private set; }
 		public static MethodReference ReleaseOnlyAttributeConstructor { get; private set; }
 
-		public static TypeReference DebugOnlyAttributeDefinition { get; private set; }
-		public static MethodReference DebugOnlyAttributeConstructor { get; private set; }
+		public static TypeReference FixedLengthAttributeDefinition { get; private set; }
+		public static MethodReference FixedLengthAttributeConstructor { get; private set; }
 
-		public static TypeReference HideInEditorAttributeDefinition { get; private set; }
-		public static MethodReference HideInEditorAttributeConstructor { get; private set; }
+		public static TypeReference EditorMetaFlagsAttributeDefinition { get; private set; }
+		public static MethodReference EditorMetaFlagsAttributeConstructor { get; private set; }
 
-		public static TypeReference NotEditableAttributeDefinition { get; private set; }
-		public static MethodReference NotEditableAttributeConstructor { get; private set; }
-
-		public static TypeReference StrongPPtrAttributeDefinition { get; private set; }
-		public static MethodReference StrongPPtrAttributeConstructor { get; private set; }
-
-		public static TypeReference TreatAsBooleanAttributeDefinition { get; private set; }
-		public static MethodReference TreatAsBooleanAttributeConstructor { get; private set; }
-
-		public static TypeReference AlignBytesAttributeDefinition { get; private set; }
-		public static MethodReference AlignBytesAttributeConstructor { get; private set; }
-
-		public static TypeReference ChildAlignsBytesAttributeDefinition { get; private set; }
-		public static MethodReference ChildAlignsBytesAttributeConstructor { get; private set; }
+		public static TypeReference ReleaseMetaFlagsAttributeDefinition { get; private set; }
+		public static MethodReference ReleaseMetaFlagsAttributeConstructor { get; private set; }
 
 		public static TypeReference RegisterAssemblyAttributeDefinition { get; private set; }
 		public static MethodReference RegisterAssemblyAttributeConstructor { get; private set; }
@@ -53,6 +41,7 @@ namespace AssemblyDumper
 
 		public static TypeReference UnityObjectBaseDefinition { get; private set; }
 		public static TypeReference UnityVersionDefinition { get; private set; }
+		public static TypeReference TransferMetaFlagsDefinition { get; private set; }
 
 
 		public static void Initialize(ModuleDefinition module)
@@ -72,26 +61,14 @@ namespace AssemblyDumper
 			ReleaseOnlyAttributeDefinition = module.ImportCommonType<ReleaseOnlyAttribute>();
 			ReleaseOnlyAttributeConstructor = module.ImportCommonConstructor<ReleaseOnlyAttribute>();
 
-			DebugOnlyAttributeDefinition = module.ImportCommonType<DebugOnlyAttribute>();
-			DebugOnlyAttributeConstructor = module.ImportCommonConstructor<DebugOnlyAttribute>();
+			FixedLengthAttributeDefinition = module.ImportCommonType<FixedLengthAttribute>();
+			FixedLengthAttributeConstructor = module.ImportCommonConstructor<FixedLengthAttribute>(1);
 
-			HideInEditorAttributeDefinition = module.ImportCommonType<HideInEditorAttribute>();
-			HideInEditorAttributeConstructor = module.ImportCommonConstructor<HideInEditorAttribute>();
+			EditorMetaFlagsAttributeDefinition = module.ImportCommonType<EditorMetaFlagsAttribute>();
+			EditorMetaFlagsAttributeConstructor = module.ImportCommonConstructor<EditorMetaFlagsAttribute>(1);
 
-			NotEditableAttributeDefinition = module.ImportCommonType<NotEditableAttribute>();
-			NotEditableAttributeConstructor = module.ImportCommonConstructor<NotEditableAttribute>();
-
-			StrongPPtrAttributeDefinition = module.ImportCommonType<StrongPPtrAttribute>();
-			StrongPPtrAttributeConstructor = module.ImportCommonConstructor<StrongPPtrAttribute>();
-
-			TreatAsBooleanAttributeDefinition = module.ImportCommonType<TreatAsBooleanAttribute>();
-			TreatAsBooleanAttributeConstructor = module.ImportCommonConstructor<TreatAsBooleanAttribute>();
-
-			AlignBytesAttributeDefinition = module.ImportCommonType<AlignBytesAttribute>();
-			AlignBytesAttributeConstructor = module.ImportCommonConstructor<AlignBytesAttribute>();
-
-			ChildAlignsBytesAttributeDefinition = module.ImportCommonType<ChildAlignsBytesAttribute>();
-			ChildAlignsBytesAttributeConstructor = module.ImportCommonConstructor<ChildAlignsBytesAttribute>();
+			ReleaseMetaFlagsAttributeDefinition = module.ImportCommonType<ReleaseMetaFlagsAttribute>();
+			ReleaseMetaFlagsAttributeConstructor = module.ImportCommonConstructor<ReleaseMetaFlagsAttribute>(1);
 
 			RegisterAssemblyAttributeDefinition = module.ImportCommonType<RegisterAssemblyAttribute>();
 			RegisterAssemblyAttributeConstructor = module.ImportCommonConstructor<RegisterAssemblyAttribute>(1);
@@ -101,6 +78,7 @@ namespace AssemblyDumper
 
 			UnityObjectBaseDefinition = module.ImportCommonType<UnityObjectBase>();
 			UnityVersionDefinition = module.ImportCommonType<AssetRipper.Core.Parser.Files.UnityVersion>();
+			TransferMetaFlagsDefinition = module.ImportCommonType<AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TransferMetaFlags>();
 		}
 
 		public static TypeReference ImportCommonType(this ModuleDefinition module, string typeFullName)
