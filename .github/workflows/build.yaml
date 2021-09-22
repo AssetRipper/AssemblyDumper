@@ -21,3 +21,11 @@ jobs:
      - name: Build
        run: dotnet build /p:Configuration=Release
        working-directory: ./AssemblyDumper/
+     - name: Checkout TypeTreeDumps Repository
+       uses: actions/checkout@v2
+       with:
+        repository: 'ds5678/TypeTreeDumps'
+      
+     - name: List Files
+       shell: bash
+       run: ls -R ./
