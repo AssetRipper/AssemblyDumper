@@ -40,8 +40,8 @@ namespace AssemblyDumper.Passes
 						if (releaseOnlyFieldType != null)
 						{
 							var releaseOnlyFieldDef = new FieldDefinition(releaseField.Name, FieldAttributes.Public, releaseOnlyFieldType);
-							releaseOnlyFieldDef.AddCustomAttribute(CommonTypeGetter.ReleaseOnlyAttributeConstructor);
 							releaseOnlyFieldDef.AddReleaseFlagAttribute(releaseField.MetaFlag);
+							releaseOnlyFieldDef.AddCustomAttribute(CommonTypeGetter.ReleaseOnlyAttributeConstructor);
 							type.Fields.Add(releaseOnlyFieldDef);
 						}
 

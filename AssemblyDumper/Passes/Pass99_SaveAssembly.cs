@@ -5,15 +5,14 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass99_SaveAssembly
 	{
-		public const string DllName = "UnityStructs.dll";
-		public static void DoPass() => DoPass(DllName); 
-		public static void DoPass(string filePath)
+		public static void DoPass(DirectoryInfo outputDirectory)
 		{
 			Logger.Info("Pass 99: Save Assembly");
 			var assembly = SharedState.Assembly;
-			FileInfo fileInfo = new FileInfo(filePath);
-			DirectoryInfo directory = fileInfo.Directory;
-			if (!directory.Exists) Directory.CreateDirectory(directory.FullName);
+
+			if (!outputDirectory.Exists) Directory.CreateDirectory(outputDirectory.FullName);
+
+			string filePath = Path.Combine(outputDirectory.FullName, SharedState.Version + ".dll");
 
 			var reference = assembly.MainModule.AssemblyReferences.FirstOrDefault(a => a.Name == "System.Private.CoreLib");
 			if (reference != null)
