@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace AssemblyDumper.Unity
 {
@@ -20,5 +21,33 @@ namespace AssemblyDumper.Unity
 		public bool IsStripped { get; set; }
 		public UnityNode EditorRootNode { get; set; }
 		public UnityNode ReleaseRootNode { get; set; }
+
+		/// <summary>
+		/// The constructor used in json deserialization
+		/// </summary>
+		public UnityClass() { }
+		/// <summary>
+		/// The constructor used to make dependent class definitions
+		/// </summary>
+		public UnityClass(UnityNode releaseRootNode, UnityNode editorRootNode)
+		{
+			if (releaseRootNode == null && editorRootNode == null)
+				throw new ArgumentException("Both root nodes cannot be negative");
+
+			ReleaseRootNode = releaseRootNode;
+			EditorRootNode = editorRootNode;
+			var mainRootNode = releaseRootNode ?? editorRootNode;
+
+			Name = mainRootNode.TypeName;
+			FullName = Name;
+			TypeID = -1;
+			Derived = new List<string>();
+			DescendantCount = 0;
+			Size = mainRootNode.ByteSize;
+			IsAbstract = false;
+			IsSealed = true;
+			IsEditorOnly = false;
+			IsStripped = false;
+		}
 	}
 }

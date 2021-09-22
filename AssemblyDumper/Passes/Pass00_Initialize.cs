@@ -3,7 +3,6 @@ using Mono.Cecil;
 using Newtonsoft.Json;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace AssemblyDumper.Passes
 {
@@ -28,8 +27,8 @@ namespace AssemblyDumper.Passes
 			using var sr = new StreamReader(JsonPath);
 			using JsonTextReader reader = new JsonTextReader(sr);
 			JsonSerializer serializer = new JsonSerializer();
-			SharedState.Info = serializer.Deserialize<UnityInfo>(reader);
-			SharedState.ClassDictionary = SharedState.Info.Classes.ToDictionary(x => x.Name, x => x);
+			var info = serializer.Deserialize<UnityInfo>(reader);
+			SharedState.Initialize(info);
 
 			AssemblyNameDefinition assemblyName = new AssemblyNameDefinition(AssemblyFileName, currentGeneratedVersion);
 			AssemblyDefinition assembly = AssemblyDefinition.CreateAssembly(assemblyName, AssemblyFileName, ModuleKind.Dll);
@@ -45,7 +44,7 @@ namespace AssemblyDumper.Passes
 			assembly.MainModule.AssemblyReferences.Add(CommonTypeGetter.Assembly.Name);
 			
 			SharedState.Assembly = assembly;
-			SharedState.RootNamespace = SharedState.Info.Version.Replace('.', '_');
+			SharedState.RootNamespace = SharedState.Version.Replace('.', '_');
 
 			CommonTypeGetter.Initialize(assembly.MainModule);
 		}

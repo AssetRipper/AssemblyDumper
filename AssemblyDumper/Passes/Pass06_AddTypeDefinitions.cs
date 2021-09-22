@@ -12,11 +12,11 @@ namespace AssemblyDumper.Passes
 		{
 			Logger.Info("Pass 6: Add Type Definitions");
 			var assembly = SharedState.Assembly;
-			foreach (var entry in SharedState.Info.Classes)
+			foreach (var pair in SharedState.ClassDictionary)
 			{
-				var typeDef = assembly.CreateType(entry);
+				var typeDef = assembly.CreateType(pair.Value);
 				if(typeDef != null)
-					SharedState.TypeDictionary.Add(entry.Name, typeDef);
+					SharedState.TypeDictionary.Add(pair.Key, typeDef);
 			}
 		}
 

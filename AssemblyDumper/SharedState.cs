@@ -1,15 +1,17 @@
 ﻿using AssemblyDumper.Unity;
 using Mono.Cecil;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace AssemblyDumper
 {
 	public static class SharedState
 	{
 		public static AssemblyDefinition Assembly { get; set; }
-		public static UnityInfo Info { get; set; }
+		public static string Version { get; private set; }
+		public static List<UnityString> Strings { get; private set; }
+		public static Dictionary<string, UnityClass> ClassDictionary { get; private set; }
 		public static Dictionary<string, TypeDefinition> TypeDictionary { get; } = new Dictionary<string, TypeDefinition>();
-		public static Dictionary<string, UnityClass> ClassDictionary { get; set; }
 
 
 		//Namespaces
@@ -28,6 +30,11 @@ namespace AssemblyDumper
 		public static TypeDefinition CommonStringEnumDefinition { get; set; }
 
 
-
+		public static void Initialize(UnityInfo info)
+		{
+			Version = info.Version;
+			Strings = info.Strings;
+			ClassDictionary = info.Classes.ToDictionary(x => x.Name, x => x);
+		}
 	}
 }
