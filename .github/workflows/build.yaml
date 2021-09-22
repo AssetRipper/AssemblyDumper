@@ -31,7 +31,9 @@ jobs:
       
      - name: Run Generation
        shell: bash
-       run: ./generate_all.sh
+       run: |
+        chmod +x ./generate_all.sh
+        ./generate_all.sh
 
      - name: Upload Assemblies
        uses: actions/upload-artifact@v2
