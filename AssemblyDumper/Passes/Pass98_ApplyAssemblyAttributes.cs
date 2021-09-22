@@ -13,7 +13,7 @@ namespace AssemblyDumper.Passes
 			{
 				if (!SystemTypeGetter.primitiveNamesCsharp.Contains(pair.Key))
 				{
-					SharedState.Assembly.AddAssetTypeAttribute(pair.Key, pair.Value.TypeID);
+					SharedState.Assembly.AddAssetTypeAttribute(pair.Key, pair.Value.TypeID, SharedState.TypeDictionary[pair.Key]);
 				}
 			}
 		}
@@ -25,13 +25,12 @@ namespace AssemblyDumper.Passes
 			_this.CustomAttributes.Add(attrDef);
 		}
 
-		private static void AddAssetTypeAttribute(this AssemblyDefinition _this, string typeName, int idNumber)
+		private static void AddAssetTypeAttribute(this AssemblyDefinition _this, string typeName, int idNumber, TypeReference type)
 		{
-			string fullName = SharedState.Classesnamespace + "." + typeName;
 			var attrDef = new CustomAttribute(CommonTypeGetter.RegisterAssetTypeAttributeConstructor);
 			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.String, typeName));
 			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.Int32, idNumber));
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.String, fullName));
+			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.Type, type));
 			_this.CustomAttributes.Add(attrDef);
 		}
 	}
