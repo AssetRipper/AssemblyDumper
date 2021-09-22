@@ -29,6 +29,13 @@ jobs:
         repository: 'ds5678/TypeTreeDumps'
         path: TypeTreeDumps
       
-     - name: List Files
+     - name: Run Generation
        shell: bash
-       run: ls -R ./
+       run: ./generate_all.sh
+
+     - name: Upload Assemblies
+       uses: actions/upload-artifact@v2
+       with:
+         name: Assemblies
+         path: /home/runner/work/AssemblyDumper/AssemblyDumper/Output/*
+         if-no-files-found: error
