@@ -16,6 +16,9 @@ namespace AssemblyDumper
 				Pass07_ApplyInheritance.DoPass();
 				Pass08_AddDefaultConstructors.DoPass();
 				
+				Pass12_UnifyFieldsOfAbstractTypes.DoPass();
+				Pass15_AddFields.DoPass();
+
 				Pass99_SaveAssembly.DoPass();
 				Logger.Info("Done!");
 			}

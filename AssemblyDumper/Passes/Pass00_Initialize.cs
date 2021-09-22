@@ -10,6 +10,7 @@ namespace AssemblyDumper.Passes
 	{
 		private const string AssemblyFileName = "UnityStructs.dll";
 		private const string SystemRuntimeFilePath = @"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\6.0.0-rc.1.21451.13\ref\net6.0\System.Runtime.dll";
+		private const string SystemCollectionsFilePath = @"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\6.0.0-rc.1.21451.13\ref\net6.0\System.Collections.dll";
 		private const string JsonPath = "info.json";
 		/// <summary>
 		/// Used to determine which version of the AssemblyDumper generated an assembly
@@ -33,14 +34,16 @@ namespace AssemblyDumper.Passes
 			AssemblyNameDefinition assemblyName = new AssemblyNameDefinition(AssemblyFileName, currentGeneratedVersion);
 			AssemblyDefinition assembly = AssemblyDefinition.CreateAssembly(assemblyName, AssemblyFileName, ModuleKind.Dll);
 
-			SystemTypeGetter.Assembly = AssemblyDefinition.ReadAssembly(SystemRuntimeFilePath);
-			Logger.Info(SystemTypeGetter.Assembly.Name.FullName);
+			SystemTypeGetter.RuntimeAssembly = AssemblyDefinition.ReadAssembly(SystemRuntimeFilePath);
+			SystemTypeGetter.CollectionsAssembly = AssemblyDefinition.ReadAssembly(SystemCollectionsFilePath);
+			Logger.Info(SystemTypeGetter.RuntimeAssembly.Name.FullName);
 
 			CommonTypeGetter.Assembly = AssemblyDefinition.ReadAssembly(typeof(AssetRipper.Core.UnityObjectBase).Assembly.Location);
 			Logger.Info(CommonTypeGetter.Assembly.Name.FullName);
 
 			assembly.MainModule.AssemblyReferences.Clear();
-			assembly.MainModule.AssemblyReferences.Add(SystemTypeGetter.Assembly.Name);
+			assembly.MainModule.AssemblyReferences.Add(SystemTypeGetter.RuntimeAssembly.Name);
+			assembly.MainModule.AssemblyReferences.Add(SystemTypeGetter.CollectionsAssembly.Name);
 			assembly.MainModule.AssemblyReferences.Add(CommonTypeGetter.Assembly.Name);
 			
 			SharedState.Assembly = assembly;
