@@ -57,46 +57,46 @@ namespace AssemblyDumper
 		public static void Initialize(ModuleDefinition module)
 		{
 			ByteSizeAttributeDefinition = module.ImportCommonType<ByteSizeAttribute>();
-			ByteSizeAttributeConstructor = module.ImportConstructor<ByteSizeAttribute>(1);
+			ByteSizeAttributeConstructor = module.ImportCommonConstructor<ByteSizeAttribute>(1);
 
 			EditorOnlyAttributeDefinition = module.ImportCommonType<EditorOnlyAttribute>();
-			EditorOnlyAttributeConstructor = module.ImportConstructor<EditorOnlyAttribute>();
+			EditorOnlyAttributeConstructor = module.ImportCommonConstructor<EditorOnlyAttribute>();
 
 			StrippedAttributeDefinition = module.ImportCommonType<StrippedAttribute>();
-			StrippedAttributeConstructor = module.ImportConstructor<StrippedAttribute>();
+			StrippedAttributeConstructor = module.ImportCommonConstructor<StrippedAttribute>();
 
 			PersistentIDAttributeDefinition = module.ImportCommonType<PersistentIDAttribute>();
-			PersistentIDAttributeConstructor = module.ImportConstructor<PersistentIDAttribute>(1);
+			PersistentIDAttributeConstructor = module.ImportCommonConstructor<PersistentIDAttribute>(1);
 
 			ReleaseOnlyAttributeDefinition = module.ImportCommonType<ReleaseOnlyAttribute>();
-			ReleaseOnlyAttributeConstructor = module.ImportConstructor<ReleaseOnlyAttribute>();
+			ReleaseOnlyAttributeConstructor = module.ImportCommonConstructor<ReleaseOnlyAttribute>();
 
 			DebugOnlyAttributeDefinition = module.ImportCommonType<DebugOnlyAttribute>();
-			DebugOnlyAttributeConstructor = module.ImportConstructor<DebugOnlyAttribute>();
+			DebugOnlyAttributeConstructor = module.ImportCommonConstructor<DebugOnlyAttribute>();
 
 			HideInEditorAttributeDefinition = module.ImportCommonType<HideInEditorAttribute>();
-			HideInEditorAttributeConstructor = module.ImportConstructor<HideInEditorAttribute>();
+			HideInEditorAttributeConstructor = module.ImportCommonConstructor<HideInEditorAttribute>();
 
 			NotEditableAttributeDefinition = module.ImportCommonType<NotEditableAttribute>();
-			NotEditableAttributeConstructor = module.ImportConstructor<NotEditableAttribute>();
+			NotEditableAttributeConstructor = module.ImportCommonConstructor<NotEditableAttribute>();
 
 			StrongPPtrAttributeDefinition = module.ImportCommonType<StrongPPtrAttribute>();
-			StrongPPtrAttributeConstructor = module.ImportConstructor<StrongPPtrAttribute>();
+			StrongPPtrAttributeConstructor = module.ImportCommonConstructor<StrongPPtrAttribute>();
 
 			TreatAsBooleanAttributeDefinition = module.ImportCommonType<TreatAsBooleanAttribute>();
-			TreatAsBooleanAttributeConstructor = module.ImportConstructor<TreatAsBooleanAttribute>();
+			TreatAsBooleanAttributeConstructor = module.ImportCommonConstructor<TreatAsBooleanAttribute>();
 
 			AlignBytesAttributeDefinition = module.ImportCommonType<AlignBytesAttribute>();
-			AlignBytesAttributeConstructor = module.ImportConstructor<AlignBytesAttribute>();
+			AlignBytesAttributeConstructor = module.ImportCommonConstructor<AlignBytesAttribute>();
 
 			ChildAlignsBytesAttributeDefinition = module.ImportCommonType<ChildAlignsBytesAttribute>();
-			ChildAlignsBytesAttributeConstructor = module.ImportConstructor<ChildAlignsBytesAttribute>();
+			ChildAlignsBytesAttributeConstructor = module.ImportCommonConstructor<ChildAlignsBytesAttribute>();
 
 			RegisterAssemblyAttributeDefinition = module.ImportCommonType<RegisterAssemblyAttribute>();
-			RegisterAssemblyAttributeConstructor = module.ImportConstructor<RegisterAssemblyAttribute>(1);
+			RegisterAssemblyAttributeConstructor = module.ImportCommonConstructor<RegisterAssemblyAttribute>(1);
 
 			RegisterAssetTypeAttributeDefinition = module.ImportCommonType<RegisterAssetTypeAttribute>();
-			RegisterAssetTypeAttributeConstructor = module.ImportConstructor<RegisterAssetTypeAttribute>(3);
+			RegisterAssetTypeAttributeConstructor = module.ImportCommonConstructor<RegisterAssetTypeAttribute>(3);
 
 			UnityObjectBaseDefinition = module.ImportCommonType<UnityObjectBase>();
 		}
@@ -108,10 +108,10 @@ namespace AssemblyDumper
 
 		public static TypeReference ImportCommonType<T>(this ModuleDefinition module) => module.ImportCommonType(typeof(T).FullName);
 
-		private static MethodReference ImportConstructor<T>(this ModuleDefinition module) => module.ImportConstructor(typeof(T).FullName, 0);
-		private static MethodReference ImportConstructor(this ModuleDefinition module, string typeFullName) => module.ImportConstructor(typeFullName, 0);
-		private static MethodReference ImportConstructor<T>(this ModuleDefinition module, int numParameters) => module.ImportConstructor(typeof(T).FullName, numParameters);
-		private static MethodReference ImportConstructor(this ModuleDefinition module, string typeFullName, int numParameters)
+		public static MethodReference ImportCommonConstructor<T>(this ModuleDefinition module) => module.ImportCommonConstructor(typeof(T).FullName, 0);
+		public static MethodReference ImportCommonConstructor(this ModuleDefinition module, string typeFullName) => module.ImportCommonConstructor(typeFullName, 0);
+		public static MethodReference ImportCommonConstructor<T>(this ModuleDefinition module, int numParameters) => module.ImportCommonConstructor(typeof(T).FullName, numParameters);
+		public static MethodReference ImportCommonConstructor(this ModuleDefinition module, string typeFullName, int numParameters)
 		{
 			return module.ImportReference(LookupCommonType(typeFullName).GetConstructor(numParameters));
 		}

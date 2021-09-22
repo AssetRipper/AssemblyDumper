@@ -44,6 +44,10 @@ namespace AssemblyDumper.Utils
 				{
 					baseConstructor = module.ImportReference(baseType.GetDefaultConstructor());
 				}
+				else if(typeDefinition.BaseType.Namespace.StartsWith("AssetRipper"))
+				{
+					baseConstructor = module.ImportCommonConstructor(typeDefinition.BaseType.FullName);
+				}
 				else
 				{
 					baseConstructor = module.ImportDefaultConstructor(typeDefinition.BaseType.FullName);
