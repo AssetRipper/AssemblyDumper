@@ -8,8 +8,8 @@ mkdir "./Output"
 
 generate() {
 	i=$1
-	echo Generating $i...
-	./AssemblyDumper/bin/Release/net6/AssemblyDumper --output ./Output --Runtime ./AssemblyDumper/Libraries/System.Runtime.dll --Collections ./AssemblyDumper/Libraries/System.Collections.dll ./TypeTreeDumps/InfoJson/$i
+	echo Generating from $i...
+	./AssemblyDumper/bin/Release/net6/AssemblyDumper --output ./Output --runtime ./AssemblyDumper/Libraries/System.Runtime.dll --collections ./AssemblyDumper/Libraries/System.Collections.dll ./TypeTreeDumps/InfoJson/$i
 }
 
 cd ./TypeTreeDumps/InfoJson
