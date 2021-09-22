@@ -33,8 +33,8 @@ namespace AssemblyDumper.Passes
 			TypeDefinition typeDef = new TypeDefinition(SharedState.Classesnamespace, name, typeAttributes);
 			if (@class.IsEditorOnly) typeDef.AddCustomAttribute(CommonTypeGetter.EditorOnlyAttributeConstructor);
 			if (@class.IsStripped) typeDef.AddCustomAttribute(CommonTypeGetter.StrippedAttributeConstructor);
-			//typeDef.AddCustomAttribute(CommonTypeGetter.PersistentIDAttributeConstructor, SharedState.PersistentTypeIDDefinition, @class.TypeID);
-			//typeDef.AddCustomAttribute(CommonTypeGetter.ByteSizeAttributeConstructor, SystemTypeGetter.Int32(_this.MainModule), @class.Size);
+			typeDef.AddCustomAttribute(CommonTypeGetter.PersistentIDAttributeConstructor, SystemTypeGetter.Int32, @class.TypeID);
+			typeDef.AddCustomAttribute(CommonTypeGetter.ByteSizeAttributeConstructor, SystemTypeGetter.Int32, @class.Size);
 
 			_this.MainModule.Types.Add(typeDef);
 			

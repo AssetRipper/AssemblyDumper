@@ -18,7 +18,7 @@ namespace AssemblyDumper
 				
 				Pass12_UnifyFieldsOfAbstractTypes.DoPass();
 				Pass15_AddFields.DoPass();
-
+				Pass98_ApplyAssemblyAttributes.DoPass();
 				Pass99_SaveAssembly.DoPass();
 				Logger.Info("Done!");
 			}

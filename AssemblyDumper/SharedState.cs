@@ -25,11 +25,6 @@ namespace AssemblyDumper
 		public static string UtilsNamespace => RootNamespace + ".Utils";
 
 
-		//Enums
-		public static TypeDefinition PersistentTypeIDDefinition { get; set; }
-		public static TypeDefinition CommonStringEnumDefinition { get; set; }
-
-
 		public static void Initialize(UnityInfo info)
 		{
 			Version = info.Version;

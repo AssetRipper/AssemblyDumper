@@ -110,7 +110,7 @@ namespace AssemblyDumper.Passes
 							return null;
 						}
 
-						var dictType = SystemTypeGetter.Dictionary(type.Module);
+						var dictType = SystemTypeGetter.Dictionary;
 						return dictType.MakeGenericInstanceType(firstType, secondType);
 					}
 					case "pair":
@@ -124,11 +124,11 @@ namespace AssemblyDumper.Passes
 							return null;
 						}
 
-						var kvpType = SystemTypeGetter.KeyValuePair(type.Module);
+						var kvpType = SystemTypeGetter.KeyValuePair;
 						return kvpType.MakeGenericInstanceType(firstType, secondType);
 					}
 					case "TypelessData":
-						return SystemTypeGetter.Int8(type.Module).MakeArrayType();
+						return SystemTypeGetter.Int8.MakeArrayType();
 				}
 			}
 

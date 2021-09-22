@@ -36,10 +36,10 @@ namespace AssemblyDumper.Passes
 
 			SystemTypeGetter.RuntimeAssembly = AssemblyDefinition.ReadAssembly(SystemRuntimeFilePath);
 			SystemTypeGetter.CollectionsAssembly = AssemblyDefinition.ReadAssembly(SystemCollectionsFilePath);
-			Logger.Info(SystemTypeGetter.RuntimeAssembly.Name.FullName);
+			//Logger.Info(SystemTypeGetter.RuntimeAssembly.Name.FullName);
 
 			CommonTypeGetter.Assembly = AssemblyDefinition.ReadAssembly(typeof(AssetRipper.Core.UnityObjectBase).Assembly.Location);
-			Logger.Info(CommonTypeGetter.Assembly.Name.FullName);
+			//Logger.Info(CommonTypeGetter.Assembly.Name.FullName);
 
 			assembly.MainModule.AssemblyReferences.Clear();
 			assembly.MainModule.AssemblyReferences.Add(SystemTypeGetter.RuntimeAssembly.Name);
@@ -50,6 +50,7 @@ namespace AssemblyDumper.Passes
 			SharedState.RootNamespace = SharedState.Version.Replace('.', '_');
 
 			CommonTypeGetter.Initialize(assembly.MainModule);
+			SystemTypeGetter.Initialize(assembly.MainModule);
 		}
 	}
 }

@@ -9,6 +9,7 @@ namespace AssemblyDumper.Passes
 		public static void DoPass() => DoPass(DllName); 
 		public static void DoPass(string filePath)
 		{
+			Logger.Info("Pass 99: Save Assembly");
 			var assembly = SharedState.Assembly;
 			FileInfo fileInfo = new FileInfo(filePath);
 			DirectoryInfo directory = fileInfo.Directory;

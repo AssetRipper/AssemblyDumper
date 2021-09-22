@@ -52,6 +52,7 @@ namespace AssemblyDumper
 		public static MethodReference RegisterAssetTypeAttributeConstructor { get; private set; }
 
 		public static TypeReference UnityObjectBaseDefinition { get; private set; }
+		public static TypeReference UnityVersionDefinition { get; private set; }
 
 
 		public static void Initialize(ModuleDefinition module)
@@ -99,6 +100,7 @@ namespace AssemblyDumper
 			RegisterAssetTypeAttributeConstructor = module.ImportCommonConstructor<RegisterAssetTypeAttribute>(3);
 
 			UnityObjectBaseDefinition = module.ImportCommonType<UnityObjectBase>();
+			UnityVersionDefinition = module.ImportCommonType<AssetRipper.Core.Parser.Files.UnityVersion>();
 		}
 
 		public static TypeReference ImportCommonType(this ModuleDefinition module, string typeFullName)

@@ -40,7 +40,7 @@ namespace AssemblyDumper.Utils
 		private static void AddEnumValue(this TypeDefinition typeDefinition)
 		{
 			var module = typeDefinition.Module;
-			var fieldDef = new FieldDefinition("value__", FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName, SystemTypeGetter.Int32(module));
+			var fieldDef = new FieldDefinition("value__", FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName, SystemTypeGetter.Int32);
 			typeDefinition.Fields.Add(fieldDef);
 		}
 		private static void AddEnumField(this TypeDefinition typeDefinition, string name, object value)
