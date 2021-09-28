@@ -590,7 +590,7 @@ namespace AssemblyDumper.Passes
 				firstType = ResolvePairType(processor, first.SubNodes[0], first.SubNodes[1]);
 			else if (firstName == "map")
 				firstType = ResolveDictionaryType(processor, first);
-			else if (firstName is "vector" or "set")
+			else if (firstName is "vector" or "set" or "staticvector")
 				firstType = ResolveVectorType(processor, first);
 			else
 				firstType = processor.Body.Method.Module.ImportReference(processor.Body.Method.Module.GetPrimitiveType(firstName) ?? SystemTypeGetter.LookupSystemType(firstName) ?? SharedState.TypeDictionary[firstName]);
@@ -599,7 +599,7 @@ namespace AssemblyDumper.Passes
 				secondType = ResolvePairType(processor, second.SubNodes[0], second.SubNodes[1]);
 			else if (secondName == "map")
 				secondType = ResolveDictionaryType(processor, second);
-			else if (secondName is "vector" or "set")
+			else if (secondName is "vector" or "set" or "staticvector")
 				secondType = ResolveVectorType(processor, second);
 			else
 				secondType = processor.Body.Method.Module.ImportReference(processor.Body.Method.Module.GetPrimitiveType(secondName) ?? SystemTypeGetter.LookupSystemType(secondName) ?? SharedState.TypeDictionary[secondName]);
