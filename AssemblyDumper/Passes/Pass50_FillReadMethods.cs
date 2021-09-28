@@ -99,6 +99,7 @@ namespace AssemblyDumper.Passes
 					ReadVector(node, processor, field, 1);
 					return;
 				case "map":
+					ReadDictionary(node, processor, field);
 					return;
 				case "pair":
 					ReadPair(node, processor, field);
@@ -264,7 +265,10 @@ namespace AssemblyDumper.Passes
 					ReadArray(listTypeNode, processor, field, arrayDepth + 1);
 					break;
 				case "map":
-					//TODO
+					if(arrayDepth > 1)
+						throw new("ReadArray does not support dictionary arrays with a depth > 1");
+					
+					ReadDictionaryArray(node, processor, field);
 					break;
 				case "pair":
 					if (arrayDepth > 1)
@@ -348,10 +352,158 @@ namespace AssemblyDumper.Passes
 			unconditionalBranch.Operand = loopConditionStart;
 
 			//Now just store field
+			if(field != null)
+				processor.Emit(OpCodes.Ldarg_0); //Load this
+			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array
+			
+			if(field != null)
+				processor.Emit(OpCodes.Stfld, field); //Store field
+		}
+		
+		private static void ReadDictionaryArray(UnityNode node, ILProcessor processor, FieldDefinition field) 
+		{
+			//you know the drill
+			//read count
+			//make empty array
+			//for i = 0 .. count 
+			//  read an entire bloody dictionary
+			//set field
+			
+			//we need an array type, so let's get that
+			var dictNode = node.SubNodes[1];
+			var dictType = ResolveDictionaryType(processor, dictNode);
+			var arrayType = dictType.MakeArrayType(); //cursed. that is all.
+			
+			//Read length of array
+			var intReader = processor.Body.Method.Module.ImportReference(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadInt32"));
+			processor.Emit(OpCodes.Ldarg_1); //Load reader
+			processor.Emit(OpCodes.Call, intReader); //Call int reader
+
+			//Make local and store length in it
+			var countLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
+			processor.Body.Variables.Add(countLocal); //Add to method
+			processor.Emit(OpCodes.Stloc, countLocal); //Store count in it
+
+			//Create empty array and local for it
+			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
+			processor.Emit(OpCodes.Newarr, dictType); //Create new array of dictionaries with given count
+			var arrayLocal = new VariableDefinition(arrayType); //Create local
+			processor.Body.Variables.Add(arrayLocal); //Add to method
+			processor.Emit(OpCodes.Stloc, arrayLocal); //Store array in local
+
+			//Make an i
+			var iLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
+			processor.Body.Variables.Add(iLocal); //Add to method
+			processor.Emit(OpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Emit(OpCodes.Stloc, iLocal); //Store in count
+			
+			//Create an empty, unconditional branch which will jump down to the loop condition.
+			//This converts the do..while loop into a for loop.
+			var unconditionalBranch =  processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
+			processor.Append(unconditionalBranch);
+
+			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
+			var jumpTarget = processor.Create(OpCodes.Nop); //Create a dummy instruction to jump back to
+			processor.Append(jumpTarget); //Add it to the method body
+
+			//Read element at index i of array
+			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array local
+			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
+			ReadDictionary(dictNode, processor, null);
+			processor.Emit(OpCodes.Stelem_Ref); //Store in array
+
+			//Increment i
+			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
+			processor.Emit(OpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Emit(OpCodes.Add); //Add 
+			processor.Emit(OpCodes.Stloc, iLocal); //Store in i local
+			
+			//Jump to start of loop if i < count
+			var loopConditionStart = processor.Create(OpCodes.Ldloc, iLocal); //Load i
+			processor.Append(loopConditionStart);
+			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
+			processor.Emit(OpCodes.Blt, jumpTarget); //Jump back up if less than
+			unconditionalBranch.Operand = loopConditionStart;
+
+			//Now just store field
 			processor.Emit(OpCodes.Ldarg_0); //Load this
 			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array
 			processor.Emit(OpCodes.Stfld, field); //Store field
 		}
+
+		private static void ReadDictionary(UnityNode node, ILProcessor processor, FieldDefinition field)
+		{
+			//Strategy:
+			//Read Count
+			//Make dictionary
+			//For i = 0 .. count
+			//	Read key, read value, store in dict
+			//Store dict in field
+			
+			//Resolve things we'll need
+			var genericDictType = ResolveDictionaryType(processor, node);
+			var genericDictCtor = MakeConstructorOnGenericType(genericDictType, 0);
+			var addMethod = MakeMethodOnGenericType(genericDictType.Resolve().Methods.First(m => m.Name == "Add"), genericDictType);
+			
+			//Read length of array
+			var intReader = processor.Body.Method.Module.ImportReference(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadInt32"));
+			processor.Emit(OpCodes.Ldarg_1); //Load reader
+			processor.Emit(OpCodes.Call, intReader); //Call int reader
+
+			//Make local and store length in it
+			var countLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
+			processor.Body.Variables.Add(countLocal); //Add to method
+			processor.Emit(OpCodes.Stloc, countLocal); //Store count in it
+
+			//Create empty dict and local for it
+			processor.Emit(OpCodes.Newobj, genericDictCtor); //Create new dictionary
+			var dictLocal = new VariableDefinition(genericDictType); //Create local
+			processor.Body.Variables.Add(dictLocal); //Add to method
+			processor.Emit(OpCodes.Stloc, dictLocal); //Store dict in local
+
+			//Make an i
+			var iLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
+			processor.Body.Variables.Add(iLocal); //Add to method
+			processor.Emit(OpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Emit(OpCodes.Stloc, iLocal); //Store in count
+			
+			//Create an empty, unconditional branch which will jump down to the loop condition.
+			//This converts the do..while loop into a for loop.
+			var unconditionalBranch =  processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
+			processor.Append(unconditionalBranch);
+
+			//Now we just read key + value, increment i, compare against count, and jump back to here if it's less
+			var jumpTarget = processor.Create(OpCodes.Nop); //Create a dummy instruction to jump back to
+			processor.Append(jumpTarget); //Add it to the method body
+
+			//Read ith key-value pair of dict 
+			processor.Emit(OpCodes.Ldloc, dictLocal); //Load dict local
+			ReadFieldContent(node.SubNodes[0].SubNodes[1].SubNodes[0], processor, null); //Load first
+			ReadFieldContent(node.SubNodes[0].SubNodes[1].SubNodes[1], processor, null); //Load second
+			processor.Emit(OpCodes.Call, addMethod); //Call Add(TKey, TValue)
+
+			//Increment i
+			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
+			processor.Emit(OpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Emit(OpCodes.Add); //Add 
+			processor.Emit(OpCodes.Stloc, iLocal); //Store in i local
+			
+			//Jump to start of loop if i < count
+			var loopConditionStart = processor.Create(OpCodes.Ldloc, iLocal); //Load i
+			processor.Append(loopConditionStart);
+			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
+			processor.Emit(OpCodes.Blt, jumpTarget); //Jump back up if less than
+			unconditionalBranch.Operand = loopConditionStart;
+
+			//Now just store field
+			if(field != null)
+				processor.Emit(OpCodes.Ldarg_0); //Load this
+			
+			processor.Emit(OpCodes.Ldloc, dictLocal); //Load dict
+			
+			if(field != null)
+				processor.Emit(OpCodes.Stfld, field); //Store field
+		} 
 
 		private static void ReadPair(UnityNode node, ILProcessor processor, FieldDefinition field)
 		{
@@ -373,7 +525,7 @@ namespace AssemblyDumper.Passes
 
 			var genericKvp = ResolvePairType(processor, first, second);
 
-			var genericCtor = ResolveGenericKeyValuePairConstructor(genericKvp);
+			var genericCtor = MakeConstructorOnGenericType(genericKvp, 2);
 
 			//Call constructor
 			processor.Emit(OpCodes.Newobj, genericCtor);
@@ -383,23 +535,48 @@ namespace AssemblyDumper.Passes
 				processor.Emit(OpCodes.Stfld, field);
 		}
 
-		private static MethodReference ResolveGenericKeyValuePairConstructor(GenericInstanceType genericKvp)
+		private static MethodReference MakeConstructorOnGenericType(GenericInstanceType instanceType, int paramCount)
 		{
 			//Get ctor
-			var ctor = genericKvp.Resolve().Methods.First(m => m.Name == ".ctor" && m.Parameters.Count == 2);
+			var ctor = instanceType.Resolve().Methods.First(m => m.Name == ".ctor" && m.Parameters.Count == paramCount);
 
+			return MakeMethodOnGenericType(ctor, instanceType);
+		}
+
+		private static MethodReference MakeMethodOnGenericType(MethodDefinition definition, GenericInstanceType instanceType)
+		{
 			//Make the constructor on the generic type
 			//Cecil sucks.
-			var genericCtor = new MethodReference(ctor.Name, ctor.ReturnType)
+			var genericMethod = new MethodReference(definition.Name, definition.ReturnType)
 			{
-				DeclaringType = genericKvp,
-				HasThis = ctor.HasThis,
-				ExplicitThis = ctor.ExplicitThis,
-				CallingConvention = ctor.CallingConvention,
+				DeclaringType = instanceType,
+				HasThis = definition.HasThis,
+				ExplicitThis = definition.ExplicitThis,
+				CallingConvention = definition.CallingConvention,
 			};
-			ctor.Parameters.ToList().ForEach(genericCtor.Parameters.Add);
-			ctor.GenericParameters.ToList().ForEach(genericCtor.GenericParameters.Add);
-			return genericCtor;
+			definition.Parameters.ToList().ForEach(genericMethod.Parameters.Add);
+			definition.GenericParameters.ToList().ForEach(genericMethod.GenericParameters.Add);
+			return genericMethod;
+		}
+
+		private static GenericInstanceType ResolveDictionaryType(ILProcessor processor, UnityNode node)
+		{
+			var pairNode = node.SubNodes[0] //Array
+				.SubNodes[1]; //Pair
+			
+			var first = pairNode.SubNodes[0];
+			var second = pairNode.SubNodes[1];
+			var genericKvp = ResolvePairType(processor, first, second);
+
+			return SystemTypeGetter.Dictionary.MakeGenericInstanceType(genericKvp.GenericArguments[0], genericKvp.GenericArguments[1]);
+		}
+
+		private static ArrayType ResolveVectorType(ILProcessor processor, UnityNode node)
+		{
+			var contentNode = node.SubNodes[0].SubNodes[1];
+			var typeName = contentNode.TypeName;
+		
+			return processor.Body.Method.Module.ImportReference(processor.Body.Method.Module.GetPrimitiveType(typeName) ?? SystemTypeGetter.LookupSystemType(typeName) ?? SharedState.TypeDictionary[typeName]).MakeArrayType();
 		}
 
 		private static GenericInstanceType ResolvePairType(ILProcessor processor, UnityNode first, UnityNode second)
@@ -411,11 +588,19 @@ namespace AssemblyDumper.Passes
 			TypeReference secondType;
 			if (firstName == "pair") 
 				firstType = ResolvePairType(processor, first.SubNodes[0], first.SubNodes[1]);
+			else if (firstName == "map")
+				firstType = ResolveDictionaryType(processor, first);
+			else if (firstName is "vector" or "set" or "staticvector")
+				firstType = ResolveVectorType(processor, first);
 			else
 				firstType = processor.Body.Method.Module.ImportReference(processor.Body.Method.Module.GetPrimitiveType(firstName) ?? SystemTypeGetter.LookupSystemType(firstName) ?? SharedState.TypeDictionary[firstName]);
 
 			if (secondName == "pair")
 				secondType = ResolvePairType(processor, second.SubNodes[0], second.SubNodes[1]);
+			else if (secondName == "map")
+				secondType = ResolveDictionaryType(processor, second);
+			else if (secondName is "vector" or "set" or "staticvector")
+				secondType = ResolveVectorType(processor, second);
 			else
 				secondType = processor.Body.Method.Module.ImportReference(processor.Body.Method.Module.GetPrimitiveType(secondName) ?? SystemTypeGetter.LookupSystemType(secondName) ?? SharedState.TypeDictionary[secondName]);
 
