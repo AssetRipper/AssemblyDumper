@@ -271,7 +271,7 @@ namespace AssemblyDumper.Passes
 						throw new("ReadArray does not support Pair arrays with a depth > 1");
 					
 					ReadPairArray(processor, field, listTypeNode);
-					return;
+					break;
 				default:
 					ReadPrimitiveType(listTypeNode, processor, field, arrayDepth);
 					break;
