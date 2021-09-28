@@ -66,6 +66,12 @@ namespace AssemblyDumper.Passes
 
 		private static void AddLoadToProcessor(UnityNode node, ILProcessor processor, List<FieldDefinition> fields)
 		{
+			//Get field
+			var field = fields.FirstOrDefault(f => f.Name == node.Name);
+
+			if (field == null)
+				throw new Exception($"Field {node.Name} cannot be found in {processor.Body.Method.DeclaringType} (fields are {string.Join(", ", fields.Select(f => f.Name))})");
+
 			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out var fieldType))
 			{
 				//Complex field type, IAssetReadable, call read
@@ -86,13 +92,6 @@ namespace AssemblyDumper.Passes
 				//Call it
 				processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(genericInst));
 
-				//Get field
-
-				var field = fields.FirstOrDefault(f => f.Name == node.Name);
-
-				if (field == null)
-					throw new Exception($"Field {node.Name} cannot be found in {processor.Body.Method.DeclaringType} (fields are {string.Join(", ", fields.Select(f => f.Name))})");
-
 				//Store result in field
 				processor.Emit(OpCodes.Stfld, field);
 
@@ -110,8 +109,25 @@ namespace AssemblyDumper.Passes
 					return;
 				case "pair":
 					return;
-				case "TypelessData":
-					return;
+				case "TypelessData": //byte array
+					{
+						//Load "this" for field store later
+						processor.Emit(OpCodes.Ldarg_0);
+
+						//Load reader
+						processor.Emit(OpCodes.Ldarg_1);
+
+						//Get ReadAsset
+						var readMethod = CommonTypeGetter.BinaryReaderExtensionsDefinition.Resolve().Methods.First(m => m.Name == "ReadUInt8Array");
+
+						//Call it
+						processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(readMethod));
+
+						//Store result in field
+						processor.Emit(OpCodes.Stfld, field);
+
+						return;
+					}
 				case "Array":
 					return;
 			}

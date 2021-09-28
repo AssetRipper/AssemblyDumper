@@ -153,7 +153,7 @@ namespace AssemblyDumper.Passes
 						return kvpType.MakeGenericInstanceType(firstType, secondType);
 					}
 					case "TypelessData":
-						return SystemTypeGetter.Int8.MakeArrayType();
+						return SystemTypeGetter.UInt8.MakeArrayType();
 					case "Array":
 						var arrayTypeNode = editorField.SubNodes[1];
 						var arrayType = ResolveFieldType(type, arrayTypeNode);
