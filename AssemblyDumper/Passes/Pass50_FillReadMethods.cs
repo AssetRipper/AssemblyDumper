@@ -11,11 +11,6 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass50_FillReadMethods
 	{
-		private static Dictionary<string, string> GenericParameterRemapping = new()
-		{
-			{"pair", "System.Collections.Generic.KeyValuePair`2"}
-		};
-
 		public static void DoPass()
 		{
 			Logger.Info("Pass 50: Filling read methods");
