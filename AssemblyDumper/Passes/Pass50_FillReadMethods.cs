@@ -32,6 +32,7 @@ namespace AssemblyDumper.Passes
 
 				var fields = GetAllFieldsInTypeAndBase(type);
 
+				//Logger.Info($"Generating the editor read method for {name}");
 				if (klass.EditorRootNode != null)
 				{
 					foreach (var unityNode in klass.EditorRootNode.SubNodes)
@@ -40,6 +41,7 @@ namespace AssemblyDumper.Passes
 					}
 				}
 
+				//Logger.Info($"Generating the release read method for {name}");
 				if (klass.ReleaseRootNode != null)
 				{
 					foreach (var unityNode in klass.ReleaseRootNode.SubNodes)
@@ -75,7 +77,7 @@ namespace AssemblyDumper.Passes
 
 			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out var fieldType))
 			{
-				ReadAssetType(node, processor, field, fieldType);
+				ReadAssetType(node, processor, field, fieldType, 0);
 				return;
 			}
 
@@ -85,6 +87,7 @@ namespace AssemblyDumper.Passes
 				case "vector":
 				case "set":
 				case "staticvector":
+					ReadVector(node, processor, field, 1);
 					return;
 				case "map":
 					return;
@@ -97,7 +100,7 @@ namespace AssemblyDumper.Passes
 					return;
 			}
 
-			ReadPrimitiveType(node, processor, field);
+			ReadPrimitiveType(node, processor, field, 0);
 		}
 
 		private static void MaybeAlignBytes(UnityNode node, ILProcessor processor)
@@ -115,14 +118,21 @@ namespace AssemblyDumper.Passes
 			}
 		}
 
-		private static void ReadPrimitiveType(UnityNode node, ILProcessor processor, FieldDefinition field)
+		private static void ReadPrimitiveType(UnityNode node, ILProcessor processor, FieldDefinition field, int arrayDepth)
 		{
 			//Primitives
 			var csPrimitiveTypeName = SystemTypeGetter.CppPrimitivesToCSharpPrimitives[node.TypeName];
 			var csPrimitiveType = processor.Body.Method.DeclaringType.Module.GetPrimitiveType(node.TypeName);
 
 			//Read
-			var primitiveReadMethod = CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}");
+			MethodDefinition primitiveReadMethod = arrayDepth switch
+			{
+				0 => CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}")
+					?? SystemTypeGetter.BinaryReader.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}"),
+				1 => CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}Array"),
+				2 => CommonTypeGetter.EndianReaderExtensionsDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}ArrayArray"),
+				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth), $"ReadPrimitiveType does not support array depth '{arrayDepth}'"),
+			};
 
 			primitiveReadMethod ??= SystemTypeGetter.BinaryReader.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}");
 
@@ -148,7 +158,7 @@ namespace AssemblyDumper.Passes
 		/// <summary>
 		/// Complex field type, IAssetReadable, call read
 		/// </summary>
-		private static void ReadAssetType(UnityNode node, ILProcessor processor, FieldDefinition field, TypeDefinition fieldType)
+		private static void ReadAssetType(UnityNode node, ILProcessor processor, FieldDefinition field, TypeDefinition fieldType, int arrayDepth)
 		{
 			//Load "this" for field store later
 			processor.Emit(OpCodes.Ldarg_0);
@@ -157,7 +167,13 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Ldarg_1);
 
 			//Get ReadAsset
-			var readMethod = CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadAsset");
+			MethodDefinition readMethod = arrayDepth switch
+			{
+				0 => CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadAsset"),
+				1 => CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadAssetArray"),
+				2 => CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadAssetArrayArray"),
+				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth), $"ReadAssetType does not support array depth '{arrayDepth}'"),
+			};
 
 			//Make generic ReadAsset<T>
 			var genericInst = new GenericInstanceMethod(readMethod);
@@ -191,6 +207,29 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Stfld, field);
 
 			//Maybe Align Bytes
+			MaybeAlignBytes(node, processor);
+		}
+
+		private static void ReadVector(UnityNode node, ILProcessor processor, FieldDefinition field, int arrayDepth)
+		{
+			var listTypeNode = node.SubNodes[0].SubNodes[1];
+			if (SharedState.TypeDictionary.TryGetValue(listTypeNode.TypeName, out var fieldType))
+			{
+				ReadAssetType(listTypeNode, processor, field, fieldType, arrayDepth);
+			}
+			else if (listTypeNode.TypeName is "vector" or "set" or "staticvector")
+			{
+				ReadVector(listTypeNode, processor, field, arrayDepth + 1);
+			}
+			else if (listTypeNode.TypeName is "map" or "pair")
+			{
+				//TODO
+			}
+			else
+			{
+				ReadPrimitiveType(listTypeNode, processor, field, arrayDepth);
+			}
+
 			MaybeAlignBytes(node, processor);
 		}
 	}

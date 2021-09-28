@@ -163,7 +163,6 @@ namespace AssemblyDumper.Passes
 
 						Logger.Info($"WARNING: Could not resolve array parameter {arrayTypeNode.TypeName}");
 						return null;
-						break;
 				}
 			}
 
