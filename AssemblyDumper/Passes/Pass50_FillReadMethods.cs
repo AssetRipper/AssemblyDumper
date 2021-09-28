@@ -97,6 +97,7 @@ namespace AssemblyDumper.Passes
 					ReadByteArray(node, processor, field);
 					return;
 				case "Array":
+					ReadArray(node, processor, field, 1);
 					return;
 			}
 
@@ -127,8 +128,9 @@ namespace AssemblyDumper.Passes
 			//Read
 			MethodDefinition primitiveReadMethod = arrayDepth switch
 			{
-				0 => CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}")
-					?? SystemTypeGetter.BinaryReader.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}"),
+				0 => CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}") //String
+					?? CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}")
+					?? SystemTypeGetter.BinaryReader.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}"),//Byte, SByte, and Boolean
 				1 => CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}Array"),
 				2 => CommonTypeGetter.EndianReaderExtensionsDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}ArrayArray"),
 				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth), $"ReadPrimitiveType does not support array depth '{arrayDepth}'"),
@@ -152,6 +154,7 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Stfld, field);
 
 			//Maybe Align Bytes
+			//Note: string has its own alignment built-in. That's why this doesn't appear to align strings
 			MaybeAlignBytes(node, processor);
 		}
 
@@ -198,7 +201,7 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Ldarg_1);
 
 			//Get ReadAsset
-			var readMethod = CommonTypeGetter.BinaryReaderExtensionsDefinition.Resolve().Methods.First(m => m.Name == "ReadUInt8Array");
+			var readMethod = CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadByteArray");
 
 			//Call it
 			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(readMethod));
@@ -207,12 +210,31 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Stfld, field);
 
 			//Maybe Align Bytes
+			//warning: this will generate incorrect reads
+			//there will be a double alignment from the endian reader aligning itself
 			MaybeAlignBytes(node, processor);
 		}
 
 		private static void ReadVector(UnityNode node, ILProcessor processor, FieldDefinition field, int arrayDepth)
 		{
-			var listTypeNode = node.SubNodes[0].SubNodes[1];
+			var listTypeNode = node.SubNodes[0];
+			if (listTypeNode.TypeName is "Array")
+			{
+				ReadArray(listTypeNode, processor, field, arrayDepth);
+			}
+			else
+			{
+				throw new ArgumentException($"Invalid subnode for {node.TypeName}", nameof(node));
+			}
+
+			//warning: this will generate incorrect reads
+			//there will be a double alignment from the endian reader aligning itself
+			MaybeAlignBytes(node, processor);
+		}
+
+		private static void ReadArray(UnityNode node, ILProcessor processor, FieldDefinition field, int arrayDepth)
+		{
+			var listTypeNode = node.SubNodes[1];
 			if (SharedState.TypeDictionary.TryGetValue(listTypeNode.TypeName, out var fieldType))
 			{
 				ReadAssetType(listTypeNode, processor, field, fieldType, arrayDepth);
@@ -220,6 +242,10 @@ namespace AssemblyDumper.Passes
 			else if (listTypeNode.TypeName is "vector" or "set" or "staticvector")
 			{
 				ReadVector(listTypeNode, processor, field, arrayDepth + 1);
+			}
+			else if (listTypeNode.TypeName is "Array")
+			{
+				ReadArray(listTypeNode, processor, field, arrayDepth + 1);
 			}
 			else if (listTypeNode.TypeName is "map" or "pair")
 			{

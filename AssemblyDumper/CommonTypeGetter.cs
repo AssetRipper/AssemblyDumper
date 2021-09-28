@@ -48,8 +48,8 @@ namespace AssemblyDumper
 		public static TypeReference EndianReaderDefinition { get; private set; }
 		public static TypeReference AssetWriterDefinition { get; private set; }
 
-		public static TypeReference BinaryReaderExtensionsDefinition { get; private set; }
 		public static TypeReference EndianReaderExtensionsDefinition { get; private set; }
+		public static TypeReference AssetReaderExtensionsDefinition { get; private set; }
 
 		public static void Initialize(ModuleDefinition module)
 		{
@@ -92,8 +92,8 @@ namespace AssemblyDumper
 			EndianReaderDefinition = module.ImportCommonType<AssetRipper.Core.IO.Endian.EndianReader>();
 			AssetWriterDefinition = module.ImportCommonType<AssetRipper.Core.IO.Asset.AssetWriter>();
 
-			BinaryReaderExtensionsDefinition = module.ImportCommonType("AssetRipper.Core.IO.Extensions.BinaryReaderExtensions");
 			EndianReaderExtensionsDefinition = module.ImportCommonType("AssetRipper.Core.IO.Extensions.EndianReaderExtensions");
+			AssetReaderExtensionsDefinition = module.ImportCommonType("AssetRipper.Core.IO.Extensions.AssetReaderExtensions");
 		}
 
 		public static TypeReference ImportCommonType(this ModuleDefinition module, string typeFullName)
