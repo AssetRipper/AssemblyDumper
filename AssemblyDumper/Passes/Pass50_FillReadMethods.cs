@@ -282,7 +282,6 @@ namespace AssemblyDumper.Passes
 
 		private static void ReadPairArray(ILProcessor processor, FieldDefinition field, UnityNode listTypeNode)
 		{
-			Logger.Info($"Reading pair array in {processor.Body.Method.DeclaringType}!");
 			//Strategy:
 			//Read Count
 			//Make array of size count
