@@ -282,6 +282,7 @@ namespace AssemblyDumper.Passes
 
 		private static void ReadPairArray(ILProcessor processor, FieldDefinition field, UnityNode listTypeNode)
 		{
+			Logger.Info($"Reading pair array in {processor.Body.Method.DeclaringType}!");
 			//Strategy:
 			//Read Count
 			//Make array of size count
@@ -318,6 +319,11 @@ namespace AssemblyDumper.Passes
 			processor.Body.Variables.Add(iLocal); //Add to method
 			processor.Emit(OpCodes.Ldc_I4_0); //Load 0 as an int32
 			processor.Emit(OpCodes.Stloc, iLocal); //Store in count
+			
+			//Create an empty, unconditional branch which will jump down to the loop condition.
+			//This converts the do..while loop into a for loop.
+			var unconditionalBranch =  processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
+			processor.Append(unconditionalBranch);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
 			var jumpTarget = processor.Create(OpCodes.Nop); //Create a dummy instruction to jump back to
@@ -333,12 +339,14 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
 			processor.Emit(OpCodes.Ldc_I4_1); //Load constant 1 as int32
 			processor.Emit(OpCodes.Add); //Add 
-			processor.Emit(OpCodes.Dup); //Duplicate it so we can store to a local and then compare it
 			processor.Emit(OpCodes.Stloc, iLocal); //Store in i local
 			
 			//Jump to start of loop if i < count
+			var loopConditionStart = processor.Create(OpCodes.Ldloc, iLocal); //Load i
+			processor.Append(loopConditionStart);
 			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
 			processor.Emit(OpCodes.Blt, jumpTarget); //Jump back up if less than
+			unconditionalBranch.Operand = loopConditionStart;
 
 			//Now just store field
 			processor.Emit(OpCodes.Ldarg_0); //Load this
