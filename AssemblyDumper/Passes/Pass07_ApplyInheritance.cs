@@ -16,7 +16,10 @@ namespace AssemblyDumper.Passes
 					continue;
 				if (string.IsNullOrEmpty(pair.Value.Base))
 				{
-					SharedState.TypeDictionary[pair.Key].BaseType = CommonTypeGetter.UnityObjectBaseDefinition;
+					if(pair.Key == "Object")
+						SharedState.TypeDictionary[pair.Key].BaseType = CommonTypeGetter.UnityObjectBaseDefinition;
+					else
+						SharedState.TypeDictionary[pair.Key].BaseType = CommonTypeGetter.UnityAssetBaseDefinition;
 				}
 				else
 				{
