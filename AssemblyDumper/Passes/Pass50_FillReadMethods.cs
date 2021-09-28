@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using AssemblyDumper.Unity;
+using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -95,6 +96,9 @@ namespace AssemblyDumper.Passes
 				//Store result in field
 				processor.Emit(OpCodes.Stfld, field);
 
+				//Maybe Align Bytes
+				MaybeAlignBytes(node, processor);
+
 				return;
 			}
 
@@ -126,6 +130,9 @@ namespace AssemblyDumper.Passes
 						//Store result in field
 						processor.Emit(OpCodes.Stfld, field);
 
+						//Maybe Align Bytes
+						MaybeAlignBytes(node, processor);
+
 						return;
 					}
 				case "Array":
@@ -153,14 +160,26 @@ namespace AssemblyDumper.Passes
 			//Call read method
 			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(primitiveReadMethod));
 
-			//Get field
-			var primitiveField = fields.FirstOrDefault(f => f.Name == node.Name);
-			
-			if(primitiveField == null)
-				throw new Exception($"Field {node.Name} cannot be found in {processor.Body.Method.DeclaringType} (fields are {string.Join(", ", fields.Select(f => f.Name))})");
-
 			//Store result in field
-			processor.Emit(OpCodes.Stfld, primitiveField);
+			processor.Emit(OpCodes.Stfld, field);
+
+			//Maybe Align Bytes
+			MaybeAlignBytes(node, processor);
+		}
+
+		private static void MaybeAlignBytes(UnityNode node, ILProcessor processor)
+		{
+			if (((TransferMetaFlags)node.MetaFlag).IsAlignBytes())
+			{
+				//Load reader
+				processor.Emit(OpCodes.Ldarg_1);
+
+				//Get ReadAsset
+				var alignMethod = CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "AlignStream");
+
+				//Call it
+				processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(alignMethod));
+			}
 		}
 	}
 }
