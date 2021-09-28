@@ -40,8 +40,13 @@ namespace AssemblyDumper
 		public static MethodReference RegisterAssetTypeAttributeConstructor { get; private set; }
 
 		public static TypeReference UnityObjectBaseDefinition { get; private set; }
+		public static TypeReference UnityAssetBaseDefinition { get; private set; }
 		public static TypeReference UnityVersionDefinition { get; private set; }
 		public static TypeReference TransferMetaFlagsDefinition { get; private set; }
+		
+		public static TypeReference AssetReaderDefinition { get; private set; }
+		public static TypeReference EndianReaderDefinition { get; private set; }
+		public static TypeReference AssetWriterDefinition { get; private set; }
 
 
 		public static void Initialize(ModuleDefinition module)
@@ -77,8 +82,13 @@ namespace AssemblyDumper
 			RegisterAssetTypeAttributeConstructor = module.ImportCommonConstructor<RegisterAssetTypeAttribute>(3);
 
 			UnityObjectBaseDefinition = module.ImportCommonType<UnityObjectBase>();
+			UnityAssetBaseDefinition = module.ImportCommonType<UnityAssetBase>();
 			UnityVersionDefinition = module.ImportCommonType<AssetRipper.Core.Parser.Files.UnityVersion>();
 			TransferMetaFlagsDefinition = module.ImportCommonType<AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TransferMetaFlags>();
+
+			AssetReaderDefinition = module.ImportCommonType<AssetRipper.Core.IO.Asset.AssetReader>();
+			EndianReaderDefinition = module.ImportCommonType<AssetRipper.Core.IO.Endian.EndianReader>();
+			AssetWriterDefinition = module.ImportCommonType<AssetRipper.Core.IO.Asset.AssetWriter>();
 		}
 
 		public static TypeReference ImportCommonType(this ModuleDefinition module, string typeFullName)
