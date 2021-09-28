@@ -20,7 +20,7 @@ namespace AssemblyDumper.Passes
 
 				var type = SharedState.TypeDictionary[name];
 
-				var editorModeReadMethod = type.Methods.First(m => m.Name == "ReadDebug");
+				var editorModeReadMethod = type.Methods.First(m => m.Name == "ReadEditor");
 				var releaseModeReadMethod = type.Methods.First(m => m.Name == "ReadRelease");
 
 				var editorModeBody = editorModeReadMethod.Body = new(editorModeReadMethod);
