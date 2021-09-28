@@ -75,30 +75,7 @@ namespace AssemblyDumper.Passes
 
 			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out var fieldType))
 			{
-				//Complex field type, IAssetReadable, call read
-
-				//Load "this" for field store later
-				processor.Emit(OpCodes.Ldarg_0);
-
-				//Load reader
-				processor.Emit(OpCodes.Ldarg_1);
-
-				//Get ReadAsset
-				var readMethod = CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadAsset");
-
-				//Make generic ReadAsset<T>
-				var genericInst = new GenericInstanceMethod(readMethod);
-				genericInst.GenericArguments.Add(processor.Body.Method.Module.ImportReference(fieldType));
-
-				//Call it
-				processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(genericInst));
-
-				//Store result in field
-				processor.Emit(OpCodes.Stfld, field);
-
-				//Maybe Align Bytes
-				MaybeAlignBytes(node, processor);
-
+				ReadAssetType(node, processor, field, fieldType);
 				return;
 			}
 
@@ -114,57 +91,13 @@ namespace AssemblyDumper.Passes
 				case "pair":
 					return;
 				case "TypelessData": //byte array
-					{
-						//Load "this" for field store later
-						processor.Emit(OpCodes.Ldarg_0);
-
-						//Load reader
-						processor.Emit(OpCodes.Ldarg_1);
-
-						//Get ReadAsset
-						var readMethod = CommonTypeGetter.BinaryReaderExtensionsDefinition.Resolve().Methods.First(m => m.Name == "ReadUInt8Array");
-
-						//Call it
-						processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(readMethod));
-
-						//Store result in field
-						processor.Emit(OpCodes.Stfld, field);
-
-						//Maybe Align Bytes
-						MaybeAlignBytes(node, processor);
-
-						return;
-					}
+					ReadByteArray(node, processor, field);
+					return;
 				case "Array":
 					return;
 			}
 
-			//Primitives
-			var csPrimitiveTypeName = SystemTypeGetter.CppPrimitivesToCSharpPrimitives[node.TypeName];
-			var csPrimitiveType = processor.Body.Method.DeclaringType.Module.GetPrimitiveType(node.TypeName);
-
-			//Read
-			var primitiveReadMethod = CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}");
-
-			primitiveReadMethod ??= SystemTypeGetter.BinaryReader.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}");
-
-			if (primitiveReadMethod == null)
-				throw new Exception($"Missing a read method for {csPrimitiveTypeName} in {processor.Body.Method.DeclaringType}");
-			
-			//Load this
-			processor.Emit(OpCodes.Ldarg_0);
-
-			//Load reader
-			processor.Emit(OpCodes.Ldarg_1);
-			
-			//Call read method
-			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(primitiveReadMethod));
-
-			//Store result in field
-			processor.Emit(OpCodes.Stfld, field);
-
-			//Maybe Align Bytes
-			MaybeAlignBytes(node, processor);
+			ReadPrimitiveType(node, processor, field);
 		}
 
 		private static void MaybeAlignBytes(UnityNode node, ILProcessor processor)
@@ -180,6 +113,85 @@ namespace AssemblyDumper.Passes
 				//Call it
 				processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(alignMethod));
 			}
+		}
+
+		private static void ReadPrimitiveType(UnityNode node, ILProcessor processor, FieldDefinition field)
+		{
+			//Primitives
+			var csPrimitiveTypeName = SystemTypeGetter.CppPrimitivesToCSharpPrimitives[node.TypeName];
+			var csPrimitiveType = processor.Body.Method.DeclaringType.Module.GetPrimitiveType(node.TypeName);
+
+			//Read
+			var primitiveReadMethod = CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}");
+
+			primitiveReadMethod ??= SystemTypeGetter.BinaryReader.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}");
+
+			if (primitiveReadMethod == null)
+				throw new Exception($"Missing a read method for {csPrimitiveTypeName} in {processor.Body.Method.DeclaringType}");
+
+			//Load this
+			processor.Emit(OpCodes.Ldarg_0);
+
+			//Load reader
+			processor.Emit(OpCodes.Ldarg_1);
+
+			//Call read method
+			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(primitiveReadMethod));
+
+			//Store result in field
+			processor.Emit(OpCodes.Stfld, field);
+
+			//Maybe Align Bytes
+			MaybeAlignBytes(node, processor);
+		}
+
+		/// <summary>
+		/// Complex field type, IAssetReadable, call read
+		/// </summary>
+		private static void ReadAssetType(UnityNode node, ILProcessor processor, FieldDefinition field, TypeDefinition fieldType)
+		{
+			//Load "this" for field store later
+			processor.Emit(OpCodes.Ldarg_0);
+
+			//Load reader
+			processor.Emit(OpCodes.Ldarg_1);
+
+			//Get ReadAsset
+			var readMethod = CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadAsset");
+
+			//Make generic ReadAsset<T>
+			var genericInst = new GenericInstanceMethod(readMethod);
+			genericInst.GenericArguments.Add(processor.Body.Method.Module.ImportReference(fieldType));
+
+			//Call it
+			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(genericInst));
+
+			//Store result in field
+			processor.Emit(OpCodes.Stfld, field);
+
+			//Maybe Align Bytes
+			MaybeAlignBytes(node, processor);
+		}
+
+		private static void ReadByteArray(UnityNode node, ILProcessor processor, FieldDefinition field)
+		{
+			//Load "this" for field store later
+			processor.Emit(OpCodes.Ldarg_0);
+
+			//Load reader
+			processor.Emit(OpCodes.Ldarg_1);
+
+			//Get ReadAsset
+			var readMethod = CommonTypeGetter.BinaryReaderExtensionsDefinition.Resolve().Methods.First(m => m.Name == "ReadUInt8Array");
+
+			//Call it
+			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(readMethod));
+
+			//Store result in field
+			processor.Emit(OpCodes.Stfld, field);
+
+			//Maybe Align Bytes
+			MaybeAlignBytes(node, processor);
 		}
 	}
 }
