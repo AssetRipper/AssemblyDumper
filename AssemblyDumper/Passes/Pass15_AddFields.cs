@@ -148,8 +148,6 @@ namespace AssemblyDumper.Passes
 							Logger.Info($"WARNING: Could not resolve one of the parameters in a pair: first is {editorField.SubNodes[0].TypeName}, second is {editorField.SubNodes[1].TypeName}");
 							return null;
 						}
-						
-						Logger.Info($"KVP<{firstType},{secondType}> in {type}");
 
 						var kvpType = SystemTypeGetter.KeyValuePair;
 						return kvpType.MakeGenericInstanceType(firstType, secondType);
