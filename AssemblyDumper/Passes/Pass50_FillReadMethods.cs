@@ -5,11 +5,17 @@ using AssemblyDumper.Unity;
 using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 
 namespace AssemblyDumper.Passes
 {
 	public static class Pass50_FillReadMethods
 	{
+		private static Dictionary<string, string> GenericParameterRemapping = new()
+		{
+			{"pair", "System.Collections.Generic.KeyValuePair`2"}
+		};
+
 		public static void DoPass()
 		{
 			Logger.Info("Pass 50: Filling read methods");
@@ -52,6 +58,9 @@ namespace AssemblyDumper.Passes
 
 				editorModeProcessor.Emit(OpCodes.Ret);
 				releaseModeProcessor.Emit(OpCodes.Ret);
+				
+				editorModeBody.Optimize();
+				releaseModeBody.Optimize();
 			}
 		}
 
@@ -75,6 +84,11 @@ namespace AssemblyDumper.Passes
 			if (field == null)
 				throw new Exception($"Field {node.Name} cannot be found in {processor.Body.Method.DeclaringType} (fields are {string.Join(", ", fields.Select(f => f.Name))})");
 
+			ReadFieldContent(node, processor, field);
+		}
+
+		private static void ReadFieldContent(UnityNode node, ILProcessor processor, FieldDefinition field)
+		{
 			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out var fieldType))
 			{
 				ReadAssetType(node, processor, field, fieldType, 0);
@@ -92,6 +106,7 @@ namespace AssemblyDumper.Passes
 				case "map":
 					return;
 				case "pair":
+					ReadPair(node, processor, field);
 					return;
 				case "TypelessData": //byte array
 					ReadByteArray(node, processor, field);
@@ -142,7 +157,8 @@ namespace AssemblyDumper.Passes
 				throw new Exception($"Missing a read method for {csPrimitiveTypeName} in {processor.Body.Method.DeclaringType}");
 
 			//Load this
-			processor.Emit(OpCodes.Ldarg_0);
+			if(field != null)
+				processor.Emit(OpCodes.Ldarg_0);
 
 			//Load reader
 			processor.Emit(OpCodes.Ldarg_1);
@@ -151,7 +167,8 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(primitiveReadMethod));
 
 			//Store result in field
-			processor.Emit(OpCodes.Stfld, field);
+			if(field != null)
+				processor.Emit(OpCodes.Stfld, field);
 
 			//Maybe Align Bytes
 			//Note: string has its own alignment built-in. That's why this doesn't appear to align strings
@@ -164,7 +181,8 @@ namespace AssemblyDumper.Passes
 		private static void ReadAssetType(UnityNode node, ILProcessor processor, FieldDefinition field, TypeDefinition fieldType, int arrayDepth)
 		{
 			//Load "this" for field store later
-			processor.Emit(OpCodes.Ldarg_0);
+			if(field != null)
+				processor.Emit(OpCodes.Ldarg_0);
 
 			//Load reader
 			processor.Emit(OpCodes.Ldarg_1);
@@ -186,7 +204,8 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(genericInst));
 
 			//Store result in field
-			processor.Emit(OpCodes.Stfld, field);
+			if(field != null)
+				processor.Emit(OpCodes.Stfld, field);
 
 			//Maybe Align Bytes
 			MaybeAlignBytes(node, processor);
@@ -195,7 +214,8 @@ namespace AssemblyDumper.Passes
 		private static void ReadByteArray(UnityNode node, ILProcessor processor, FieldDefinition field)
 		{
 			//Load "this" for field store later
-			processor.Emit(OpCodes.Ldarg_0);
+			if(field != null)
+				processor.Emit(OpCodes.Ldarg_0);
 
 			//Load reader
 			processor.Emit(OpCodes.Ldarg_1);
@@ -207,7 +227,8 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(readMethod));
 
 			//Store result in field
-			processor.Emit(OpCodes.Stfld, field);
+			if(field != null)
+				processor.Emit(OpCodes.Stfld, field);
 
 			//Maybe Align Bytes
 			//warning: this will generate incorrect reads
@@ -239,24 +260,167 @@ namespace AssemblyDumper.Passes
 			{
 				ReadAssetType(listTypeNode, processor, field, fieldType, arrayDepth);
 			}
-			else if (listTypeNode.TypeName is "vector" or "set" or "staticvector")
+			else switch (listTypeNode.TypeName)
 			{
-				ReadVector(listTypeNode, processor, field, arrayDepth + 1);
-			}
-			else if (listTypeNode.TypeName is "Array")
-			{
-				ReadArray(listTypeNode, processor, field, arrayDepth + 1);
-			}
-			else if (listTypeNode.TypeName is "map" or "pair")
-			{
-				//TODO
-			}
-			else
-			{
-				ReadPrimitiveType(listTypeNode, processor, field, arrayDepth);
+				case "vector" or "set" or "staticvector":
+					ReadVector(listTypeNode, processor, field, arrayDepth + 1);
+					break;
+				case "Array":
+					ReadArray(listTypeNode, processor, field, arrayDepth + 1);
+					break;
+				case "map":
+					//TODO
+					break;
+				case "pair":
+					if (arrayDepth > 1)
+						throw new("ReadArray does not support Pair arrays with a depth > 1");
+					
+					ReadPairArray(processor, field, listTypeNode);
+					return;
+				default:
+					ReadPrimitiveType(listTypeNode, processor, field, arrayDepth);
+					break;
 			}
 
 			MaybeAlignBytes(node, processor);
+		}
+
+		private static void ReadPairArray(ILProcessor processor, FieldDefinition field, UnityNode listTypeNode)
+		{
+			//Strategy:
+			//Read Count
+			//Make array of size count
+			//For i = 0 .. count
+			//	Read pair, store in array
+			//Store array in field
+			
+			//Resolve things we'll need
+			var first = listTypeNode.SubNodes[0];
+			var second = listTypeNode.SubNodes[1];
+			var genericKvp = ResolvePairType(processor, first, second);
+
+			var arrayType = genericKvp.MakeArrayType();
+			
+			//Read length of array
+			var intReader = processor.Body.Method.Module.ImportReference(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadInt32"));
+			processor.Emit(OpCodes.Ldarg_1); //Load reader
+			processor.Emit(OpCodes.Call, intReader); //Call int reader
+
+			//Make local and store length in it
+			var countLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
+			processor.Body.Variables.Add(countLocal); //Add to method
+			processor.Emit(OpCodes.Stloc, countLocal); //Store count in it
+
+			//Create empty array and local for it
+			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
+			processor.Emit(OpCodes.Newarr, genericKvp); //Create new array of kvp with given count
+			var arrayLocal = new VariableDefinition(arrayType); //Create local
+			processor.Body.Variables.Add(arrayLocal); //Add to method
+			processor.Emit(OpCodes.Stloc, arrayLocal); //Store array in local
+
+			//Make an i
+			var iLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
+			processor.Body.Variables.Add(iLocal); //Add to method
+			processor.Emit(OpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Emit(OpCodes.Stloc, iLocal); //Store in count
+
+			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
+			var jumpTarget = processor.Create(OpCodes.Nop); //Create a dummy instruction to jump back to
+			processor.Append(jumpTarget); //Add it to the method body
+
+			//Read element at index i of array
+			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array local
+			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
+			ReadPair(listTypeNode, processor, null); //Read the pair
+			processor.Emit(OpCodes.Stelem_Ref); //Store in array
+
+			//Increment i
+			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
+			processor.Emit(OpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Emit(OpCodes.Add); //Add 
+			processor.Emit(OpCodes.Dup); //Duplicate it so we can store to a local and then compare it
+			processor.Emit(OpCodes.Stloc, iLocal); //Store in i local
+			
+			//Jump to start of loop if i < count
+			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
+			processor.Emit(OpCodes.Blt, jumpTarget); //Jump back up if less than
+
+			//Now just store field
+			processor.Emit(OpCodes.Ldarg_0); //Load this
+			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array
+			processor.Emit(OpCodes.Stfld, field); //Store field
+		}
+
+		private static void ReadPair(UnityNode node, ILProcessor processor, FieldDefinition field)
+		{
+			//Read one, read two, construct tuple, store field
+			//Passing a null field to any of the Read generators causes no field store or this load to be emitted
+			//Which is just what we want
+			var first = node.SubNodes[0];
+			var second = node.SubNodes[1];
+
+			//Load this for later usage
+			if (field != null)
+				processor.Emit(OpCodes.Ldarg_0);
+
+			//Load the left side of the pair
+			ReadFieldContent(first, processor, null);
+
+			//Load the right side of the pair
+			ReadFieldContent(second, processor, null);
+
+			var genericKvp = ResolvePairType(processor, first, second);
+
+			var genericCtor = ResolveGenericKeyValuePairConstructor(genericKvp);
+
+			//Call constructor
+			processor.Emit(OpCodes.Newobj, genericCtor);
+
+			//Store in field if desired
+			if (field != null)
+				processor.Emit(OpCodes.Stfld, field);
+		}
+
+		private static MethodReference ResolveGenericKeyValuePairConstructor(GenericInstanceType genericKvp)
+		{
+			//Get ctor
+			var ctor = genericKvp.Resolve().Methods.First(m => m.Name == ".ctor" && m.Parameters.Count == 2);
+
+			//Make the constructor on the generic type
+			//Cecil sucks.
+			var genericCtor = new MethodReference(ctor.Name, ctor.ReturnType)
+			{
+				DeclaringType = genericKvp,
+				HasThis = ctor.HasThis,
+				ExplicitThis = ctor.ExplicitThis,
+				CallingConvention = ctor.CallingConvention,
+			};
+			ctor.Parameters.ToList().ForEach(genericCtor.Parameters.Add);
+			ctor.GenericParameters.ToList().ForEach(genericCtor.GenericParameters.Add);
+			return genericCtor;
+		}
+
+		private static GenericInstanceType ResolvePairType(ILProcessor processor, UnityNode first, UnityNode second)
+		{
+			var firstName = first.TypeName;
+			var secondName = second.TypeName;
+
+			TypeReference firstType;
+			TypeReference secondType;
+			if (firstName == "pair") 
+				firstType = ResolvePairType(processor, first.SubNodes[0], first.SubNodes[1]);
+			else
+				firstType = processor.Body.Method.Module.ImportReference(processor.Body.Method.Module.GetPrimitiveType(firstName) ?? SystemTypeGetter.LookupSystemType(firstName) ?? SharedState.TypeDictionary[firstName]);
+
+			if (secondName == "pair")
+				secondType = ResolvePairType(processor, second.SubNodes[0], second.SubNodes[1]);
+			else
+				secondType = processor.Body.Method.Module.ImportReference(processor.Body.Method.Module.GetPrimitiveType(secondName) ?? SystemTypeGetter.LookupSystemType(secondName) ?? SharedState.TypeDictionary[secondName]);
+
+			//Construct a KeyValuePair
+			var kvpType = SystemTypeGetter.KeyValuePair;
+			var genericKvp = kvpType.MakeGenericInstanceType(firstType, secondType);
+			return genericKvp;
 		}
 	}
 }
