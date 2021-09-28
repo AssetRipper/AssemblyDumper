@@ -19,10 +19,10 @@ namespace AssemblyDumper.Passes
 
 				var type = SharedState.TypeDictionary[name];
 
-				if (unityClass.EditorRootNode == null)
+				if (unityClass.EditorRootNode == null && unityClass.ReleaseRootNode == null)
 					continue; //No fields.
 
-				var editorFields = unityClass.EditorRootNode.SubNodes;
+				var editorFields = unityClass.EditorRootNode?.SubNodes ?? new();
 				var releaseFields = unityClass.ReleaseRootNode?.SubNodes ?? new();
 
 				var releaseIdx = 0;
@@ -77,12 +77,33 @@ namespace AssemblyDumper.Passes
 					fieldDef.AddEditorFlagAttribute(editorField.MetaFlag);
 					type.Fields.Add(fieldDef);
 				}
+				
+				//Check for release-only fields left at the end (e.g. MeshRenderer)
+				while (releaseIdx < releaseFields.Count)
+				{
+					var releaseField = releaseFields[releaseIdx];
+					
+					//Release-only field at this index.
+					var releaseOnlyFieldType = ResolveFieldType(type, releaseField);
+
+					if (releaseOnlyFieldType != null)
+					{
+						var releaseOnlyFieldDef = new FieldDefinition(releaseField.Name, FieldAttributes.Public, releaseOnlyFieldType);
+						releaseOnlyFieldDef.AddReleaseFlagAttribute(releaseField.MetaFlag);
+						releaseOnlyFieldDef.AddCustomAttribute(CommonTypeGetter.ReleaseOnlyAttributeConstructor);
+						type.Fields.Add(releaseOnlyFieldDef);
+					}
+
+					//Increment release index and fetch new field.
+					releaseIdx++;
+				}
 			}
 		}
 
 		private static TypeReference ResolveFieldType(TypeDefinition type, UnityNode editorField)
 		{
 			var fieldType = type.Module.GetPrimitiveType(editorField.TypeName);
+
 			if (fieldType == null && SharedState.TypeDictionary.TryGetValue(editorField.TypeName, out var result))
 				fieldType = result;
 
@@ -133,6 +154,16 @@ namespace AssemblyDumper.Passes
 					}
 					case "TypelessData":
 						return SystemTypeGetter.Int8.MakeArrayType();
+					case "Array":
+						var arrayTypeNode = editorField.SubNodes[1];
+						var arrayType = ResolveFieldType(type, arrayTypeNode);
+
+						if (arrayType != null)
+							return arrayType.MakeArrayType();
+
+						Logger.Info($"WARNING: Could not resolve array parameter {arrayTypeNode.TypeName}");
+						return null;
+						break;
 				}
 			}
 

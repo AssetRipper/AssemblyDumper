@@ -74,6 +74,11 @@ namespace AssemblyDumper
 				
 				Pass12_UnifyFieldsOfAbstractTypes.DoPass();
 				Pass15_AddFields.DoPass();
+				
+				Pass33_CreateReadMethods.DoPass();
+				
+				Pass50_FillReadMethods.DoPass();
+
 				Pass98_ApplyAssemblyAttributes.DoPass();
 				Pass99_SaveAssembly.DoPass(options.OutputDirectory);
 				Logger.Info("Done!");

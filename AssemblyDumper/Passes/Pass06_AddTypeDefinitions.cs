@@ -28,7 +28,7 @@ namespace AssemblyDumper.Passes
 			TypeAttributes typeAttributes = TypeAttributes.Public | TypeAttributes.BeforeFieldInit;
 
 			if (@class.IsAbstract) typeAttributes |= TypeAttributes.Abstract;
-			if (@class.IsSealed) typeAttributes |= TypeAttributes.Sealed;
+			// if (@class.IsSealed) typeAttributes |= TypeAttributes.Sealed;
 
 			TypeDefinition typeDef = new TypeDefinition(SharedState.Classesnamespace, name, typeAttributes);
 			if (@class.IsEditorOnly) typeDef.AddCustomAttribute(CommonTypeGetter.EditorOnlyAttributeConstructor);
