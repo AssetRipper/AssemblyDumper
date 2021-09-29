@@ -64,8 +64,8 @@ namespace AssemblyDumper
 		private static void Run(Options options)
 		{
 			Logger.Info("Making a new dll");
-			try
-			{
+			//try
+			//{
 				Pass00_Initialize.DoPass(options.JsonPath.FullName, options.SystemRuntimeAssembly.FullName, options.SystemCollectionsAssembly.FullName);
 				Pass04_ExtractDependentNodeTrees.DoPass();
 				Pass06_AddTypeDefinitions.DoPass();
@@ -83,11 +83,11 @@ namespace AssemblyDumper
 				Pass98_ApplyAssemblyAttributes.DoPass();
 				Pass99_SaveAssembly.DoPass(options.OutputDirectory);
 				Logger.Info("Done!");
-			}
-			catch (Exception ex)
-			{
-				Logger.Info(ex.ToString());
-			}
+			//}
+			//catch (Exception ex)
+			//{
+			//	Logger.Info(ex.ToString());
+			//}
 		}
 	}
 }
