@@ -1,3 +1,8 @@
+#!/bin/bash
+
+# exit when any command fails
+set -e
+
 path_to_OutputFolder="./Output"
 path_to_JsonFolder="./TypeTreeDumps/InfoJson"
 path_to_AssemblyDumper="./AssemblyDumper/bin/Release/net6/AssemblyDumper"
