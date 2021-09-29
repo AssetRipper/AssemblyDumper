@@ -16,7 +16,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Logger.Info("Pass 50: Filling read methods");
+			Logger.Info("Pass 75: Filling write methods");
 			foreach (var (name, klass) in SharedState.ClassDictionary)
 			{
 				if (!SharedState.TypeDictionary.ContainsKey(name))
