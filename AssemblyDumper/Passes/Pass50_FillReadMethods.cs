@@ -267,13 +267,19 @@ namespace AssemblyDumper.Passes
 						break;
 					case "map":
 						if (arrayDepth > 1)
-							throw new("ReadArray does not support dictionary arrays with a depth > 1");
+							throw new("ReadArray does not support dictionary arrays with a depth > 1. Found in {node.Name} (field {field}) of {processor.Body.Method.DeclaringType}");
 
 						ReadDictionaryArray(node, processor, field);
 						break;
 					case "pair":
-						if (arrayDepth > 1)
-							throw new("ReadArray does not support Pair arrays with a depth > 1");
+						if (arrayDepth > 2)
+							throw new($"ReadArray does not support Pair arrays with a depth > 2. Found in {node.Name} (field {field}) of {processor.Body.Method.DeclaringType}");
+
+						if (arrayDepth == 2)
+						{
+							ReadPairArrayArray(processor, field, listTypeNode);
+							break;
+						}
 
 						ReadPairArray(processor, field, listTypeNode);
 						break;
@@ -337,7 +343,88 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array local
 			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
 			ReadPair(listTypeNode, processor, null); //Read the pair
-			processor.Emit(OpCodes.Stelem_Ref); //Store in array
+			processor.Emit(OpCodes.Stelem_Any, genericKvp); //Store in array
+
+			//Increment i
+			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
+			processor.Emit(OpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Emit(OpCodes.Add); //Add 
+			processor.Emit(OpCodes.Stloc, iLocal); //Store in i local
+
+			//Jump to start of loop if i < count
+			var loopConditionStart = processor.Create(OpCodes.Ldloc, iLocal); //Load i
+			processor.Append(loopConditionStart);
+			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
+			processor.Emit(OpCodes.Blt, jumpTarget); //Jump back up if less than
+			unconditionalBranch.Operand = loopConditionStart;
+
+			//Now just store field
+			if (field != null)
+				processor.Emit(OpCodes.Ldarg_0); //Load this
+			
+			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array
+
+			if (field != null)
+				processor.Emit(OpCodes.Stfld, field); //Store field
+		}
+
+		private static void ReadPairArrayArray(ILProcessor processor, FieldDefinition field, UnityNode listTypeNode)
+		{
+			//Strategy:
+			//Read Count
+			//Make array of size count
+			//For i = 0 .. count
+			//	Read array of pairs, store in array of arrays
+			//Store array in field
+
+			//Resolve things we'll need
+			var first = listTypeNode.SubNodes[0];
+			var second = listTypeNode.SubNodes[1];
+			var genericKvp = ResolvePairType(processor, first, second);
+
+			var arrayType = genericKvp.MakeArrayType();
+
+			//Read length of array
+			var intReader = processor.Body.Method.Module.ImportReference(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadInt32"));
+			processor.Emit(OpCodes.Ldarg_1); //Load reader
+			processor.Emit(OpCodes.Call, intReader); //Call int reader
+
+			//Make local and store length in it
+			var countLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
+			processor.Body.Variables.Add(countLocal); //Add to method
+			processor.Emit(OpCodes.Stloc, countLocal); //Store count in it
+
+			//Create empty array and local for it
+			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
+			processor.Emit(OpCodes.Newarr, arrayType); //Create new array of arrays of kvps with given count
+			var arrayLocal = new VariableDefinition(arrayType.MakeArrayType()); //Create local
+			processor.Body.Variables.Add(arrayLocal); //Add to method
+			processor.Emit(OpCodes.Stloc, arrayLocal); //Store array in local
+
+			//Make an i
+			var iLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
+			processor.Body.Variables.Add(iLocal); //Add to method
+			processor.Emit(OpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Emit(OpCodes.Stloc, iLocal); //Store in count
+
+			//Create an empty, unconditional branch which will jump down to the loop condition.
+			//This converts the do..while loop into a for loop.
+			var unconditionalBranch = processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
+			processor.Append(unconditionalBranch);
+
+			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
+			var jumpTarget = processor.Create(OpCodes.Nop); //Create a dummy instruction to jump back to
+			processor.Append(jumpTarget); //Add it to the method body
+
+			//Read element at index i of array
+			ReadPairArray(processor, null, listTypeNode); //Read the array of pairs
+			var pairArrayLocal = new VariableDefinition(arrayType); //Create local for array of pairs
+			processor.Body.Variables.Add(pairArrayLocal); //Add to method
+			processor.Emit(OpCodes.Stloc, pairArrayLocal); //Store pair array
+			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array of arrays local
+			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
+			processor.Emit(OpCodes.Ldloc, pairArrayLocal); //Load array of pairs
+			processor.Emit(OpCodes.Stelem_Any, arrayType); //Store in array
 
 			//Increment i
 			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
@@ -411,7 +498,7 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array local
 			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
 			ReadDictionary(dictNode, processor, null);
-			processor.Emit(OpCodes.Stelem_Ref); //Store in array
+			processor.Emit(OpCodes.Stelem_Any, dictType); //Store in array
 
 			//Increment i
 			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
