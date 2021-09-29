@@ -68,7 +68,7 @@ namespace AssemblyDumper.Passes
 						continue; //Skip field, can't resolve type.
 
 					var fieldDef = new FieldDefinition(editorField.Name, FieldAttributes.Public, fieldType);
-					
+
 					if (!isInReleaseToo)
 						fieldDef.AddCustomAttribute(CommonTypeGetter.EditorOnlyAttributeConstructor);
 					else
@@ -77,12 +77,12 @@ namespace AssemblyDumper.Passes
 					fieldDef.AddEditorFlagAttribute(editorField.MetaFlag);
 					type.Fields.Add(fieldDef);
 				}
-				
+
 				//Check for release-only fields left at the end (e.g. MeshRenderer)
 				while (releaseIdx < releaseFields.Count)
 				{
 					var releaseField = releaseFields[releaseIdx];
-					
+
 					//Release-only field at this index.
 					var releaseOnlyFieldType = ResolveFieldType(type, releaseField);
 

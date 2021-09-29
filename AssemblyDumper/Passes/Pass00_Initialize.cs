@@ -42,7 +42,7 @@ namespace AssemblyDumper.Passes
 			assembly.MainModule.AssemblyReferences.Add(SystemTypeGetter.RuntimeAssembly.Name);
 			assembly.MainModule.AssemblyReferences.Add(SystemTypeGetter.CollectionsAssembly.Name);
 			assembly.MainModule.AssemblyReferences.Add(CommonTypeGetter.Assembly.Name);
-			
+
 			SharedState.Assembly = assembly;
 			SharedState.RootNamespace = AssemblyFileName;
 

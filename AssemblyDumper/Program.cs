@@ -71,12 +71,12 @@ namespace AssemblyDumper
 				Pass06_AddTypeDefinitions.DoPass();
 				Pass07_ApplyInheritance.DoPass();
 				Pass08_AddDefaultConstructors.DoPass();
-				
+
 				Pass12_UnifyFieldsOfAbstractTypes.DoPass();
 				Pass15_AddFields.DoPass();
-				
+
 				Pass33_CreateEmptyMethods.DoPass();
-				
+
 				Pass50_FillReadMethods.DoPass();
 				Pass75_FillWriteMethods.DoPass();
 

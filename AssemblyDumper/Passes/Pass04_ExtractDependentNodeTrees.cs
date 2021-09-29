@@ -16,7 +16,7 @@ namespace AssemblyDumper.Passes
 			"float",
 			"int",
 			"list",
-			"long long",//long in C#
+			"long long", //long in C#
 			"map",
 			"pair",
 			"set",
@@ -39,6 +39,7 @@ namespace AssemblyDumper.Passes
 			"vector",
 			"void"
 		};
+
 		private readonly static string[] primitiveNames =
 		{
 			"bool",
@@ -46,7 +47,7 @@ namespace AssemblyDumper.Passes
 			"double",
 			"float",
 			"int",
-			"long long",//long in C#
+			"long long", //long in C#
 			"short",
 			"SInt16",
 			"SInt32",
@@ -64,6 +65,7 @@ namespace AssemblyDumper.Passes
 			"Type*", //int32
 			"void"
 		};
+
 		public readonly static string[] generics =
 		{
 			"Array",
@@ -86,9 +88,9 @@ namespace AssemblyDumper.Passes
 
 		private static void CreateNewClasses()
 		{
-			foreach(var pair in releaseRootNodes)
+			foreach (var pair in releaseRootNodes)
 			{
-				if(editorRootNodes.TryGetValue(pair.Key, out UnityNode editorNode))
+				if (editorRootNodes.TryGetValue(pair.Key, out UnityNode editorNode))
 				{
 					var newClass = new UnityClass(pair.Value, editorNode);
 					SharedState.ClassDictionary.Add(pair.Key, newClass);
@@ -99,6 +101,7 @@ namespace AssemblyDumper.Passes
 					SharedState.ClassDictionary.Add(pair.Key, newClass);
 				}
 			}
+
 			foreach (var pair in editorRootNodes)
 			{
 				if (!releaseRootNodes.ContainsKey(pair.Key))
@@ -125,7 +128,7 @@ namespace AssemblyDumper.Passes
 			if (tree?.SubNodes == null)
 				return;
 
-			foreach(var subnode in tree.SubNodes)
+			foreach (var subnode in tree.SubNodes)
 			{
 				string typeName = subnode.TypeName;
 				if (!primitiveNames.Contains(typeName) && !SharedState.ClassDictionary.ContainsKey(typeName) && !dict.ContainsKey(typeName))
@@ -136,6 +139,7 @@ namespace AssemblyDumper.Passes
 						newNode.Name = "Base";
 						dict.Add(typeName, newNode);
 					}
+
 					AddDependentTypes(subnode, dict);
 				}
 			}

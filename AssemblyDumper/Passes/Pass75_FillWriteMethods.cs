@@ -13,7 +13,7 @@ namespace AssemblyDumper.Passes
 	public static class Pass75_FillWriteMethods
 	{
 		private static MethodReference WriteMethod;
-		
+
 		public static void DoPass()
 		{
 			Logger.Info("Pass 50: Filling read methods");
@@ -56,12 +56,12 @@ namespace AssemblyDumper.Passes
 
 				editorModeProcessor.Emit(OpCodes.Ret);
 				releaseModeProcessor.Emit(OpCodes.Ret);
-				
+
 				editorModeBody.Optimize();
 				releaseModeBody.Optimize();
 			}
 		}
-		
+
 		private static List<FieldDefinition> GetAllFieldsInTypeAndBase(TypeDefinition type)
 		{
 			if (type == null)
@@ -73,7 +73,7 @@ namespace AssemblyDumper.Passes
 
 			return ret;
 		}
-		
+
 		private static void AddWriteToProcessor(UnityNode node, ILProcessor processor, List<FieldDefinition> fields)
 		{
 			//Get field
@@ -92,10 +92,10 @@ namespace AssemblyDumper.Passes
 			var genericMethod = new GenericInstanceMethod(WriteMethod);
 			genericMethod.GenericArguments.Add(field.FieldType);
 			processor.Emit(OpCodes.Call, genericMethod);
-			
+
 			MaybeAlignBytes(node, processor);
 		}
-		
+
 		private static void MaybeAlignBytes(UnityNode node, ILProcessor processor)
 		{
 			if (((TransferMetaFlags)node.MetaFlag).IsAlignBytes())

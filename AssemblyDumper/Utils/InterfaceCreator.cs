@@ -11,13 +11,15 @@ namespace AssemblyDumper.Utils
 			module.Types.Add(definition);
 			return definition;
 		}
+
 		public static TypeDefinition CreateEmptyInterface(AssemblyDefinition assembly, string @namespace, string name, TypeReference[] interfaces)
 		{
 			var emptyInterface = CreateEmptyInterface(assembly, @namespace, name);
-			foreach(var implementedInterface in interfaces)
+			foreach (var implementedInterface in interfaces)
 			{
 				emptyInterface.Interfaces.Add(new InterfaceImplementation(implementedInterface));
 			}
+
 			return emptyInterface;
 		}
 	}

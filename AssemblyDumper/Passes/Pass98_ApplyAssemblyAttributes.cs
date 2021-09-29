@@ -9,7 +9,7 @@ namespace AssemblyDumper.Passes
 		{
 			Logger.Info("Pass 98: Apply Assembly Attributes");
 			SharedState.Assembly.AddVersionAttribute(SharedState.Version);
-			foreach(var pair in SharedState.ClassDictionary)
+			foreach (var pair in SharedState.ClassDictionary)
 			{
 				if (!SystemTypeGetter.primitiveNamesCsharp.Contains(pair.Key))
 				{

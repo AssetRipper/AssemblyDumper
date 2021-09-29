@@ -42,7 +42,7 @@ namespace AssemblyDumper.Utils
 			var attributeDefinition = new TypeDefinition(@namespace, name, TypeAttributes.Public | TypeAttributes.BeforeFieldInit, systemAttributeReference);
 
 			module.Types.Add(attributeDefinition);
-			if(hasDefaultConstructor)
+			if (hasDefaultConstructor)
 			{
 				var defaultConstructor = new MethodDefinition(
 					".ctor",
@@ -65,7 +65,7 @@ namespace AssemblyDumper.Utils
 
 
 			var field = new FieldDefinition(fieldName, FieldAttributes.Public, fieldType);
-			if(defaultValue != null) field.Constant = defaultValue;
+			if (defaultValue != null) field.Constant = defaultValue;
 			attributeDefinition.Fields.Add(field);
 
 

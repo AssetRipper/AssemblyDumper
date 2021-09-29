@@ -53,7 +53,7 @@ namespace AssemblyDumper.Passes
 
 				editorModeProcessor.Emit(OpCodes.Ret);
 				releaseModeProcessor.Emit(OpCodes.Ret);
-				
+
 				editorModeBody.Optimize();
 				releaseModeBody.Optimize();
 			}
@@ -140,8 +140,8 @@ namespace AssemblyDumper.Passes
 			MethodDefinition primitiveReadMethod = arrayDepth switch
 			{
 				0 => CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}") //String
-					?? CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}")
-					?? SystemTypeGetter.BinaryReader.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}"),//Byte, SByte, and Boolean
+				     ?? CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}")
+				     ?? SystemTypeGetter.BinaryReader.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}"), //Byte, SByte, and Boolean
 				1 => CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}Array"),
 				2 => CommonTypeGetter.EndianReaderExtensionsDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}ArrayArray"),
 				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth), $"ReadPrimitiveType does not support array depth '{arrayDepth}'"),
@@ -153,7 +153,7 @@ namespace AssemblyDumper.Passes
 				throw new Exception($"Missing a read method for {csPrimitiveTypeName} in {processor.Body.Method.DeclaringType}");
 
 			//Load this
-			if(field != null)
+			if (field != null)
 				processor.Emit(OpCodes.Ldarg_0);
 
 			//Load reader
@@ -163,7 +163,7 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(primitiveReadMethod));
 
 			//Store result in field
-			if(field != null)
+			if (field != null)
 				processor.Emit(OpCodes.Stfld, field);
 
 			//Maybe Align Bytes
@@ -177,7 +177,7 @@ namespace AssemblyDumper.Passes
 		private static void ReadAssetType(UnityNode node, ILProcessor processor, FieldDefinition field, TypeDefinition fieldType, int arrayDepth)
 		{
 			//Load "this" for field store later
-			if(field != null)
+			if (field != null)
 				processor.Emit(OpCodes.Ldarg_0);
 
 			//Load reader
@@ -200,7 +200,7 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(genericInst));
 
 			//Store result in field
-			if(field != null)
+			if (field != null)
 				processor.Emit(OpCodes.Stfld, field);
 
 			//Maybe Align Bytes
@@ -210,7 +210,7 @@ namespace AssemblyDumper.Passes
 		private static void ReadByteArray(UnityNode node, ILProcessor processor, FieldDefinition field)
 		{
 			//Load "this" for field store later
-			if(field != null)
+			if (field != null)
 				processor.Emit(OpCodes.Ldarg_0);
 
 			//Load reader
@@ -223,7 +223,7 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(readMethod));
 
 			//Store result in field
-			if(field != null)
+			if (field != null)
 				processor.Emit(OpCodes.Stfld, field);
 
 			//Maybe Align Bytes
@@ -256,30 +256,31 @@ namespace AssemblyDumper.Passes
 			{
 				ReadAssetType(listTypeNode, processor, field, fieldType, arrayDepth);
 			}
-			else switch (listTypeNode.TypeName)
-			{
-				case "vector" or "set" or "staticvector":
-					ReadVector(listTypeNode, processor, field, arrayDepth + 1);
-					break;
-				case "Array":
-					ReadArray(listTypeNode, processor, field, arrayDepth + 1);
-					break;
-				case "map":
-					if(arrayDepth > 1)
-						throw new("ReadArray does not support dictionary arrays with a depth > 1");
-					
-					ReadDictionaryArray(node, processor, field);
-					break;
-				case "pair":
-					if (arrayDepth > 1)
-						throw new("ReadArray does not support Pair arrays with a depth > 1");
-					
-					ReadPairArray(processor, field, listTypeNode);
-					break;
-				default:
-					ReadPrimitiveType(listTypeNode, processor, field, arrayDepth);
-					break;
-			}
+			else
+				switch (listTypeNode.TypeName)
+				{
+					case "vector" or "set" or "staticvector":
+						ReadVector(listTypeNode, processor, field, arrayDepth + 1);
+						break;
+					case "Array":
+						ReadArray(listTypeNode, processor, field, arrayDepth + 1);
+						break;
+					case "map":
+						if (arrayDepth > 1)
+							throw new("ReadArray does not support dictionary arrays with a depth > 1");
+
+						ReadDictionaryArray(node, processor, field);
+						break;
+					case "pair":
+						if (arrayDepth > 1)
+							throw new("ReadArray does not support Pair arrays with a depth > 1");
+
+						ReadPairArray(processor, field, listTypeNode);
+						break;
+					default:
+						ReadPrimitiveType(listTypeNode, processor, field, arrayDepth);
+						break;
+				}
 
 			MaybeAlignBytes(node, processor);
 		}
@@ -292,14 +293,14 @@ namespace AssemblyDumper.Passes
 			//For i = 0 .. count
 			//	Read pair, store in array
 			//Store array in field
-			
+
 			//Resolve things we'll need
 			var first = listTypeNode.SubNodes[0];
 			var second = listTypeNode.SubNodes[1];
 			var genericKvp = ResolvePairType(processor, first, second);
 
 			var arrayType = genericKvp.MakeArrayType();
-			
+
 			//Read length of array
 			var intReader = processor.Body.Method.Module.ImportReference(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadInt32"));
 			processor.Emit(OpCodes.Ldarg_1); //Load reader
@@ -322,10 +323,10 @@ namespace AssemblyDumper.Passes
 			processor.Body.Variables.Add(iLocal); //Add to method
 			processor.Emit(OpCodes.Ldc_I4_0); //Load 0 as an int32
 			processor.Emit(OpCodes.Stloc, iLocal); //Store in count
-			
+
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch =  processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
+			var unconditionalBranch = processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
 			processor.Append(unconditionalBranch);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
@@ -343,7 +344,7 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Ldc_I4_1); //Load constant 1 as int32
 			processor.Emit(OpCodes.Add); //Add 
 			processor.Emit(OpCodes.Stloc, iLocal); //Store in i local
-			
+
 			//Jump to start of loop if i < count
 			var loopConditionStart = processor.Create(OpCodes.Ldloc, iLocal); //Load i
 			processor.Append(loopConditionStart);
@@ -352,15 +353,15 @@ namespace AssemblyDumper.Passes
 			unconditionalBranch.Operand = loopConditionStart;
 
 			//Now just store field
-			if(field != null)
+			if (field != null)
 				processor.Emit(OpCodes.Ldarg_0); //Load this
 			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array
-			
-			if(field != null)
+
+			if (field != null)
 				processor.Emit(OpCodes.Stfld, field); //Store field
 		}
-		
-		private static void ReadDictionaryArray(UnityNode node, ILProcessor processor, FieldDefinition field) 
+
+		private static void ReadDictionaryArray(UnityNode node, ILProcessor processor, FieldDefinition field)
 		{
 			//you know the drill
 			//read count
@@ -368,12 +369,12 @@ namespace AssemblyDumper.Passes
 			//for i = 0 .. count 
 			//  read an entire bloody dictionary
 			//set field
-			
+
 			//we need an array type, so let's get that
 			var dictNode = node.SubNodes[1];
 			var dictType = ResolveDictionaryType(processor, dictNode);
 			var arrayType = dictType.MakeArrayType(); //cursed. that is all.
-			
+
 			//Read length of array
 			var intReader = processor.Body.Method.Module.ImportReference(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadInt32"));
 			processor.Emit(OpCodes.Ldarg_1); //Load reader
@@ -396,10 +397,10 @@ namespace AssemblyDumper.Passes
 			processor.Body.Variables.Add(iLocal); //Add to method
 			processor.Emit(OpCodes.Ldc_I4_0); //Load 0 as an int32
 			processor.Emit(OpCodes.Stloc, iLocal); //Store in count
-			
+
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch =  processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
+			var unconditionalBranch = processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
 			processor.Append(unconditionalBranch);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
@@ -417,7 +418,7 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Ldc_I4_1); //Load constant 1 as int32
 			processor.Emit(OpCodes.Add); //Add 
 			processor.Emit(OpCodes.Stloc, iLocal); //Store in i local
-			
+
 			//Jump to start of loop if i < count
 			var loopConditionStart = processor.Create(OpCodes.Ldloc, iLocal); //Load i
 			processor.Append(loopConditionStart);
@@ -439,12 +440,12 @@ namespace AssemblyDumper.Passes
 			//For i = 0 .. count
 			//	Read key, read value, store in dict
 			//Store dict in field
-			
+
 			//Resolve things we'll need
 			var genericDictType = ResolveDictionaryType(processor, node);
 			var genericDictCtor = MakeConstructorOnGenericType(genericDictType, 0);
 			var addMethod = MakeMethodOnGenericType(genericDictType.Resolve().Methods.First(m => m.Name == "Add"), genericDictType);
-			
+
 			//Read length of array
 			var intReader = processor.Body.Method.Module.ImportReference(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadInt32"));
 			processor.Emit(OpCodes.Ldarg_1); //Load reader
@@ -466,10 +467,10 @@ namespace AssemblyDumper.Passes
 			processor.Body.Variables.Add(iLocal); //Add to method
 			processor.Emit(OpCodes.Ldc_I4_0); //Load 0 as an int32
 			processor.Emit(OpCodes.Stloc, iLocal); //Store in count
-			
+
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch =  processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
+			var unconditionalBranch = processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
 			processor.Append(unconditionalBranch);
 
 			//Now we just read key + value, increment i, compare against count, and jump back to here if it's less
@@ -487,7 +488,7 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Ldc_I4_1); //Load constant 1 as int32
 			processor.Emit(OpCodes.Add); //Add 
 			processor.Emit(OpCodes.Stloc, iLocal); //Store in i local
-			
+
 			//Jump to start of loop if i < count
 			var loopConditionStart = processor.Create(OpCodes.Ldloc, iLocal); //Load i
 			processor.Append(loopConditionStart);
@@ -496,14 +497,14 @@ namespace AssemblyDumper.Passes
 			unconditionalBranch.Operand = loopConditionStart;
 
 			//Now just store field
-			if(field != null)
+			if (field != null)
 				processor.Emit(OpCodes.Ldarg_0); //Load this
-			
+
 			processor.Emit(OpCodes.Ldloc, dictLocal); //Load dict
-			
-			if(field != null)
+
+			if (field != null)
 				processor.Emit(OpCodes.Stfld, field); //Store field
-		} 
+		}
 
 		private static void ReadPair(UnityNode node, ILProcessor processor, FieldDefinition field)
 		{
@@ -563,7 +564,7 @@ namespace AssemblyDumper.Passes
 		{
 			var pairNode = node.SubNodes[0] //Array
 				.SubNodes[1]; //Pair
-			
+
 			var first = pairNode.SubNodes[0];
 			var second = pairNode.SubNodes[1];
 			var genericKvp = ResolvePairType(processor, first, second);
@@ -575,7 +576,7 @@ namespace AssemblyDumper.Passes
 		{
 			var contentNode = node.SubNodes[0].SubNodes[1];
 			var typeName = contentNode.TypeName;
-		
+
 			return processor.Body.Method.Module.ImportReference(processor.Body.Method.Module.GetPrimitiveType(typeName) ?? SystemTypeGetter.LookupSystemType(typeName) ?? SharedState.TypeDictionary[typeName]).MakeArrayType();
 		}
 
@@ -586,7 +587,7 @@ namespace AssemblyDumper.Passes
 
 			TypeReference firstType;
 			TypeReference secondType;
-			if (firstName == "pair") 
+			if (firstName == "pair")
 				firstType = ResolvePairType(processor, first.SubNodes[0], first.SubNodes[1]);
 			else if (firstName == "map")
 				firstType = ResolveDictionaryType(processor, first);

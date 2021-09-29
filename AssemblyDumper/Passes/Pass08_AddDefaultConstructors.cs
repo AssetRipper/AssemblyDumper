@@ -8,7 +8,7 @@ namespace AssemblyDumper.Passes
 	public static class Pass08_AddDefaultConstructors
 	{
 		private readonly static List<string> processed = new List<string>();
-		
+
 		public static void DoPass()
 		{
 			Logger.Info("Pass 8: Add Default Constructors");
