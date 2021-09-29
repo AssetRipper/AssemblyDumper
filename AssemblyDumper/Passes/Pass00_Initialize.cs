@@ -1,8 +1,8 @@
 ﻿using AssemblyDumper.Unity;
 using Mono.Cecil;
-using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Text.Json;
 
 namespace AssemblyDumper.Passes
 {
@@ -20,10 +20,8 @@ namespace AssemblyDumper.Passes
 		{
 			Logger.Info("Pass 0: Initialize");
 
-			using var sr = new StreamReader(jsonPath);
-			using JsonTextReader reader = new JsonTextReader(sr);
-			JsonSerializer serializer = new JsonSerializer();
-			var info = serializer.Deserialize<UnityInfo>(reader);
+			using var stream = File.OpenRead(jsonPath);
+			var info = JsonSerializer.Deserialize<UnityInfo>(stream);
 			SharedState.Initialize(info);
 
 			string AssemblyFileName = SharedState.Version.Replace('.', '_');
@@ -42,7 +40,7 @@ namespace AssemblyDumper.Passes
 			assembly.MainModule.AssemblyReferences.Add(SystemTypeGetter.RuntimeAssembly.Name);
 			assembly.MainModule.AssemblyReferences.Add(SystemTypeGetter.CollectionsAssembly.Name);
 			assembly.MainModule.AssemblyReferences.Add(CommonTypeGetter.Assembly.Name);
-			
+
 			SharedState.Assembly = assembly;
 			SharedState.RootNamespace = AssemblyFileName;
 

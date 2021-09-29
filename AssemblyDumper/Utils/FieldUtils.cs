@@ -12,6 +12,7 @@ namespace AssemblyDumper.Utils
 			typeDefinition.Fields.Add(fieldDef);
 			return fieldDef;
 		}
+
 		public static FieldDefinition AddIntStaticField(this TypeDefinition typeDefinition, string name)
 		{
 			var module = typeDefinition.Module;
@@ -19,6 +20,7 @@ namespace AssemblyDumper.Utils
 			typeDefinition.Fields.Add(fieldDef);
 			return fieldDef;
 		}
+
 		public static FieldDefinition AddByteField(this TypeDefinition typeDefinition, string name)
 		{
 			var module = typeDefinition.Module;
@@ -26,6 +28,7 @@ namespace AssemblyDumper.Utils
 			typeDefinition.Fields.Add(fieldDef);
 			return fieldDef;
 		}
+
 		public static FieldDefinition AddByteArrayField(this TypeDefinition typeDefinition, string name)
 		{
 			var module = typeDefinition.Module;

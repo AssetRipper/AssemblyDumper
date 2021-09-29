@@ -18,14 +18,17 @@ namespace AssemblyDumper
 		{
 			return (_this & TypeFlags.IsArray) != 0;
 		}
+
 		public static bool IsManagedReference(this TypeFlags _this)
 		{
 			return (_this & TypeFlags.IsManagedReference) != 0;
 		}
+
 		public static bool IsManagedReferenceRegistry(this TypeFlags _this)
 		{
 			return (_this & TypeFlags.IsManagedReferenceRegistry) != 0;
 		}
+
 		public static bool IsArrayOfRefs(this TypeFlags _this)
 		{
 			return (_this & TypeFlags.IsArrayOfRefs) != 0;

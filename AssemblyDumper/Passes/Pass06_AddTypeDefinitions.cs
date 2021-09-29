@@ -15,7 +15,7 @@ namespace AssemblyDumper.Passes
 			foreach (var pair in SharedState.ClassDictionary)
 			{
 				var typeDef = assembly.CreateType(pair.Value);
-				if(typeDef != null)
+				if (typeDef != null)
 					SharedState.TypeDictionary.Add(pair.Key, typeDef);
 			}
 		}
@@ -37,7 +37,7 @@ namespace AssemblyDumper.Passes
 			typeDef.AddCustomAttribute(CommonTypeGetter.ByteSizeAttributeConstructor, SystemTypeGetter.Int32, @class.Size);
 
 			_this.MainModule.Types.Add(typeDef);
-			
+
 			return typeDef;
 		}
 

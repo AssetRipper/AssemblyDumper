@@ -50,7 +50,7 @@ namespace AssemblyDumper.Passes
 				for (var editorIdx = 0; editorIdx < derivedClass?.EditorRootNode?.SubNodes?.Count; editorIdx++)
 				{
 					var subNode = derivedClass.EditorRootNode.SubNodes[editorIdx];
-					
+
 					var mismatching = derived.Where(d => d?.EditorRootNode?.SubNodes?.Count <= editorIdx || d?.EditorRootNode?.SubNodes[editorIdx].Name != subNode.Name).ToList();
 					if (mismatching.Count >= Math.Ceiling(derived.Count / 10.0))
 					{

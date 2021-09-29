@@ -26,6 +26,7 @@ namespace AssemblyDumper.Unity
 		/// The constructor used in json deserialization
 		/// </summary>
 		public UnityClass() { }
+
 		/// <summary>
 		/// The constructor used to make dependent class definitions
 		/// </summary>

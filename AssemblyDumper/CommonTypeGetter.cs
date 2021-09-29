@@ -8,6 +8,7 @@ namespace AssemblyDumper
 	public static class CommonTypeGetter
 	{
 		public static AssemblyDefinition Assembly { get; set; }
+
 		//Attributes
 		public static TypeReference ByteSizeAttributeDefinition { get; private set; }
 		public static MethodReference ByteSizeAttributeConstructor { get; private set; }
@@ -43,7 +44,7 @@ namespace AssemblyDumper
 		public static TypeReference UnityAssetBaseDefinition { get; private set; }
 		public static TypeReference UnityVersionDefinition { get; private set; }
 		public static TypeReference TransferMetaFlagsDefinition { get; private set; }
-		
+
 		public static TypeReference AssetReaderDefinition { get; private set; }
 		public static TypeReference EndianReaderDefinition { get; private set; }
 		public static TypeReference AssetWriterDefinition { get; private set; }
@@ -106,6 +107,7 @@ namespace AssemblyDumper
 		public static MethodReference ImportCommonConstructor<T>(this ModuleDefinition module) => module.ImportCommonConstructor(typeof(T).FullName, 0);
 		public static MethodReference ImportCommonConstructor(this ModuleDefinition module, string typeFullName) => module.ImportCommonConstructor(typeFullName, 0);
 		public static MethodReference ImportCommonConstructor<T>(this ModuleDefinition module, int numParameters) => module.ImportCommonConstructor(typeof(T).FullName, numParameters);
+
 		public static MethodReference ImportCommonConstructor(this ModuleDefinition module, string typeFullName, int numParameters)
 		{
 			return module.ImportReference(LookupCommonType(typeFullName).GetConstructor(numParameters));
