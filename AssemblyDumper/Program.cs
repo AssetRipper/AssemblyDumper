@@ -80,7 +80,7 @@ namespace AssemblyDumper
 				Pass33_CreateEmptyMethods.DoPass();
 
 				Pass50_FillReadMethods.DoPass();
-				Pass75_FillWriteMethods.DoPass();
+				Pass51_FillWriteMethods.DoPass();
 
 				Pass98_ApplyAssemblyAttributes.DoPass();
 				Pass99_SaveAssembly.DoPass(options.OutputDirectory);

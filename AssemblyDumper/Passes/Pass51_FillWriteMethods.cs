@@ -10,13 +10,13 @@ using Mono.Cecil.Rocks;
 
 namespace AssemblyDumper.Passes
 {
-	public static class Pass75_FillWriteMethods
+	public static class Pass51_FillWriteMethods
 	{
 		private static MethodReference WriteMethod;
 
 		public static void DoPass()
 		{
-			Logger.Info("Pass 75: Filling write methods");
+			Logger.Info("Pass 51: Filling write methods");
 			foreach (var (name, klass) in SharedState.ClassDictionary)
 			{
 				if (!SharedState.TypeDictionary.ContainsKey(name))
