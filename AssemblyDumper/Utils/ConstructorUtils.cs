@@ -16,7 +16,7 @@ namespace AssemblyDumper.Utils
 		/// </summary>
 		public static MethodDefinition GetConstructor(this TypeDefinition _this, int numParameters)
 		{
-			return _this.Methods.Where(x => x.IsConstructor && x.Parameters.Count == numParameters).Single();
+			return _this.Methods.Where(x => x.IsConstructor && x.Parameters.Count == numParameters && !x.IsStatic).Single();
 		}
 
 		/// <summary>
