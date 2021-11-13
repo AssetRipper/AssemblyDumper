@@ -61,7 +61,7 @@ namespace AssemblyDumper.Passes
 
 					//This field is common to all sub classes. Add it to base.
 					// Logger.Info($"\t\tCopying field {subNode.Name} to EDITOR");
-					abstractClass.EditorRootNode.SubNodes.Add(subNode.DeapClone());
+					abstractClass.EditorRootNode.SubNodes.Add(subNode.DeepClone());
 				}
 
 				//Handle release node
@@ -79,7 +79,7 @@ namespace AssemblyDumper.Passes
 
 					//This field is common to all sub classes. Add it to base.
 					// Logger.Info($"\t\tCopying field {subNode.Name} to RELEASE");
-					abstractClass.ReleaseRootNode.SubNodes.Add(subNode.DeapClone());
+					abstractClass.ReleaseRootNode.SubNodes.Add(subNode.DeepClone());
 				}
 			}
 		}

@@ -135,7 +135,7 @@ namespace AssemblyDumper.Passes
 				{
 					if (!generics.Contains(typeName))
 					{
-						var newNode = subnode.DeapClone();
+						var newNode = subnode.DeepClone();
 						newNode.Name = "Base";
 						dict.Add(typeName, newNode);
 					}

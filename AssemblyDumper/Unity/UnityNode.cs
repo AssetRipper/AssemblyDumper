@@ -19,7 +19,7 @@ namespace AssemblyDumper.Unity
 		/// Warning: Deep cloning a node with a circular hierarchy will cause an endless loop
 		/// </summary>
 		/// <returns>The new node</returns>
-		public UnityNode DeapClone()
+		public UnityNode DeepClone()
 		{
 			var cloned = new UnityNode();
 			cloned.TypeName = new string(TypeName);
@@ -30,7 +30,7 @@ namespace AssemblyDumper.Unity
 			cloned.Version = Version;
 			cloned.TypeFlags = TypeFlags;
 			cloned.MetaFlag = MetaFlag;
-			cloned.SubNodes = SubNodes.ConvertAll(x => x.DeapClone());
+			cloned.SubNodes = SubNodes.ConvertAll(x => x.DeepClone());
 			return cloned;
 		}
 	}
