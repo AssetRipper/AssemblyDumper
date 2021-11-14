@@ -45,9 +45,9 @@ namespace AssemblyDumper
 				if (options.JsonPath == null || !options.JsonPath.Exists)
 					return false;
 				if (options.SystemRuntimeAssembly == null)
-					options.SystemRuntimeAssembly = new FileInfo(@"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\6.0.0-rc.1.21451.13\ref\net6.0\System.Runtime.dll");
+					options.SystemRuntimeAssembly = new FileInfo(@"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\6.0.0\ref\net6.0\System.Runtime.dll");
 				if (options.SystemCollectionsAssembly == null)
-					options.SystemCollectionsAssembly = new FileInfo(@"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\6.0.0-rc.1.21451.13\ref\net6.0\System.Collections.dll");
+					options.SystemCollectionsAssembly = new FileInfo(@"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\6.0.0\ref\net6.0\System.Collections.dll");
 				if (options.OutputDirectory == null)
 					options.OutputDirectory = new DirectoryInfo(Environment.CurrentDirectory);
 
@@ -81,6 +81,7 @@ namespace AssemblyDumper
 
 				Pass50_FillReadMethods.DoPass();
 				Pass51_FillWriteMethods.DoPass();
+				Pass52_FillYamlMethods.DoPass();
 
 				Pass98_ApplyAssemblyAttributes.DoPass();
 				Pass99_SaveAssembly.DoPass(options.OutputDirectory);

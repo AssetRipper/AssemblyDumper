@@ -49,6 +49,11 @@ namespace AssemblyDumper
 		public static TypeReference EndianReaderDefinition { get; private set; }
 		public static TypeReference AssetWriterDefinition { get; private set; }
 
+		public static TypeReference IExportContainerDefinition { get; private set; }
+		public static TypeReference YAMLNodeDefinition { get; private set; }
+		public static TypeReference YAMLMappingNodeDefinition { get; private set; }
+		public static MethodReference YAMLMappingNodeConstructor { get; private set; }
+
 		public static TypeReference EndianReaderExtensionsDefinition { get; private set; }
 		public static TypeReference AssetReaderExtensionsDefinition { get; private set; }
 
@@ -93,15 +98,20 @@ namespace AssemblyDumper
 			EndianReaderDefinition = module.ImportCommonType<AssetRipper.Core.IO.Endian.EndianReader>();
 			AssetWriterDefinition = module.ImportCommonType<AssetRipper.Core.IO.Asset.AssetWriter>();
 
-			EndianReaderExtensionsDefinition = module.ImportCommonType("AssetRipper.Core.IO.Extensions.EndianReaderExtensions");
-			AssetReaderExtensionsDefinition = module.ImportCommonType("AssetRipper.Core.IO.Extensions.AssetReaderExtensions");
+			IExportContainerDefinition = module.ImportCommonType<AssetRipper.Core.Project.Collections.IExportCollection>();
+			YAMLNodeDefinition = module.ImportCommonType<AssetRipper.Core.YAML.YAMLNode>();
+			YAMLMappingNodeDefinition = module.ImportCommonType<AssetRipper.Core.YAML.YAMLMappingNode>();
+			YAMLMappingNodeConstructor = module.ImportCommonConstructor<AssetRipper.Core.YAML.YAMLMappingNode>();
+
+			EndianReaderExtensionsDefinition = module.ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.EndianReaderExtensions));
+			AssetReaderExtensionsDefinition = module.ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.AssetReaderExtensions));
 		}
 
 		public static TypeReference ImportCommonType(this ModuleDefinition module, string typeFullName)
 		{
 			return module.ImportReference(LookupCommonType(typeFullName));
 		}
-
+		public static TypeReference ImportCommonType(this ModuleDefinition module, System.Type type) => module.ImportCommonType(type.FullName);
 		public static TypeReference ImportCommonType<T>(this ModuleDefinition module) => module.ImportCommonType(typeof(T).FullName);
 
 		public static MethodReference ImportCommonConstructor<T>(this ModuleDefinition module) => module.ImportCommonConstructor(typeof(T).FullName, 0);

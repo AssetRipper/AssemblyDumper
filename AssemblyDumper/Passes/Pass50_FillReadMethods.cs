@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using AssemblyDumper.Unity;
+using AssemblyDumper.Utils;
 using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -31,7 +32,7 @@ namespace AssemblyDumper.Passes
 				var editorModeProcessor = editorModeBody.GetILProcessor();
 				var releaseModeProcessor = releaseModeBody.GetILProcessor();
 
-				var fields = GetAllFieldsInTypeAndBase(type);
+				var fields = FieldUtils.GetAllFieldsInTypeAndBase(type);
 
 				//Logger.Info($"Generating the editor read method for {name}");
 				if (klass.EditorRootNode != null)
@@ -57,18 +58,6 @@ namespace AssemblyDumper.Passes
 				editorModeBody.Optimize();
 				releaseModeBody.Optimize();
 			}
-		}
-
-		private static List<FieldDefinition> GetAllFieldsInTypeAndBase(TypeDefinition type)
-		{
-			if (type == null)
-				return new();
-
-			var ret = type.Fields.ToList();
-
-			ret.AddRange(GetAllFieldsInTypeAndBase(type.BaseType?.Resolve()));
-
-			return ret;
 		}
 
 		private static void AddLoadToProcessor(UnityNode node, ILProcessor processor, List<FieldDefinition> fields)

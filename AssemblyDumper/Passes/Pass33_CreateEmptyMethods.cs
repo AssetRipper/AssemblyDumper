@@ -28,10 +28,18 @@ namespace AssemblyDumper.Passes
 				var editorWriteDef = new MethodDefinition("WriteEditor", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.ReuseSlot | MethodAttributes.HideBySig, SystemTypeGetter.Void);
 				editorWriteDef.Parameters.Add(new("writer", ParameterAttributes.None, CommonTypeGetter.AssetWriterDefinition));
 
+				var releaseYamlDef = new MethodDefinition("ExportYAMLRelease", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.ReuseSlot | MethodAttributes.HideBySig, CommonTypeGetter.YAMLNodeDefinition);
+				releaseYamlDef.Parameters.Add(new("container", ParameterAttributes.None, CommonTypeGetter.IExportContainerDefinition));
+
+				var editorYamlDef = new MethodDefinition("ExportYAMLEditor", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.ReuseSlot | MethodAttributes.HideBySig, CommonTypeGetter.YAMLNodeDefinition);
+				editorYamlDef.Parameters.Add(new("container", ParameterAttributes.None, CommonTypeGetter.IExportContainerDefinition));
+
 				type.Methods.Add(releaseReadDef);
 				type.Methods.Add(editorReadDef);
 				type.Methods.Add(releaseWriteDef);
 				type.Methods.Add(editorWriteDef);
+				type.Methods.Add(releaseYamlDef);
+				type.Methods.Add(editorYamlDef);
 			}
 		}
 	}
