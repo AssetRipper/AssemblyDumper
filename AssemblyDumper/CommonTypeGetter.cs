@@ -2,127 +2,84 @@
 using AssetRipper.Core;
 using AssetRipper.Core.Attributes;
 using Mono.Cecil;
+using System;
+using System.Linq;
 
 namespace AssemblyDumper
 {
 	public static class CommonTypeGetter
 	{
-		public static AssemblyDefinition Assembly { get; set; }
+		public static AssemblyDefinition CommonAssembly { get; set; }
+		private static ModuleDefinition generatedModule;
 
 		//Attributes
-		public static TypeReference ByteSizeAttributeDefinition { get; private set; }
-		public static MethodReference ByteSizeAttributeConstructor { get; private set; }
+		public static MethodReference ByteSizeAttributeConstructor => generatedModule.ImportCommonConstructor<ByteSizeAttribute>(1);
+		public static MethodReference EditorOnlyAttributeConstructor => generatedModule.ImportCommonConstructor<EditorOnlyAttribute>();
+		public static MethodReference StrippedAttributeConstructor => generatedModule.ImportCommonConstructor<StrippedAttribute>();
+		public static MethodReference PersistentIDAttributeConstructor => generatedModule.ImportCommonConstructor<PersistentIDAttribute>(1);
+		public static MethodReference ReleaseOnlyAttributeConstructor => generatedModule.ImportCommonConstructor<ReleaseOnlyAttribute>();
+		public static MethodReference FixedLengthAttributeConstructor => generatedModule.ImportCommonConstructor<FixedLengthAttribute>(1);
+		public static MethodReference EditorMetaFlagsAttributeConstructor => generatedModule.ImportCommonConstructor<EditorMetaFlagsAttribute>(1);
+		public static MethodReference ReleaseMetaFlagsAttributeConstructor => generatedModule.ImportCommonConstructor<ReleaseMetaFlagsAttribute>(1);
+		public static MethodReference RegisterAssemblyAttributeConstructor => generatedModule.ImportCommonConstructor<RegisterAssemblyAttribute>(1);
+		public static MethodReference RegisterAssetTypeAttributeConstructor => generatedModule.ImportCommonConstructor<RegisterAssetTypeAttribute>(3);
 
-		public static TypeReference EditorOnlyAttributeDefinition { get; private set; }
-		public static MethodReference EditorOnlyAttributeConstructor { get; private set; }
+		public static TypeReference UnityObjectBaseDefinition => generatedModule.ImportCommonType<UnityObjectBase>();
+		public static TypeReference UnityAssetBaseDefinition => generatedModule.ImportCommonType<UnityAssetBase>();
+		public static TypeReference UnityVersionDefinition => generatedModule.ImportCommonType<AssetRipper.Core.Parser.Files.UnityVersion>();
+		public static TypeReference TransferMetaFlagsDefinition => generatedModule.ImportCommonType<AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TransferMetaFlags>();
 
-		public static TypeReference StrippedAttributeDefinition { get; private set; }
-		public static MethodReference StrippedAttributeConstructor { get; private set; }
+		//Reading
+		public static TypeReference AssetReaderDefinition => generatedModule.ImportCommonType<AssetRipper.Core.IO.Asset.AssetReader>();
+		public static TypeReference EndianReaderDefinition => generatedModule.ImportCommonType<AssetRipper.Core.IO.Endian.EndianReader>();
+		public static TypeReference EndianReaderExtensionsDefinition => generatedModule.ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.EndianReaderExtensions));
+		public static TypeReference AssetReaderExtensionsDefinition => generatedModule.ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.AssetReaderExtensions));
 
-		public static TypeReference PersistentIDAttributeDefinition { get; private set; }
-		public static MethodReference PersistentIDAttributeConstructor { get; private set; }
+		//Writing
+		public static TypeReference AssetWriterDefinition => generatedModule.ImportCommonType<AssetRipper.Core.IO.Asset.AssetWriter>();
 
-		public static TypeReference ReleaseOnlyAttributeDefinition { get; private set; }
-		public static MethodReference ReleaseOnlyAttributeConstructor { get; private set; }
-
-		public static TypeReference FixedLengthAttributeDefinition { get; private set; }
-		public static MethodReference FixedLengthAttributeConstructor { get; private set; }
-
-		public static TypeReference EditorMetaFlagsAttributeDefinition { get; private set; }
-		public static MethodReference EditorMetaFlagsAttributeConstructor { get; private set; }
-
-		public static TypeReference ReleaseMetaFlagsAttributeDefinition { get; private set; }
-		public static MethodReference ReleaseMetaFlagsAttributeConstructor { get; private set; }
-
-		public static TypeReference RegisterAssemblyAttributeDefinition { get; private set; }
-		public static MethodReference RegisterAssemblyAttributeConstructor { get; private set; }
-
-		public static TypeReference RegisterAssetTypeAttributeDefinition { get; private set; }
-		public static MethodReference RegisterAssetTypeAttributeConstructor { get; private set; }
-
-		public static TypeReference UnityObjectBaseDefinition { get; private set; }
-		public static TypeReference UnityAssetBaseDefinition { get; private set; }
-		public static TypeReference UnityVersionDefinition { get; private set; }
-		public static TypeReference TransferMetaFlagsDefinition { get; private set; }
-
-		public static TypeReference AssetReaderDefinition { get; private set; }
-		public static TypeReference EndianReaderDefinition { get; private set; }
-		public static TypeReference AssetWriterDefinition { get; private set; }
-
-		public static TypeReference IExportContainerDefinition { get; private set; }
-		public static TypeReference YAMLNodeDefinition { get; private set; }
-		public static TypeReference YAMLMappingNodeDefinition { get; private set; }
-		public static MethodReference YAMLMappingNodeConstructor { get; private set; }
-
-		public static TypeReference EndianReaderExtensionsDefinition { get; private set; }
-		public static TypeReference AssetReaderExtensionsDefinition { get; private set; }
+		//Yaml Export
+		public static TypeReference IExportContainerDefinition => generatedModule.ImportCommonType<AssetRipper.Core.Project.Collections.IExportCollection>();
+		public static TypeReference YAMLNodeDefinition => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLNode>();
+		public static TypeReference YAMLMappingNodeDefinition => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLMappingNode>();
+		public static MethodReference YAMLMappingNodeConstructor => generatedModule.ImportCommonConstructor<AssetRipper.Core.YAML.YAMLMappingNode>();
 
 		public static void Initialize(ModuleDefinition module)
 		{
-			ByteSizeAttributeDefinition = module.ImportCommonType<ByteSizeAttribute>();
-			ByteSizeAttributeConstructor = module.ImportCommonConstructor<ByteSizeAttribute>(1);
-
-			EditorOnlyAttributeDefinition = module.ImportCommonType<EditorOnlyAttribute>();
-			EditorOnlyAttributeConstructor = module.ImportCommonConstructor<EditorOnlyAttribute>();
-
-			StrippedAttributeDefinition = module.ImportCommonType<StrippedAttribute>();
-			StrippedAttributeConstructor = module.ImportCommonConstructor<StrippedAttribute>();
-
-			PersistentIDAttributeDefinition = module.ImportCommonType<PersistentIDAttribute>();
-			PersistentIDAttributeConstructor = module.ImportCommonConstructor<PersistentIDAttribute>(1);
-
-			ReleaseOnlyAttributeDefinition = module.ImportCommonType<ReleaseOnlyAttribute>();
-			ReleaseOnlyAttributeConstructor = module.ImportCommonConstructor<ReleaseOnlyAttribute>();
-
-			FixedLengthAttributeDefinition = module.ImportCommonType<FixedLengthAttribute>();
-			FixedLengthAttributeConstructor = module.ImportCommonConstructor<FixedLengthAttribute>(1);
-
-			EditorMetaFlagsAttributeDefinition = module.ImportCommonType<EditorMetaFlagsAttribute>();
-			EditorMetaFlagsAttributeConstructor = module.ImportCommonConstructor<EditorMetaFlagsAttribute>(1);
-
-			ReleaseMetaFlagsAttributeDefinition = module.ImportCommonType<ReleaseMetaFlagsAttribute>();
-			ReleaseMetaFlagsAttributeConstructor = module.ImportCommonConstructor<ReleaseMetaFlagsAttribute>(1);
-
-			RegisterAssemblyAttributeDefinition = module.ImportCommonType<RegisterAssemblyAttribute>();
-			RegisterAssemblyAttributeConstructor = module.ImportCommonConstructor<RegisterAssemblyAttribute>(1);
-
-			RegisterAssetTypeAttributeDefinition = module.ImportCommonType<RegisterAssetTypeAttribute>();
-			RegisterAssetTypeAttributeConstructor = module.ImportCommonConstructor<RegisterAssetTypeAttribute>(3);
-
-			UnityObjectBaseDefinition = module.ImportCommonType<UnityObjectBase>();
-			UnityAssetBaseDefinition = module.ImportCommonType<UnityAssetBase>();
-			UnityVersionDefinition = module.ImportCommonType<AssetRipper.Core.Parser.Files.UnityVersion>();
-			TransferMetaFlagsDefinition = module.ImportCommonType<AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TransferMetaFlags>();
-
-			AssetReaderDefinition = module.ImportCommonType<AssetRipper.Core.IO.Asset.AssetReader>();
-			EndianReaderDefinition = module.ImportCommonType<AssetRipper.Core.IO.Endian.EndianReader>();
-			AssetWriterDefinition = module.ImportCommonType<AssetRipper.Core.IO.Asset.AssetWriter>();
-
-			IExportContainerDefinition = module.ImportCommonType<AssetRipper.Core.Project.Collections.IExportCollection>();
-			YAMLNodeDefinition = module.ImportCommonType<AssetRipper.Core.YAML.YAMLNode>();
-			YAMLMappingNodeDefinition = module.ImportCommonType<AssetRipper.Core.YAML.YAMLMappingNode>();
-			YAMLMappingNodeConstructor = module.ImportCommonConstructor<AssetRipper.Core.YAML.YAMLMappingNode>();
-
-			EndianReaderExtensionsDefinition = module.ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.EndianReaderExtensions));
-			AssetReaderExtensionsDefinition = module.ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.AssetReaderExtensions));
+			generatedModule = module;
 		}
 
-		public static TypeReference ImportCommonType(this ModuleDefinition module, string typeFullName)
+		public static TypeDefinition LookupCommonType(string typeFullName) => CommonAssembly.MainModule.GetType(typeFullName);
+		public static TypeDefinition LookupCommonType(Type type) => LookupCommonType(type.FullName);
+		public static TypeDefinition LookupCommonType<T>() => LookupCommonType(typeof(T));
+
+		public static MethodDefinition LookupCommonMethod(string typeFullName, Func<MethodDefinition, bool> filter) => LookupCommonType(typeFullName).Methods.Single(filter);
+		public static MethodDefinition LookupCommonMethod(Type type, Func<MethodDefinition, bool> filter) => LookupCommonMethod(type.FullName, filter);
+		public static MethodDefinition LookupCommonMethod<T>(Func<MethodDefinition, bool> filter) => LookupCommonMethod(typeof(T), filter);
+
+		public static TypeReference ImportCommonType(this ModuleDefinition module, string typeFullName) => module.ImportReference(LookupCommonType(typeFullName));
+		public static TypeReference ImportCommonType(this ModuleDefinition module, System.Type type) => module.ImportReference(LookupCommonType(type));
+		public static TypeReference ImportCommonType<T>(this ModuleDefinition module) => module.ImportReference(LookupCommonType<T>());
+
+		public static MethodReference ImportCommonMethod(this ModuleDefinition module, string typeFullName, Func<MethodDefinition, bool> filter)
 		{
-			return module.ImportReference(LookupCommonType(typeFullName));
+			return module.ImportReference(LookupCommonMethod(typeFullName, filter));
 		}
-		public static TypeReference ImportCommonType(this ModuleDefinition module, System.Type type) => module.ImportCommonType(type.FullName);
-		public static TypeReference ImportCommonType<T>(this ModuleDefinition module) => module.ImportCommonType(typeof(T).FullName);
+		public static MethodReference ImportCommonMethod(this ModuleDefinition module, System.Type type, Func<MethodDefinition, bool> filter)
+		{
+			return module.ImportReference(LookupCommonMethod(type, filter));
+		}
+		public static MethodReference ImportCommonMethod<T>(this ModuleDefinition module, Func<MethodDefinition, bool> filter)
+		{
+			return module.ImportReference(LookupCommonMethod<T>(filter));
+		}
 
 		public static MethodReference ImportCommonConstructor<T>(this ModuleDefinition module) => module.ImportCommonConstructor(typeof(T).FullName, 0);
-		public static MethodReference ImportCommonConstructor(this ModuleDefinition module, string typeFullName) => module.ImportCommonConstructor(typeFullName, 0);
 		public static MethodReference ImportCommonConstructor<T>(this ModuleDefinition module, int numParameters) => module.ImportCommonConstructor(typeof(T).FullName, numParameters);
-
+		public static MethodReference ImportCommonConstructor(this ModuleDefinition module, string typeFullName) => module.ImportCommonConstructor(typeFullName, 0);
 		public static MethodReference ImportCommonConstructor(this ModuleDefinition module, string typeFullName, int numParameters)
 		{
 			return module.ImportReference(LookupCommonType(typeFullName).GetConstructor(numParameters));
 		}
-
-		private static TypeDefinition LookupCommonType(string typeFullName) => Assembly.MainModule.GetType(typeFullName);
 	}
 }

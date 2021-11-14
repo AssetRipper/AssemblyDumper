@@ -33,13 +33,13 @@ namespace AssemblyDumper.Passes
 			SystemTypeGetter.CollectionsAssembly = AssemblyDefinition.ReadAssembly(systemCollectionsFilePath);
 			//Logger.Info(SystemTypeGetter.RuntimeAssembly.Name.FullName);
 
-			CommonTypeGetter.Assembly = AssemblyDefinition.ReadAssembly(typeof(AssetRipper.Core.UnityObjectBase).Assembly.Location);
+			CommonTypeGetter.CommonAssembly = AssemblyDefinition.ReadAssembly(typeof(AssetRipper.Core.UnityObjectBase).Assembly.Location);
 			//Logger.Info(CommonTypeGetter.Assembly.Name.FullName);
 
 			assembly.MainModule.AssemblyReferences.Clear();
 			assembly.MainModule.AssemblyReferences.Add(SystemTypeGetter.RuntimeAssembly.Name);
 			assembly.MainModule.AssemblyReferences.Add(SystemTypeGetter.CollectionsAssembly.Name);
-			assembly.MainModule.AssemblyReferences.Add(CommonTypeGetter.Assembly.Name);
+			assembly.MainModule.AssemblyReferences.Add(CommonTypeGetter.CommonAssembly.Name);
 
 			SharedState.Assembly = assembly;
 			SharedState.RootNamespace = AssemblyFileName;
