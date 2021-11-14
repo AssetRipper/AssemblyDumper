@@ -1,4 +1,5 @@
-﻿using AssemblyDumper.Utils;
+﻿using AssemblyDumper.Unity;
+using AssemblyDumper.Utils;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -74,9 +75,47 @@ namespace AssemblyDumper.Passes
 			}
 		}
 
-		private static void AddExportToProcessor(Unity.UnityNode node, ILProcessor processor, List<FieldDefinition> fields)
+		private static void AddExportToProcessor(UnityNode node, ILProcessor processor, List<FieldDefinition> fields)
 		{
+			//Get field
+			var field = fields.FirstOrDefault(f => f.Name == node.Name);
 
+			if (field == null)
+				throw new Exception($"Field {node.Name} cannot be found in {processor.Body.Method.DeclaringType} (fields are {string.Join(", ", fields.Select(f => f.Name))})");
+
+			ExportFieldContent(node, processor, field);
+		}
+
+		private static void ExportFieldContent(UnityNode node, ILProcessor processor, FieldDefinition field)
+		{
+			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out var fieldType))
+			{
+				//ReadAssetType(node, processor, field, fieldType, 0);
+				return;
+			}
+
+			switch (node.TypeName)
+			{
+				case "vector":
+				case "set":
+				case "staticvector":
+					//ReadVector(node, processor, field, 1);
+					return;
+				case "map":
+					//ReadDictionary(node, processor, field);
+					return;
+				case "pair":
+					//ReadPair(node, processor, field);
+					return;
+				case "TypelessData": //byte array
+					//ReadByteArray(node, processor, field);
+					return;
+				case "Array":
+					//ReadArray(node, processor, field, 1);
+					return;
+			}
+
+			//ReadPrimitiveType(node, processor, field, 0);
 		}
 	}
 }
