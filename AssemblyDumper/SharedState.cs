@@ -36,7 +36,9 @@ namespace AssemblyDumper
 		{
 			Version = info.Version;
 			Strings = info.Strings;
-			ClassDictionary = info.Classes.ToDictionary(x => x.Name, x => x);
+			ClassDictionary = info.Classes.Where(y => y.TypeID < 100_000 || y.TypeID > 100_011).ToDictionary(x => x.Name, x => x);
+			//100,000 to 100,011 are excluded here because they always have null root nodes
+			//The non primitives will get re-added in pass 4
 		}
 	}
 }

@@ -77,7 +77,7 @@ namespace AssemblyDumper.Passes
 
 		private static UnityNode GetFirstNode(List<UnityClass> classes, bool isRelease, string fieldName)
 		{
-			return classes.SelectMany(klass => klass.GetSubNodes(isRelease)) //all the release subnodes
+			return classes.SelectMany(klass => klass.GetSubNodes(isRelease)) //all the subnodes
 				.FirstOrDefault(s => s.Name == fieldName); //where the field name matches
 		}
 
