@@ -1,5 +1,5 @@
 ﻿using AssemblyDumper.Unity;
-using AssemblyDumper.Utils;
+using AssetRipper.Core.Attributes;
 using Mono.Cecil;
 using System;
 using System.Linq;
@@ -8,9 +8,20 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass06_AddTypeDefinitions
 	{
+		public static MethodReference ByteSizeAttributeConstructor { get; set; }
+		public static MethodReference EditorOnlyAttributeConstructor { get; set; }
+		public static MethodReference StrippedAttributeConstructor { get; set; }
+		public static MethodReference PersistentIDAttributeConstructor { get; set; }
+
 		public static void DoPass()
 		{
 			Logger.Info("Pass 6: Add Type Definitions");
+
+			ByteSizeAttributeConstructor = SharedState.Module.ImportCommonConstructor<ByteSizeAttribute>(1);
+			EditorOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorOnlyAttribute>();
+			StrippedAttributeConstructor = SharedState.Module.ImportCommonConstructor<StrippedAttribute>();
+			PersistentIDAttributeConstructor = SharedState.Module.ImportCommonConstructor<PersistentIDAttribute>(1);
+
 			var assembly = SharedState.Assembly;
 			foreach (var pair in SharedState.ClassDictionary)
 			{
@@ -31,10 +42,10 @@ namespace AssemblyDumper.Passes
 			// if (@class.IsSealed) typeAttributes |= TypeAttributes.Sealed;
 
 			TypeDefinition typeDef = new TypeDefinition(SharedState.Classesnamespace, name, typeAttributes);
-			if (@class.IsEditorOnly) typeDef.AddCustomAttribute(CommonTypeGetter.EditorOnlyAttributeConstructor);
-			if (@class.IsStripped) typeDef.AddCustomAttribute(CommonTypeGetter.StrippedAttributeConstructor);
-			typeDef.AddCustomAttribute(CommonTypeGetter.PersistentIDAttributeConstructor, SystemTypeGetter.Int32, @class.TypeID);
-			typeDef.AddCustomAttribute(CommonTypeGetter.ByteSizeAttributeConstructor, SystemTypeGetter.Int32, @class.Size);
+			if (@class.IsEditorOnly) typeDef.AddCustomAttribute(EditorOnlyAttributeConstructor);
+			if (@class.IsStripped) typeDef.AddCustomAttribute(StrippedAttributeConstructor);
+			typeDef.AddCustomAttribute(PersistentIDAttributeConstructor, SystemTypeGetter.Int32, @class.TypeID);
+			typeDef.AddCustomAttribute(ByteSizeAttributeConstructor, SystemTypeGetter.Int32, @class.Size);
 
 			_this.MainModule.Types.Add(typeDef);
 

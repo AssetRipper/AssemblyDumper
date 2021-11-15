@@ -12,23 +12,6 @@ namespace AssemblyDumper
 		public static AssemblyDefinition CommonAssembly { get; set; }
 		private static ModuleDefinition generatedModule;
 
-		//Attributes
-		public static MethodReference ByteSizeAttributeConstructor => generatedModule.ImportCommonConstructor<ByteSizeAttribute>(1);
-		public static MethodReference EditorOnlyAttributeConstructor => generatedModule.ImportCommonConstructor<EditorOnlyAttribute>();
-		public static MethodReference StrippedAttributeConstructor => generatedModule.ImportCommonConstructor<StrippedAttribute>();
-		public static MethodReference PersistentIDAttributeConstructor => generatedModule.ImportCommonConstructor<PersistentIDAttribute>(1);
-		public static MethodReference ReleaseOnlyAttributeConstructor => generatedModule.ImportCommonConstructor<ReleaseOnlyAttribute>();
-		public static MethodReference FixedLengthAttributeConstructor => generatedModule.ImportCommonConstructor<FixedLengthAttribute>(1);
-		public static MethodReference EditorMetaFlagsAttributeConstructor => generatedModule.ImportCommonConstructor<EditorMetaFlagsAttribute>(1);
-		public static MethodReference ReleaseMetaFlagsAttributeConstructor => generatedModule.ImportCommonConstructor<ReleaseMetaFlagsAttribute>(1);
-		public static MethodReference RegisterAssemblyAttributeConstructor => generatedModule.ImportCommonConstructor<RegisterAssemblyAttribute>(1);
-		public static MethodReference RegisterAssetTypeAttributeConstructor => generatedModule.ImportCommonConstructor<RegisterAssetTypeAttribute>(3);
-
-		public static TypeReference UnityObjectBaseDefinition => generatedModule.ImportCommonType<UnityObjectBase>();
-		public static TypeReference UnityAssetBaseDefinition => generatedModule.ImportCommonType<UnityAssetBase>();
-		public static TypeReference UnityVersionDefinition => generatedModule.ImportCommonType<AssetRipper.Core.Parser.Files.UnityVersion>();
-		public static TypeReference TransferMetaFlagsDefinition => generatedModule.ImportCommonType<AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TransferMetaFlags>();
-
 		//Reading
 		public static TypeReference AssetReaderDefinition => generatedModule.ImportCommonType<AssetRipper.Core.IO.Asset.AssetReader>();
 		public static TypeReference EndianReaderDefinition => generatedModule.ImportCommonType<AssetRipper.Core.IO.Endian.EndianReader>();

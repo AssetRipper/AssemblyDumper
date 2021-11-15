@@ -1,4 +1,5 @@
-﻿using Mono.Cecil;
+﻿using AssetRipper.Core.Attributes;
+using Mono.Cecil;
 using System.Linq;
 
 namespace AssemblyDumper.Passes
@@ -20,14 +21,17 @@ namespace AssemblyDumper.Passes
 
 		private static void AddVersionAttribute(this AssemblyDefinition _this, string versionString)
 		{
-			var attrDef = new CustomAttribute(CommonTypeGetter.RegisterAssemblyAttributeConstructor);
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(CommonTypeGetter.UnityVersionDefinition, versionString));
+			var registerAssemblyAttributeConstructor = _this.MainModule.ImportCommonConstructor<RegisterAssemblyAttribute>(1);
+			var attrDef = new CustomAttribute(registerAssemblyAttributeConstructor);
+			var unityVersionDefinition = _this.MainModule.ImportCommonType<AssetRipper.Core.Parser.Files.UnityVersion>();
+			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(unityVersionDefinition, versionString));
 			_this.CustomAttributes.Add(attrDef);
 		}
 
 		private static void AddAssetTypeAttribute(this AssemblyDefinition _this, string typeName, int idNumber, TypeReference type)
 		{
-			var attrDef = new CustomAttribute(CommonTypeGetter.RegisterAssetTypeAttributeConstructor);
+			var registerAssetTypeAttributeConstructor = _this.MainModule.ImportCommonConstructor<RegisterAssetTypeAttribute>(3);
+			var attrDef = new CustomAttribute(registerAssetTypeAttributeConstructor);
 			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.String, typeName));
 			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.Int32, idNumber));
 			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.Type, type));

@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using AssemblyDumper.Unity;
+using AssetRipper.Core.Attributes;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
 
@@ -7,9 +8,21 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass15_AddFields
 	{
+		private static MethodReference ReleaseOnlyAttributeConstructor { get; set; }
+		private static MethodReference EditorOnlyAttributeConstructor { get; set; }
+		private static TypeReference TransferMetaFlagsDefinition { get; set; }
+		private static MethodReference EditorMetaFlagsAttributeConstructor { get; set; }
+		private static MethodReference ReleaseMetaFlagsAttributeConstructor { get; set; }
+
 		public static void DoPass()
 		{
 			Logger.Info("Pass 15: Add Fields");
+
+			ReleaseOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<ReleaseOnlyAttribute>();
+			EditorOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorOnlyAttribute>();
+			TransferMetaFlagsDefinition = SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TransferMetaFlags>();
+			EditorMetaFlagsAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorMetaFlagsAttribute>(1);
+			ReleaseMetaFlagsAttributeConstructor = SharedState.Module.ImportCommonConstructor<ReleaseMetaFlagsAttribute>(1);
 
 			foreach (var (name, unityClass) in SharedState.ClassDictionary)
 			{
@@ -41,7 +54,7 @@ namespace AssemblyDumper.Passes
 						{
 							var releaseOnlyFieldDef = new FieldDefinition(releaseField.Name, FieldAttributes.Public, releaseOnlyFieldType);
 							releaseOnlyFieldDef.AddReleaseFlagAttribute(releaseField.MetaFlag);
-							releaseOnlyFieldDef.AddCustomAttribute(CommonTypeGetter.ReleaseOnlyAttributeConstructor);
+							releaseOnlyFieldDef.AddCustomAttribute(ReleaseOnlyAttributeConstructor);
 							type.Fields.Add(releaseOnlyFieldDef);
 						}
 
@@ -70,7 +83,7 @@ namespace AssemblyDumper.Passes
 					var fieldDef = new FieldDefinition(editorField.Name, FieldAttributes.Public, fieldType);
 
 					if (!isInReleaseToo)
-						fieldDef.AddCustomAttribute(CommonTypeGetter.EditorOnlyAttributeConstructor);
+						fieldDef.AddCustomAttribute(EditorOnlyAttributeConstructor);
 					else
 						fieldDef.AddReleaseFlagAttribute(releaseField.MetaFlag);
 
@@ -90,7 +103,7 @@ namespace AssemblyDumper.Passes
 					{
 						var releaseOnlyFieldDef = new FieldDefinition(releaseField.Name, FieldAttributes.Public, releaseOnlyFieldType);
 						releaseOnlyFieldDef.AddReleaseFlagAttribute(releaseField.MetaFlag);
-						releaseOnlyFieldDef.AddCustomAttribute(CommonTypeGetter.ReleaseOnlyAttributeConstructor);
+						releaseOnlyFieldDef.AddCustomAttribute(ReleaseOnlyAttributeConstructor);
 						type.Fields.Add(releaseOnlyFieldDef);
 					}
 
@@ -177,15 +190,15 @@ namespace AssemblyDumper.Passes
 
 		private static void AddReleaseFlagAttribute(this FieldDefinition _this, int flags)
 		{
-			var attrDef = new CustomAttribute(CommonTypeGetter.ReleaseMetaFlagsAttributeConstructor);
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(CommonTypeGetter.TransferMetaFlagsDefinition, flags));
+			var attrDef = new CustomAttribute(ReleaseMetaFlagsAttributeConstructor);
+			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(TransferMetaFlagsDefinition, flags));
 			_this.CustomAttributes.Add(attrDef);
 		}
 
 		private static void AddEditorFlagAttribute(this FieldDefinition _this, int flags)
 		{
-			var attrDef = new CustomAttribute(CommonTypeGetter.EditorMetaFlagsAttributeConstructor);
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(CommonTypeGetter.TransferMetaFlagsDefinition, flags));
+			var attrDef = new CustomAttribute(EditorMetaFlagsAttributeConstructor);
+			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(TransferMetaFlagsDefinition, flags));
 			_this.CustomAttributes.Add(attrDef);
 		}
 

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using AssetRipper.Core;
+using Mono.Cecil;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace AssemblyDumper.Passes
@@ -9,6 +11,8 @@ namespace AssemblyDumper.Passes
 		{
 			Logger.Info("Pass 7: Apply Inheritance");
 
+			TypeReference unityObjectBaseDefinition = SharedState.Module.ImportCommonType<UnityObjectBase>();
+			TypeReference unityAssetBaseDefinition = SharedState.Module.ImportCommonType<UnityAssetBase>();
 
 			foreach (var pair in SharedState.ClassDictionary)
 			{
@@ -17,9 +21,9 @@ namespace AssemblyDumper.Passes
 				if (string.IsNullOrEmpty(pair.Value.Base))
 				{
 					if (pair.Key == "Object")
-						SharedState.TypeDictionary[pair.Key].BaseType = CommonTypeGetter.UnityObjectBaseDefinition;
+						SharedState.TypeDictionary[pair.Key].BaseType = unityObjectBaseDefinition;
 					else
-						SharedState.TypeDictionary[pair.Key].BaseType = CommonTypeGetter.UnityAssetBaseDefinition;
+						SharedState.TypeDictionary[pair.Key].BaseType = unityAssetBaseDefinition;
 				}
 				else
 				{
