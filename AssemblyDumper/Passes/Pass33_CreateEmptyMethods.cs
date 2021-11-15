@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using Mono.Cecil.Rocks;
 
 namespace AssemblyDumper.Passes
 {
@@ -34,12 +35,25 @@ namespace AssemblyDumper.Passes
 				var editorYamlDef = new MethodDefinition("ExportYAMLEditor", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.ReuseSlot | MethodAttributes.HideBySig, CommonTypeGetter.YAMLNodeDefinition);
 				editorYamlDef.Parameters.Add(new("container", ParameterAttributes.None, CommonTypeGetter.IExportContainerDefinition));
 
+				var typeTreeNodeRef = SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TypeTree.TypeTreeNode>();
+				var typeTreeNodeListRef = SystemTypeGetter.List.MakeGenericInstanceType(typeTreeNodeRef);
+
+				var releaseTypeTreeDef = new MethodDefinition("MakeReleaseTypeTreeNodes", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.ReuseSlot | MethodAttributes.HideBySig, typeTreeNodeListRef);
+				releaseTypeTreeDef.Parameters.Add(new("depth", ParameterAttributes.None, SystemTypeGetter.Int32));
+				releaseTypeTreeDef.Parameters.Add(new("startingIndex", ParameterAttributes.None, SystemTypeGetter.Int32));
+
+				var editorTypeTreeDef = new MethodDefinition("MakeEditorTypeTreeNodes", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.ReuseSlot | MethodAttributes.HideBySig, typeTreeNodeListRef);
+				editorTypeTreeDef.Parameters.Add(new("depth", ParameterAttributes.None, SystemTypeGetter.Int32));
+				editorTypeTreeDef.Parameters.Add(new("startingIndex", ParameterAttributes.None, SystemTypeGetter.Int32));
+
 				type.Methods.Add(releaseReadDef);
 				type.Methods.Add(editorReadDef);
 				type.Methods.Add(releaseWriteDef);
 				type.Methods.Add(editorWriteDef);
 				type.Methods.Add(releaseYamlDef);
 				type.Methods.Add(editorYamlDef);
+				type.Methods.Add(releaseTypeTreeDef);
+				type.Methods.Add(editorTypeTreeDef);
 			}
 		}
 	}

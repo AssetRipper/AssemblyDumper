@@ -60,10 +60,12 @@ namespace AssemblyDumper
 		public static TypeReference UInt64 { get; private set; }
 		public static TypeReference String { get; private set; }
 		public static TypeReference Dictionary { get; private set; }
+		public static TypeReference List { get; private set; }
 		public static TypeReference KeyValuePair { get; private set; }
 		public static TypeReference Type { get; private set; }
 		public static TypeReference Void { get; private set; }
 		public static TypeReference BinaryReader { get; private set; }
+		public static MethodReference NotSupportedExceptionConstructor { get; private set; }
 
 		public static void Initialize(ModuleDefinition module)
 		{
@@ -77,10 +79,12 @@ namespace AssemblyDumper
 			UInt64 = module.ImportSystemType("System.UInt64");
 			String = module.ImportSystemType("System.String");
 			Dictionary = module.ImportSystemType("System.Collections.Generic.Dictionary`2");
+			List = module.ImportSystemType("System.Collections.Generic.List`1");
 			KeyValuePair = module.ImportSystemType("System.Collections.Generic.KeyValuePair`2");
 			Type = module.ImportSystemType("System.Type");
 			Void = module.ImportSystemType("System.Void");
 			BinaryReader = module.ImportSystemType("System.IO.BinaryReader");
+			NotSupportedExceptionConstructor = module.ImportSystemDefaultConstructor("System.NotSupportedException");
 		}
 
 		public static TypeReference ImportSystemType(this ModuleDefinition module, string typeFullName)
@@ -88,7 +92,7 @@ namespace AssemblyDumper
 			return module.ImportReference(LookupSystemType(typeFullName));
 		}
 
-		public static MethodReference ImportDefaultConstructor(this ModuleDefinition module, string typeFullName)
+		public static MethodReference ImportSystemDefaultConstructor(this ModuleDefinition module, string typeFullName)
 		{
 			return module.ImportReference(LookupSystemType(typeFullName).GetDefaultConstructor());
 		}

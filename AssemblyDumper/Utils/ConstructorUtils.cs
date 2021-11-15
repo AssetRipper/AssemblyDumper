@@ -36,7 +36,7 @@ namespace AssemblyDumper.Utils
 			MethodReference baseConstructor;
 			if (typeDefinition.BaseType == null)
 			{
-				baseConstructor = module.ImportDefaultConstructor("System.Object");
+				baseConstructor = module.ImportSystemDefaultConstructor("System.Object");
 			}
 			else
 			{
@@ -50,7 +50,7 @@ namespace AssemblyDumper.Utils
 				}
 				else
 				{
-					baseConstructor = module.ImportDefaultConstructor(typeDefinition.BaseType.FullName);
+					baseConstructor = module.ImportSystemDefaultConstructor(typeDefinition.BaseType.FullName);
 				}
 			}
 

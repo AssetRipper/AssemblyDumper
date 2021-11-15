@@ -8,6 +8,7 @@ namespace AssemblyDumper
 	public static class SharedState
 	{
 		public static AssemblyDefinition Assembly { get; set; }
+		public static ModuleDefinition Module => Assembly.MainModule;
 		public static string Version { get; private set; }
 		public static List<UnityString> Strings { get; private set; }
 		public static Dictionary<string, UnityClass> ClassDictionary { get; private set; }
