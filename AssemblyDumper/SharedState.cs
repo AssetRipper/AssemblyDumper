@@ -11,7 +11,13 @@ namespace AssemblyDumper
 		public static ModuleDefinition Module => Assembly.MainModule;
 		public static string Version { get; private set; }
 		public static List<UnityString> Strings { get; private set; }
+		/// <summary>
+		/// The name of the class (no namespace) : its UnityClass object
+		/// </summary>
 		public static Dictionary<string, UnityClass> ClassDictionary { get; private set; }
+		/// <summary>
+		/// The name of the class (no namespace) : its generated TypeDefinition
+		/// </summary>
 		public static Dictionary<string, TypeDefinition> TypeDictionary { get; } = new Dictionary<string, TypeDefinition>();
 
 

@@ -5,19 +5,61 @@ namespace AssemblyDumper.Unity
 {
 	public class UnityClass
 	{
+		/// <summary>
+		/// The name of the class not including the namespace
+		/// </summary>
 		public string Name { get; set; }
+		/// <summary>
+		/// The namespace of the class if it exists
+		/// </summary>
 		public string Namespace { get; set; }
+		/// <summary>
+		/// The full name of the class including the namespace but not an assembly specification
+		/// </summary>
 		public string FullName { get; set; }
+		/// <summary>
+		/// The module containing the class
+		/// </summary>
 		public string Module { get; set; }
+		/// <summary>
+		/// The unique number used to identify the class
+		/// </summary>
 		public int TypeID { get; set; }
+		/// <summary>
+		/// The name of the base class if it exists. Namespace not included
+		/// </summary>
 		public string Base { get; set; }
+		/// <summary>
+		/// The names of the classes that directly derive from this. Namespaces not included
+		/// </summary>
 		public List<string> Derived { get; set; }
+		/// <summary>
+		/// The count of all classes that descend from this class
+		/// </summary>
 		public uint DescendantCount { get; set; }
+		/// <summary>
+		/// The size in bytes of one object. Doesn't include alignments. May be wildly inaccurate, especially for classes with variable size.
+		/// </summary>
 		public int Size { get; set; }
+		/// <summary>
+		/// The zero based index of this class in the list of acquired classes. Doesn't mean much.
+		/// </summary>
 		public uint TypeIndex { get; set; }
+		/// <summary>
+		/// Is the class abstract?
+		/// </summary>
 		public bool IsAbstract { get; set; }
+		/// <summary>
+		/// Is the class sealed?
+		/// </summary>
 		public bool IsSealed { get; set; }
+		/// <summary>
+		/// Does the class only appear in the editor?
+		/// </summary>
 		public bool IsEditorOnly { get; set; }
+		/// <summary>
+		/// Is the class stripped?
+		/// </summary>
 		public bool IsStripped { get; set; }
 		public UnityNode EditorRootNode { get; set; }
 		public UnityNode ReleaseRootNode { get; set; }

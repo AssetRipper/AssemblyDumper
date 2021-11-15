@@ -7,87 +7,157 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass12_UnifyFieldsOfAbstractTypes
 	{
+		private const float MinMatchingProportion = 0.8f;
 		public static void DoPass()
 		{
 			Logger.Info("Pass 12: Merging fields of abstract types");
-			//We need to get all abstract classes, and we need to do them in order of highest abstraction to lowest.
-			//Easy part first - abstract
-			var abstractClasses = SharedState.ClassDictionary.Values.Where(c => c.IsAbstract).ToList();
 
-			//Now sort so that most-base classes are first, or more crucially, before any of their subclasses. 
-			abstractClasses.Sort((b, a) => a.IsSubclassOf(b) ? 1 : b.IsSubclassOf(a) ? -1 : 0);
+			//We need to get all abstract classes, and we need to do them in order of lowest abstraction to highest.
+			//In other words, the most derived classes should be done first, so their values can be used for their own base classes
 
-			foreach (var abstractClass in abstractClasses)
+			//Get all the abstract classes
+			List<UnityClass> abstractClasses = SharedState.ClassDictionary.Values.Where(c => c.IsAbstract).ToList();
+
+			//Now sort so that most-derived classes are first, or more crucially, before any of their base classes. 
+			abstractClasses.Sort((a, b) => Compare(a, b));
+
+			foreach (UnityClass abstractClass in abstractClasses)
 			{
 				// Logger.Info($"\t{abstractClass.Name}");
-				abstractClass.EditorRootNode = new()
-				{
-					Name = "Base",
-					TypeName = abstractClass.Name,
-					Index = 0,
-					Level = 0,
-					SubNodes = new(),
-					Version = 1,
-				};
-				abstractClass.ReleaseRootNode = new()
-				{
-					Name = "Base",
-					TypeName = abstractClass.Name,
-					Index = 0,
-					Level = 0,
-					SubNodes = new(),
-					Version = 1,
-				};
+				abstractClass.InitializeRootNodes();
 
-				var derived = abstractClass.AllNonAbstractDerivedClasses();
+				var derived = abstractClass.AllDerivedClasses();
 
 				if (derived.Count == 0)
 					continue;
 
-				var derivedClass = derived.First();
-
 				//Handle editor node
-				for (var editorIdx = 0; editorIdx < derivedClass?.EditorRootNode?.SubNodes?.Count; editorIdx++)
+				foreach (string editorFieldName in GetAllFieldNames(derived, false))
 				{
-					var subNode = derivedClass.EditorRootNode.SubNodes[editorIdx];
-
-					var mismatching = derived.Where(d => d?.EditorRootNode?.SubNodes?.Count <= editorIdx || d?.EditorRootNode?.SubNodes[editorIdx].Name != subNode.Name).ToList();
-					if (mismatching.Count >= Math.Ceiling(derived.Count / 10.0))
+					float matchProportion = GetWeightedMatching(derived, false, editorFieldName);
+					if(matchProportion < MinMatchingProportion)
 					{
-						//Mismatch in at least one derived class, break out.
-						// Logger.Info($"\t\tField {subNode.Name} not present at index {editorIdx} in {mismatching.Count} derived types, e.g. {mismatching.First().Name}");
+						//Mismatch in too many descendent classes, break out.
 						break;
 					}
 
 					//This field is common to all sub classes. Add it to base.
+					UnityNode subNode = GetFirstNode(derived, false, editorFieldName);
 					// Logger.Info($"\t\tCopying field {subNode.Name} to EDITOR");
 					abstractClass.EditorRootNode.SubNodes.Add(subNode.DeepClone());
 				}
 
 				//Handle release node
-				for (var releaseIdx = 0; releaseIdx < derivedClass?.ReleaseRootNode?.SubNodes?.Count; releaseIdx++)
+				foreach (string releaseFieldName in GetAllFieldNames(derived, true))
 				{
-					var subNode = derivedClass.ReleaseRootNode.SubNodes[releaseIdx];
-
-					var mismatching = derived.Where(d => d?.ReleaseRootNode?.SubNodes?.Count <= releaseIdx || d?.ReleaseRootNode?.SubNodes[releaseIdx].Name != subNode.Name).ToList();
-					if (mismatching.Count >= Math.Ceiling(derived.Count / 10.0))
+					float matchProportion = GetWeightedMatching(derived, true, releaseFieldName);
+					if (matchProportion < MinMatchingProportion)
 					{
-						//Mismatch in at least one derived class, break out.
-						// Logger.Info($"\t\tField {subNode.Name} not present at index {releaseIdx} in {mismatching.Count} derived types, e.g. {mismatching.First().Name}");
+						//Mismatch in too many descendent classes, break out.
 						break;
 					}
 
 					//This field is common to all sub classes. Add it to base.
-					// Logger.Info($"\t\tCopying field {subNode.Name} to RELEASE");
+					UnityNode subNode = GetFirstNode(derived, true, releaseFieldName);
+					// Logger.Info($"\t\tCopying field {subNode.Name} to EDITOR");
 					abstractClass.ReleaseRootNode.SubNodes.Add(subNode.DeepClone());
 				}
 			}
 		}
 
-		private static List<UnityClass> AllNonAbstractDerivedClasses(this UnityClass parent) => parent.Derived
-			.Select(c => SharedState.ClassDictionary[c])
-			//.Where(c => !c.IsAbstract)
-			.ToList();
+		private static List<UnityClass> AllDerivedClasses(this UnityClass parent) => parent.Derived.Select(c => SharedState.ClassDictionary[c]).ToList();
+
+		private static List<string> GetAllFieldNames(List<UnityClass> classes, bool isRelease)
+		{
+			return classes.SelectMany(klass => klass.GetSubNodes(isRelease)) //all the subnodes
+				.Select(s => s.Name) //convert to their field name
+				.Distinct() //remove duplicates
+				.ToList(); //make list
+		}
+
+		private static UnityNode GetFirstNode(List<UnityClass> classes, bool isRelease, string fieldName)
+		{
+			return classes.SelectMany(klass => klass.GetSubNodes(isRelease)) //all the release subnodes
+				.FirstOrDefault(s => s.Name == fieldName); //where the field name matches
+		}
+
+		private static List<UnityNode> GetSubNodes(this UnityClass klass, bool isRelease)
+		{
+			var result = isRelease ? klass.ReleaseRootNode?.SubNodes : klass.EditorRootNode?.SubNodes;
+			return result ?? new List<UnityNode>();
+		}
+
+		private static float GetWeightedMatching(List<UnityClass> classes, bool isRelease, string fieldName)
+		{
+			uint total = 0;
+			uint matching = 0;
+
+			foreach(UnityClass unityClass in classes)
+			{
+				if (isRelease)
+				{
+					if (unityClass.ReleaseRootNode.ContainsField(fieldName))
+					{
+						matching += unityClass.DescendantCount + 1;
+					}
+				}
+				else
+				{
+					if (unityClass.EditorRootNode.ContainsField(fieldName))
+					{
+						matching += unityClass.DescendantCount + 1;
+					}
+				}
+				total += unityClass.DescendantCount + 1;
+			}
+
+			return (float)matching / total;
+		}
+
+		private static bool ContainsField(this UnityNode rootNode, string fieldName)
+		{
+			return rootNode?.SubNodes?.Select(node => node.Name).Contains(fieldName) ?? false;
+		}
+
+		private static void InitializeRootNodes(this UnityClass abstractClass)
+		{
+			abstractClass.EditorRootNode ??= new()
+			{
+				Name = "Base",
+				TypeName = abstractClass.Name,
+				Index = 0,
+				Level = 0,
+				SubNodes = new(),
+				Version = 1,
+			};
+			abstractClass.ReleaseRootNode ??= new()
+			{
+				Name = "Base",
+				TypeName = abstractClass.Name,
+				Index = 0,
+				Level = 0,
+				SubNodes = new(),
+				Version = 1,
+			};
+		}
+
+		/// <summary>
+		/// A compare function favoring less derivation
+		/// </summary>
+		/// <returns>
+		/// -1 if the left derives from the right<br/>
+		/// 1 if the right derives from the left<br/>
+		/// 0 if neither derives from the other
+		/// </returns>
+		private static int Compare(UnityClass left, UnityClass right)
+		{
+			if(left.IsSubclassOf(right))
+				return -1;
+			else if(right.IsSubclassOf(left))
+				return 1;
+			else
+				return 0;
+		}
 
 		private static bool IsSubclassOf(this UnityClass potentialSubClass, UnityClass potentialSuperClass)
 		{
