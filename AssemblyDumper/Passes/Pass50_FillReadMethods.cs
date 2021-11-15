@@ -519,8 +519,8 @@ namespace AssemblyDumper.Passes
 
 			//Resolve things we'll need
 			var genericDictType = ResolveDictionaryType(processor, node);
-			var genericDictCtor = MakeConstructorOnGenericType(genericDictType, 0);
-			var addMethod = MakeMethodOnGenericType(genericDictType.Resolve().Methods.First(m => m.Name == "Add"), genericDictType);
+			var genericDictCtor = MethodUtils.MakeConstructorOnGenericType(genericDictType, 0);
+			var addMethod = MethodUtils.MakeMethodOnGenericType(genericDictType.Resolve().Methods.First(m => m.Name == "Add"), genericDictType);
 
 			//Read length of array
 			var intReader = processor.Body.Method.Module.ImportReference(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadInt32"));
@@ -602,7 +602,7 @@ namespace AssemblyDumper.Passes
 
 			var genericKvp = ResolvePairType(processor, first, second);
 
-			var genericCtor = MakeConstructorOnGenericType(genericKvp, 2);
+			var genericCtor = MethodUtils.MakeConstructorOnGenericType(genericKvp, 2);
 
 			//Call constructor
 			processor.Emit(OpCodes.Newobj, genericCtor);
@@ -610,30 +610,6 @@ namespace AssemblyDumper.Passes
 			//Store in field if desired
 			if (field != null)
 				processor.Emit(OpCodes.Stfld, field);
-		}
-
-		private static MethodReference MakeConstructorOnGenericType(GenericInstanceType instanceType, int paramCount)
-		{
-			//Get ctor
-			var ctor = instanceType.Resolve().Methods.First(m => m.Name == ".ctor" && m.Parameters.Count == paramCount);
-
-			return MakeMethodOnGenericType(ctor, instanceType);
-		}
-
-		private static MethodReference MakeMethodOnGenericType(MethodDefinition definition, GenericInstanceType instanceType)
-		{
-			//Make the constructor on the generic type
-			//Cecil sucks.
-			var genericMethod = new MethodReference(definition.Name, definition.ReturnType)
-			{
-				DeclaringType = instanceType,
-				HasThis = definition.HasThis,
-				ExplicitThis = definition.ExplicitThis,
-				CallingConvention = definition.CallingConvention,
-			};
-			definition.Parameters.ToList().ForEach(genericMethod.Parameters.Add);
-			definition.GenericParameters.ToList().ForEach(genericMethod.GenericParameters.Add);
-			return genericMethod;
 		}
 
 		private static GenericInstanceType ResolveDictionaryType(ILProcessor processor, UnityNode node)
