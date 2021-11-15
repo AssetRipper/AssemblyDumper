@@ -99,6 +99,9 @@ namespace AssemblyDumper.Passes
 				case "Array":
 					ReadArray(node, processor, field, 1);
 					return;
+				case "OffsetPtr":
+					ReadOffsetPtr(node, processor, field, 0);
+					return;
 			}
 
 			ReadPrimitiveType(node, processor, field, 0);
@@ -221,6 +224,30 @@ namespace AssemblyDumper.Passes
 			MaybeAlignBytes(node, processor);
 		}
 
+		private static void ReadOffsetPtr(UnityNode node, ILProcessor processor, FieldDefinition field, int arrayDepth)
+		{
+			var typeNode = node.SubNodes.Single();
+			if (arrayDepth == 0)
+			{
+				ReadFieldContent(typeNode, processor, field);
+			}
+			else if (arrayDepth == 1)
+			{
+				if (SharedState.TypeDictionary.TryGetValue(typeNode.TypeName, out var fieldType))
+				{
+					ReadAssetType(typeNode, processor, field, fieldType, arrayDepth);
+				}
+				else
+				{
+					ReadPrimitiveType(typeNode, processor, field, arrayDepth);
+				}
+			}
+			else
+			{
+				throw new ArgumentOutOfRangeException(nameof(arrayDepth), $"Unsupported array depth: {arrayDepth}");
+			}
+		}
+
 		private static void ReadVector(UnityNode node, ILProcessor processor, FieldDefinition field, int arrayDepth)
 		{
 			var listTypeNode = node.SubNodes[0];
@@ -271,6 +298,9 @@ namespace AssemblyDumper.Passes
 						}
 
 						ReadPairArray(processor, field, listTypeNode);
+						break;
+					case "OffsetPtr":
+						ReadOffsetPtr(listTypeNode, processor, field, arrayDepth);
 						break;
 					default:
 						ReadPrimitiveType(listTypeNode, processor, field, arrayDepth);

@@ -76,7 +76,8 @@ namespace AssemblyDumper.Passes
 			"second",
 			"set",
 			"staticvector",
-			"vector"
+			"vector",
+			"OffsetPtr"
 		};
 
 		public static void DoPass()
