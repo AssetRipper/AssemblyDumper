@@ -137,11 +137,21 @@ namespace AssemblyDumper.Passes
 					{
 						var newNode = subnode.DeepClone();
 						newNode.Name = "Base";
+						newNode.RecalculateLevel(0); //Needed for type tree method generation
 						dict.Add(typeName, newNode);
 					}
 
 					AddDependentTypes(subnode, dict);
 				}
+			}
+		}
+
+		private static void RecalculateLevel(this UnityNode node, int depth)
+		{
+			node.Level = (byte)depth;
+			foreach(var subNode in node.SubNodes)
+			{
+				RecalculateLevel(subNode, depth + 1);
 			}
 		}
 
