@@ -1,6 +1,4 @@
 ﻿using AssemblyDumper.Utils;
-using AssetRipper.Core;
-using AssetRipper.Core.Attributes;
 using Mono.Cecil;
 using System;
 using System.Linq;

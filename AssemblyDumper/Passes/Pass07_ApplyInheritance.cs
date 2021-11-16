@@ -1,6 +1,5 @@
 ﻿using AssetRipper.Core;
 using Mono.Cecil;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace AssemblyDumper.Passes

@@ -4,11 +4,7 @@ using AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TypeTree;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AssemblyDumper.Passes
 {
