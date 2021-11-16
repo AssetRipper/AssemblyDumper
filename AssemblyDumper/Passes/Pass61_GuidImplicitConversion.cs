@@ -1,17 +1,12 @@
 ﻿using AssetRipper.Core.Classes.Misc;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AssemblyDumper.Passes
 {
 	public static class Pass61_GuidImplicitConversion
 	{
-		private static TypeReference commonHashType;
 		public static void DoPass()
 		{
 			Logger.Info("Pass 61: GUID Implicit Conversion");
