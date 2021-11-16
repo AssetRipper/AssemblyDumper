@@ -134,7 +134,7 @@ namespace AssemblyDumper.Passes
 				0 => CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}") //String
 				     ?? CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}")
 				     ?? SystemTypeGetter.BinaryReader.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}"), //Byte, SByte, and Boolean
-				1 => CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}Array"),
+				1 => CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}Array" && m.Parameters.Count == 1),
 				2 => CommonTypeGetter.EndianReaderExtensionsDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}ArrayArray"),
 				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth), $"ReadPrimitiveType does not support array depth '{arrayDepth}'"),
 			};
@@ -150,6 +150,11 @@ namespace AssemblyDumper.Passes
 
 			//Load reader
 			processor.Emit(OpCodes.Ldarg_1);
+
+			if (arrayDepth == 1)//Read{Primitive}Array has an allowAlignment parameter
+			{
+				processor.Emit(OpCodes.Ldc_I4, 0);//load false onto the stack
+			}
 
 			//Call read method
 			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(primitiveReadMethod));
@@ -179,14 +184,19 @@ namespace AssemblyDumper.Passes
 			MethodDefinition readMethod = arrayDepth switch
 			{
 				0 => CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadAsset"),
-				1 => CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadAssetArray"),
-				2 => CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadAssetArrayArray"),
+				1 => CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadAssetArray" && m.Parameters.Count == 1),
+				2 => CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadAssetArrayArray" && m.Parameters.Count == 1),
 				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth), $"ReadAssetType does not support array depth '{arrayDepth}'"),
 			};
 
 			//Make generic ReadAsset<T>
 			var genericInst = new GenericInstanceMethod(readMethod);
 			genericInst.GenericArguments.Add(processor.Body.Method.Module.ImportReference(fieldType));
+
+			if (arrayDepth > 0)//ReadAssetArray and ReadAssetArrayArray have an allowAlignment parameter
+			{
+				processor.Emit(OpCodes.Ldc_I4, 0);//load false onto the stack
+			}
 
 			//Call it
 			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(genericInst));
