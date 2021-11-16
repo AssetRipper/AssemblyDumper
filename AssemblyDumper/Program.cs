@@ -85,6 +85,7 @@ namespace AssemblyDumper
 				Pass53_FillTypeTreeMethods.DoPass();
 
 				Pass60_PPtrImplicitConversions.DoPass();
+				Pass61_GuidImplicitConversion.DoPass();
 
 				Pass98_ApplyAssemblyAttributes.DoPass();
 				Pass99_SaveAssembly.DoPass(options.OutputDirectory);
