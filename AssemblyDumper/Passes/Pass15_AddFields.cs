@@ -183,7 +183,7 @@ namespace AssemblyDumper.Passes
 						if (offsetPtrType != null)
 							return offsetPtrType;
 
-						Logger.Info($"WARNING: Could not resolve array parameter {offsetPtrTypeNode.TypeName}");
+						Logger.Info($"WARNING: Could not resolve offset ptr parameter {offsetPtrTypeNode.TypeName}");
 						return null;
 				}
 			}
