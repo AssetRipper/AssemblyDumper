@@ -64,6 +64,7 @@ namespace AssemblyDumper
 		public static TypeReference KeyValuePair { get; private set; }
 		public static TypeReference Type { get; private set; }
 		public static TypeReference Void { get; private set; }
+		public static TypeReference Object { get; private set; }
 		public static TypeReference BinaryReader { get; private set; }
 		public static MethodReference NotSupportedExceptionConstructor { get; private set; }
 
@@ -83,6 +84,7 @@ namespace AssemblyDumper
 			KeyValuePair = module.ImportSystemType("System.Collections.Generic.KeyValuePair`2");
 			Type = module.ImportSystemType("System.Type");
 			Void = module.ImportSystemType("System.Void");
+			Object = module.ImportSystemType("System.Object");
 			BinaryReader = module.ImportSystemType("System.IO.BinaryReader");
 			NotSupportedExceptionConstructor = module.ImportSystemDefaultConstructor("System.NotSupportedException");
 		}

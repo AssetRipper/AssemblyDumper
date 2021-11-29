@@ -69,6 +69,7 @@ namespace AssemblyDumper
 			{
 #endif
 				Pass00_Initialize.DoPass(options.JsonPath.FullName, options.SystemRuntimeAssembly.FullName, options.SystemCollectionsAssembly.FullName);
+				Pass01_CreateBasicTypes.DoPass();
 				Pass04_ExtractDependentNodeTrees.DoPass();
 				Pass06_AddTypeDefinitions.DoPass();
 				Pass07_ApplyInheritance.DoPass();
