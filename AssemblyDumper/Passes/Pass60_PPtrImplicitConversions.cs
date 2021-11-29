@@ -20,7 +20,7 @@ namespace AssemblyDumper.Passes
 			{
 				if (name.StartsWith("PPtr<"))
 				{
-					string parameterTypeName = name.Substring(5, name.Length - 6);
+					string parameterTypeName = name.Substring(5, name.LastIndexOf('>') - 5);
 					TypeDefinition parameterType = SharedState.TypeDictionary[parameterTypeName];
 					TypeDefinition pptrType = SharedState.TypeDictionary[name];
 					AddImplicitConversion(pptrType, parameterType);

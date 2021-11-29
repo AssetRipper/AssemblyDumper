@@ -73,13 +73,13 @@ namespace AssemblyDumper.Passes
 
 		private static void ReadFieldContent(UnityNode node, ILProcessor processor, FieldDefinition field)
 		{
-			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out var fieldType))
+			if (SharedState.TypeDictionary.TryGetValue(node.GetRelevantTypeName(), out var fieldType))
 			{
 				ReadAssetType(node, processor, field, fieldType, 0);
 				return;
 			}
 
-			switch (node.TypeName)
+			switch (node.GetRelevantTypeName())
 			{
 				//TODO
 				case "vector":
@@ -98,9 +98,6 @@ namespace AssemblyDumper.Passes
 					return;
 				case "Array":
 					ReadArray(node, processor, field, 1);
-					return;
-				case "OffsetPtr":
-					ReadOffsetPtr(node, processor, field, 0);
 					return;
 			}
 
@@ -125,8 +122,8 @@ namespace AssemblyDumper.Passes
 		private static void ReadPrimitiveType(UnityNode node, ILProcessor processor, FieldDefinition field, int arrayDepth)
 		{
 			//Primitives
-			var csPrimitiveTypeName = SystemTypeGetter.CppPrimitivesToCSharpPrimitives[node.TypeName];
-			var csPrimitiveType = processor.Body.Method.DeclaringType.Module.GetPrimitiveType(node.TypeName);
+			var csPrimitiveTypeName = SystemTypeGetter.CppPrimitivesToCSharpPrimitives[node.GetRelevantTypeName()];
+			var csPrimitiveType = processor.Body.Method.DeclaringType.Module.GetPrimitiveType(node.GetRelevantTypeName());
 
 			//Read
 			MethodDefinition primitiveReadMethod = arrayDepth switch
@@ -234,40 +231,16 @@ namespace AssemblyDumper.Passes
 			MaybeAlignBytes(node, processor);
 		}
 
-		private static void ReadOffsetPtr(UnityNode node, ILProcessor processor, FieldDefinition field, int arrayDepth)
-		{
-			var typeNode = node.SubNodes.Single();
-			if (arrayDepth == 0)
-			{
-				ReadFieldContent(typeNode, processor, field);
-			}
-			else if (arrayDepth == 1)
-			{
-				if (SharedState.TypeDictionary.TryGetValue(typeNode.TypeName, out var fieldType))
-				{
-					ReadAssetType(typeNode, processor, field, fieldType, arrayDepth);
-				}
-				else
-				{
-					ReadPrimitiveType(typeNode, processor, field, arrayDepth);
-				}
-			}
-			else
-			{
-				throw new ArgumentOutOfRangeException(nameof(arrayDepth), $"Unsupported array depth: {arrayDepth}");
-			}
-		}
-
 		private static void ReadVector(UnityNode node, ILProcessor processor, FieldDefinition field, int arrayDepth)
 		{
 			var listTypeNode = node.SubNodes[0];
-			if (listTypeNode.TypeName is "Array")
+			if (listTypeNode.GetRelevantTypeName() is "Array")
 			{
 				ReadArray(listTypeNode, processor, field, arrayDepth);
 			}
 			else
 			{
-				throw new ArgumentException($"Invalid subnode for {node.TypeName}", nameof(node));
+				throw new ArgumentException($"Invalid subnode for {node.GetRelevantTypeName()}", nameof(node));
 			}
 
 			//warning: this will generate incorrect reads
@@ -278,12 +251,12 @@ namespace AssemblyDumper.Passes
 		private static void ReadArray(UnityNode node, ILProcessor processor, FieldDefinition field, int arrayDepth)
 		{
 			var listTypeNode = node.SubNodes[1];
-			if (SharedState.TypeDictionary.TryGetValue(listTypeNode.TypeName, out var fieldType))
+			if (SharedState.TypeDictionary.TryGetValue(listTypeNode.GetRelevantTypeName(), out var fieldType))
 			{
 				ReadAssetType(listTypeNode, processor, field, fieldType, arrayDepth);
 			}
 			else
-				switch (listTypeNode.TypeName)
+				switch (listTypeNode.GetRelevantTypeName())
 				{
 					case "vector" or "set" or "staticvector":
 						ReadVector(listTypeNode, processor, field, arrayDepth + 1);
@@ -308,9 +281,6 @@ namespace AssemblyDumper.Passes
 						}
 
 						ReadPairArray(processor, field, listTypeNode);
-						break;
-					case "OffsetPtr":
-						ReadOffsetPtr(listTypeNode, processor, field, arrayDepth);
 						break;
 					default:
 						ReadPrimitiveType(listTypeNode, processor, field, arrayDepth);
@@ -667,15 +637,15 @@ namespace AssemblyDumper.Passes
 		private static ArrayType ResolveVectorType(ILProcessor processor, UnityNode node)
 		{
 			var contentNode = node.SubNodes[0].SubNodes[1];
-			var typeName = contentNode.TypeName;
+			var typeName = contentNode.GetRelevantTypeName();
 
 			return processor.Body.Method.Module.ImportReference(processor.Body.Method.Module.GetPrimitiveType(typeName) ?? SystemTypeGetter.LookupSystemType(typeName) ?? SharedState.TypeDictionary[typeName]).MakeArrayType();
 		}
 
 		private static GenericInstanceType ResolvePairType(ILProcessor processor, UnityNode first, UnityNode second)
 		{
-			var firstName = first.TypeName;
-			var secondName = second.TypeName;
+			var firstName = first.GetRelevantTypeName();
+			var secondName = second.GetRelevantTypeName();
 
 			TypeReference firstType;
 			TypeReference secondType;

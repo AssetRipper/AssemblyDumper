@@ -1,11 +1,7 @@
 ﻿using AssetRipper.Core.Math;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AssemblyDumper.Passes
 {

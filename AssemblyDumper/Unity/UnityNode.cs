@@ -1,10 +1,13 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace AssemblyDumper.Unity
 {
 	public class UnityNode
 	{
 		public string TypeName { get; set; }
+		[System.Text.Json.Serialization.JsonIgnore]
+		public string AlternateTypeName { get; set; }
 		public string Name { get; set; }
 		public byte Level { get; set; }
 		public int ByteSize { get; set; }
@@ -14,6 +17,8 @@ namespace AssemblyDumper.Unity
 		public int MetaFlag { get; set; }
 		public List<UnityNode> SubNodes { get; set; }
 
+		public string GetRelevantTypeName() => string.IsNullOrEmpty(AlternateTypeName) ? TypeName : AlternateTypeName;
+
 		/// <summary>
 		/// Deep clones a node and all its subnodes<br/>
 		/// Warning: Deep cloning a node with a circular hierarchy will cause an endless loop
@@ -22,8 +27,9 @@ namespace AssemblyDumper.Unity
 		public UnityNode DeepClone()
 		{
 			var cloned = new UnityNode();
-			cloned.TypeName = new string(TypeName);
-			cloned.Name = new string(Name);
+			cloned.TypeName = new string(TypeName ?? "");
+			cloned.AlternateTypeName = new string(AlternateTypeName ?? "");
+			cloned.Name = new string(Name ?? "");
 			cloned.Level = Level;
 			cloned.ByteSize = ByteSize;
 			cloned.Index = Index;

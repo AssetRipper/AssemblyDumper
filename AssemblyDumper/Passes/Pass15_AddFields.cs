@@ -115,14 +115,14 @@ namespace AssemblyDumper.Passes
 
 		private static TypeReference ResolveFieldType(TypeDefinition type, UnityNode editorField)
 		{
-			var fieldType = type.Module.GetPrimitiveType(editorField.TypeName);
+			var fieldType = type.Module.GetPrimitiveType(editorField.GetRelevantTypeName());
 
-			if (fieldType == null && SharedState.TypeDictionary.TryGetValue(editorField.TypeName, out var result))
+			if (fieldType == null && SharedState.TypeDictionary.TryGetValue(editorField.GetRelevantTypeName(), out var result))
 				fieldType = result;
 
 			if (fieldType == null)
 			{
-				switch (editorField.TypeName)
+				switch (editorField.GetRelevantTypeName())
 				{
 					case "vector":
 					case "set":
@@ -133,7 +133,7 @@ namespace AssemblyDumper.Passes
 						if (listType != null)
 							return listType.MakeArrayType();
 
-						Logger.Info($"WARNING: Could not resolve vector parameter {listTypeNode.TypeName}");
+						Logger.Info($"WARNING: Could not resolve vector parameter {listTypeNode.GetRelevantTypeName()}");
 						return null;
 					case "map":
 					{
@@ -144,7 +144,7 @@ namespace AssemblyDumper.Passes
 
 						if (firstType == null || secondType == null)
 						{
-							Logger.Info($"WARNING: Could not resolve one of the parameters in a map: first is {pairNode.SubNodes[0].TypeName}, second is {pairNode.SubNodes[1].TypeName}");
+							Logger.Info($"WARNING: Could not resolve one of the parameters in a map: first is {pairNode.SubNodes[0].GetRelevantTypeName()}, second is {pairNode.SubNodes[1].GetRelevantTypeName()}");
 							return null;
 						}
 
@@ -158,7 +158,7 @@ namespace AssemblyDumper.Passes
 
 						if (firstType == null || secondType == null)
 						{
-							Logger.Info($"WARNING: Could not resolve one of the parameters in a pair: first is {editorField.SubNodes[0].TypeName}, second is {editorField.SubNodes[1].TypeName}");
+							Logger.Info($"WARNING: Could not resolve one of the parameters in a pair: first is {editorField.SubNodes[0].GetRelevantTypeName()}, second is {editorField.SubNodes[1].GetRelevantTypeName()}");
 							return null;
 						}
 
@@ -174,7 +174,7 @@ namespace AssemblyDumper.Passes
 						if (arrayType != null)
 							return arrayType.MakeArrayType();
 
-						Logger.Info($"WARNING: Could not resolve array parameter {arrayTypeNode.TypeName}");
+						Logger.Info($"WARNING: Could not resolve array parameter {arrayTypeNode.GetRelevantTypeName()}");
 						return null;
 					case "OffsetPtr":
 						var offsetPtrTypeNode = editorField.SubNodes.Single();
@@ -183,14 +183,14 @@ namespace AssemblyDumper.Passes
 						if (offsetPtrType != null)
 							return offsetPtrType;
 
-						Logger.Info($"WARNING: Could not resolve offset ptr parameter {offsetPtrTypeNode.TypeName}");
+						Logger.Info($"WARNING: Could not resolve offset ptr parameter {offsetPtrTypeNode.GetRelevantTypeName()}");
 						return null;
 				}
 			}
 
 			if (fieldType == null)
 			{
-				Logger.Info($"WARNING: Could not resolve field type {editorField.TypeName}");
+				Logger.Info($"WARNING: Could not resolve field type {editorField.GetRelevantTypeName()}");
 				return null;
 			}
 
