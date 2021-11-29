@@ -31,16 +31,24 @@ namespace AssemblyDumper.Passes
 				if (derived.Count == 0)
 					continue;
 
+				//Abstract classes that inherit from a nonabstract class will have the inherited fields in the json
+				//For example, Behaviour inherits from Component
+				List<string> existingEditorFields = abstractClass.EditorRootNode.SubNodes.Select(c => c.Name).ToList();
+				List<string> existingReleaseFields = abstractClass.ReleaseRootNode.SubNodes.Select(c => c.Name).ToList();
+
 				//Handle editor node
 				foreach (string editorFieldName in GetAllFieldNames(derived, false))
 				{
+					if (existingEditorFields.Contains(editorFieldName))
+						continue;
+
 					float matchProportion = GetWeightedMatching(derived, false, editorFieldName);
 					if(matchProportion < MinMatchingProportion)
 					{
 						//Mismatch in too many descendent classes, break out.
 						break;
 					}
-
+					
 					//This field is common to all sub classes. Add it to base.
 					UnityNode subNode = GetFirstNode(derived, false, editorFieldName);
 					// Logger.Info($"\t\tCopying field {subNode.Name} to EDITOR");
@@ -50,13 +58,16 @@ namespace AssemblyDumper.Passes
 				//Handle release node
 				foreach (string releaseFieldName in GetAllFieldNames(derived, true))
 				{
+					if (existingReleaseFields.Contains(releaseFieldName))
+						continue;
+
 					float matchProportion = GetWeightedMatching(derived, true, releaseFieldName);
 					if (matchProportion < MinMatchingProportion)
 					{
 						//Mismatch in too many descendent classes, break out.
 						break;
 					}
-
+					
 					//This field is common to all sub classes. Add it to base.
 					UnityNode subNode = GetFirstNode(derived, true, releaseFieldName);
 					// Logger.Info($"\t\tCopying field {subNode.Name} to EDITOR");
