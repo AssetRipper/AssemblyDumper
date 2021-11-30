@@ -12,11 +12,11 @@ namespace AssemblyDumper.Passes
 
 			if (!outputDirectory.Exists) Directory.CreateDirectory(outputDirectory.FullName);
 
-			string filePath = Path.Combine(outputDirectory.FullName, SharedState.Version + ".dll");
+			string filePath = Path.Combine(outputDirectory.FullName, SharedState.Assembly.Name.Name + ".dll");
 
-			var reference = assembly.MainModule.AssemblyReferences.FirstOrDefault(a => a.Name == "System.Private.CoreLib");
-			if (reference != null)
-				assembly.MainModule.AssemblyReferences.Remove(reference);
+			//var reference = assembly.MainModule.AssemblyReferences.FirstOrDefault(a => a.Name == "System.Private.CoreLib");
+			//if (reference != null)
+			//	assembly.MainModule.AssemblyReferences.Remove(reference);
 
 			Logger.Info($"Saving assembly to {filePath}");
 			assembly.Write(filePath);

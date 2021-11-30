@@ -24,7 +24,7 @@ namespace AssemblyDumper.Passes
 			var info = JsonSerializer.Deserialize<UnityInfo>(stream);
 			SharedState.Initialize(info);
 
-			string AssemblyFileName = SharedState.Version.Replace('.', '_');
+			string AssemblyFileName = '_' + SharedState.Version.Replace('.', '_');
 
 			AssemblyNameDefinition assemblyName = new AssemblyNameDefinition(AssemblyFileName, currentGeneratedVersion);
 			AssemblyDefinition assembly = AssemblyDefinition.CreateAssembly(assemblyName, AssemblyFileName, ModuleKind.Dll);

@@ -22,7 +22,7 @@ namespace AssemblyDumper
 
 
 		//Namespaces
-		public static string RootNamespace { get; set; } = "AssemblyDumper";
+		public static string RootNamespace { get; set; } = "AssemblyDumperOutput";
 		public static string AttributesNamespace => RootNamespace + ".Attributes";
 		public static string Classesnamespace => RootNamespace + ".Classes";
 		public static string EnumsNamespace => RootNamespace + ".Enums";

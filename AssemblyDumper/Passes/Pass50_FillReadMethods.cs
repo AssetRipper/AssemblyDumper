@@ -130,13 +130,13 @@ namespace AssemblyDumper.Passes
 			{
 				0 => CommonTypeGetter.AssetReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}") //String
 				     ?? CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}")
-				     ?? SystemTypeGetter.BinaryReader.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}"), //Byte, SByte, and Boolean
+				     ?? SystemTypeGetter.LookupSystemType("System.IO.BinaryReader").Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}"), //Byte, SByte, and Boolean
 				1 => CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}Array" && m.Parameters.Count == 1),
 				2 => CommonTypeGetter.EndianReaderExtensionsDefinition.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}ArrayArray"),
 				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth), $"ReadPrimitiveType does not support array depth '{arrayDepth}'"),
 			};
 
-			primitiveReadMethod ??= SystemTypeGetter.BinaryReader.Resolve().Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}");
+			primitiveReadMethod ??= SystemTypeGetter.LookupSystemType("System.IO.BinaryReader").Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}");
 
 			if (primitiveReadMethod == null)
 				throw new Exception($"Missing a read method for {csPrimitiveTypeName} in {processor.Body.Method.DeclaringType}");
