@@ -67,12 +67,6 @@ namespace AssemblyDumper.Passes
 			}
 		}
 
-		private static void EmitNotSupportedException(this ILProcessor processor)
-		{
-			processor.Emit(OpCodes.Newobj, SystemTypeGetter.NotSupportedExceptionConstructor);
-			processor.Emit(OpCodes.Throw);
-		}
-
 		private static void EmitTypeTreeCreation(this ILProcessor processor, UnityNode rootNode)
 		{
 			processor.Body.InitLocals = true;

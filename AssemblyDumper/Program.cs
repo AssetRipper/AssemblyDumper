@@ -74,6 +74,7 @@ namespace AssemblyDumper
 				Pass06_AddTypeDefinitions.DoPass();
 				Pass07_ApplyInheritance.DoPass();
 				Pass08_AddConstructors.DoPass();
+				Pass09_MakeAssetFactory.DoPass();
 
 				Pass12_UnifyFieldsOfAbstractTypes.DoPass();
 				Pass15_AddFields.DoPass();
