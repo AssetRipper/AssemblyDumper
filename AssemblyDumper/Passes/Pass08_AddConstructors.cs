@@ -2,6 +2,7 @@
 using AssemblyDumper.Utils;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -83,6 +84,8 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Call, baseConstructor);
 
 			processor.Emit(OpCodes.Ret);
+
+			processor.Body.Optimize();
 
 			typeDefinition.Methods.Add(constructor);
 			return constructor;

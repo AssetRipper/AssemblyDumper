@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 using System.Linq;
 
 namespace AssemblyDumper.Utils
@@ -58,6 +59,8 @@ namespace AssemblyDumper.Utils
 			processor.Emit(OpCodes.Call, baseConstructor);
 
 			processor.Emit(OpCodes.Ret);
+
+			processor.Body.Optimize();
 
 			typeDefinition.Methods.Add(defaultConstructor);
 			return defaultConstructor;

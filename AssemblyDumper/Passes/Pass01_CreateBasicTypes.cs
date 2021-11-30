@@ -49,6 +49,8 @@ namespace AssemblyDumper.Passes
 			}
 			processor.Emit(OpCodes.Stsfld, field);
 			processor.Emit(OpCodes.Ret);
+
+			processor.Body.Optimize();
 		}
 
 		private static TypeDefinition CreateEmptyStaticClass(AssemblyDefinition assembly, string @namespace, string name)
