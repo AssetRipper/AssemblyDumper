@@ -73,7 +73,7 @@ namespace AssemblyDumper
 				Pass04_ExtractDependentNodeTrees.DoPass();
 				Pass06_AddTypeDefinitions.DoPass();
 				Pass07_ApplyInheritance.DoPass();
-				Pass08_AddDefaultConstructors.DoPass();
+				Pass08_AddConstructors.DoPass();
 
 				Pass12_UnifyFieldsOfAbstractTypes.DoPass();
 				Pass15_AddFields.DoPass();
