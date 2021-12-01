@@ -177,15 +177,6 @@ namespace AssemblyDumper.Passes
 
 						Console.WriteLine($"WARNING: Could not resolve array parameter {arrayTypeNode.TypeName}");
 						return null;
-					case "OffsetPtr":
-						var offsetPtrTypeNode = editorField.SubNodes.Single();
-						var offsetPtrType = ResolveFieldType(type, offsetPtrTypeNode);
-
-						if (offsetPtrType != null)
-							return offsetPtrType;
-
-						Console.WriteLine($"WARNING: Could not resolve offset ptr parameter {offsetPtrTypeNode.TypeName}");
-						return null;
 				}
 			}
 
