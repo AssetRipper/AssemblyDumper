@@ -3,15 +3,20 @@ using AssetRipper.Core.Attributes;
 using Mono.Cecil;
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace AssemblyDumper.Passes
 {
 	public static class Pass06_AddTypeDefinitions
 	{
-		public static MethodReference ByteSizeAttributeConstructor { get; set; }
-		public static MethodReference EditorOnlyAttributeConstructor { get; set; }
-		public static MethodReference StrippedAttributeConstructor { get; set; }
-		public static MethodReference PersistentIDAttributeConstructor { get; set; }
+		private static MethodReference ByteSizeAttributeConstructor { get; set; }
+		private static MethodReference EditorOnlyAttributeConstructor { get; set; }
+		private static MethodReference StrippedAttributeConstructor { get; set; }
+		private static MethodReference PersistentIDAttributeConstructor { get; set; }
+		/// <summary>
+		/// Currently, just &lt; and &gt; for PPtrs
+		/// </summary>
+		private static readonly Regex badCharactersRegex = new Regex(@"[<>]", RegexOptions.Compiled);
 
 		public static void DoPass()
 		{
@@ -41,7 +46,7 @@ namespace AssemblyDumper.Passes
 			if (@class.IsAbstract) typeAttributes |= TypeAttributes.Abstract;
 			// if (@class.IsSealed) typeAttributes |= TypeAttributes.Sealed;
 
-			TypeDefinition typeDef = new TypeDefinition(SharedState.Classesnamespace, name, typeAttributes);
+			TypeDefinition typeDef = new TypeDefinition(SharedState.Classesnamespace, GetValidTypeName(name), typeAttributes);
 			if (@class.IsEditorOnly) typeDef.AddCustomAttribute(EditorOnlyAttributeConstructor);
 			if (@class.IsStripped) typeDef.AddCustomAttribute(StrippedAttributeConstructor);
 			typeDef.AddCustomAttribute(PersistentIDAttributeConstructor, SystemTypeGetter.Int32, @class.TypeID);
@@ -62,6 +67,11 @@ namespace AssemblyDumper.Passes
 			var attrDef = new CustomAttribute(constructor);
 			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(param1Type, param1Value));
 			_this.CustomAttributes.Add(attrDef);
+		}
+
+		private static string GetValidTypeName(string originalName)
+		{
+			return badCharactersRegex.Replace(originalName, "_");
 		}
 	}
 }
