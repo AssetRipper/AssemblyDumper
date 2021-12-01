@@ -6,7 +6,7 @@ namespace AssemblyDumper.Passes
 	{
 		public static void DoPass(DirectoryInfo outputDirectory)
 		{
-			Logger.Info("Pass 99: Save Assembly");
+			System.Console.WriteLine("Pass 99: Save Assembly");
 			var assembly = SharedState.Assembly;
 
 			if (!outputDirectory.Exists) Directory.CreateDirectory(outputDirectory.FullName);
@@ -17,7 +17,7 @@ namespace AssemblyDumper.Passes
 			//if (reference != null)
 			//	assembly.MainModule.AssemblyReferences.Remove(reference);
 
-			Logger.Info($"Saving assembly to {filePath}");
+			System.Console.WriteLine($"Saving assembly to {filePath}");
 			assembly.Write(filePath);
 		}
 	}

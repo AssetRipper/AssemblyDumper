@@ -18,7 +18,7 @@ namespace AssemblyDumper.Passes
 		/// </summary>
 		public static void DoPass(string jsonPath, string systemRuntimeFilePath, string systemCollectionsFilePath)
 		{
-			Logger.Info("Pass 0: Initialize");
+			Console.WriteLine("Pass 0: Initialize");
 
 			using var stream = File.OpenRead(jsonPath);
 			var info = JsonSerializer.Deserialize<UnityInfo>(stream);
@@ -31,10 +31,10 @@ namespace AssemblyDumper.Passes
 
 			SystemTypeGetter.RuntimeAssembly = AssemblyDefinition.ReadAssembly(systemRuntimeFilePath);
 			SystemTypeGetter.CollectionsAssembly = AssemblyDefinition.ReadAssembly(systemCollectionsFilePath);
-			//Logger.Info(SystemTypeGetter.RuntimeAssembly.Name.FullName);
+			//Console.WriteLine(SystemTypeGetter.RuntimeAssembly.Name.FullName);
 
 			CommonTypeGetter.CommonAssembly = AssemblyDefinition.ReadAssembly(typeof(AssetRipper.Core.UnityObjectBase).Assembly.Location);
-			//Logger.Info(CommonTypeGetter.Assembly.Name.FullName);
+			//Console.WriteLine(CommonTypeGetter.Assembly.Name.FullName);
 
 			assembly.MainModule.AssemblyReferences.Clear();
 			assembly.MainModule.AssemblyReferences.Add(SystemTypeGetter.RuntimeAssembly.Name);

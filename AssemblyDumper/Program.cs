@@ -9,7 +9,7 @@ namespace AssemblyDumper
 	{
 		private static void Run(Options options)
 		{
-			Logger.Info("Making a new dll");
+			Console.WriteLine("Making a new dll");
 #if DEBUG
 			try
 			{
@@ -40,12 +40,12 @@ namespace AssemblyDumper
 
 				Pass98_ApplyAssemblyAttributes.DoPass();
 				Pass99_SaveAssembly.DoPass(options.OutputDirectory);
-				Logger.Info("Done!");
+				Console.WriteLine("Done!");
 #if DEBUG
 			}
 			catch (Exception ex)
 			{
-				Logger.Info(ex.ToString());
+				Console.WriteLine(ex.ToString());
 			}
 #endif
 		}

@@ -10,7 +10,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Logger.Info("Pass 23: OffsetPtr Implicit Conversions");
+			System.Console.WriteLine("Pass 23: OffsetPtr Implicit Conversions");
 
 			foreach ((string name, TypeDefinition type) in SharedState.TypeDictionary)
 			{

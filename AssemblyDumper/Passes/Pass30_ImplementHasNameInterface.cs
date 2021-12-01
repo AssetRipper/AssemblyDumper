@@ -18,7 +18,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Logger.Info("Pass 30: Implement the Has Name Interface");
+			System.Console.WriteLine("Pass 30: Implement the Has Name Interface");
 			TypeReference hasName = SharedState.Module.ImportCommonType<AssetRipper.Core.Interfaces.IHasName>();
 			foreach(TypeDefinition type in SharedState.TypeDictionary.Values)
 			{

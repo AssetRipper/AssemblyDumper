@@ -7,7 +7,7 @@ namespace AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			Logger.Info("Pass 49: Creating empty methods on generated types");
+			System.Console.WriteLine("Pass 49: Creating empty methods on generated types");
 
 			foreach (var (name, klass) in SharedState.ClassDictionary)
 			{

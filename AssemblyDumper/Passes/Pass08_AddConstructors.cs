@@ -16,7 +16,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Logger.Info("Pass 8: Add Constructors");
+			System.Console.WriteLine("Pass 8: Add Constructors");
 			AssetInfoRef = SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Asset.AssetInfo>();
 			LayoutInfoRef = SharedState.Module.ImportCommonType<AssetRipper.Core.Layout.LayoutInfo>();
 			foreach (var pair in SharedState.ClassDictionary)

@@ -8,7 +8,7 @@ namespace AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			Logger.Info("Pass 7: Apply Inheritance");
+			System.Console.WriteLine("Pass 7: Apply Inheritance");
 
 			TypeReference unityObjectBaseDefinition = SharedState.Module.ImportCommonType<UnityObjectBase>();
 			TypeReference unityAssetBaseDefinition = SharedState.Module.ImportCommonType<UnityAssetBase>();

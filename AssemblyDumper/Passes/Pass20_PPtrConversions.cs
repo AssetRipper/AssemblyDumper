@@ -14,7 +14,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Logger.Info("Pass 20: PPtr Conversions");
+			System.Console.WriteLine("Pass 20: PPtr Conversions");
 
 			commonPPtrType = SharedState.Module.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
 			unityObjectBaseInterface = SharedState.Module.ImportCommonType<AssetRipper.Core.Interfaces.IUnityObjectBase>();

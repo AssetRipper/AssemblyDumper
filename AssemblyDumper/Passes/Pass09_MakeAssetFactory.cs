@@ -12,7 +12,7 @@ namespace AssemblyDumper.Passes
 		const MethodAttributes InterfaceOverrideAttributes = MethodAttributes.Public | MethodAttributes.NewSlot | MethodAttributes.HideBySig | MethodAttributes.Final | MethodAttributes.Virtual;
 		public static void DoPass()
 		{
-			Logger.Info("Pass 9: Make Asset Factory");
+			System.Console.WriteLine("Pass 9: Make Asset Factory");
 			TypeDefinition factoryDefinition = CreateFactoryDefinition();
 			factoryDefinition.AddCreateEngineAsset();
 			factoryDefinition.AddCreateAsset();

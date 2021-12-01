@@ -10,7 +10,7 @@ namespace AssemblyDumper.Passes
 		private const float MinMatchingProportion = 0.8f;
 		public static void DoPass()
 		{
-			Logger.Info("Pass 12: Merging fields of abstract types");
+			Console.WriteLine("Pass 12: Merging fields of abstract types");
 
 			//We need to get all abstract classes, and we need to do them in order of lowest abstraction to highest.
 			//In other words, the most derived classes should be done first, so their values can be used for their own base classes
@@ -23,7 +23,7 @@ namespace AssemblyDumper.Passes
 
 			foreach (UnityClass abstractClass in abstractClasses)
 			{
-				// Logger.Info($"\t{abstractClass.Name}");
+				// Console.WriteLine($"\t{abstractClass.Name}");
 				abstractClass.InitializeRootNodes();
 
 				var derived = abstractClass.AllDerivedClasses();
@@ -51,7 +51,7 @@ namespace AssemblyDumper.Passes
 					
 					//This field is common to all sub classes. Add it to base.
 					UnityNode subNode = GetFirstNode(derived, false, editorFieldName);
-					// Logger.Info($"\t\tCopying field {subNode.Name} to EDITOR");
+					// Console.WriteLine($"\t\tCopying field {subNode.Name} to EDITOR");
 					abstractClass.EditorRootNode.SubNodes.Add(subNode.DeepClone());
 				}
 
@@ -70,7 +70,7 @@ namespace AssemblyDumper.Passes
 					
 					//This field is common to all sub classes. Add it to base.
 					UnityNode subNode = GetFirstNode(derived, true, releaseFieldName);
-					// Logger.Info($"\t\tCopying field {subNode.Name} to EDITOR");
+					// Console.WriteLine($"\t\tCopying field {subNode.Name} to EDITOR");
 					abstractClass.ReleaseRootNode.SubNodes.Add(subNode.DeepClone());
 				}
 			}

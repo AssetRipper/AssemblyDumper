@@ -14,7 +14,7 @@ namespace AssemblyDumper.Passes
 		private const MethodAttributes StaticConstructorAttributes = MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName | MethodAttributes.Static;
 		public static void DoPass()
 		{
-			Logger.Info("Pass 1: Create Basic Types");
+			System.Console.WriteLine("Pass 1: Create Basic Types");
 			CreateClassID();
 			CreateCommonStringClass();
 		}

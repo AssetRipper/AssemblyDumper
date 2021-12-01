@@ -8,7 +8,7 @@ namespace AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			Logger.Info("Pass 98: Apply Assembly Attributes");
+			System.Console.WriteLine("Pass 98: Apply Assembly Attributes");
 			SharedState.Assembly.AddVersionAttribute(SharedState.Version);
 			foreach (var pair in SharedState.ClassDictionary)
 			{

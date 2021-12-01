@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using AssemblyDumper.Unity;
 using AssetRipper.Core.Attributes;
 using Mono.Cecil;
@@ -16,7 +17,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Logger.Info("Pass 15: Add Fields");
+			Console.WriteLine("Pass 15: Add Fields");
 
 			ReleaseOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<ReleaseOnlyAttribute>();
 			EditorOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorOnlyAttribute>();
@@ -133,7 +134,7 @@ namespace AssemblyDumper.Passes
 						if (listType != null)
 							return listType.MakeArrayType();
 
-						Logger.Info($"WARNING: Could not resolve vector parameter {listTypeNode.TypeName}");
+						Console.WriteLine($"WARNING: Could not resolve vector parameter {listTypeNode.TypeName}");
 						return null;
 					case "map":
 					{
@@ -144,7 +145,7 @@ namespace AssemblyDumper.Passes
 
 						if (firstType == null || secondType == null)
 						{
-							Logger.Info($"WARNING: Could not resolve one of the parameters in a map: first is {pairNode.SubNodes[0].TypeName}, second is {pairNode.SubNodes[1].TypeName}");
+							Console.WriteLine($"WARNING: Could not resolve one of the parameters in a map: first is {pairNode.SubNodes[0].TypeName}, second is {pairNode.SubNodes[1].TypeName}");
 							return null;
 						}
 
@@ -158,7 +159,7 @@ namespace AssemblyDumper.Passes
 
 						if (firstType == null || secondType == null)
 						{
-							Logger.Info($"WARNING: Could not resolve one of the parameters in a pair: first is {editorField.SubNodes[0].TypeName}, second is {editorField.SubNodes[1].TypeName}");
+							Console.WriteLine($"WARNING: Could not resolve one of the parameters in a pair: first is {editorField.SubNodes[0].TypeName}, second is {editorField.SubNodes[1].TypeName}");
 							return null;
 						}
 
@@ -174,7 +175,7 @@ namespace AssemblyDumper.Passes
 						if (arrayType != null)
 							return arrayType.MakeArrayType();
 
-						Logger.Info($"WARNING: Could not resolve array parameter {arrayTypeNode.TypeName}");
+						Console.WriteLine($"WARNING: Could not resolve array parameter {arrayTypeNode.TypeName}");
 						return null;
 					case "OffsetPtr":
 						var offsetPtrTypeNode = editorField.SubNodes.Single();
@@ -183,14 +184,14 @@ namespace AssemblyDumper.Passes
 						if (offsetPtrType != null)
 							return offsetPtrType;
 
-						Logger.Info($"WARNING: Could not resolve offset ptr parameter {offsetPtrTypeNode.TypeName}");
+						Console.WriteLine($"WARNING: Could not resolve offset ptr parameter {offsetPtrTypeNode.TypeName}");
 						return null;
 				}
 			}
 
 			if (fieldType == null)
 			{
-				Logger.Info($"WARNING: Could not resolve field type {editorField.TypeName}");
+				Console.WriteLine($"WARNING: Could not resolve field type {editorField.TypeName}");
 				return null;
 			}
 

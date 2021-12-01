@@ -13,7 +13,7 @@ namespace AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			Logger.Info("Pass 52: Filling yaml methods");
+			Console.WriteLine("Pass 52: Filling yaml methods");
 			foreach (var (name, klass) in SharedState.ClassDictionary)
 			{
 				if (!SharedState.TypeDictionary.ContainsKey(name))
@@ -45,7 +45,7 @@ namespace AssemblyDumper.Passes
 				releaseModeProcessor.Emit(OpCodes.Newobj, CommonTypeGetter.YAMLMappingNodeConstructor);
 				releaseModeProcessor.Emit(OpCodes.Stloc, releaseResult);
 
-				//Logger.Info($"Generating the editor read method for {name}");
+				//Console.WriteLine($"Generating the editor read method for {name}");
 				if (klass.EditorRootNode != null)
 				{
 					foreach (var unityNode in klass.EditorRootNode.SubNodes)
@@ -54,7 +54,7 @@ namespace AssemblyDumper.Passes
 					}
 				}
 
-				//Logger.Info($"Generating the release read method for {name}");
+				//Console.WriteLine($"Generating the release read method for {name}");
 				if (klass.ReleaseRootNode != null)
 				{
 					foreach (var unityNode in klass.ReleaseRootNode.SubNodes)

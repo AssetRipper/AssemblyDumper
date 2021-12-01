@@ -17,7 +17,7 @@ namespace AssemblyDumper.Passes
 		private static MethodReference listAddMethod;
 		public static void DoPass()
 		{
-			Logger.Info("Pass 53: Fill Type Tree Methods");
+			System.Console.WriteLine("Pass 53: Fill Type Tree Methods");
 
 			typeTreeNode = SharedState.Module.ImportCommonType<TypeTreeNode>();
 			typeTreeNodeConstructor = SharedState.Module.ImportCommonConstructor<TypeTreeNode>(8);
@@ -42,7 +42,7 @@ namespace AssemblyDumper.Passes
 				var editorModeProcessor = editorModeBody.GetILProcessor();
 				var releaseModeProcessor = releaseModeBody.GetILProcessor();
 				
-				//Logger.Info($"Generating the editor read method for {name}");
+				//Console.WriteLine($"Generating the editor read method for {name}");
 				if (klass.EditorRootNode == null)
 				{
 					editorModeProcessor.EmitNotSupportedException();
@@ -52,7 +52,7 @@ namespace AssemblyDumper.Passes
 					editorModeProcessor.EmitTypeTreeCreation(klass.EditorRootNode);
 				}
 
-				//Logger.Info($"Generating the release read method for {name}");
+				//Console.WriteLine($"Generating the release read method for {name}");
 				if (klass.ReleaseRootNode == null)
 				{
 					releaseModeProcessor.EmitNotSupportedException();

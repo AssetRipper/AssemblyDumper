@@ -9,7 +9,7 @@ namespace AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			Logger.Info("Pass 21: GUID Implicit Conversion");
+			System.Console.WriteLine("Pass 21: GUID Implicit Conversion");
 			if(SharedState.TypeDictionary.TryGetValue("GUID", out TypeDefinition guidType))
 			{
 				AddGuidConversion(guidType);

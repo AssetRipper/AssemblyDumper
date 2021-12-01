@@ -14,7 +14,7 @@ namespace AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			Logger.Info("Pass 50: Filling read methods");
+			Console.WriteLine("Pass 50: Filling read methods");
 			foreach (var (name, klass) in SharedState.ClassDictionary)
 			{
 				if (!SharedState.TypeDictionary.ContainsKey(name))
@@ -34,7 +34,7 @@ namespace AssemblyDumper.Passes
 
 				var fields = FieldUtils.GetAllFieldsInTypeAndBase(type);
 
-				//Logger.Info($"Generating the editor read method for {name}");
+				//Console.WriteLine($"Generating the editor read method for {name}");
 				if (klass.EditorRootNode != null)
 				{
 					foreach (var unityNode in klass.EditorRootNode.SubNodes)
@@ -43,7 +43,7 @@ namespace AssemblyDumper.Passes
 					}
 				}
 
-				//Logger.Info($"Generating the release read method for {name}");
+				//Console.WriteLine($"Generating the release read method for {name}");
 				if (klass.ReleaseRootNode != null)
 				{
 					foreach (var unityNode in klass.ReleaseRootNode.SubNodes)

@@ -86,7 +86,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Logger.Info("Pass 4: Extract Dependent Node Trees");
+			Console.WriteLine("Pass 4: Extract Dependent Node Trees");
 			AddDependentTypes();
 			CreateNewClasses();
 			CheckCompatibility();
@@ -113,7 +113,7 @@ namespace AssemblyDumper.Passes
 				UnityClass unityClass = pair.Value;
 				if(!AreCompatible(unityClass.ReleaseRootNode, unityClass.EditorRootNode, false))
 				{
-					Logger.Info($"{unityClass.Name} has incompatible release and editor root nodes");
+					Console.WriteLine($"{unityClass.Name} has incompatible release and editor root nodes");
 				}
 			}
 		}
@@ -229,13 +229,13 @@ namespace AssemblyDumper.Passes
 					{
 						if (releaseField != null)
 						{
-							//Logger.Info($"Release field {releaseField.Name} of type {releaseField.TypeName} renamed to {list[relevantIndex].Item1}");
+							//Console.WriteLine($"Release field {releaseField.Name} of type {releaseField.TypeName} renamed to {list[relevantIndex].Item1}");
 							releaseField.OriginalTypeName = typeName;
 							releaseField.TypeName = list[relevantIndex].Item1;
 						}
 						if (editorField != null)
 						{
-							//Logger.Info($"Editor field {editorField.Name} of type {editorField.TypeName} renamed to {list[relevantIndex].Item1}");
+							//Console.WriteLine($"Editor field {editorField.Name} of type {editorField.TypeName} renamed to {list[relevantIndex].Item1}");
 							editorField.OriginalTypeName = typeName;
 							editorField.TypeName = list[relevantIndex].Item1;
 						}
@@ -314,12 +314,12 @@ namespace AssemblyDumper.Passes
 			}
 			if (left.OriginalTypeName != right.OriginalTypeName)
 			{
-				//Logger.Info($"\tInequal because type name {left.TypeName} doesn't match {right.TypeName}");
+				//Console.WriteLine($"\tInequal because type name {left.TypeName} doesn't match {right.TypeName}");
 				return false;
 			}
 			if (left.SubNodes.Count != right.SubNodes.Count)
 			{
-				//Logger.Info($"\tInequal because subnode count {left.SubNodes.Count} doesn't match {right.SubNodes.Count}");
+				//Console.WriteLine($"\tInequal because subnode count {left.SubNodes.Count} doesn't match {right.SubNodes.Count}");
 				return false;
 			}
 			for (int i = 0; i < left.SubNodes.Count; i++)

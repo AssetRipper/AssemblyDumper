@@ -20,7 +20,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Logger.Info("Pass 6: Add Type Definitions");
+			Console.WriteLine("Pass 6: Add Type Definitions");
 
 			ByteSizeAttributeConstructor = SharedState.Module.ImportCommonConstructor<ByteSizeAttribute>(1);
 			EditorOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorOnlyAttribute>();
