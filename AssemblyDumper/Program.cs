@@ -25,7 +25,7 @@ namespace AssemblyDumper
 				Pass12_UnifyFieldsOfAbstractTypes.DoPass();
 				Pass15_AddFields.DoPass();
 
-				Pass20_PPtrImplicitConversions.DoPass();
+				Pass20_PPtrConversions.DoPass();
 				Pass21_GuidImplicitConversion.DoPass();
 				Pass22_VectorImplicitConversions.DoPass();
 
