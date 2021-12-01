@@ -7,6 +7,48 @@ namespace AssemblyDumper
 {
 	public static class Program
 	{
+		private static void Run(Options options)
+		{
+			Logger.Info("Making a new dll");
+#if DEBUG
+			try
+			{
+#endif
+				Pass00_Initialize.DoPass(options.JsonPath.FullName, options.SystemRuntimeAssembly.FullName, options.SystemCollectionsAssembly.FullName);
+				Pass01_CreateBasicTypes.DoPass();
+				Pass04_ExtractDependentNodeTrees.DoPass();
+				Pass06_AddTypeDefinitions.DoPass();
+				Pass07_ApplyInheritance.DoPass();
+				Pass08_AddConstructors.DoPass();
+				Pass09_MakeAssetFactory.DoPass();
+
+				Pass12_UnifyFieldsOfAbstractTypes.DoPass();
+				Pass15_AddFields.DoPass();
+
+				Pass20_PPtrImplicitConversions.DoPass();
+				Pass21_GuidImplicitConversion.DoPass();
+				Pass22_VectorImplicitConversions.DoPass();
+
+				Pass30_ImplementHasNameInterface.DoPass();
+
+				Pass49_CreateEmptyMethods.DoPass();
+				Pass50_FillReadMethods.DoPass();
+				Pass51_FillWriteMethods.DoPass();
+				Pass52_FillYamlMethods.DoPass();
+				Pass53_FillTypeTreeMethods.DoPass();
+
+				Pass98_ApplyAssemblyAttributes.DoPass();
+				Pass99_SaveAssembly.DoPass(options.OutputDirectory);
+				Logger.Info("Done!");
+#if DEBUG
+			}
+			catch (Exception ex)
+			{
+				Logger.Info(ex.ToString());
+			}
+#endif
+		}
+
 		internal class Options
 		{
 			[Value(0, Required = true, HelpText = "Information Json to parse")]
@@ -59,46 +101,6 @@ namespace AssemblyDumper
 				System.Console.WriteLine(ex.ToString());
 				return false;
 			}
-		}
-
-		private static void Run(Options options)
-		{
-			Logger.Info("Making a new dll");
-#if DEBUG
-			try
-			{
-#endif
-				Pass00_Initialize.DoPass(options.JsonPath.FullName, options.SystemRuntimeAssembly.FullName, options.SystemCollectionsAssembly.FullName);
-				Pass01_CreateBasicTypes.DoPass();
-				Pass04_ExtractDependentNodeTrees.DoPass();
-				Pass06_AddTypeDefinitions.DoPass();
-				Pass07_ApplyInheritance.DoPass();
-				Pass08_AddConstructors.DoPass();
-				Pass09_MakeAssetFactory.DoPass();
-
-				Pass12_UnifyFieldsOfAbstractTypes.DoPass();
-				Pass15_AddFields.DoPass();
-
-				Pass20_PPtrImplicitConversions.DoPass();
-				Pass21_GuidImplicitConversion.DoPass();
-				Pass22_VectorImplicitConversions.DoPass();
-
-				Pass49_CreateEmptyMethods.DoPass();
-				Pass50_FillReadMethods.DoPass();
-				Pass51_FillWriteMethods.DoPass();
-				Pass52_FillYamlMethods.DoPass();
-				Pass53_FillTypeTreeMethods.DoPass();
-
-				Pass98_ApplyAssemblyAttributes.DoPass();
-				Pass99_SaveAssembly.DoPass(options.OutputDirectory);
-				Logger.Info("Done!");
-#if DEBUG
-			}
-			catch (Exception ex)
-			{
-				Logger.Info(ex.ToString());
-			}
-#endif
 		}
 	}
 }
