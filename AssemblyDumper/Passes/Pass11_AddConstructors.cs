@@ -1,8 +1,6 @@
 ﻿using AssemblyDumper.Unity;
 using AssemblyDumper.Utils;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -67,24 +65,6 @@ namespace AssemblyDumper.Passes
 
 			ParameterDefinition parameter = new ParameterDefinition(parameterName, ParameterAttributes.None, parameterType);
 			constructor.Parameters.Add(parameter);
-
-			var processor = constructor.Body.GetILProcessor();
-
-			MethodDefinition baseConstructorDef = typeDefinition.BaseType.Resolve().Methods
-				.Where(x =>
-				x.IsConstructor &&
-				x.Parameters.Count == 1 &&
-				x.Parameters[0].ParameterType.Name == parameterType.Name &&
-				!x.IsStatic)
-				.Single();
-			MethodReference baseConstructor = SharedState.Module.ImportReference(baseConstructorDef);
-
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldarg, parameter);
-			processor.Emit(OpCodes.Call, baseConstructor);
-
-			processor.Emit(OpCodes.Ret);
-			processor.Body.Optimize();
 
 			typeDefinition.Methods.Add(constructor);
 			return constructor;

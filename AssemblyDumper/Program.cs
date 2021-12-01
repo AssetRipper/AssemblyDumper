@@ -23,6 +23,7 @@ namespace AssemblyDumper
 				Pass10_AddFields.DoPass();
 
 				Pass11_AddConstructors.DoPass();
+				Pass12_FillConstructors.DoPass();
 				Pass13_MakeAssetFactory.DoPass();
 
 				Pass20_PPtrConversions.DoPass();
