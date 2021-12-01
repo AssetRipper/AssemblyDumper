@@ -1,5 +1,4 @@
-﻿using AssemblyDumper.Unity;
-using AssemblyDumper.Utils;
+﻿using AssemblyDumper.Utils;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
