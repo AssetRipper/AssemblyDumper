@@ -79,16 +79,15 @@ namespace AssemblyDumper
 				Pass12_UnifyFieldsOfAbstractTypes.DoPass();
 				Pass15_AddFields.DoPass();
 
-				Pass33_CreateEmptyMethods.DoPass();
+				Pass20_PPtrImplicitConversions.DoPass();
+				Pass21_GuidImplicitConversion.DoPass();
+				Pass22_VectorImplicitConversions.DoPass();
 
+				Pass49_CreateEmptyMethods.DoPass();
 				Pass50_FillReadMethods.DoPass();
 				Pass51_FillWriteMethods.DoPass();
 				Pass52_FillYamlMethods.DoPass();
 				Pass53_FillTypeTreeMethods.DoPass();
-
-				Pass60_PPtrImplicitConversions.DoPass();
-				Pass61_GuidImplicitConversion.DoPass();
-				Pass62_VectorImplicitConversions.DoPass();
 
 				Pass98_ApplyAssemblyAttributes.DoPass();
 				Pass99_SaveAssembly.DoPass(options.OutputDirectory);

@@ -5,11 +5,11 @@ using System.Linq;
 
 namespace AssemblyDumper.Passes
 {
-	public static class Pass62_VectorImplicitConversions
+	public static class Pass22_VectorImplicitConversions
 	{
 		public static void DoPass()
 		{
-			Logger.Info("Pass 62: Vector Implicit Conversions");
+			Logger.Info("Pass 22: Vector Implicit Conversions");
 			if (SharedState.TypeDictionary.TryGetValue("float2", out TypeDefinition float2Type)) //not sure if this exists
 			{
 				AddConversion<Vector2f>(float2Type, 2);

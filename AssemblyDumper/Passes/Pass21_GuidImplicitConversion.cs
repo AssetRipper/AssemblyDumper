@@ -5,11 +5,11 @@ using System.Linq;
 
 namespace AssemblyDumper.Passes
 {
-	public static class Pass61_GuidImplicitConversion
+	public static class Pass21_GuidImplicitConversion
 	{
 		public static void DoPass()
 		{
-			Logger.Info("Pass 61: GUID Implicit Conversion");
+			Logger.Info("Pass 21: GUID Implicit Conversion");
 			if(SharedState.TypeDictionary.TryGetValue("GUID", out TypeDefinition guidType))
 			{
 				AddGuidConversion(guidType);

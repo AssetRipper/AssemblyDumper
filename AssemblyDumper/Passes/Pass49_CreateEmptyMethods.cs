@@ -3,11 +3,11 @@ using Mono.Cecil.Rocks;
 
 namespace AssemblyDumper.Passes
 {
-	public static class Pass33_CreateEmptyMethods
+	public static class Pass49_CreateEmptyMethods
 	{
 		public static void DoPass()
 		{
-			Logger.Info("Pass 33: Creating empty methods on generated types");
+			Logger.Info("Pass 49: Creating empty methods on generated types");
 
 			foreach (var (name, klass) in SharedState.ClassDictionary)
 			{

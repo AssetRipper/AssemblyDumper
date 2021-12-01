@@ -7,12 +7,12 @@ using System.Linq;
 
 namespace AssemblyDumper.Passes
 {
-	public static class Pass60_PPtrImplicitConversions
+	public static class Pass20_PPtrImplicitConversions
 	{
 		private static TypeReference commonPPtrType;
 		public static void DoPass()
 		{
-			Logger.Info("Pass 60: PPtr ImplicitConversions");
+			Logger.Info("Pass 20: PPtr Implicit Conversions");
 
 			commonPPtrType = SharedState.Module.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
 
