@@ -106,7 +106,7 @@ namespace AssemblyDumper.Passes
 			//For the add method at the end
 			processor.Emit(OpCodes.Ldloc, listVariable);
 
-			processor.Emit(OpCodes.Ldstr, node.TypeName);
+			processor.Emit(OpCodes.Ldstr, node.OriginalTypeName);
 			processor.Emit(OpCodes.Ldstr, node.Name);
 
 			//Level

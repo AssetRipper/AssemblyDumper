@@ -86,13 +86,13 @@ namespace AssemblyDumper.Passes
 
 		private static void ExportFieldContent(UnityNode node, ILProcessor processor, FieldDefinition field)
 		{
-			if (SharedState.TypeDictionary.TryGetValue(node.GetRelevantTypeName(), out var fieldType))
+			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out var fieldType))
 			{
 				//ReadAssetType(node, processor, field, fieldType, 0);
 				return;
 			}
 
-			switch (node.GetRelevantTypeName())
+			switch (node.TypeName)
 			{
 				case "vector":
 				case "set":

@@ -5,9 +5,19 @@ namespace AssemblyDumper.Unity
 {
 	public class UnityNode
 	{
+		/// <summary>
+		/// The unique type name used in the <see cref = "SharedState"/> dictionaries
+		/// </summary>
 		public string TypeName { get; set; }
+		/// <summary>
+		/// The original type name as obtained from the json file
+		/// </summary>
 		[System.Text.Json.Serialization.JsonIgnore]
-		public string AlternateTypeName { get; set; }
+		public string OriginalTypeName 
+		{
+			get => string.IsNullOrEmpty(m_OriginalTypeName) ? TypeName : m_OriginalTypeName;
+			set => m_OriginalTypeName = value;
+		}
 		public string Name { get; set; }
 		public byte Level { get; set; }
 		public int ByteSize { get; set; }
@@ -17,7 +27,7 @@ namespace AssemblyDumper.Unity
 		public int MetaFlag { get; set; }
 		public List<UnityNode> SubNodes { get; set; }
 
-		public string GetRelevantTypeName() => string.IsNullOrEmpty(AlternateTypeName) ? TypeName : AlternateTypeName;
+		private string m_OriginalTypeName;
 
 		/// <summary>
 		/// Deep clones a node and all its subnodes<br/>
@@ -28,7 +38,7 @@ namespace AssemblyDumper.Unity
 		{
 			var cloned = new UnityNode();
 			cloned.TypeName = new string(TypeName ?? "");
-			cloned.AlternateTypeName = new string(AlternateTypeName ?? "");
+			cloned.OriginalTypeName = new string(m_OriginalTypeName ?? "");
 			cloned.Name = new string(Name ?? "");
 			cloned.Level = Level;
 			cloned.ByteSize = ByteSize;

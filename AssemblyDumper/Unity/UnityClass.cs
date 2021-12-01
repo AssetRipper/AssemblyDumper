@@ -81,7 +81,7 @@ namespace AssemblyDumper.Unity
 			EditorRootNode = editorRootNode;
 			var mainRootNode = releaseRootNode ?? editorRootNode;
 
-			Name = mainRootNode.GetRelevantTypeName();
+			Name = mainRootNode.TypeName;
 			FullName = Name;
 			TypeID = -1;
 			Derived = new List<string>();

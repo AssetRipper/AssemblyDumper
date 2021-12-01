@@ -132,7 +132,7 @@ namespace AssemblyDumper.Passes
 			List<(UnityNode, UnityNode)> fieldList = GenerateFieldDictionary(releaseNode, editorNode);
 			foreach((UnityNode releaseField,UnityNode editorField) in fieldList)
 			{
-				string typeName = releaseField?.TypeName ?? editorField.TypeName;
+				string typeName = releaseField?.OriginalTypeName ?? editorField.OriginalTypeName;
 				if (primitiveNames.Contains(typeName))
 					continue;
 
@@ -169,7 +169,8 @@ namespace AssemblyDumper.Passes
 						{
 							var newEditorNode = editorField.DeepClone();
 							newEditorNode.Name = "Base";
-							newEditorNode.AlternateTypeName = elementTypeName;
+							newEditorNode.OriginalTypeName = typeName;
+							newEditorNode.TypeName = elementTypeName;
 							newEditorNode.RecalculateLevel(0); //Needed for type tree method generation
 
 							list[i] = (elementTypeName, releaseTypeNode, newEditorNode);
@@ -189,7 +190,8 @@ namespace AssemblyDumper.Passes
 						{
 							var newReleaseNode = releaseField.DeepClone();
 							newReleaseNode.Name = "Base";
-							newReleaseNode.AlternateTypeName = elementTypeName;
+							newReleaseNode.OriginalTypeName= typeName;
+							newReleaseNode.TypeName = elementTypeName;
 							newReleaseNode.RecalculateLevel(0); //Needed for type tree method generation
 
 							list[i] = (elementTypeName, newReleaseNode, editorTypeNode);
@@ -208,14 +210,16 @@ namespace AssemblyDumper.Passes
 						if (newReleaseNode != null)
 						{
 							newReleaseNode.Name = "Base";
-							newReleaseNode.AlternateTypeName = newTypeName;
+							newReleaseNode.OriginalTypeName = typeName;
+							newReleaseNode.TypeName = newTypeName;
 							newReleaseNode.RecalculateLevel(0); //Needed for type tree method generation
 						}
 						var newEditorNode = editorField?.DeepClone();
 						if (newEditorNode != null)
 						{
 							newEditorNode.Name = "Base";
-							newEditorNode.AlternateTypeName = newTypeName;
+							newEditorNode.OriginalTypeName = typeName;
+							newEditorNode.TypeName = newTypeName;
 							newEditorNode.RecalculateLevel(0); //Needed for type tree method generation
 						}
 						list.Add((newTypeName, newReleaseNode, newEditorNode));
@@ -226,12 +230,14 @@ namespace AssemblyDumper.Passes
 						if (releaseField != null)
 						{
 							//Logger.Info($"Release field {releaseField.Name} of type {releaseField.TypeName} renamed to {list[relevantIndex].Item1}");
-							releaseField.AlternateTypeName = list[relevantIndex].Item1;
+							releaseField.OriginalTypeName = typeName;
+							releaseField.TypeName = list[relevantIndex].Item1;
 						}
 						if (editorField != null)
 						{
 							//Logger.Info($"Editor field {editorField.Name} of type {editorField.TypeName} renamed to {list[relevantIndex].Item1}");
-							editorField.AlternateTypeName = list[relevantIndex].Item1;
+							editorField.OriginalTypeName = typeName;
+							editorField.TypeName = list[relevantIndex].Item1;
 						}
 					}
 				}
@@ -306,7 +312,7 @@ namespace AssemblyDumper.Passes
 			{
 				return false;
 			}
-			if (left.TypeName != right.TypeName)
+			if (left.OriginalTypeName != right.OriginalTypeName)
 			{
 				//Logger.Info($"\tInequal because type name {left.TypeName} doesn't match {right.TypeName}");
 				return false;
@@ -330,7 +336,7 @@ namespace AssemblyDumper.Passes
 				return true;
 			if(!root && releaseNode.Name != editorNode.Name) //The root nodes will not have the same name if one has already been renamed to "Base"
 				return false;
-			if(releaseNode.TypeName != editorNode.TypeName)
+			if(releaseNode.OriginalTypeName != editorNode.OriginalTypeName)
 				return false;
 			if (releaseNode.SubNodes == null || editorNode.SubNodes == null)
 				return true;
