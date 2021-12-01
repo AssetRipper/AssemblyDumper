@@ -28,6 +28,7 @@ namespace AssemblyDumper
 				Pass20_PPtrConversions.DoPass();
 				Pass21_GuidImplicitConversion.DoPass();
 				Pass22_VectorImplicitConversions.DoPass();
+				Pass23_OffsetPtrImplicitConversions.DoPass();
 
 				Pass30_ImplementHasNameInterface.DoPass();
 
