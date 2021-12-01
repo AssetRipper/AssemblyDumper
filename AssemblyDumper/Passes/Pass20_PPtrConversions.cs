@@ -10,6 +10,7 @@ namespace AssemblyDumper.Passes
 	{
 		private static TypeReference commonPPtrType;
 		private static TypeReference unityObjectBaseInterface;
+		private static GenericInstanceType unityObjectBasePPtr;
 		const MethodAttributes ConversionAttributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.HideBySig;
 
 		public static void DoPass()
@@ -18,6 +19,7 @@ namespace AssemblyDumper.Passes
 
 			commonPPtrType = SharedState.Module.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
 			unityObjectBaseInterface = SharedState.Module.ImportCommonType<AssetRipper.Core.Interfaces.IUnityObjectBase>();
+			unityObjectBasePPtr = commonPPtrType.MakeGenericInstanceType(unityObjectBaseInterface);
 
 			foreach (string name in SharedState.ClassDictionary.Keys)
 			{
@@ -57,13 +59,12 @@ namespace AssemblyDumper.Passes
 
 		private static void AddExplicitConversion(TypeDefinition pptrType)
 		{
-			GenericInstanceType conversionResultType = commonPPtrType.MakeGenericInstanceType(unityObjectBaseInterface);
-			MethodReference constructor = MethodUtils.MakeConstructorOnGenericType(conversionResultType, 2);
+			MethodReference constructor = MethodUtils.MakeConstructorOnGenericType(unityObjectBasePPtr, 2);
 
 			FieldDefinition fileID = pptrType.Fields.Single(field => field.Name == "m_FileID");
 			FieldDefinition pathID = pptrType.Fields.Single(f => f.Name == "m_PathID");
 
-			var implicitMethod = new MethodDefinition("op_Explicit", ConversionAttributes, conversionResultType);
+			var implicitMethod = new MethodDefinition("op_Explicit", ConversionAttributes, unityObjectBasePPtr);
 			pptrType.Methods.Add(implicitMethod);
 			implicitMethod.Body.InitLocals = true;
 			var processor = implicitMethod.Body.GetILProcessor();
