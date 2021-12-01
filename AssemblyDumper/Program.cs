@@ -19,11 +19,11 @@ namespace AssemblyDumper
 				Pass04_ExtractDependentNodeTrees.DoPass();
 				Pass06_AddTypeDefinitions.DoPass();
 				Pass07_ApplyInheritance.DoPass();
-				Pass08_AddConstructors.DoPass();
-				Pass09_MakeAssetFactory.DoPass();
+				Pass09_UnifyFieldsOfAbstractTypes.DoPass();
+				Pass10_AddFields.DoPass();
 
-				Pass12_UnifyFieldsOfAbstractTypes.DoPass();
-				Pass15_AddFields.DoPass();
+				Pass11_AddConstructors.DoPass();
+				Pass13_MakeAssetFactory.DoPass();
 
 				Pass20_PPtrConversions.DoPass();
 				Pass21_GuidImplicitConversion.DoPass();

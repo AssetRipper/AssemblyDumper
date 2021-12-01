@@ -7,7 +7,7 @@ using Mono.Cecil.Rocks;
 
 namespace AssemblyDumper.Passes
 {
-	public static class Pass15_AddFields
+	public static class Pass10_AddFields
 	{
 		private static MethodReference ReleaseOnlyAttributeConstructor { get; set; }
 		private static MethodReference EditorOnlyAttributeConstructor { get; set; }
@@ -17,7 +17,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 15: Add Fields");
+			Console.WriteLine("Pass 10: Add Fields");
 
 			ReleaseOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<ReleaseOnlyAttribute>();
 			EditorOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorOnlyAttribute>();

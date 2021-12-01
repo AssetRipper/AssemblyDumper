@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace AssemblyDumper.Passes
 {
-	public static class Pass08_AddConstructors
+	public static class Pass11_AddConstructors
 	{
 		private readonly static List<string> processed = new List<string>();
 		private static TypeReference AssetInfoRef;
@@ -16,7 +16,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			System.Console.WriteLine("Pass 8: Add Constructors");
+			System.Console.WriteLine("Pass 11: Add Constructors");
 			AssetInfoRef = SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Asset.AssetInfo>();
 			LayoutInfoRef = SharedState.Module.ImportCommonType<AssetRipper.Core.Layout.LayoutInfo>();
 			foreach (var pair in SharedState.ClassDictionary)
@@ -84,7 +84,6 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Call, baseConstructor);
 
 			processor.Emit(OpCodes.Ret);
-
 			processor.Body.Optimize();
 
 			typeDefinition.Methods.Add(constructor);

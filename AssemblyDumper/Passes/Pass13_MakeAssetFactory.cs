@@ -6,13 +6,13 @@ using System.Linq;
 
 namespace AssemblyDumper.Passes
 {
-	public static class Pass09_MakeAssetFactory
+	public static class Pass13_MakeAssetFactory
 	{
 		const TypeAttributes SealedClassAttributes = TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.Public | TypeAttributes.Sealed;
 		const MethodAttributes InterfaceOverrideAttributes = MethodAttributes.Public | MethodAttributes.NewSlot | MethodAttributes.HideBySig | MethodAttributes.Final | MethodAttributes.Virtual;
 		public static void DoPass()
 		{
-			System.Console.WriteLine("Pass 9: Make Asset Factory");
+			System.Console.WriteLine("Pass 13: Make Asset Factory");
 			TypeDefinition factoryDefinition = CreateFactoryDefinition();
 			factoryDefinition.AddCreateEngineAsset();
 			factoryDefinition.AddCreateAsset();
