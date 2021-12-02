@@ -40,6 +40,8 @@ namespace AssemblyDumper
 				Pass53_FillTypeTreeMethods.DoPass();
 				Pass54_FillDependencyMethods.DoPass();
 
+				Pass60_AddMarkerInterfaces.DoPass();
+
 				Pass98_ApplyAssemblyAttributes.DoPass();
 				Pass99_SaveAssembly.DoPass(options.OutputDirectory);
 				Console.WriteLine("Done!");
