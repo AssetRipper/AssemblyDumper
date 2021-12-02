@@ -140,7 +140,8 @@ namespace AssemblyDumper.Passes
 			ParameterDefinition parameter = constructor.Parameters[0];
 			ILProcessor processor = constructor.Body.GetILProcessor();
 			processor.Clear();
-			MethodReference baseConstructor = SharedState.Module.ImportReference(type.BaseType.Resolve().GetLayoutInfoConstructor());
+			type.BaseType.Resolve().TryGetAssetInfoConstructor(out MethodDefinition baseConstructorDefinition);
+			MethodReference baseConstructor = SharedState.Module.ImportReference(baseConstructorDefinition);
 			processor.Emit(OpCodes.Ldarg_0);
 			processor.Emit(OpCodes.Ldarg, parameter);
 			processor.Emit(OpCodes.Call, baseConstructor);
