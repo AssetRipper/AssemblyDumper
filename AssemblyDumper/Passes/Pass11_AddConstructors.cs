@@ -56,11 +56,10 @@ namespace AssemblyDumper.Passes
 
 		private static MethodDefinition AddSingleParameterConstructor(TypeDefinition typeDefinition, TypeReference parameterType, string parameterName)
 		{
-			var module = typeDefinition.Module;
 			var constructor = new MethodDefinition(
 				".ctor",
 				MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
-				module.ImportReference(typeof(void))
+				SystemTypeGetter.Void
 			);
 
 			ParameterDefinition parameter = new ParameterDefinition(parameterName, ParameterAttributes.None, parameterType);
