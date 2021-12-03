@@ -14,6 +14,7 @@ namespace AssemblyDumper.Passes
 		private static TypeReference TransferMetaFlagsDefinition { get; set; }
 		private static MethodReference EditorMetaFlagsAttributeConstructor { get; set; }
 		private static MethodReference ReleaseMetaFlagsAttributeConstructor { get; set; }
+		private static TypeReference AssetDictionaryType { get; set; }
 
 		public static void DoPass()
 		{
@@ -24,6 +25,7 @@ namespace AssemblyDumper.Passes
 			TransferMetaFlagsDefinition = SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TransferMetaFlags>();
 			EditorMetaFlagsAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorMetaFlagsAttribute>(1);
 			ReleaseMetaFlagsAttributeConstructor = SharedState.Module.ImportCommonConstructor<ReleaseMetaFlagsAttribute>(1);
+			AssetDictionaryType = SharedState.Module.ImportCommonType("AssetRipper.Core.IO.AssetDictionary`2");
 
 			foreach (var (name, unityClass) in SharedState.ClassDictionary)
 			{
@@ -149,8 +151,7 @@ namespace AssemblyDumper.Passes
 							return null;
 						}
 
-						var dictType = SystemTypeGetter.Dictionary;
-						return dictType.MakeGenericInstanceType(firstType, secondType);
+						return AssetDictionaryType.MakeGenericInstanceType(firstType, secondType);
 					}
 					case "pair":
 					{

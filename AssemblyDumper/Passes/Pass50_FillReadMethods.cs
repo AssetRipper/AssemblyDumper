@@ -12,9 +12,14 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass50_FillReadMethods
 	{
+		private static TypeReference AssetDictionaryType { get; set; }
+
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 50: Filling read methods");
+
+			AssetDictionaryType = SharedState.Module.ImportCommonType("AssetRipper.Core.IO.AssetDictionary`2");
+
 			foreach (var (name, klass) in SharedState.ClassDictionary)
 			{
 				if (!SharedState.TypeDictionary.ContainsKey(name))
@@ -530,7 +535,7 @@ namespace AssemblyDumper.Passes
 			//Resolve things we'll need
 			var genericDictType = ResolveDictionaryType(processor, node);
 			var genericDictCtor = MethodUtils.MakeConstructorOnGenericType(genericDictType, 0);
-			var addMethod = MethodUtils.MakeMethodOnGenericType(genericDictType.Resolve().Methods.First(m => m.Name == "Add"), genericDictType);
+			var addMethod = MethodUtils.MakeMethodOnGenericType(genericDictType.Resolve().Methods.Single(m => m.Name == "Add" && m.Parameters.Count == 2), genericDictType);
 
 			//Read length of array
 			var intReader = processor.Body.Method.Module.ImportReference(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadInt32"));
@@ -631,7 +636,7 @@ namespace AssemblyDumper.Passes
 			var second = pairNode.SubNodes[1];
 			var genericKvp = ResolvePairType(processor, first, second);
 
-			return SystemTypeGetter.Dictionary.MakeGenericInstanceType(genericKvp.GenericArguments[0], genericKvp.GenericArguments[1]);
+			return AssetDictionaryType.MakeGenericInstanceType(genericKvp.GenericArguments[0], genericKvp.GenericArguments[1]);
 		}
 
 		private static ArrayType ResolveVectorType(ILProcessor processor, UnityNode node)
