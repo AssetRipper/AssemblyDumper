@@ -10,12 +10,15 @@ namespace AssemblyDumper.Passes
 	{
 		const TypeAttributes SealedClassAttributes = TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.Public | TypeAttributes.Sealed;
 		const MethodAttributes InterfaceOverrideAttributes = MethodAttributes.Public | MethodAttributes.NewSlot | MethodAttributes.HideBySig | MethodAttributes.Final | MethodAttributes.Virtual;
+
+		public static TypeDefinition FactoryDefinition { get; private set; }
+
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 13: Make Asset Factory");
-			TypeDefinition factoryDefinition = CreateFactoryDefinition();
-			factoryDefinition.AddCreateEngineAsset();
-			factoryDefinition.AddCreateAsset();
+			FactoryDefinition = CreateFactoryDefinition();
+			FactoryDefinition.AddCreateEngineAsset();
+			FactoryDefinition.AddCreateAsset();
 		}
 
 		private static TypeDefinition CreateFactoryDefinition()

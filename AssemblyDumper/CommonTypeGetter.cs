@@ -55,6 +55,9 @@ namespace AssemblyDumper
 			return module.ImportReference(LookupCommonMethod<T>(filter));
 		}
 
+		/// <summary>
+		/// Import the default constructor for this type
+		/// </summary>
 		public static MethodReference ImportCommonConstructor<T>(this ModuleDefinition module) => module.ImportCommonConstructor(typeof(T).FullName, 0);
 		public static MethodReference ImportCommonConstructor<T>(this ModuleDefinition module, int numParameters) => module.ImportCommonConstructor(typeof(T).FullName, numParameters);
 		public static MethodReference ImportCommonConstructor(this ModuleDefinition module, string typeFullName) => module.ImportCommonConstructor(typeFullName, 0);
