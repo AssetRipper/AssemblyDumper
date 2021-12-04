@@ -36,6 +36,7 @@ namespace AssemblyDumper.Passes
 			ILProcessor processor = constructor.Body.GetILProcessor();
 			processor.EmitBaseConstructorCall();
 			processor.EmitAssetFactoryAssignment();
+			processor.EmitImporterFactoryAssignment();
 			processor.Emit(OpCodes.Ret);
 			processor.Body.Optimize();
 		}
@@ -54,6 +55,15 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Ldarg_0);
 			processor.Emit(OpCodes.Newobj, assetFactoryConstructor);
 			processor.Emit(OpCodes.Call, baseAssetFactorySetter);
+		}
+
+		private static void EmitImporterFactoryAssignment(this ILProcessor processor)
+		{
+			MethodReference baseAssetImporterFactorySetter = SharedState.Module.ImportCommonMethod<UnityHandlerBase>(m => m.Name == "set_ImporterFactory");
+			MethodDefinition assetImporterFactoryConstructor = Pass91_MakeImporterFactory.ImporterFactoryDefinition.Methods.Single(c => c.IsConstructor && !c.IsStatic);
+			processor.Emit(OpCodes.Ldarg_0);
+			processor.Emit(OpCodes.Newobj, assetImporterFactoryConstructor);
+			processor.Emit(OpCodes.Call, baseAssetImporterFactorySetter);
 		}
 
 		private static void AddUnityVersionOverride(this TypeDefinition type)
