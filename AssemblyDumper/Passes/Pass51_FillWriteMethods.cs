@@ -14,59 +14,74 @@ namespace AssemblyDumper.Passes
 	public static class Pass51_FillWriteMethods
 	{
 		private static MethodReference WriteMethod;
+		private static bool throwNotSupported = true;
 
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 51: Filling write methods");
-			foreach (var (name, klass) in SharedState.ClassDictionary)
+			foreach ((string name, UnityClass klass) in SharedState.ClassDictionary)
 			{
-				if (!SharedState.TypeDictionary.ContainsKey(name))
-					//Skip primitive types
-					continue;
+				TypeDefinition type = SharedState.TypeDictionary[name];
+				List<FieldDefinition> fields = FieldUtils.GetAllFieldsInTypeAndBase(type);
+				type.FillEditorWriteMethod(klass, fields);
+				type.FillReleaseWriteMethod(klass, fields);
+			}
+		}
 
-				var type = SharedState.TypeDictionary[name];
+		private static void FillEditorWriteMethod(this TypeDefinition type, UnityClass klass, List<FieldDefinition> fields)
+		{
+			MethodDefinition editorModeReadMethod = type.Methods.First(m => m.Name == "WriteEditor");
+			MethodBody editorModeBody = editorModeReadMethod.Body = new(editorModeReadMethod);
+			ILProcessor editorModeProcessor = editorModeBody.GetILProcessor();
 
-				var editorModeReadMethod = type.Methods.First(m => m.Name == "WriteEditor");
-				var releaseModeReadMethod = type.Methods.First(m => m.Name == "WriteRelease");
-
-				var editorModeBody = editorModeReadMethod.Body = new(editorModeReadMethod);
-				var releaseModeBody = releaseModeReadMethod.Body = new(releaseModeReadMethod);
-
-				var editorModeProcessor = editorModeBody.GetILProcessor();
-				var releaseModeProcessor = releaseModeBody.GetILProcessor();
-
-				var fields = FieldUtils.GetAllFieldsInTypeAndBase(type);
-
+			if (throwNotSupported)
+			{
+				editorModeProcessor.EmitNotSupportedException();
+			}
+			else
+			{
 				//Console.WriteLine($"Generating the editor read method for {name}");
 				if (klass.EditorRootNode != null)
 				{
-					foreach (var unityNode in klass.EditorRootNode.SubNodes)
+					foreach (UnityNode unityNode in klass.EditorRootNode.SubNodes)
 					{
 						AddWriteToProcessor(unityNode, editorModeProcessor, fields);
 					}
 				}
+				editorModeProcessor.Emit(OpCodes.Ret);
+			}
+			editorModeBody.Optimize();
+		}
 
+		private static void FillReleaseWriteMethod(this TypeDefinition type, UnityClass klass, List<FieldDefinition> fields)
+		{
+			MethodDefinition releaseModeReadMethod = type.Methods.First(m => m.Name == "WriteRelease");
+			MethodBody releaseModeBody = releaseModeReadMethod.Body = new(releaseModeReadMethod);
+			ILProcessor releaseModeProcessor = releaseModeBody.GetILProcessor();
+
+			if (throwNotSupported)
+			{
+				releaseModeProcessor.EmitNotSupportedException();
+			}
+			else
+			{
 				//Console.WriteLine($"Generating the release read method for {name}");
 				if (klass.ReleaseRootNode != null)
 				{
-					foreach (var unityNode in klass.ReleaseRootNode.SubNodes)
+					foreach (UnityNode unityNode in klass.ReleaseRootNode.SubNodes)
 					{
 						AddWriteToProcessor(unityNode, releaseModeProcessor, fields);
 					}
 				}
-
-				editorModeProcessor.Emit(OpCodes.Ret);
 				releaseModeProcessor.Emit(OpCodes.Ret);
-
-				editorModeBody.Optimize();
-				releaseModeBody.Optimize();
 			}
+			releaseModeBody.Optimize();
 		}
 
 		private static void AddWriteToProcessor(UnityNode node, ILProcessor processor, List<FieldDefinition> fields)
 		{
 			//Get field
-			var field = fields.SingleOrDefault(f => f.Name == node.Name);
+			FieldDefinition field = fields.SingleOrDefault(f => f.Name == node.Name);
 
 			if (field == null)
 				throw new Exception($"Field {node.Name} cannot be found in {processor.Body.Method.DeclaringType} (fields are {string.Join(", ", fields.Select(f => f.Name))})");
@@ -78,7 +93,7 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Ldarg_0); //Load this
 			processor.Emit(OpCodes.Ldfld, field); //Load field
 
-			var genericMethod = new GenericInstanceMethod(WriteMethod);
+			GenericInstanceMethod genericMethod = new GenericInstanceMethod(WriteMethod);
 			genericMethod.GenericArguments.Add(field.FieldType);
 			processor.Emit(OpCodes.Call, genericMethod);
 
@@ -93,7 +108,7 @@ namespace AssemblyDumper.Passes
 				processor.Emit(OpCodes.Ldarg_1);
 
 				//Get ReadAsset
-				var alignMethod = CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "AlignStream");
+				MethodDefinition alignMethod = CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "AlignStream");
 
 				//Call it
 				processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(alignMethod));
