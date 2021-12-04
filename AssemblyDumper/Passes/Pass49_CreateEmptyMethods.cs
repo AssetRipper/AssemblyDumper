@@ -50,7 +50,7 @@ namespace AssemblyDumper.Passes
 				editorTypeTreeDef.Parameters.Add(new("startingIndex", ParameterAttributes.None, SystemTypeGetter.Int32));
 
 				var fetchDependenciesDef = new MethodDefinition("FetchDependencies", OverrideMethodAttributes, enumerablePPtrsRef);
-				releaseYamlDef.Parameters.Add(new("context", ParameterAttributes.None, dependencyContextRef));
+				fetchDependenciesDef.Parameters.Add(new("context", ParameterAttributes.None, dependencyContextRef));
 
 				type.Methods.Add(releaseReadDef);
 				type.Methods.Add(editorReadDef);
