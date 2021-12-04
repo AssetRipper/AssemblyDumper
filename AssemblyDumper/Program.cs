@@ -24,8 +24,6 @@ namespace AssemblyDumper
 
 				Pass11_AddConstructors.DoPass();
 				Pass12_FillConstructors.DoPass();
-				Pass13_MakeAssetFactory.DoPass();
-				Pass15_UnityVersionHandler.DoPass();
 
 				Pass20_PPtrConversions.DoPass();
 				Pass21_GuidImplicitConversion.DoPass();
@@ -42,6 +40,9 @@ namespace AssemblyDumper
 				Pass54_FillDependencyMethods.DoPass();
 
 				Pass60_AddMarkerInterfaces.DoPass();
+
+				Pass90_MakeAssetFactory.DoPass();
+				Pass95_UnityVersionHandler.DoPass();
 
 				Pass98_ApplyAssemblyAttributes.DoPass();
 				Pass99_SaveAssembly.DoPass(options.OutputDirectory);

@@ -3,15 +3,12 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityHandlerBase = AssetRipper.Core.VersionHandling.UnityHandlerBase;
 
 namespace AssemblyDumper.Passes
 {
-	public static class Pass15_UnityVersionHandler
+	public static class Pass95_UnityVersionHandler
 	{
 		const TypeAttributes SealedClassAttributes = TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.Public | TypeAttributes.Sealed;
 		const MethodAttributes PropertyOverrideAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.Virtual;
@@ -20,7 +17,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 15: Unity Version Handler");
+			Console.WriteLine("Pass 95: Unity Version Handler");
 			TypeReference baseHandler = SharedState.Module.ImportCommonType<AssetRipper.Core.VersionHandling.UnityHandlerBase>();
 			HandlerDefinition = new TypeDefinition(SharedState.RootNamespace, "UnityVersionHandler", SealedClassAttributes, baseHandler);
 			SharedState.Module.Types.Add(HandlerDefinition);
@@ -53,7 +50,7 @@ namespace AssemblyDumper.Passes
 		private static void EmitAssetFactoryAssignment(this ILProcessor processor)
 		{
 			MethodReference baseAssetFactorySetter = SharedState.Module.ImportCommonMethod<UnityHandlerBase>(m => m.Name == "set_AssetFactory");
-			MethodDefinition assetFactoryConstructor = Pass13_MakeAssetFactory.FactoryDefinition.Methods.Single(c => c.IsConstructor && !c.IsStatic);
+			MethodDefinition assetFactoryConstructor = Pass90_MakeAssetFactory.FactoryDefinition.Methods.Single(c => c.IsConstructor && !c.IsStatic);
 			processor.Emit(OpCodes.Ldarg_0);
 			processor.Emit(OpCodes.Newobj, assetFactoryConstructor);
 			processor.Emit(OpCodes.Call, baseAssetFactorySetter);

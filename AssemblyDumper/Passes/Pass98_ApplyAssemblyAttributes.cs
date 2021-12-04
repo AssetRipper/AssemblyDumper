@@ -44,7 +44,7 @@ namespace AssemblyDumper.Passes
 		{
 			var registerVersionHandlerAttributeConstructor = _this.MainModule.ImportCommonConstructor<RegisterVersionHandlerAttribute>(1);
 			var attrDef = new CustomAttribute(registerVersionHandlerAttributeConstructor);
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.Type, Pass15_UnityVersionHandler.HandlerDefinition));
+			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.Type, Pass95_UnityVersionHandler.HandlerDefinition));
 			_this.CustomAttributes.Add(attrDef);
 		}
 	}
