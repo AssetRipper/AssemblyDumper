@@ -68,7 +68,7 @@ namespace AssemblyDumper.Passes
 		private static void AddLoadToProcessor(UnityNode node, ILProcessor processor, List<FieldDefinition> fields)
 		{
 			//Get field
-			var field = fields.FirstOrDefault(f => f.Name == node.Name);
+			var field = fields.SingleOrDefault(f => f.Name == node.Name);
 
 			if (field == null)
 				throw new Exception($"Field {node.Name} cannot be found in {processor.Body.Method.DeclaringType} (fields are {string.Join(", ", fields.Select(f => f.Name))})");

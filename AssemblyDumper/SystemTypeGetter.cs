@@ -93,14 +93,23 @@ namespace AssemblyDumper
 
 		public static MethodReference ImportSystemDefaultConstructor(this ModuleDefinition module, string typeFullName)
 		{
-			return module.ImportReference(LookupSystemType(typeFullName).GetDefaultConstructor());
+			TypeDefinition type = LookupSystemType(typeFullName) ?? throw new Exception($"{typeFullName} not found in the system assemblies");
+			return module.ImportReference(type.GetDefaultConstructor());
 		}
 
-		public static TypeDefinition LookupSystemType(string typeFullName) => RuntimeAssembly.MainModule.GetType(typeFullName) ?? CollectionsAssembly.MainModule.GetType(typeFullName);
+		public static TypeDefinition LookupSystemType(string typeFullName)
+		{
+			return RuntimeAssembly.MainModule.GetType(typeFullName)
+				?? CollectionsAssembly.MainModule.GetType(typeFullName);
+		}
 		public static TypeDefinition LookupSystemType(Type type) => LookupSystemType(type.FullName);
 		public static TypeDefinition LookupSystemType<T>() => LookupSystemType(typeof(T));
 
-		public static MethodDefinition LookupSystemMethod(string typeFullName, Func<MethodDefinition, bool> filter) => LookupSystemType(typeFullName).Methods.Single(filter);
+		public static MethodDefinition LookupSystemMethod(string typeFullName, Func<MethodDefinition, bool> filter)
+		{
+			TypeDefinition type = LookupSystemType(typeFullName) ?? throw new Exception($"{typeFullName} not found in the system assemblies");
+			return type.Methods.Single(filter);
+		}
 		public static MethodDefinition LookupSystemMethod(Type type, Func<MethodDefinition, bool> filter) => LookupSystemMethod(type.FullName, filter);
 		public static MethodDefinition LookupSystemMethod<T>(Func<MethodDefinition, bool> filter) => LookupSystemMethod(typeof(T), filter);
 
