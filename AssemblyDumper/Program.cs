@@ -40,6 +40,7 @@ namespace AssemblyDumper
 				Pass54_FillDependencyMethods.DoPass();
 
 				Pass60_AddMarkerInterfaces.DoPass();
+				Pass61_NativeImporterInterface.DoPass();
 
 				Pass90_MakeAssetFactory.DoPass();
 				Pass95_UnityVersionHandler.DoPass();
