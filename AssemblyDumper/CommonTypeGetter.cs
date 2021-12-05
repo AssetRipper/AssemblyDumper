@@ -22,8 +22,11 @@ namespace AssemblyDumper
 		//Yaml Export
 		public static TypeReference IExportContainerDefinition => generatedModule.ImportCommonType<AssetRipper.Core.Project.Collections.IExportCollection>();
 		public static TypeReference YAMLNodeDefinition => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLNode>();
-		public static TypeReference YAMLMappingNodeDefinition => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLMappingNode>();
+		public static TypeReference YAMLMappingNodeReference => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLMappingNode>();
 		public static MethodReference YAMLMappingNodeConstructor => generatedModule.ImportCommonConstructor<AssetRipper.Core.YAML.YAMLMappingNode>();
+
+		//Generics
+		public static TypeReference AssetDictionaryType => generatedModule.ImportCommonType("AssetRipper.Core.IO.AssetDictionary`2");
 
 		public static void Initialize(ModuleDefinition module)
 		{

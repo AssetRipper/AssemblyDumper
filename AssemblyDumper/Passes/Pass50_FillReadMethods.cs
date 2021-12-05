@@ -307,7 +307,7 @@ namespace AssemblyDumper.Passes
 			//Resolve things we'll need
 			var first = listTypeNode.SubNodes[0];
 			var second = listTypeNode.SubNodes[1];
-			var genericKvp = ResolvePairType(processor, first, second);
+			var genericKvp = GenericTypeResolver.ResolvePairType(first, second);
 
 			var arrayType = genericKvp.MakeArrayType();
 
@@ -384,7 +384,7 @@ namespace AssemblyDumper.Passes
 			//Resolve things we'll need
 			var first = listTypeNode.SubNodes[0];
 			var second = listTypeNode.SubNodes[1];
-			var genericKvp = ResolvePairType(processor, first, second);
+			var genericKvp = GenericTypeResolver.ResolvePairType(first, second);
 
 			var arrayType = genericKvp.MakeArrayType();
 
@@ -463,7 +463,7 @@ namespace AssemblyDumper.Passes
 
 			//we need an array type, so let's get that
 			var dictNode = node.SubNodes[1];
-			var dictType = ResolveDictionaryType(processor, dictNode);
+			var dictType = GenericTypeResolver.ResolveDictionaryType(dictNode);
 			var arrayType = dictType.MakeArrayType(); //cursed. that is all.
 
 			//Read length of array
@@ -533,7 +533,7 @@ namespace AssemblyDumper.Passes
 			//Store dict in field
 
 			//Resolve things we'll need
-			var genericDictType = ResolveDictionaryType(processor, node);
+			var genericDictType = GenericTypeResolver.ResolveDictionaryType(node);
 			var genericDictCtor = MethodUtils.MakeConstructorOnGenericType(genericDictType, 0);
 			var addMethod = MethodUtils.MakeMethodOnGenericType(genericDictType.Resolve().Methods.Single(m => m.Name == "Add" && m.Parameters.Count == 2), genericDictType);
 
@@ -615,7 +615,7 @@ namespace AssemblyDumper.Passes
 			//Load the right side of the pair
 			ReadFieldContent(second, processor, null);
 
-			var genericKvp = ResolvePairType(processor, first, second);
+			var genericKvp = GenericTypeResolver.ResolvePairType(first, second);
 
 			var genericCtor = MethodUtils.MakeConstructorOnGenericType(genericKvp, 2);
 
@@ -625,57 +625,6 @@ namespace AssemblyDumper.Passes
 			//Store in field if desired
 			if (field != null)
 				processor.Emit(OpCodes.Stfld, field);
-		}
-
-		private static GenericInstanceType ResolveDictionaryType(ILProcessor processor, UnityNode node)
-		{
-			var pairNode = node.SubNodes[0] //Array
-				.SubNodes[1]; //Pair
-
-			var first = pairNode.SubNodes[0];
-			var second = pairNode.SubNodes[1];
-			var genericKvp = ResolvePairType(processor, first, second);
-
-			return AssetDictionaryType.MakeGenericInstanceType(genericKvp.GenericArguments[0], genericKvp.GenericArguments[1]);
-		}
-
-		private static ArrayType ResolveVectorType(ILProcessor processor, UnityNode node)
-		{
-			var contentNode = node.SubNodes[0].SubNodes[1];
-			var typeName = contentNode.TypeName;
-
-			return processor.Body.Method.Module.ImportReference(processor.Body.Method.Module.GetPrimitiveType(typeName) ?? SystemTypeGetter.LookupSystemType(typeName) ?? SharedState.TypeDictionary[typeName]).MakeArrayType();
-		}
-
-		private static GenericInstanceType ResolvePairType(ILProcessor processor, UnityNode first, UnityNode second)
-		{
-			var firstName = first.TypeName;
-			var secondName = second.TypeName;
-
-			TypeReference firstType;
-			TypeReference secondType;
-			if (firstName == "pair")
-				firstType = ResolvePairType(processor, first.SubNodes[0], first.SubNodes[1]);
-			else if (firstName == "map")
-				firstType = ResolveDictionaryType(processor, first);
-			else if (firstName is "vector" or "set" or "staticvector")
-				firstType = ResolveVectorType(processor, first);
-			else
-				firstType = processor.Body.Method.Module.ImportReference(processor.Body.Method.Module.GetPrimitiveType(firstName) ?? SystemTypeGetter.LookupSystemType(firstName) ?? SharedState.TypeDictionary[firstName]);
-
-			if (secondName == "pair")
-				secondType = ResolvePairType(processor, second.SubNodes[0], second.SubNodes[1]);
-			else if (secondName == "map")
-				secondType = ResolveDictionaryType(processor, second);
-			else if (secondName is "vector" or "set" or "staticvector")
-				secondType = ResolveVectorType(processor, second);
-			else
-				secondType = processor.Body.Method.Module.ImportReference(processor.Body.Method.Module.GetPrimitiveType(secondName) ?? SystemTypeGetter.LookupSystemType(secondName) ?? SharedState.TypeDictionary[secondName]);
-
-			//Construct a KeyValuePair
-			var kvpType = SystemTypeGetter.KeyValuePair;
-			var genericKvp = kvpType.MakeGenericInstanceType(firstType, secondType);
-			return genericKvp;
 		}
 	}
 }

@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
+using System;
 
 namespace AssemblyDumper
 {
@@ -29,6 +30,14 @@ namespace AssemblyDumper
 			{
 				processor.Emit(OpCodes.Ldnull);
 			}
+		}
+
+		public static void EmitLogStatement(this ILProcessor processor, string text)
+		{
+			Func<MethodDefinition, bool> func = m => m.IsStatic && m.Name == "Info" && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.Name == "String";
+			MethodReference writeMethod = SharedState.Module.ImportCommonMethod("AssetRipper.Core.Logging.Logger", func);
+			processor.Emit(OpCodes.Ldstr, text);
+			processor.Emit(OpCodes.Call, writeMethod);
 		}
 
 		/// <summary>
