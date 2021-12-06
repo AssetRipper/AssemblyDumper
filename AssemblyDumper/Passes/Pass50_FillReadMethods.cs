@@ -86,7 +86,6 @@ namespace AssemblyDumper.Passes
 
 			switch (node.TypeName)
 			{
-				//TODO
 				case "vector":
 				case "set":
 				case "staticvector":

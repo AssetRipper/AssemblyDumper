@@ -81,7 +81,13 @@ namespace AssemblyDumper.Passes
 					processor.Emit(OpCodes.Call, method);
 					processor.Emit(OpCodes.Stfld, field);
 				}
-				else if(field.FieldType.FullName != "System.String")
+				else if(field.FieldType.FullName == "System.String")
+				{
+					processor.Emit(OpCodes.Ldarg_0);
+					processor.Emit(OpCodes.Ldstr, "");
+					processor.Emit(OpCodes.Stfld, field);
+				}
+				else
 				{
 					Console.WriteLine($"Warning: skipping {type.Name}.{field.Name} of type {field.FieldType.Name} while filling default constructors.");
 				}

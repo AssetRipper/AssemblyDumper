@@ -63,7 +63,6 @@ namespace AssemblyDumper
 		public static TypeReference String { get; private set; }
 		public static TypeReference Dictionary { get; private set; }
 		public static TypeReference List { get; private set; }
-		public static TypeReference KeyValuePair { get; private set; }
 		public static TypeReference Type { get; private set; }
 		public static TypeReference Void { get; private set; }
 		public static TypeReference Object { get; private set; }
@@ -83,7 +82,6 @@ namespace AssemblyDumper
 			String = module.ImportSystemType("System.String");
 			Dictionary = module.ImportSystemType("System.Collections.Generic.Dictionary`2");
 			List = module.ImportSystemType("System.Collections.Generic.List`1");
-			KeyValuePair = module.ImportSystemType("System.Collections.Generic.KeyValuePair`2");
 			Type = module.ImportSystemType("System.Type");
 			Void = module.ImportSystemType("System.Void");
 			Object = module.ImportSystemType("System.Object");

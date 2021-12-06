@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using System;
 using System.Linq;
 
 namespace AssemblyDumper.Utils
@@ -15,8 +16,7 @@ namespace AssemblyDumper.Utils
 
 		public static MethodReference MakeMethodOnGenericType(MethodDefinition definition, GenericInstanceType instanceType)
 		{
-			//Make the constructor on the generic type
-			//Cecil sucks.
+			//https://www.py4u.net/discuss/1996785
 			var genericMethod = new MethodReference(definition.Name, definition.ReturnType)
 			{
 				DeclaringType = instanceType,
@@ -27,6 +27,37 @@ namespace AssemblyDumper.Utils
 			definition.Parameters.ToList().ForEach(genericMethod.Parameters.Add);
 			definition.GenericParameters.ToList().ForEach(genericMethod.GenericParameters.Add);
 			return genericMethod;
+		}
+
+		public static MethodReference MakeMethodReferenceOnGenericType(MethodReference self, params TypeReference[] arguments)
+		{
+			var reference = new MethodReference(self.Name, self.ReturnType)
+			{
+				DeclaringType = self.DeclaringType.MakeGenericType(arguments),
+				HasThis = self.HasThis,
+				ExplicitThis = self.ExplicitThis,
+				CallingConvention = self.CallingConvention,
+			};
+
+			foreach (var parameter in self.Parameters)
+				reference.Parameters.Add(new ParameterDefinition(parameter.ParameterType));
+
+			foreach (var generic_parameter in self.GenericParameters)
+				reference.GenericParameters.Add(new GenericParameter(generic_parameter.Name, reference));
+
+			return reference;
+		}
+
+		private static TypeReference MakeGenericType(this TypeReference self, params TypeReference[] arguments)
+		{
+			if (self.GenericParameters.Count != arguments.Length)
+				throw new ArgumentException();
+
+			var instance = new GenericInstanceType(self);
+			foreach (var argument in arguments)
+				instance.GenericArguments.Add(argument);
+
+			return instance;
 		}
 	}
 }

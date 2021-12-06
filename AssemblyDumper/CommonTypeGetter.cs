@@ -20,13 +20,16 @@ namespace AssemblyDumper
 		public static TypeReference AssetWriterDefinition => generatedModule.ImportCommonType<AssetRipper.Core.IO.Asset.AssetWriter>();
 
 		//Yaml Export
-		public static TypeReference IExportContainerDefinition => generatedModule.ImportCommonType<AssetRipper.Core.Project.Collections.IExportCollection>();
+		public static TypeReference IExportContainerDefinition => generatedModule.ImportCommonType<AssetRipper.Core.Project.IExportContainer>();
 		public static TypeReference YAMLNodeDefinition => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLNode>();
-		public static TypeReference YAMLMappingNodeReference => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLMappingNode>();
+		public static TypeReference YAMLMappingNodeDefinition => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLMappingNode>();
+		public static TypeReference YAMLSequenceNodeDefinition => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLSequenceNode>();
 		public static MethodReference YAMLMappingNodeConstructor => generatedModule.ImportCommonConstructor<AssetRipper.Core.YAML.YAMLMappingNode>();
+		public static MethodReference YAMLSequenceNodeConstructor => generatedModule.ImportCommonConstructor<AssetRipper.Core.YAML.YAMLSequenceNode>(1);
 
 		//Generics
 		public static TypeReference AssetDictionaryType => generatedModule.ImportCommonType("AssetRipper.Core.IO.AssetDictionary`2");
+		public static TypeReference NullableKeyValuePair => generatedModule.ImportCommonType("AssetRipper.Core.IO.NullableKeyValuePair`2");
 
 		public static void Initialize(ModuleDefinition module)
 		{

@@ -168,7 +168,7 @@ namespace AssemblyDumper.Passes
 		private static TypeReference ResolvePairType(UnityNode pairNode)
 		{
 			ResolvePairElementTypes(pairNode, out TypeReference firstType, out TypeReference secondType);
-			TypeReference kvpType = SystemTypeGetter.KeyValuePair;
+			TypeReference kvpType = CommonTypeGetter.NullableKeyValuePair;
 			return kvpType.MakeGenericInstanceType(firstType, secondType);
 		}
 
