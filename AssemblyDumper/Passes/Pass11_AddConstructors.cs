@@ -28,7 +28,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddConstructor(UnityClass typeInfo)
 		{
-			if (Pass04_ExtractDependentNodeTrees.primitives.Contains(typeInfo.Name))
+			if (PrimitiveTypes.primitives.Contains(typeInfo.Name))
 				return;
 
 			if (!string.IsNullOrEmpty(typeInfo.Base) && !processed.Contains(typeInfo.Base))

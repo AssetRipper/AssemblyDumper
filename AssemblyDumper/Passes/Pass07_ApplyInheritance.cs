@@ -15,7 +15,7 @@ namespace AssemblyDumper.Passes
 
 			foreach (var pair in SharedState.ClassDictionary)
 			{
-				if (Pass04_ExtractDependentNodeTrees.primitives.Contains(pair.Key))
+				if (PrimitiveTypes.primitives.Contains(pair.Key))
 					continue;
 				if (string.IsNullOrEmpty(pair.Value.Base))
 				{
