@@ -117,7 +117,7 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Stloc, fieldNode);
 
 			processor.Emit(OpCodes.Ldloc, yamlMappingNode);
-			processor.EmitScalarNodeForString(node.Name);
+			processor.EmitScalarNodeForString(node.OriginalName);
 			processor.Emit(OpCodes.Ldloc, fieldNode);
 			processor.Emit(OpCodes.Call, mappingAddMethod);
 		}

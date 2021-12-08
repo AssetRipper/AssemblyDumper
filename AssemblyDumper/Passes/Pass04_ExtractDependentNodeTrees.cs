@@ -7,78 +7,6 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass04_ExtractDependentNodeTrees
 	{
-		public readonly static string[] primitives =
-		{
-			"Array",
-			"bool",
-			"char",
-			"double",
-			"float",
-			"int",
-			"list",
-			"long long", //long in C#
-			"map",
-			"pair",
-			"set",
-			"short",
-			"SInt16",
-			"SInt32",
-			"SInt64",
-			"SInt8",
-			"staticvector",
-			"string",
-			"TypelessData", //byte[]
-			"UInt16",
-			"UInt32",
-			"UInt64",
-			"UInt8",
-			"unsigned int",
-			"unsigned long long",
-			"unsigned short",
-			"Type*", //int32
-			"vector",
-			"void"
-		};
-
-		private readonly static string[] primitiveNames =
-		{
-			"bool",
-			"char",
-			"double",
-			"float",
-			"int",
-			"long long", //long in C#
-			"short",
-			"SInt16",
-			"SInt32",
-			"SInt64",
-			"SInt8",
-			"string",
-			"TypelessData", //byte[]
-			"UInt16",
-			"UInt32",
-			"UInt64",
-			"UInt8",
-			"unsigned int",
-			"unsigned long long",
-			"unsigned short",
-			"Type*", //int32
-			"void"
-		};
-
-		public readonly static string[] generics =
-		{
-			"Array",
-			"first",
-			"list",
-			"map",
-			"pair",
-			"second",
-			"set",
-			"staticvector",
-			"vector"
-		};
-
 		/// <summary>
 		/// OriginalTypeName : List(newTypeName,releaseRoot,editorRoot)
 		/// </summary>
@@ -112,8 +40,8 @@ namespace AssemblyDumper.Passes
 					if(!SharedState.ClassDictionary.TryGetValue(uniqueName, out var _))
 					{
 						var newClass = new UnityClass(releaseNode, editorNode);
-						newClass.Name = uniqueName;
-						newClass.FullName = uniqueName;
+						//newClass.Name = uniqueName;
+						//newClass.FullName = uniqueName;
 						SharedState.ClassDictionary.Add(uniqueName, newClass);
 					}
 				}
@@ -124,7 +52,7 @@ namespace AssemblyDumper.Passes
 		{
 			foreach (UnityClass unityClass in SharedState.ClassDictionary.Values)
 			{
-				if(!AreCompatible(unityClass.ReleaseRootNode, unityClass.EditorRootNode, false))
+				if(!AreCompatibleWithLogging(unityClass.ReleaseRootNode, unityClass.EditorRootNode, false))
 				{
 					Console.WriteLine($"{unityClass.Name} has incompatible release and editor root nodes");
 				}
@@ -145,9 +73,11 @@ namespace AssemblyDumper.Passes
 			List<(UnityNode, UnityNode)> fieldList = GenerateFieldDictionary(releaseNode, editorNode);
 			foreach((UnityNode releaseField,UnityNode editorField) in fieldList)
 			{
-				string typeName = releaseField?.OriginalTypeName ?? editorField.OriginalTypeName;
-				if (primitiveNames.Contains(typeName))
+				string originalTypeName = releaseField?.OriginalTypeName ?? editorField.OriginalTypeName;
+				if (PrimitiveTypes.primitiveNames.Contains(originalTypeName))
 					continue;
+
+				string typeName = Pass02_RenameSubnodes.GetValidName(originalTypeName);
 
 				AddDependentTypes(releaseField, editorField);
 
@@ -182,7 +112,8 @@ namespace AssemblyDumper.Passes
 						{
 							var newEditorNode = editorField.DeepClone();
 							newEditorNode.Name = "Base";
-							newEditorNode.OriginalTypeName = typeName;
+							newEditorNode.OriginalName = "Base";
+							newEditorNode.OriginalTypeName = originalTypeName;
 							newEditorNode.TypeName = elementTypeName;
 							newEditorNode.RecalculateLevel(0); //Needed for type tree method generation
 
@@ -203,7 +134,8 @@ namespace AssemblyDumper.Passes
 						{
 							var newReleaseNode = releaseField.DeepClone();
 							newReleaseNode.Name = "Base";
-							newReleaseNode.OriginalTypeName= typeName;
+							newReleaseNode.OriginalName = "Base";
+							newReleaseNode.OriginalTypeName= originalTypeName;
 							newReleaseNode.TypeName = elementTypeName;
 							newReleaseNode.RecalculateLevel(0); //Needed for type tree method generation
 
@@ -223,7 +155,8 @@ namespace AssemblyDumper.Passes
 						if (newReleaseNode != null)
 						{
 							newReleaseNode.Name = "Base";
-							newReleaseNode.OriginalTypeName = typeName;
+							newReleaseNode.OriginalName = "Base";
+							newReleaseNode.OriginalTypeName = originalTypeName;
 							newReleaseNode.TypeName = newTypeName;
 							newReleaseNode.RecalculateLevel(0); //Needed for type tree method generation
 						}
@@ -231,7 +164,8 @@ namespace AssemblyDumper.Passes
 						if (newEditorNode != null)
 						{
 							newEditorNode.Name = "Base";
-							newEditorNode.OriginalTypeName = typeName;
+							newEditorNode.OriginalName = "Base";
+							newEditorNode.OriginalTypeName = originalTypeName;
 							newEditorNode.TypeName = newTypeName;
 							newEditorNode.RecalculateLevel(0); //Needed for type tree method generation
 						}
@@ -243,31 +177,33 @@ namespace AssemblyDumper.Passes
 						if (releaseField != null)
 						{
 							//Console.WriteLine($"Release field {releaseField.Name} of type {releaseField.TypeName} renamed to {list[relevantIndex].Item1}");
-							releaseField.OriginalTypeName = typeName;
+							releaseField.OriginalTypeName = originalTypeName;
 							releaseField.TypeName = list[relevantIndex].Item1;
 						}
 						if (editorField != null)
 						{
 							//Console.WriteLine($"Editor field {editorField.Name} of type {editorField.TypeName} renamed to {list[relevantIndex].Item1}");
-							editorField.OriginalTypeName = typeName;
+							editorField.OriginalTypeName = originalTypeName;
 							editorField.TypeName = list[relevantIndex].Item1;
 						}
 					}
 				}
 				else
 				{
-					if (!generics.Contains(typeName) && !SharedState.ClassDictionary.ContainsKey(typeName))
+					if (!PrimitiveTypes.generics.Contains(typeName) && !SharedState.ClassDictionary.ContainsKey(typeName))
 					{
 						var newReleaseNode = releaseField?.DeepClone();
 						if(newReleaseNode != null)
 						{
 							newReleaseNode.Name = "Base";
+							newReleaseNode.OriginalName = "Base";
 							newReleaseNode.RecalculateLevel(0); //Needed for type tree method generation
 						}
 						var newEditorNode = editorField?.DeepClone();
 						if(newEditorNode != null)
 						{
 							newEditorNode.Name = "Base";
+							newEditorNode.OriginalName = "Base";
 							newEditorNode.RecalculateLevel(0); //Needed for type tree method generation
 						}
 						var newList = new List<(string,UnityNode,UnityNode)>();
@@ -321,13 +257,14 @@ namespace AssemblyDumper.Passes
 			{
 				return left == null && right == null;
 			}
-			if(!root && left.Name != right.Name) //The root nodes will not have the same name if one has already been renamed to "Base"
+			if(!root && left.OriginalName != right.OriginalName) //The root nodes will not have the same name if one has already been renamed to "Base"
 			{
+				//Console.WriteLine($"\tInequal because name {left.OriginalName} doesn't match {right.OriginalName}");
 				return false;
 			}
 			if (left.OriginalTypeName != right.OriginalTypeName)
 			{
-				//Console.WriteLine($"\tInequal because type name {left.TypeName} doesn't match {right.TypeName}");
+				//Console.WriteLine($"\tInequal because type name {left.OriginalTypeName} doesn't match {right.OriginalTypeName}");
 				return false;
 			}
 			if (left.SubNodes.Count != right.SubNodes.Count)
@@ -347,7 +284,7 @@ namespace AssemblyDumper.Passes
 		{
 			if (releaseNode == null || editorNode == null)
 				return true;
-			if(!root && releaseNode.Name != editorNode.Name) //The root nodes will not have the same name if one has already been renamed to "Base"
+			if(!root && releaseNode.OriginalName != editorNode.OriginalName) //The root nodes will not have the same name if one has already been renamed to "Base"
 				return false;
 			if(releaseNode.OriginalTypeName != editorNode.OriginalTypeName)
 				return false;
@@ -360,6 +297,45 @@ namespace AssemblyDumper.Passes
 				if(editorFields.TryGetValue(releasePair.Key, out UnityNode editorField))
 				{
 					if(!AreCompatible(releasePair.Value, editorField, false))
+					{
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
+		private static bool AreCompatibleWithLogging(UnityNode releaseNode, UnityNode editorNode, bool root)
+		{
+			if (releaseNode == null || editorNode == null)
+			{
+				return true;
+			}
+
+			if (!root && releaseNode.OriginalName != editorNode.OriginalName) //The root nodes will not have the same name if one has already been renamed to "Base"
+			{
+				Console.WriteLine($"Original Name {releaseNode.OriginalName} does not equal {editorNode.OriginalName}");
+				return false;
+			}
+
+			if (releaseNode.OriginalTypeName != editorNode.OriginalTypeName)
+			{
+				Console.WriteLine($"Original Type Name {releaseNode.OriginalTypeName} does not equal {editorNode.OriginalTypeName}");
+				return false;
+			}
+
+			if (releaseNode.SubNodes == null || editorNode.SubNodes == null)
+			{
+				return true;
+			}
+
+			var releaseFields = releaseNode.SubNodes.ToDictionary(x => x.Name, x => x);
+			var editorFields = editorNode.SubNodes.ToDictionary(x => x.Name, x => x);
+			foreach (var releasePair in releaseFields)
+			{
+				if (editorFields.TryGetValue(releasePair.Key, out UnityNode editorField))
+				{
+					if (!AreCompatibleWithLogging(releasePair.Value, editorField, false))
 					{
 						return false;
 					}

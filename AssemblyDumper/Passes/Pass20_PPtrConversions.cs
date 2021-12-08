@@ -23,9 +23,9 @@ namespace AssemblyDumper.Passes
 
 			foreach (string name in SharedState.ClassDictionary.Keys)
 			{
-				if (name.StartsWith("PPtr<"))
+				if (name.StartsWith("PPtr_"))
 				{
-					string parameterTypeName = name.Substring(5, name.LastIndexOf('>') - 5);
+					string parameterTypeName = name.Substring(5, name.LastIndexOf('_') - 5);
 					TypeDefinition parameterType = SharedState.TypeDictionary[parameterTypeName];
 					TypeDefinition pptrType = SharedState.TypeDictionary[name];
 					AddImplicitConversion(pptrType, parameterType);

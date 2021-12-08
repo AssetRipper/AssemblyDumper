@@ -21,10 +21,10 @@ namespace AssemblyDumper.Passes
 			TypeReference commonGuidType = SharedState.Module.ImportCommonType<UnityGUID>();
 			MethodReference constructor = SharedState.Module.ImportCommonConstructor<UnityGUID>(4);
 
-			FieldDefinition data0 = guidType.Fields.Single(field => field.Name == "data[0]");
-			FieldDefinition data1 = guidType.Fields.Single(field => field.Name == "data[1]");
-			FieldDefinition data2 = guidType.Fields.Single(field => field.Name == "data[2]");
-			FieldDefinition data3 = guidType.Fields.Single(field => field.Name == "data[3]");
+			FieldDefinition data0 = guidType.Fields.Single(field => field.Name == "data_0_");
+			FieldDefinition data1 = guidType.Fields.Single(field => field.Name == "data_1_");
+			FieldDefinition data2 = guidType.Fields.Single(field => field.Name == "data_2_");
+			FieldDefinition data3 = guidType.Fields.Single(field => field.Name == "data_3_");
 
 			var implicitMethod = new MethodDefinition("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.HideBySig, SystemTypeGetter.Void);
 			implicitMethod.ReturnType = commonGuidType;
