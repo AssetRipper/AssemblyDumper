@@ -15,6 +15,7 @@ namespace AssemblyDumper.Passes
 		private static TypeReference TransferMetaFlagsDefinition { get; set; }
 		private static MethodReference EditorMetaFlagsAttributeConstructor { get; set; }
 		private static MethodReference ReleaseMetaFlagsAttributeConstructor { get; set; }
+		private static MethodReference OriginalNameAttributeConstructor { get; set; }
 		private static TypeReference AssetDictionaryType { get; set; }
 
 		private static void InitializeImports()
@@ -24,6 +25,7 @@ namespace AssemblyDumper.Passes
 			TransferMetaFlagsDefinition = SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TransferMetaFlags>();
 			EditorMetaFlagsAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorMetaFlagsAttribute>(1);
 			ReleaseMetaFlagsAttributeConstructor = SharedState.Module.ImportCommonConstructor<ReleaseMetaFlagsAttribute>(1);
+			OriginalNameAttributeConstructor = SharedState.Module.ImportCommonConstructor<OriginalNameAttribute>(1);
 			AssetDictionaryType = SharedState.Module.ImportCommonType("AssetRipper.Core.IO.AssetDictionary`2");
 		}
 
@@ -102,6 +104,7 @@ namespace AssemblyDumper.Passes
 		private static void AddReleaseOnlyField(this TypeDefinition type, UnityNode releaseNode, TypeReference fieldType)
 		{
 			FieldDefinition fieldDefinition = new FieldDefinition(releaseNode.Name, FieldAttributes.Public, fieldType);
+			fieldDefinition.MaybeAddOriginalNameAttribute(releaseNode, null);
 			fieldDefinition.AddReleaseFlagAttribute(releaseNode.MetaFlag);
 			fieldDefinition.AddCustomAttribute(ReleaseOnlyAttributeConstructor);
 			type.Fields.Add(fieldDefinition);
@@ -110,6 +113,7 @@ namespace AssemblyDumper.Passes
 		private static void AddEditorOnlyField(this TypeDefinition type, UnityNode editorNode, TypeReference fieldType)
 		{
 			FieldDefinition fieldDefinition = new FieldDefinition(editorNode.Name, FieldAttributes.Public, fieldType);
+			fieldDefinition.MaybeAddOriginalNameAttribute(null, editorNode);
 			fieldDefinition.AddCustomAttribute(EditorOnlyAttributeConstructor);
 			fieldDefinition.AddEditorFlagAttribute(editorNode.MetaFlag);
 			type.Fields.Add(fieldDefinition);
@@ -118,9 +122,37 @@ namespace AssemblyDumper.Passes
 		private static void AddNormalField(this TypeDefinition type, UnityNode releaseNode, UnityNode editorNode, TypeReference fieldType)
 		{
 			FieldDefinition fieldDefinition = new FieldDefinition(editorNode.Name, FieldAttributes.Public, fieldType);
+			fieldDefinition.MaybeAddOriginalNameAttribute(releaseNode, editorNode);
 			fieldDefinition.AddReleaseFlagAttribute(releaseNode.MetaFlag);
 			fieldDefinition.AddEditorFlagAttribute(editorNode.MetaFlag);
 			type.Fields.Add(fieldDefinition);
+		}
+
+		private static void MaybeAddOriginalNameAttribute(this FieldDefinition field, UnityNode releaseNode, UnityNode editorNode)
+		{
+			if(releaseNode == null)
+			{
+				if(editorNode.Name != editorNode.OriginalName)
+				{
+					field.AddOriginalNameAttribute(editorNode.OriginalName);
+				}
+			}
+			else if (editorNode == null)
+			{
+				if (releaseNode.Name != releaseNode.OriginalName)
+				{
+					field.AddOriginalNameAttribute(releaseNode.OriginalName);
+				}
+			}
+			else
+			{
+				Assertions.AssertEquality(releaseNode.Name, editorNode.Name);
+				Assertions.AssertEquality(releaseNode.OriginalName, editorNode.OriginalName);
+				if (releaseNode.Name != releaseNode.OriginalName)
+				{
+					field.AddOriginalNameAttribute(releaseNode.OriginalName);
+				}
+			}
 		}
 
 		private static TypeReference ResolveFieldType(UnityNode editorField)
@@ -207,6 +239,13 @@ namespace AssemblyDumper.Passes
 		{
 			CustomAttribute attrDef = new CustomAttribute(EditorMetaFlagsAttributeConstructor);
 			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(TransferMetaFlagsDefinition, flags));
+			_this.CustomAttributes.Add(attrDef);
+		}
+
+		private static void AddOriginalNameAttribute(this FieldDefinition _this, string originalName)
+		{
+			CustomAttribute attrDef = new CustomAttribute(OriginalNameAttributeConstructor);
+			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.String, originalName));
 			_this.CustomAttributes.Add(attrDef);
 		}
 

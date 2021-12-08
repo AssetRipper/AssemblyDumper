@@ -92,5 +92,39 @@ namespace AssemblyDumper.Unity
 			IsEditorOnly = releaseRootNode == null;
 			IsStripped = false;
 		}
+
+		/// <summary>
+		/// Gets the original name of the type and asserts compatible naming
+		/// </summary>
+		/// <param name="originalTypeName">The original name of the type before any changes were applied</param>
+		/// <returns>True if the original name is different from the current name</returns>
+		public bool GetOriginalTypeName(out string originalTypeName)
+		{
+			if(ReleaseRootNode == null && EditorRootNode == null)
+			{
+				originalTypeName = Name;
+				return false;
+			}
+			else if(ReleaseRootNode == null)
+			{
+				Assertions.AssertEquality(Name, EditorRootNode.TypeName);
+				originalTypeName = EditorRootNode.OriginalTypeName;
+				return originalTypeName != Name;
+			}
+			else if (EditorRootNode == null)
+			{
+				Assertions.AssertEquality(Name, ReleaseRootNode.TypeName);
+				originalTypeName = ReleaseRootNode.OriginalTypeName;
+				return originalTypeName != Name;
+			}
+			else
+			{
+				Assertions.AssertEquality(Name, ReleaseRootNode.TypeName);
+				Assertions.AssertEquality(Name, EditorRootNode.TypeName);
+				Assertions.AssertEquality(ReleaseRootNode.OriginalTypeName, EditorRootNode.OriginalTypeName);
+				originalTypeName = ReleaseRootNode.OriginalTypeName;
+				return originalTypeName != Name;
+			}
+		}
 	}
 }

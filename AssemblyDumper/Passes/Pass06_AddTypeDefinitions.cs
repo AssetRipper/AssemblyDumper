@@ -13,6 +13,7 @@ namespace AssemblyDumper.Passes
 		private static MethodReference EditorOnlyAttributeConstructor { get; set; }
 		private static MethodReference StrippedAttributeConstructor { get; set; }
 		private static MethodReference PersistentIDAttributeConstructor { get; set; }
+		private static MethodReference OriginalNameAttributeConstructor { get; set; }
 
 		public static void DoPass()
 		{
@@ -22,6 +23,7 @@ namespace AssemblyDumper.Passes
 			EditorOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorOnlyAttribute>();
 			StrippedAttributeConstructor = SharedState.Module.ImportCommonConstructor<StrippedAttribute>();
 			PersistentIDAttributeConstructor = SharedState.Module.ImportCommonConstructor<PersistentIDAttribute>(1);
+			OriginalNameAttributeConstructor = SharedState.Module.ImportCommonConstructor<OriginalNameAttribute>(1);
 
 			var assembly = SharedState.Assembly;
 			foreach (var pair in SharedState.ClassDictionary)
@@ -43,6 +45,12 @@ namespace AssemblyDumper.Passes
 			// if (@class.IsSealed) typeAttributes |= TypeAttributes.Sealed;
 
 			TypeDefinition typeDef = new TypeDefinition(SharedState.Classesnamespace, name, typeAttributes);
+
+			if(@class.GetOriginalTypeName(out string originalTypeName))
+			{
+				typeDef.AddCustomAttribute(OriginalNameAttributeConstructor, SystemTypeGetter.String, originalTypeName);
+			}
+
 			if (@class.IsEditorOnly) typeDef.AddCustomAttribute(EditorOnlyAttributeConstructor);
 			if (@class.IsStripped) typeDef.AddCustomAttribute(StrippedAttributeConstructor);
 			typeDef.AddCustomAttribute(PersistentIDAttributeConstructor, SystemTypeGetter.Int32, @class.TypeID);
