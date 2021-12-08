@@ -89,7 +89,7 @@ namespace AssemblyDumper.Unity
 			Size = mainRootNode.ByteSize;
 			IsAbstract = false;
 			IsSealed = true;
-			IsEditorOnly = false;
+			IsEditorOnly = releaseRootNode == null;
 			IsStripped = false;
 		}
 	}
