@@ -107,7 +107,7 @@ namespace AssemblyDumper.Passes
 			processor.Emit(OpCodes.Ldloc, listVariable);
 
 			processor.Emit(OpCodes.Ldstr, node.OriginalTypeName);
-			processor.Emit(OpCodes.Ldstr, node.Name);
+			processor.Emit(OpCodes.Ldstr, node.OriginalName);
 
 			//Level
 			processor.Emit(OpCodes.Ldarg_1);//depth

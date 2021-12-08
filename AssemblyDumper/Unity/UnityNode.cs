@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace AssemblyDumper.Unity
 {
@@ -11,13 +12,22 @@ namespace AssemblyDumper.Unity
 		/// <summary>
 		/// The original type name as obtained from the json file
 		/// </summary>
-		[System.Text.Json.Serialization.JsonIgnore]
+		[JsonIgnore]
 		public string OriginalTypeName 
 		{
 			get => string.IsNullOrEmpty(m_OriginalTypeName) ? TypeName : m_OriginalTypeName;
 			set => m_OriginalTypeName = value;
 		}
 		public string Name { get; set; }
+		/// <summary>
+		/// The original name as obtained from the json file
+		/// </summary>
+		[JsonIgnore]
+		public string OriginalName
+		{
+			get => string.IsNullOrEmpty(m_OriginalName) ? Name : m_OriginalName;
+			set => m_OriginalName = value;
+		}
 		public byte Level { get; set; }
 		public int ByteSize { get; set; }
 		public int Index { get; set; }
@@ -27,6 +37,7 @@ namespace AssemblyDumper.Unity
 		public List<UnityNode> SubNodes { get; set; }
 
 		private string m_OriginalTypeName;
+		private string m_OriginalName;
 
 		/// <summary>
 		/// Deep clones a node and all its subnodes<br/>
@@ -36,9 +47,10 @@ namespace AssemblyDumper.Unity
 		public UnityNode DeepClone()
 		{
 			var cloned = new UnityNode();
-			cloned.TypeName = new string(TypeName ?? "");
-			cloned.OriginalTypeName = new string(m_OriginalTypeName ?? "");
-			cloned.Name = new string(Name ?? "");
+			cloned.TypeName = CloneString(TypeName);
+			cloned.m_OriginalTypeName = CloneString(m_OriginalTypeName);
+			cloned.Name = CloneString(Name);
+			cloned.m_OriginalName = CloneString(m_OriginalName);
 			cloned.Level = Level;
 			cloned.ByteSize = ByteSize;
 			cloned.Index = Index;
@@ -47,6 +59,11 @@ namespace AssemblyDumper.Unity
 			cloned.MetaFlag = MetaFlag;
 			cloned.SubNodes = SubNodes.ConvertAll(x => x.DeepClone());
 			return cloned;
+		}
+
+		private static string CloneString(string @string)
+		{
+			return @string == null ? null : new string(@string);
 		}
 	}
 }

@@ -135,6 +135,7 @@ namespace AssemblyDumper.Passes
 			abstractClass.EditorRootNode ??= new()
 			{
 				Name = "Base",
+				OriginalName = "Base",
 				TypeName = abstractClass.Name,
 				Index = 0,
 				Level = 0,
@@ -144,6 +145,7 @@ namespace AssemblyDumper.Passes
 			abstractClass.ReleaseRootNode ??= new()
 			{
 				Name = "Base",
+				OriginalName = "Base",
 				TypeName = abstractClass.Name,
 				Index = 0,
 				Level = 0,
