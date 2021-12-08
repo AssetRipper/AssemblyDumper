@@ -87,30 +87,43 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 4: Extract Dependent Node Trees");
+			AddExistingClassDictionaryToGeneratedTypes();
 			AddDependentTypes();
 			CreateNewClasses();
 			CheckCompatibility();
 		}
 
+		private static void AddExistingClassDictionaryToGeneratedTypes()
+		{
+			foreach(UnityClass unityClass in SharedState.ClassDictionary.Values)
+			{
+				var newList = new List<(string, UnityNode, UnityNode)>();
+				newList.Add((unityClass.Name, unityClass.ReleaseRootNode, unityClass.EditorRootNode));
+				generatedTypes.Add(unityClass.Name, newList);
+			}
+		}
+
 		private static void CreateNewClasses()
 		{
-			foreach (var variantList in generatedTypes)
+			foreach ((string originalName, var variantList) in generatedTypes)
 			{
-				foreach(var variant in variantList.Value)
+				foreach((string uniqueName, UnityNode releaseNode, UnityNode editorNode) in variantList)
 				{
-					var newClass = new UnityClass(variant.Item2, variant.Item3);
-					newClass.Name = variant.Item1;
-					newClass.FullName = variant.Item1;
-					SharedState.ClassDictionary.Add(variant.Item1, newClass);
+					if(!SharedState.ClassDictionary.TryGetValue(uniqueName, out var _))
+					{
+						var newClass = new UnityClass(releaseNode, editorNode);
+						newClass.Name = uniqueName;
+						newClass.FullName = uniqueName;
+						SharedState.ClassDictionary.Add(uniqueName, newClass);
+					}
 				}
 			}
 		}
 
 		private static void CheckCompatibility()
 		{
-			foreach (var pair in SharedState.ClassDictionary)
+			foreach (UnityClass unityClass in SharedState.ClassDictionary.Values)
 			{
-				UnityClass unityClass = pair.Value;
 				if(!AreCompatible(unityClass.ReleaseRootNode, unityClass.EditorRootNode, false))
 				{
 					Console.WriteLine($"{unityClass.Name} has incompatible release and editor root nodes");
