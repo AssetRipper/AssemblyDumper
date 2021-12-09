@@ -4,11 +4,11 @@ using System.Linq;
 
 namespace AssemblyDumper.Passes
 {
-	public static class Pass07_ApplyInheritance
+	public static class Pass08_ApplyInheritance
 	{
 		public static void DoPass()
 		{
-			System.Console.WriteLine("Pass 7: Apply Inheritance");
+			System.Console.WriteLine("Pass 8: Apply Inheritance");
 
 			TypeReference unityObjectBaseDefinition = SharedState.Module.ImportCommonType<UnityObjectBase>();
 			TypeReference unityAssetBaseDefinition = SharedState.Module.ImportCommonType<UnityAssetBase>();

@@ -3,11 +3,10 @@ using AssetRipper.Core.Attributes;
 using Mono.Cecil;
 using System;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace AssemblyDumper.Passes
 {
-	public static class Pass06_AddTypeDefinitions
+	public static class Pass07_AddTypeDefinitions
 	{
 		private static MethodReference EditorOnlyAttributeConstructor { get; set; }
 		private static MethodReference StrippedAttributeConstructor { get; set; }
@@ -16,7 +15,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 6: Add Type Definitions");
+			Console.WriteLine("Pass 7: Add Type Definitions");
 
 			EditorOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorOnlyAttribute>();
 			StrippedAttributeConstructor = SharedState.Module.ImportCommonConstructor<StrippedAttribute>();

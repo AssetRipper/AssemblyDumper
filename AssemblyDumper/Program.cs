@@ -18,9 +18,11 @@ namespace AssemblyDumper
 				Pass01_CreateBasicTypes.DoPass();
 				Pass02_RenameSubnodes.DoPass();
 				Pass04_ExtractDependentNodeTrees.DoPass();
-				Pass06_AddTypeDefinitions.DoPass();
-				Pass07_ApplyInheritance.DoPass();
-				Pass09_UnifyFieldsOfAbstractTypes.DoPass();
+				Pass05_UnifyFieldsOfAbstractTypes.DoPass();
+				//After this point, class dictionary does not change
+
+				Pass07_AddTypeDefinitions.DoPass();
+				Pass08_ApplyInheritance.DoPass();
 				Pass10_AddFields.DoPass();
 
 				Pass11_AddConstructors.DoPass();

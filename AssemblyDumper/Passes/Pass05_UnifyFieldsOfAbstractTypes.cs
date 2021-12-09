@@ -5,12 +5,12 @@ using AssemblyDumper.Unity;
 
 namespace AssemblyDumper.Passes
 {
-	public static class Pass09_UnifyFieldsOfAbstractTypes
+	public static class Pass05_UnifyFieldsOfAbstractTypes
 	{
 		private const float MinMatchingProportion = 0.8f;
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 9: Merging fields of abstract types");
+			Console.WriteLine("Pass 5: Merging fields of abstract types");
 
 			//We need to get all abstract classes, and we need to do them in order of lowest abstraction to highest.
 			//In other words, the most derived classes should be done first, so their values can be used for their own base classes
