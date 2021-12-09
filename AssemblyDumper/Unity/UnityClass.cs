@@ -34,7 +34,9 @@ namespace AssemblyDumper.Unity
 		/// </summary>
 		public List<string> Derived { get; set; }
 		/// <summary>
-		/// The count of all classes that descend from this class
+		/// The count of all classes that descend from this class<br/>
+		/// It includes this class, so the count is always positive<br/>
+		/// However, some older unity versions don't generate this, so sometimes we have to set it in SharedState initialization
 		/// </summary>
 		public uint DescendantCount { get; set; }
 		/// <summary>
@@ -50,7 +52,7 @@ namespace AssemblyDumper.Unity
 		/// </summary>
 		public bool IsAbstract { get; set; }
 		/// <summary>
-		/// Is the class sealed?
+		/// Is the class sealed? Not necessarily accurate.
 		/// </summary>
 		public bool IsSealed { get; set; }
 		/// <summary>
@@ -85,7 +87,7 @@ namespace AssemblyDumper.Unity
 			FullName = Name;
 			TypeID = -1;
 			Derived = new List<string>();
-			DescendantCount = 0;
+			DescendantCount = 1;
 			Size = mainRootNode.ByteSize;
 			IsAbstract = false;
 			IsSealed = true;

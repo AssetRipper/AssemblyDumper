@@ -109,20 +109,25 @@ namespace AssemblyDumper.Passes
 				{
 					if (unityClass.ReleaseRootNode.ContainsField(fieldName))
 					{
-						matching += unityClass.DescendantCount + 1;
+						matching += unityClass.DescendantCount;
 					}
 				}
 				else
 				{
 					if (unityClass.EditorRootNode.ContainsField(fieldName))
 					{
-						matching += unityClass.DescendantCount + 1;
+						matching += unityClass.DescendantCount;
 					}
 				}
-				total += unityClass.DescendantCount + 1;
+				total += unityClass.DescendantCount;
 			}
 
-			return (float)matching / total;
+			float result = (float)matching / total;
+			if (float.IsNaN(result))
+			{
+				throw new InvalidOperationException("Proportion cannot be nan");
+			}
+			return result;
 		}
 
 		private static bool ContainsField(this UnityNode rootNode, string fieldName)

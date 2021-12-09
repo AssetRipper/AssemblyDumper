@@ -39,8 +39,10 @@ namespace AssemblyDumper.Passes
 				return null;
 			TypeAttributes typeAttributes = TypeAttributes.Public | TypeAttributes.BeforeFieldInit;
 
-			if (@class.IsAbstract) typeAttributes |= TypeAttributes.Abstract;
-			// if (@class.IsSealed) typeAttributes |= TypeAttributes.Sealed;
+			if (@class.IsAbstract)
+				typeAttributes |= TypeAttributes.Abstract;
+			else if (@class.DescendantCount == 1) 
+				typeAttributes |= TypeAttributes.Sealed;
 
 			TypeDefinition typeDef = new TypeDefinition(SharedState.Classesnamespace, name, typeAttributes);
 
