@@ -9,7 +9,6 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass06_AddTypeDefinitions
 	{
-		private static MethodReference ByteSizeAttributeConstructor { get; set; }
 		private static MethodReference EditorOnlyAttributeConstructor { get; set; }
 		private static MethodReference StrippedAttributeConstructor { get; set; }
 		private static MethodReference PersistentIDAttributeConstructor { get; set; }
@@ -19,7 +18,6 @@ namespace AssemblyDumper.Passes
 		{
 			Console.WriteLine("Pass 6: Add Type Definitions");
 
-			ByteSizeAttributeConstructor = SharedState.Module.ImportCommonConstructor<ByteSizeAttribute>(1);
 			EditorOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorOnlyAttribute>();
 			StrippedAttributeConstructor = SharedState.Module.ImportCommonConstructor<StrippedAttribute>();
 			PersistentIDAttributeConstructor = SharedState.Module.ImportCommonConstructor<PersistentIDAttribute>(1);
@@ -54,7 +52,6 @@ namespace AssemblyDumper.Passes
 			if (@class.IsEditorOnly) typeDef.AddCustomAttribute(EditorOnlyAttributeConstructor);
 			if (@class.IsStripped) typeDef.AddCustomAttribute(StrippedAttributeConstructor);
 			typeDef.AddCustomAttribute(PersistentIDAttributeConstructor, SystemTypeGetter.Int32, @class.TypeID);
-			typeDef.AddCustomAttribute(ByteSizeAttributeConstructor, SystemTypeGetter.Int32, @class.Size);
 
 			_this.MainModule.Types.Add(typeDef);
 
