@@ -58,6 +58,10 @@ namespace AssemblyDumper
 			{
 				return ResolveVectorType(node);
 			}
+			else if (typeName == "TypelessData")
+			{
+				return SystemTypeGetter.UInt8.MakeArrayType();
+			}
 			else if (typeName == "Array")
 			{
 				return ResolveArrayType(node);

@@ -77,7 +77,7 @@ namespace AssemblyDumper.Passes
 				if (PrimitiveTypes.primitiveNames.Contains(originalTypeName))
 					continue;
 
-				string typeName = Pass02_RenameSubnodes.GetValidName(originalTypeName);
+				string typeName = releaseField?.TypeName ?? editorField.TypeName;
 
 				AddDependentTypes(releaseField, editorField);
 
