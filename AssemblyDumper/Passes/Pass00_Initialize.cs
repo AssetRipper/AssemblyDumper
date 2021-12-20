@@ -1,5 +1,5 @@
-﻿using AssemblyDumper.Unity;
-using Mono.Cecil;
+﻿using AsmResolver.DotNet;
+using AssemblyDumper.Unity;
 using System;
 using System.IO;
 using System.Text.Json;
@@ -14,6 +14,16 @@ namespace AssemblyDumper.Passes
 		private static Version currentGeneratedVersion = new Version(0, 0, 0, 0);
 
 		/// <summary>
+		/// References System.Runtime.dll, Version=6.0.0.0, PublicKeyToken=B03F5F7F11D50A3A. This is used by .NET
+		/// assemblies targeting .NET 6.0.
+		/// </summary>
+		public static readonly AssemblyReference SystemRuntime_v6_0_0_0 = new AssemblyReference("System.Runtime",
+			new Version(6, 0, 0, 0), false, new byte[]
+			{
+				0xB0, 0x3F, 0x5F, 0x7F, 0x11, 0xD5, 0x0A, 0x3A
+			});
+
+		/// <summary>
 		/// Read the information json, system assembly, and AssetRipperCommon. Then create a new assembly.
 		/// </summary>
 		public static void DoPass(string jsonPath, string systemRuntimeFilePath, string systemCollectionsFilePath)
@@ -26,26 +36,28 @@ namespace AssemblyDumper.Passes
 
 			string AssemblyFileName = '_' + SharedState.Version.Replace('.', '_');
 
-			AssemblyNameDefinition assemblyName = new AssemblyNameDefinition(AssemblyFileName, currentGeneratedVersion);
-			AssemblyDefinition assembly = AssemblyDefinition.CreateAssembly(assemblyName, AssemblyFileName, ModuleKind.Dll);
+			AssemblyDefinition assembly = new AssemblyDefinition(AssemblyFileName, currentGeneratedVersion);
+			ModuleDefinition module = new ModuleDefinition(AssemblyFileName, SystemRuntime_v6_0_0_0);
+			assembly.Modules.Add(module);
 
-			SystemTypeGetter.RuntimeAssembly = AssemblyDefinition.ReadAssembly(systemRuntimeFilePath);
-			SystemTypeGetter.CollectionsAssembly = AssemblyDefinition.ReadAssembly(systemCollectionsFilePath);
-			//Console.WriteLine(SystemTypeGetter.RuntimeAssembly.Name.FullName);
+			AssemblyDefinition runtimeAssembly = AssemblyDefinition.FromFile(systemRuntimeFilePath);
+			AssemblyDefinition collectionsAssembly = AssemblyDefinition.FromFile(systemCollectionsFilePath);
+			AssemblyDefinition commonAssembly = AssemblyDefinition.FromFile(typeof(AssetRipper.Core.UnityObjectBase).Assembly.Location);
 
-			CommonTypeGetter.CommonAssembly = AssemblyDefinition.ReadAssembly(typeof(AssetRipper.Core.UnityObjectBase).Assembly.Location);
-			//Console.WriteLine(CommonTypeGetter.Assembly.Name.FullName);
+			SystemTypeGetter.RuntimeAssembly = runtimeAssembly;
+			SystemTypeGetter.CollectionsAssembly = collectionsAssembly;
+			CommonTypeGetter.CommonAssembly = commonAssembly;
 
-			assembly.MainModule.AssemblyReferences.Clear();
-			assembly.MainModule.AssemblyReferences.Add(SystemTypeGetter.RuntimeAssembly.Name);
-			assembly.MainModule.AssemblyReferences.Add(SystemTypeGetter.CollectionsAssembly.Name);
-			assembly.MainModule.AssemblyReferences.Add(CommonTypeGetter.CommonAssembly.Name);
+			module.MetadataResolver.AssemblyResolver.AddToCache(runtimeAssembly, runtimeAssembly);
+			module.MetadataResolver.AssemblyResolver.AddToCache(collectionsAssembly, collectionsAssembly);
+			module.MetadataResolver.AssemblyResolver.AddToCache(commonAssembly, commonAssembly);
 
 			SharedState.Assembly = assembly;
 			SharedState.RootNamespace = AssemblyFileName;
+			SharedState.Importer = new ReferenceImporter(module);
 
-			CommonTypeGetter.Initialize(assembly.MainModule);
-			SystemTypeGetter.Initialize(assembly.MainModule);
+			CommonTypeGetter.Initialize(assembly.ManifestModule);
+			SystemTypeGetter.Initialize(assembly.ManifestModule);
 		}
 	}
 }

@@ -1,18 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using AsmResolver.DotNet;
+using AsmResolver.DotNet.Code.Cil;
+using AsmResolver.PE.DotNet.Cil;
 using AssemblyDumper.Unity;
 using AssemblyDumper.Utils;
 using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
-
+using System;
+using System.Collections.Generic;
+using System.Linq;
+/*
 namespace AssemblyDumper.Passes
 {
 	public static class Pass50_FillReadMethods
 	{
-		private static TypeReference AssetDictionaryType { get; set; }
+		private static ITypeDefOrRef AssetDictionaryType { get; set; }
 
 		public static void DoPass()
 		{
@@ -31,11 +31,11 @@ namespace AssemblyDumper.Passes
 				var editorModeReadMethod = type.Methods.First(m => m.Name == "ReadEditor");
 				var releaseModeReadMethod = type.Methods.First(m => m.Name == "ReadRelease");
 
-				var editorModeBody = editorModeReadMethod.Body = new(editorModeReadMethod);
-				var releaseModeBody = releaseModeReadMethod.Body = new(releaseModeReadMethod);
-
-				var editorModeProcessor = editorModeBody.GetILProcessor();
-				var releaseModeProcessor = releaseModeBody.GetILProcessor();
+				var editorModeBody = editorModeReadMethod.CilMethodBody;
+				var releaseModeBody = releaseModeReadMethod.CilMethodBody;
+				
+				var editorModeProcessor = editorModeBody.Instructions;
+				var releaseModeProcessor = releaseModeBody.Instructions;
 
 				var fields = FieldUtils.GetAllFieldsInTypeAndBase(type);
 
@@ -57,26 +57,26 @@ namespace AssemblyDumper.Passes
 					}
 				}
 
-				editorModeProcessor.Emit(OpCodes.Ret);
-				releaseModeProcessor.Emit(OpCodes.Ret);
+				editorModeProcessor.Add(CilOpCodes.Ret);
+				releaseModeProcessor.Add(CilOpCodes.Ret);
 
-				editorModeBody.Optimize();
-				releaseModeBody.Optimize();
+				editorModeProcessor.OptimizeMacros();
+				releaseModeProcessor.OptimizeMacros();
 			}
 		}
 
-		private static void AddLoadToProcessor(UnityNode node, ILProcessor processor, List<FieldDefinition> fields)
+		private static void AddLoadToProcessor(UnityNode node, CilInstructionCollection processor, List<FieldDefinition> fields)
 		{
 			//Get field
 			var field = fields.SingleOrDefault(f => f.Name == node.Name);
 
 			if (field == null)
-				throw new Exception($"Field {node.Name} cannot be found in {processor.Body.Method.DeclaringType} (fields are {string.Join(", ", fields.Select(f => f.Name))})");
+				throw new Exception($"Field {node.Name} cannot be found in {processor.Owner.Owner.DeclaringType} (fields are {string.Join(", ", fields.Select(f => f.Name))})");
 
 			ReadFieldContent(node, processor, field);
 		}
 
-		private static void ReadFieldContent(UnityNode node, ILProcessor processor, FieldDefinition field)
+		private static void ReadFieldContent(UnityNode node, CilInstructionCollection processor, FieldDefinition field)
 		{
 			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out var fieldType))
 			{
@@ -108,26 +108,26 @@ namespace AssemblyDumper.Passes
 			ReadPrimitiveType(node, processor, field, 0);
 		}
 
-		private static void MaybeAlignBytes(UnityNode node, ILProcessor processor)
+		private static void MaybeAlignBytes(UnityNode node, CilInstructionCollection processor)
 		{
 			if (((TransferMetaFlags)node.MetaFlag).IsAlignBytes())
 			{
 				//Load reader
-				processor.Emit(OpCodes.Ldarg_1);
+				processor.Add(CilOpCodes.Ldarg_1);
 
 				//Get ReadAsset
 				var alignMethod = CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "AlignStream");
 
 				//Call it
-				processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(alignMethod));
+				processor.Add(CilOpCodes.Call, SharedState.Importer.ImportMethod(alignMethod));
 			}
 		}
 
-		private static void ReadPrimitiveType(UnityNode node, ILProcessor processor, FieldDefinition field, int arrayDepth)
+		private static void ReadPrimitiveType(UnityNode node, CilInstructionCollection processor, FieldDefinition field, int arrayDepth)
 		{
 			//Primitives
 			var csPrimitiveTypeName = SystemTypeGetter.CppPrimitivesToCSharpPrimitives[node.TypeName];
-			var csPrimitiveType = processor.Body.Method.DeclaringType.Module.GetPrimitiveType(node.TypeName);
+			var csPrimitiveType = SystemTypeGetter.GetCppPrimitiveTypeSignature(node.TypeName);
 
 			//Read
 			MethodDefinition primitiveReadMethod = arrayDepth switch
@@ -143,26 +143,26 @@ namespace AssemblyDumper.Passes
 			primitiveReadMethod ??= SystemTypeGetter.LookupSystemType("System.IO.BinaryReader").Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}");
 
 			if (primitiveReadMethod == null)
-				throw new Exception($"Missing a read method for {csPrimitiveTypeName} in {processor.Body.Method.DeclaringType}");
+				throw new Exception($"Missing a read method for {csPrimitiveTypeName} in {processor.Owner.Owner.DeclaringType}");
 
 			//Load this
 			if (field != null)
-				processor.Emit(OpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldarg_0);
 
 			//Load reader
-			processor.Emit(OpCodes.Ldarg_1);
+			processor.Add(CilOpCodes.Ldarg_1);
 
 			if (arrayDepth == 1)//Read{Primitive}Array has an allowAlignment parameter
 			{
-				processor.Emit(OpCodes.Ldc_I4, 0);//load false onto the stack
+				processor.Add(CilOpCodes.Ldc_I4, 0);//load false onto the stack
 			}
 
 			//Call read method
-			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(primitiveReadMethod));
+			processor.Add(CilOpCodes.Call, SharedState.Importer.ImportMethod(primitiveReadMethod));
 
 			//Store result in field
 			if (field != null)
-				processor.Emit(OpCodes.Stfld, field);
+				processor.Add(CilOpCodes.Stfld, field);
 
 			//Maybe Align Bytes
 			//Note: string has its own alignment built-in. That's why this doesn't appear to align strings
@@ -172,14 +172,14 @@ namespace AssemblyDumper.Passes
 		/// <summary>
 		/// Complex field type, IAssetReadable, call read
 		/// </summary>
-		private static void ReadAssetType(UnityNode node, ILProcessor processor, FieldDefinition field, TypeDefinition fieldType, int arrayDepth)
+		private static void ReadAssetType(UnityNode node, CilInstructionCollection processor, FieldDefinition field, TypeDefinition fieldType, int arrayDepth)
 		{
 			//Load "this" for field store later
 			if (field != null)
-				processor.Emit(OpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldarg_0);
 
 			//Load reader
-			processor.Emit(OpCodes.Ldarg_1);
+			processor.Add(CilOpCodes.Ldarg_1);
 
 			//Get ReadAsset
 			MethodDefinition readMethod = arrayDepth switch
@@ -192,42 +192,42 @@ namespace AssemblyDumper.Passes
 
 			//Make generic ReadAsset<T>
 			var genericInst = new GenericInstanceMethod(readMethod);
-			genericInst.GenericArguments.Add(processor.Body.Method.Module.ImportReference(fieldType));
+			genericInst.GenericArguments.Add(SharedState.Importer.ImportType(fieldType));
 
 			if (arrayDepth > 0)//ReadAssetArray and ReadAssetArrayArray have an allowAlignment parameter
 			{
-				processor.Emit(OpCodes.Ldc_I4, 0);//load false onto the stack
+				processor.Add(CilOpCodes.Ldc_I4, 0);//load false onto the stack
 			}
 
 			//Call it
-			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(genericInst));
+			processor.Add(CilOpCodes.Call, processor.Body.Method.Module.ImportReference(genericInst));
 
 			//Store result in field
 			if (field != null)
-				processor.Emit(OpCodes.Stfld, field);
+				processor.Add(CilOpCodes.Stfld, field);
 
 			//Maybe Align Bytes
 			MaybeAlignBytes(node, processor);
 		}
 
-		private static void ReadByteArray(UnityNode node, ILProcessor processor, FieldDefinition field)
+		private static void ReadByteArray(UnityNode node, CilInstructionCollection processor, FieldDefinition field)
 		{
 			//Load "this" for field store later
 			if (field != null)
-				processor.Emit(OpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldarg_0);
 
 			//Load reader
-			processor.Emit(OpCodes.Ldarg_1);
+			processor.Add(CilOpCodes.Ldarg_1);
 
 			//Get ReadAsset
 			var readMethod = CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadByteArray");
 
 			//Call it
-			processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(readMethod));
+			processor.Add(CilOpCodes.Call, SharedState.Importer.ImportMethod(readMethod));
 
 			//Store result in field
 			if (field != null)
-				processor.Emit(OpCodes.Stfld, field);
+				processor.Add(CilOpCodes.Stfld, field);
 
 			//Maybe Align Bytes
 			//warning: this will generate incorrect reads
@@ -235,7 +235,7 @@ namespace AssemblyDumper.Passes
 			MaybeAlignBytes(node, processor);
 		}
 
-		private static void ReadVector(UnityNode node, ILProcessor processor, FieldDefinition field, int arrayDepth)
+		private static void ReadVector(UnityNode node, CilInstructionCollection processor, FieldDefinition field, int arrayDepth)
 		{
 			var listTypeNode = node.SubNodes[0];
 			if (listTypeNode.TypeName is "Array")
@@ -252,7 +252,7 @@ namespace AssemblyDumper.Passes
 			MaybeAlignBytes(node, processor);
 		}
 
-		private static void ReadArray(UnityNode node, ILProcessor processor, FieldDefinition field, int arrayDepth)
+		private static void ReadArray(UnityNode node, CilInstructionCollection processor, FieldDefinition field, int arrayDepth)
 		{
 			var listTypeNode = node.SubNodes[1];
 			if (SharedState.TypeDictionary.TryGetValue(listTypeNode.TypeName, out var fieldType))
@@ -276,7 +276,7 @@ namespace AssemblyDumper.Passes
 						break;
 					case "pair":
 						if (arrayDepth > 2)
-							throw new($"ReadArray does not support Pair arrays with a depth > 2. Found in {node.Name} (field {field}) of {processor.Body.Method.DeclaringType}");
+							throw new($"ReadArray does not support Pair arrays with a depth > 2. Found in {node.Name} (field {field}) of {processor.Owner.Owner.DeclaringType}");
 
 						if (arrayDepth == 2)
 						{
@@ -294,7 +294,7 @@ namespace AssemblyDumper.Passes
 			MaybeAlignBytes(node, processor);
 		}
 
-		private static void ReadPairArray(ILProcessor processor, FieldDefinition field, UnityNode listTypeNode)
+		private static void ReadPairArray(CilInstructionCollection processor, FieldDefinition field, UnityNode listTypeNode)
 		{
 			//Strategy:
 			//Read Count
@@ -311,67 +311,67 @@ namespace AssemblyDumper.Passes
 			var arrayType = genericKvp.MakeArrayType();
 
 			//Read length of array
-			var intReader = processor.Body.Method.Module.ImportReference(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadInt32"));
-			processor.Emit(OpCodes.Ldarg_1); //Load reader
-			processor.Emit(OpCodes.Call, intReader); //Call int reader
+			var intReader = SharedState.Importer.ImportMethod(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.Single(m => m.Name == "ReadInt32"));
+			processor.Add(CilOpCodes.Ldarg_1); //Load reader
+			processor.Add(CilOpCodes.Call, intReader); //Call int reader
 
 			//Make local and store length in it
-			var countLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
-			processor.Body.Variables.Add(countLocal); //Add to method
-			processor.Emit(OpCodes.Stloc, countLocal); //Store count in it
+			var countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			processor.Owner.LocalVariables.Add(countLocal); //Add to method
+			processor.Add(CilOpCodes.Stloc, countLocal); //Store count in it
 
 			//Create empty array and local for it
-			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
-			processor.Emit(OpCodes.Newarr, genericKvp); //Create new array of kvp with given count
-			var arrayLocal = new VariableDefinition(arrayType); //Create local
-			processor.Body.Variables.Add(arrayLocal); //Add to method
-			processor.Emit(OpCodes.Stloc, arrayLocal); //Store array in local
+			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			processor.Add(CilOpCodes.Newarr, genericKvp); //Create new array of kvp with given count
+			var arrayLocal = new CilLocalVariable(arrayType); //Create local
+			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
+			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
 
 			//Make an i
-			var iLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
-			processor.Body.Variables.Add(iLocal); //Add to method
-			processor.Emit(OpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Emit(OpCodes.Stloc, iLocal); //Store in count
+			var iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			processor.Owner.LocalVariables.Add(iLocal); //Add to method
+			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch = processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
+			var unconditionalBranch = processor.Create(CilOpCodes.Br, processor.Create(CilOpCodes.Nop));
 			processor.Append(unconditionalBranch);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			var jumpTarget = processor.Create(OpCodes.Nop); //Create a dummy instruction to jump back to
+			var jumpTarget = processor.Create(CilOpCodes.Nop); //Create a dummy instruction to jump back to
 			processor.Append(jumpTarget); //Add it to the method body
 
 			//Read element at index i of array
-			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array local
-			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
+			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array local
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
 			ReadPair(listTypeNode, processor, null); //Read the pair
-			processor.Emit(OpCodes.Stelem_Any, genericKvp); //Store in array
+			processor.Add(CilOpCodes.Stelem_Any, genericKvp); //Store in array
 
 			//Increment i
-			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
-			processor.Emit(OpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Emit(OpCodes.Add); //Add 
-			processor.Emit(OpCodes.Stloc, iLocal); //Store in i local
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Add(CilOpCodes.Add); //Add 
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Create(OpCodes.Ldloc, iLocal); //Load i
+			var loopConditionStart = processor.Create(CilOpCodes.Ldloc, iLocal); //Load i
 			processor.Append(loopConditionStart);
-			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
-			processor.Emit(OpCodes.Blt, jumpTarget); //Jump back up if less than
+			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
 			unconditionalBranch.Operand = loopConditionStart;
 
 			//Now just store field
 			if (field != null)
-				processor.Emit(OpCodes.Ldarg_0); //Load this
+				processor.Add(CilOpCodes.Ldarg_0); //Load this
 			
-			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array
+			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array
 
 			if (field != null)
-				processor.Emit(OpCodes.Stfld, field); //Store field
+				processor.Add(CilOpCodes.Stfld, field); //Store field
 		}
 
-		private static void ReadPairArrayArray(ILProcessor processor, FieldDefinition field, UnityNode listTypeNode)
+		private static void ReadPairArrayArray(CilInstructionCollection processor, FieldDefinition field, UnityNode listTypeNode)
 		{
 			//Strategy:
 			//Read Count
@@ -388,70 +388,70 @@ namespace AssemblyDumper.Passes
 			var arrayType = genericKvp.MakeArrayType();
 
 			//Read length of array
-			var intReader = processor.Body.Method.Module.ImportReference(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadInt32"));
-			processor.Emit(OpCodes.Ldarg_1); //Load reader
-			processor.Emit(OpCodes.Call, intReader); //Call int reader
+			var intReader = SharedState.Importer.ImportMethod(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.Single(m => m.Name == "ReadInt32"));
+			processor.Add(CilOpCodes.Ldarg_1); //Load reader
+			processor.Add(CilOpCodes.Call, intReader); //Call int reader
 
 			//Make local and store length in it
-			var countLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
-			processor.Body.Variables.Add(countLocal); //Add to method
-			processor.Emit(OpCodes.Stloc, countLocal); //Store count in it
+			var countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			processor.Owner.LocalVariables.Add(countLocal); //Add to method
+			processor.Add(CilOpCodes.Stloc, countLocal); //Store count in it
 
 			//Create empty array and local for it
-			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
-			processor.Emit(OpCodes.Newarr, arrayType); //Create new array of arrays of kvps with given count
-			var arrayLocal = new VariableDefinition(arrayType.MakeArrayType()); //Create local
-			processor.Body.Variables.Add(arrayLocal); //Add to method
-			processor.Emit(OpCodes.Stloc, arrayLocal); //Store array in local
+			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			processor.Add(CilOpCodes.Newarr, arrayType); //Create new array of arrays of kvps with given count
+			var arrayLocal = new CilLocalVariable(arrayType.MakeArrayType()); //Create local
+			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
+			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
 
 			//Make an i
-			var iLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
-			processor.Body.Variables.Add(iLocal); //Add to method
-			processor.Emit(OpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Emit(OpCodes.Stloc, iLocal); //Store in count
+			var iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			processor.Owner.LocalVariables.Add(iLocal); //Add to method
+			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch = processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
+			var unconditionalBranch = processor.Create(CilOpCodes.Br, processor.Create(CilOpCodes.Nop));
 			processor.Append(unconditionalBranch);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			var jumpTarget = processor.Create(OpCodes.Nop); //Create a dummy instruction to jump back to
+			var jumpTarget = processor.Create(CilOpCodes.Nop); //Create a dummy instruction to jump back to
 			processor.Append(jumpTarget); //Add it to the method body
 
 			//Read element at index i of array
 			ReadPairArray(processor, null, listTypeNode); //Read the array of pairs
-			var pairArrayLocal = new VariableDefinition(arrayType); //Create local for array of pairs
-			processor.Body.Variables.Add(pairArrayLocal); //Add to method
-			processor.Emit(OpCodes.Stloc, pairArrayLocal); //Store pair array
-			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array of arrays local
-			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
-			processor.Emit(OpCodes.Ldloc, pairArrayLocal); //Load array of pairs
-			processor.Emit(OpCodes.Stelem_Any, arrayType); //Store in array
+			var pairArrayLocal = new CilLocalVariable(arrayType); //Create local for array of pairs
+			processor.Owner.LocalVariables.Add(pairArrayLocal); //Add to method
+			processor.Add(CilOpCodes.Stloc, pairArrayLocal); //Store pair array
+			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array of arrays local
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			processor.Add(CilOpCodes.Ldloc, pairArrayLocal); //Load array of pairs
+			processor.Add(CilOpCodes.Stelem_Any, arrayType); //Store in array
 
 			//Increment i
-			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
-			processor.Emit(OpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Emit(OpCodes.Add); //Add 
-			processor.Emit(OpCodes.Stloc, iLocal); //Store in i local
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Add(CilOpCodes.Add); //Add 
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Create(OpCodes.Ldloc, iLocal); //Load i
+			var loopConditionStart = processor.Create(CilOpCodes.Ldloc, iLocal); //Load i
 			processor.Append(loopConditionStart);
-			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
-			processor.Emit(OpCodes.Blt, jumpTarget); //Jump back up if less than
+			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
 			unconditionalBranch.Operand = loopConditionStart;
 
 			//Now just store field
 			if (field != null)
-				processor.Emit(OpCodes.Ldarg_0); //Load this
-			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array
+				processor.Add(CilOpCodes.Ldarg_0); //Load this
+			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array
 
 			if (field != null)
-				processor.Emit(OpCodes.Stfld, field); //Store field
+				processor.Add(CilOpCodes.Stfld, field); //Store field
 		}
 
-		private static void ReadDictionaryArray(UnityNode node, ILProcessor processor, FieldDefinition field)
+		private static void ReadDictionaryArray(UnityNode node, CilInstructionCollection processor, FieldDefinition field)
 		{
 			//you know the drill
 			//read count
@@ -466,63 +466,63 @@ namespace AssemblyDumper.Passes
 			var arrayType = dictType.MakeArrayType(); //cursed. that is all.
 
 			//Read length of array
-			var intReader = processor.Body.Method.Module.ImportReference(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadInt32"));
-			processor.Emit(OpCodes.Ldarg_1); //Load reader
-			processor.Emit(OpCodes.Call, intReader); //Call int reader
+			var intReader = SharedState.Importer.ImportMethod(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.Single(m => m.Name == "ReadInt32"));
+			processor.Add(CilOpCodes.Ldarg_1); //Load reader
+			processor.Add(CilOpCodes.Call, intReader); //Call int reader
 
 			//Make local and store length in it
-			var countLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
-			processor.Body.Variables.Add(countLocal); //Add to method
-			processor.Emit(OpCodes.Stloc, countLocal); //Store count in it
+			var countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			processor.Owner.LocalVariables.Add(countLocal); //Add to method
+			processor.Add(CilOpCodes.Stloc, countLocal); //Store count in it
 
 			//Create empty array and local for it
-			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
-			processor.Emit(OpCodes.Newarr, dictType); //Create new array of dictionaries with given count
-			var arrayLocal = new VariableDefinition(arrayType); //Create local
-			processor.Body.Variables.Add(arrayLocal); //Add to method
-			processor.Emit(OpCodes.Stloc, arrayLocal); //Store array in local
+			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			processor.Add(CilOpCodes.Newarr, dictType); //Create new array of dictionaries with given count
+			var arrayLocal = new CilLocalVariable(arrayType); //Create local
+			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
+			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
 
 			//Make an i
-			var iLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
-			processor.Body.Variables.Add(iLocal); //Add to method
-			processor.Emit(OpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Emit(OpCodes.Stloc, iLocal); //Store in count
+			var iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			processor.Owner.LocalVariables.Add(iLocal); //Add to method
+			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch = processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
+			var unconditionalBranch = processor.Create(CilOpCodes.Br, processor.Create(CilOpCodes.Nop));
 			processor.Append(unconditionalBranch);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			var jumpTarget = processor.Create(OpCodes.Nop); //Create a dummy instruction to jump back to
+			var jumpTarget = processor.Create(CilOpCodes.Nop); //Create a dummy instruction to jump back to
 			processor.Append(jumpTarget); //Add it to the method body
 
 			//Read element at index i of array
-			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array local
-			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
+			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array local
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
 			ReadDictionary(dictNode, processor, null);
-			processor.Emit(OpCodes.Stelem_Any, dictType); //Store in array
+			processor.Add(CilOpCodes.Stelem_Any, dictType); //Store in array
 
 			//Increment i
-			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
-			processor.Emit(OpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Emit(OpCodes.Add); //Add 
-			processor.Emit(OpCodes.Stloc, iLocal); //Store in i local
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Add(CilOpCodes.Add); //Add 
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Create(OpCodes.Ldloc, iLocal); //Load i
+			var loopConditionStart = processor.Create(CilOpCodes.Ldloc, iLocal); //Load i
 			processor.Append(loopConditionStart);
-			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
-			processor.Emit(OpCodes.Blt, jumpTarget); //Jump back up if less than
+			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
 			unconditionalBranch.Operand = loopConditionStart;
 
 			//Now just store field
-			processor.Emit(OpCodes.Ldarg_0); //Load this
-			processor.Emit(OpCodes.Ldloc, arrayLocal); //Load array
-			processor.Emit(OpCodes.Stfld, field); //Store field
+			processor.Add(CilOpCodes.Ldarg_0); //Load this
+			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array
+			processor.Add(CilOpCodes.Stfld, field); //Store field
 		}
 
-		private static void ReadDictionary(UnityNode node, ILProcessor processor, FieldDefinition field)
+		private static void ReadDictionary(UnityNode node, CilInstructionCollection processor, FieldDefinition field)
 		{
 			//Strategy:
 			//Read Count
@@ -537,66 +537,66 @@ namespace AssemblyDumper.Passes
 			var addMethod = MethodUtils.MakeMethodOnGenericType(genericDictType.Resolve().Methods.Single(m => m.Name == "Add" && m.Parameters.Count == 2), genericDictType);
 
 			//Read length of array
-			var intReader = processor.Body.Method.Module.ImportReference(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "ReadInt32"));
-			processor.Emit(OpCodes.Ldarg_1); //Load reader
-			processor.Emit(OpCodes.Call, intReader); //Call int reader
+			var intReader = SharedState.Importer.ImportMethod(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.Single(m => m.Name == "ReadInt32"));
+			processor.Add(CilOpCodes.Ldarg_1); //Load reader
+			processor.Add(CilOpCodes.Call, intReader); //Call int reader
 
 			//Make local and store length in it
-			var countLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
-			processor.Body.Variables.Add(countLocal); //Add to method
-			processor.Emit(OpCodes.Stloc, countLocal); //Store count in it
+			var countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			processor.Owner.LocalVariables.Add(countLocal); //Add to method
+			processor.Add(CilOpCodes.Stloc, countLocal); //Store count in it
 
 			//Create empty dict and local for it
-			processor.Emit(OpCodes.Newobj, genericDictCtor); //Create new dictionary
-			var dictLocal = new VariableDefinition(genericDictType); //Create local
-			processor.Body.Variables.Add(dictLocal); //Add to method
-			processor.Emit(OpCodes.Stloc, dictLocal); //Store dict in local
+			processor.Add(CilOpCodes.Newobj, genericDictCtor); //Create new dictionary
+			var dictLocal = new CilLocalVariable(genericDictType); //Create local
+			processor.Owner.LocalVariables.Add(dictLocal); //Add to method
+			processor.Add(CilOpCodes.Stloc, dictLocal); //Store dict in local
 
 			//Make an i
-			var iLocal = new VariableDefinition(SystemTypeGetter.Int32); //Create local
-			processor.Body.Variables.Add(iLocal); //Add to method
-			processor.Emit(OpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Emit(OpCodes.Stloc, iLocal); //Store in count
+			var iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			processor.Owner.LocalVariables.Add(iLocal); //Add to method
+			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch = processor.Create(OpCodes.Br, processor.Create(OpCodes.Nop));
+			var unconditionalBranch = processor.Create(CilOpCodes.Br, processor.Create(CilOpCodes.Nop));
 			processor.Append(unconditionalBranch);
 
 			//Now we just read key + value, increment i, compare against count, and jump back to here if it's less
-			var jumpTarget = processor.Create(OpCodes.Nop); //Create a dummy instruction to jump back to
+			var jumpTarget = processor.Create(CilOpCodes.Nop); //Create a dummy instruction to jump back to
 			processor.Append(jumpTarget); //Add it to the method body
 
 			//Read ith key-value pair of dict 
-			processor.Emit(OpCodes.Ldloc, dictLocal); //Load dict local
+			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load dict local
 			ReadFieldContent(node.SubNodes[0].SubNodes[1].SubNodes[0], processor, null); //Load first
 			ReadFieldContent(node.SubNodes[0].SubNodes[1].SubNodes[1], processor, null); //Load second
-			processor.Emit(OpCodes.Call, addMethod); //Call Add(TKey, TValue)
+			processor.Add(CilOpCodes.Call, addMethod); //Call Add(TKey, TValue)
 
 			//Increment i
-			processor.Emit(OpCodes.Ldloc, iLocal); //Load i local
-			processor.Emit(OpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Emit(OpCodes.Add); //Add 
-			processor.Emit(OpCodes.Stloc, iLocal); //Store in i local
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Add(CilOpCodes.Add); //Add 
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Create(OpCodes.Ldloc, iLocal); //Load i
+			var loopConditionStart = processor.Create(CilOpCodes.Ldloc, iLocal); //Load i
 			processor.Append(loopConditionStart);
-			processor.Emit(OpCodes.Ldloc, countLocal); //Load count
-			processor.Emit(OpCodes.Blt, jumpTarget); //Jump back up if less than
+			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
 			unconditionalBranch.Operand = loopConditionStart;
 
 			//Now just store field
 			if (field != null)
-				processor.Emit(OpCodes.Ldarg_0); //Load this
+				processor.Add(CilOpCodes.Ldarg_0); //Load this
 
-			processor.Emit(OpCodes.Ldloc, dictLocal); //Load dict
+			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load dict
 
 			if (field != null)
-				processor.Emit(OpCodes.Stfld, field); //Store field
+				processor.Add(CilOpCodes.Stfld, field); //Store field
 		}
 
-		private static void ReadPair(UnityNode node, ILProcessor processor, FieldDefinition field)
+		private static void ReadPair(UnityNode node, CilInstructionCollection processor, FieldDefinition field)
 		{
 			//Read one, read two, construct tuple, store field
 			//Passing a null field to any of the Read generators causes no field store or this load to be emitted
@@ -606,7 +606,7 @@ namespace AssemblyDumper.Passes
 
 			//Load this for later usage
 			if (field != null)
-				processor.Emit(OpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldarg_0);
 
 			//Load the left side of the pair
 			ReadFieldContent(first, processor, null);
@@ -619,11 +619,12 @@ namespace AssemblyDumper.Passes
 			var genericCtor = MethodUtils.MakeConstructorOnGenericType(genericKvp, 2);
 
 			//Call constructor
-			processor.Emit(OpCodes.Newobj, genericCtor);
+			processor.Add(CilOpCodes.Newobj, genericCtor);
 
 			//Store in field if desired
 			if (field != null)
-				processor.Emit(OpCodes.Stfld, field);
+				processor.Add(CilOpCodes.Stfld, field);
 		}
 	}
 }
+*/

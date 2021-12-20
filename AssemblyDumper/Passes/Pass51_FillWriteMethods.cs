@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AsmResolver.DotNet;
+using AsmResolver.DotNet.Code.Cil;
+using AsmResolver.PE.DotNet.Cil;
 using AssemblyDumper.Unity;
 using AssemblyDumper.Utils;
 using AssetRipper.Core.IO.Asset;
 using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
 
 namespace AssemblyDumper.Passes
 {
 	public static class Pass51_FillWriteMethods
 	{
-		private static MethodReference WriteMethod;
+		private static IMethodDefOrRef WriteMethod;
 		private static bool throwNotSupported = true;
 
 		public static void DoPass()
@@ -31,12 +31,12 @@ namespace AssemblyDumper.Passes
 		private static void FillEditorWriteMethod(this TypeDefinition type, UnityClass klass, List<FieldDefinition> fields)
 		{
 			MethodDefinition editorModeReadMethod = type.Methods.First(m => m.Name == "WriteEditor");
-			MethodBody editorModeBody = editorModeReadMethod.Body = new(editorModeReadMethod);
-			ILProcessor editorModeProcessor = editorModeBody.GetILProcessor();
-
+			CilMethodBody editorModeBody = editorModeReadMethod.CilMethodBody;
+			CilInstructionCollection editorModeProcessor = editorModeBody.Instructions;
+			
 			if (throwNotSupported)
 			{
-				editorModeProcessor.EmitNotSupportedException();
+				editorModeProcessor.AddNotSupportedException();
 			}
 			else
 			{
@@ -48,20 +48,20 @@ namespace AssemblyDumper.Passes
 						AddWriteToProcessor(unityNode, editorModeProcessor, fields);
 					}
 				}
-				editorModeProcessor.Emit(OpCodes.Ret);
+				editorModeProcessor.Add(CilOpCodes.Ret);
 			}
-			editorModeBody.Optimize();
+			editorModeProcessor.OptimizeMacros();
 		}
 
 		private static void FillReleaseWriteMethod(this TypeDefinition type, UnityClass klass, List<FieldDefinition> fields)
 		{
 			MethodDefinition releaseModeReadMethod = type.Methods.First(m => m.Name == "WriteRelease");
-			MethodBody releaseModeBody = releaseModeReadMethod.Body = new(releaseModeReadMethod);
-			ILProcessor releaseModeProcessor = releaseModeBody.GetILProcessor();
+			CilMethodBody releaseModeBody = releaseModeReadMethod.CilMethodBody;
+			CilInstructionCollection releaseModeProcessor = releaseModeBody.Instructions;
 
 			if (throwNotSupported)
 			{
-				releaseModeProcessor.EmitNotSupportedException();
+				releaseModeProcessor.AddNotSupportedException();
 			}
 			else
 			{
@@ -73,45 +73,44 @@ namespace AssemblyDumper.Passes
 						AddWriteToProcessor(unityNode, releaseModeProcessor, fields);
 					}
 				}
-				releaseModeProcessor.Emit(OpCodes.Ret);
+				releaseModeProcessor.Add(CilOpCodes.Ret);
 			}
-			releaseModeBody.Optimize();
+			releaseModeProcessor.OptimizeMacros();
 		}
 
-		private static void AddWriteToProcessor(UnityNode node, ILProcessor processor, List<FieldDefinition> fields)
+		private static void AddWriteToProcessor(UnityNode node, CilInstructionCollection processor, List<FieldDefinition> fields)
 		{
 			//Get field
 			FieldDefinition field = fields.SingleOrDefault(f => f.Name == node.Name);
 
 			if (field == null)
-				throw new Exception($"Field {node.Name} cannot be found in {processor.Body.Method.DeclaringType} (fields are {string.Join(", ", fields.Select(f => f.Name))})");
+				throw new Exception($"Field {node.Name} cannot be found in {processor.Owner.Owner.DeclaringType} (fields are {string.Join(", ", fields.Select(f => f.Name))})");
 
 			if (WriteMethod == null)
-				WriteMethod = processor.Body.Method.Module.ImportReference(CommonTypeGetter.AssetWriterDefinition.Resolve().Methods.First(m => m.Name == nameof(AssetWriter.WriteGeneric)));
+				WriteMethod = SharedState.Importer.ImportMethod(CommonTypeGetter.AssetWriterDefinition.Resolve().Methods.Single(m => m.Name == nameof(AssetWriter.WriteGeneric)));
 
-			processor.Emit(OpCodes.Ldarg_1); //Load writer
-			processor.Emit(OpCodes.Ldarg_0); //Load this
-			processor.Emit(OpCodes.Ldfld, field); //Load field
+			processor.Add(CilOpCodes.Ldarg_1); //Load writer
+			processor.Add(CilOpCodes.Ldarg_0); //Load this
+			processor.Add(CilOpCodes.Ldfld, field); //Load field
 
-			GenericInstanceMethod genericMethod = new GenericInstanceMethod(WriteMethod);
-			genericMethod.GenericArguments.Add(field.FieldType);
-			processor.Emit(OpCodes.Call, genericMethod);
+			MethodSpecification genericMethod = MethodUtils.MakeGenericInstanceMethod(WriteMethod, field.Signature.FieldType);
+			processor.Add(CilOpCodes.Call, genericMethod);
 
 			MaybeAlignBytes(node, processor);
 		}
 
-		private static void MaybeAlignBytes(UnityNode node, ILProcessor processor)
+		private static void MaybeAlignBytes(UnityNode node, CilInstructionCollection processor)
 		{
 			if (((TransferMetaFlags)node.MetaFlag).IsAlignBytes())
 			{
 				//Load reader
-				processor.Emit(OpCodes.Ldarg_1);
+				processor.Add(CilOpCodes.Ldarg_1);
 
 				//Get ReadAsset
 				MethodDefinition alignMethod = CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.First(m => m.Name == "AlignStream");
 
 				//Call it
-				processor.Emit(OpCodes.Call, processor.Body.Method.Module.ImportReference(alignMethod));
+				processor.Add(CilOpCodes.Call, SharedState.Importer.ImportMethod(alignMethod));
 			}
 		}
 	}

@@ -1,6 +1,8 @@
-﻿using AssemblyDumper.Unity;
+﻿using AsmResolver.DotNet;
+using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
+using AssemblyDumper.Unity;
+using AssemblyDumper.Utils;
 using AssetRipper.Core.Attributes;
-using Mono.Cecil;
 using System;
 using System.Linq;
 
@@ -8,10 +10,10 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass07_AddTypeDefinitions
 	{
-		private static MethodReference EditorOnlyAttributeConstructor { get; set; }
-		private static MethodReference StrippedAttributeConstructor { get; set; }
-		private static MethodReference PersistentIDAttributeConstructor { get; set; }
-		private static MethodReference OriginalNameAttributeConstructor { get; set; }
+		private static IMethodDefOrRef EditorOnlyAttributeConstructor { get; set; }
+		private static IMethodDefOrRef StrippedAttributeConstructor { get; set; }
+		private static IMethodDefOrRef PersistentIDAttributeConstructor { get; set; }
+		private static IMethodDefOrRef OriginalNameAttributeConstructor { get; set; }
 
 		public static void DoPass()
 		{
@@ -54,21 +56,9 @@ namespace AssemblyDumper.Passes
 			if (@class.IsStripped) typeDef.AddCustomAttribute(StrippedAttributeConstructor);
 			typeDef.AddCustomAttribute(PersistentIDAttributeConstructor, SystemTypeGetter.Int32, @class.TypeID);
 
-			_this.MainModule.Types.Add(typeDef);
+			_this.ManifestModule.TopLevelTypes.Add(typeDef);
 
 			return typeDef;
-		}
-
-		private static void AddCustomAttribute(this TypeDefinition _this, MethodReference constructor)
-		{
-			_this.CustomAttributes.Add(new CustomAttribute(constructor));
-		}
-
-		private static void AddCustomAttribute(this TypeDefinition _this, MethodReference constructor, TypeReference param1Type, object param1Value)
-		{
-			var attrDef = new CustomAttribute(constructor);
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(param1Type, param1Value));
-			_this.CustomAttributes.Add(attrDef);
 		}
 	}
 }

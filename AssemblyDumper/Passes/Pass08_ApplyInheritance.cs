@@ -1,5 +1,5 @@
-﻿using AssetRipper.Core;
-using Mono.Cecil;
+﻿using AsmResolver.DotNet;
+using AssetRipper.Core;
 using System.Linq;
 
 namespace AssemblyDumper.Passes
@@ -10,8 +10,8 @@ namespace AssemblyDumper.Passes
 		{
 			System.Console.WriteLine("Pass 8: Apply Inheritance");
 
-			TypeReference unityObjectBaseDefinition = SharedState.Module.ImportCommonType<UnityObjectBase>();
-			TypeReference unityAssetBaseDefinition = SharedState.Module.ImportCommonType<UnityAssetBase>();
+			ITypeDefOrRef unityObjectBaseDefinition = SharedState.Module.ImportCommonType<UnityObjectBase>();
+			ITypeDefOrRef unityAssetBaseDefinition = SharedState.Module.ImportCommonType<UnityAssetBase>();
 
 			foreach (var pair in SharedState.ClassDictionary)
 			{

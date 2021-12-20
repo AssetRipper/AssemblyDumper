@@ -1,5 +1,7 @@
-﻿using Mono.Cecil;
-using Mono.Cecil.Cil;
+﻿using AsmResolver.DotNet;
+using AsmResolver.PE.DotNet.Cil;
+using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
+using AssemblyDumper.Utils;
 using System.Linq;
 
 namespace AssemblyDumper.Passes
@@ -24,16 +26,15 @@ namespace AssemblyDumper.Passes
 		private static void AddImplicitConversion(this TypeDefinition type)
 		{
 			FieldDefinition field = type.GetField();
-			MethodDefinition method = new MethodDefinition("op_Implicit", ConversionAttributes, field.FieldType);
-			type.Methods.Add(method);
+			
+			MethodDefinition implicitMethod = type.AddMethod("op_Implicit", ConversionAttributes, field.Signature.FieldType);
+			implicitMethod.AddParameter("value", type);
 
-			var value = new ParameterDefinition("value", ParameterAttributes.None, type);
-			method.Parameters.Add(value);
+			var processor = implicitMethod.CilMethodBody.Instructions;
 
-			var processor = method.Body.GetILProcessor();
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldfld, field);
-			processor.Emit(OpCodes.Ret);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, field);
+			processor.Add(CilOpCodes.Ret);
 		}
 
 		private static FieldDefinition GetField(this TypeDefinition type)

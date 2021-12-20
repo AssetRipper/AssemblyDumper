@@ -1,6 +1,8 @@
-﻿using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
+﻿using AsmResolver.DotNet;
+using AsmResolver.DotNet.Code.Cil;
+using AsmResolver.PE.DotNet.Cil;
+using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
+using AssemblyDumper.Utils;
 using System;
 using System.Linq;
 
@@ -23,16 +25,13 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 61: Implement Native Format Importer Interface");
-			TypeReference nativeImporterInterface = SharedState.Module.ImportCommonType<AssetRipper.Core.Classes.Meta.Importers.INativeFormatImporter>();
+			ITypeDefOrRef nativeImporterInterface = SharedState.Module.ImportCommonType<AssetRipper.Core.Classes.Meta.Importers.INativeFormatImporter>();
 			if (SharedState.TypeDictionary.TryGetValue("NativeFormatImporter", out TypeDefinition type))
 			{
 				type.Interfaces.Add(new InterfaceImplementation(nativeImporterInterface));
-				var getter = type.ImplementGetter();
-				var setter = type.ImplementSetter();
-				PropertyDefinition property = new PropertyDefinition(PropertyName, PropertyAttributes.None, SystemTypeGetter.Int64);
-				property.GetMethod = getter;
-				property.SetMethod = setter;
-				type.Properties.Add(property);
+				PropertyDefinition property = type.AddFullProperty(PropertyName, InterfacePropertyImplementationAttributes, SystemTypeGetter.Int64);
+				property.FillGetter();
+				property.FillSetter();
 			}
 			else
 			{
@@ -40,40 +39,38 @@ namespace AssemblyDumper.Passes
 			}
 		}
 
-		private static MethodDefinition ImplementGetter(this TypeDefinition type)
+		private static MethodDefinition FillGetter(this PropertyDefinition property)
 		{
-			MethodDefinition getter = new MethodDefinition(GetterName, InterfacePropertyImplementationAttributes, SystemTypeGetter.Int64);
-			type.Methods.Add(getter);
-			ILProcessor processor = getter.Body.GetILProcessor();
-			if (type.HasField())
+			MethodDefinition getter = property.GetMethod;
+			
+			CilInstructionCollection processor = getter.CilMethodBody.Instructions;
+			if (property.DeclaringType.HasField())
 			{
-				processor.Emit(OpCodes.Ldarg_0);
-				processor.Emit(OpCodes.Ldfld, type.GetField());
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldfld, property.DeclaringType.GetField());
 			}
 			else
 			{
-				processor.EmitDefaultValue(SystemTypeGetter.Int64);
+				processor.AddDefaultValue(SystemTypeGetter.Int64);
 			}
-			processor.Emit(OpCodes.Ret);
-			processor.Body.Optimize();
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
 			return getter;
 		}
 
-		private static MethodDefinition ImplementSetter(this TypeDefinition type)
+		private static MethodDefinition FillSetter(this PropertyDefinition property)
 		{
-			MethodDefinition setter = new MethodDefinition(SetterName, InterfacePropertyImplementationAttributes, SystemTypeGetter.Void);
-			type.Methods.Add(setter);
-			ParameterDefinition value = new ParameterDefinition("value", ParameterAttributes.None, SystemTypeGetter.Int64);
-			setter.Parameters.Add(value);
-			ILProcessor processor = setter.Body.GetILProcessor();
-			if (type.HasField())
+			MethodDefinition setter = property.SetMethod;
+			
+			CilInstructionCollection processor = setter.CilMethodBody.Instructions;
+			if (property.DeclaringType.HasField())
 			{
-				processor.Emit(OpCodes.Ldarg_0);
-				processor.Emit(OpCodes.Ldarg, value);
-				processor.Emit(OpCodes.Stfld, type.GetField());
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldarg_1); //value
+				processor.Add(CilOpCodes.Stfld, property.DeclaringType.GetField());
 			}
-			processor.Emit(OpCodes.Ret);
-			processor.Body.Optimize();
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
 			return setter;
 		}
 

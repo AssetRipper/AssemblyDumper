@@ -1,6 +1,7 @@
-﻿using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
+﻿using AsmResolver.DotNet;
+using AsmResolver.PE.DotNet.Cil;
+using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
+using AssemblyDumper.Utils;
 using System.Linq;
 
 namespace AssemblyDumper.Passes
@@ -19,46 +20,42 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 30: Implement the Has Name Interface");
-			TypeReference hasName = SharedState.Module.ImportCommonType<AssetRipper.Core.Interfaces.IHasName>();
+			ITypeDefOrRef hasName = SharedState.Module.ImportCommonType<AssetRipper.Core.Interfaces.IHasName>();
 			foreach(TypeDefinition type in SharedState.TypeDictionary.Values)
 			{
 				if (type.HasNameField())
 				{
 					type.Interfaces.Add(new InterfaceImplementation(hasName));
-					var getter = type.ImplementGetter();
-					var setter = type.ImplementSetter();
-					PropertyDefinition property = new PropertyDefinition("Name", PropertyAttributes.None, SystemTypeGetter.String);
-					property.GetMethod = getter;
-					property.SetMethod = setter;
-					type.Properties.Add(property);
+					
+					PropertyDefinition property = type.AddFullProperty("Name", InterfacePropertyImplementationAttributes, SystemTypeGetter.String);
+					property.FillGetter();
+					property.FillSetter();
 				}
 			}
 		}
 
-		private static MethodDefinition ImplementGetter(this TypeDefinition type)
+		private static MethodDefinition FillGetter(this PropertyDefinition property)
 		{
-			MethodDefinition getter = new MethodDefinition("get_Name", InterfacePropertyImplementationAttributes, SystemTypeGetter.String);
-			type.Methods.Add(getter);
-			ILProcessor processor = getter.Body.GetILProcessor();
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldfld, type.GetNameField());
-			processor.Emit(OpCodes.Ret);
-			processor.Body.Optimize();
+			MethodDefinition getter = property.GetMethod;
+			
+			var processor = getter.CilMethodBody.Instructions;
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, property.DeclaringType.GetNameField());
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
 			return getter;
 		}
 
-		private static MethodDefinition ImplementSetter(this TypeDefinition type)
+		private static MethodDefinition FillSetter(this PropertyDefinition property)
 		{
-			MethodDefinition setter = new MethodDefinition("set_Name", InterfacePropertyImplementationAttributes, SystemTypeGetter.Void);
-			type.Methods.Add(setter);
-			ParameterDefinition value = new ParameterDefinition("value", ParameterAttributes.None, SystemTypeGetter.String);
-			setter.Parameters.Add(value);
-			ILProcessor processor = setter.Body.GetILProcessor();
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldarg, value);
-			processor.Emit(OpCodes.Stfld, type.GetNameField());
-			processor.Emit(OpCodes.Ret);
-			processor.Body.Optimize();
+			MethodDefinition setter = property.SetMethod;
+			
+			var processor = setter.CilMethodBody.Instructions;
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldarg_1); //value
+			processor.Add(CilOpCodes.Stfld, property.DeclaringType.GetNameField());
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
 			return setter;
 		}
 
