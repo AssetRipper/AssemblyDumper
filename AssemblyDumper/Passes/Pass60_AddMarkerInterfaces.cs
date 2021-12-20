@@ -1,4 +1,4 @@
-﻿using Mono.Cecil;
+﻿using AsmResolver.DotNet;
 using System;
 
 namespace AssemblyDumper.Passes
@@ -31,7 +31,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddInterface<T>(this TypeDefinition type)
 		{
-			TypeReference @interface = SharedState.Module.ImportCommonType<T>();
+			ITypeDefOrRef @interface = SharedState.Module.ImportCommonType<T>();
 			type.Interfaces.Add(new InterfaceImplementation(@interface));
 		}
 	}

@@ -1,6 +1,7 @@
-﻿using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
+﻿/*
+using AsmResolver.DotNet;
+using AsmResolver.DotNet.Signatures;
+using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using System;
 using System.Linq;
 
@@ -10,38 +11,38 @@ namespace AssemblyDumper.Utils
 	{
 		public static TypeDefinition CreateDefaultAttribute(AssemblyDefinition assembly, string @namespace, string name, AttributeTargets targets)
 		{
-			var module = assembly.MainModule;
+			var module = assembly.ManifestModule;
 
-			TypeReference systemAttributeReference = module.ImportSystemType("System.Attribute");
-			TypeReference attributeTargetsReference = module.ImportSystemType("System.AttributeTargets");
+			ITypeDefOrRef systemAttributeReference = module.ImportSystemType("System.Attribute");
+			ITypeDefOrRef attributeTargetsReference = module.ImportSystemType("System.AttributeTargets");
 
-			MethodReference constructorMethod = SystemTypeGetter.LookupSystemType("System.AttributeUsageAttribute").GetConstructors().First(c => c.Parameters.Count == 1 && c.Parameters[0].ParameterType.Name == "AttributeTargets");
+			IMethodDefOrRef constructorMethod = SystemTypeGetter.LookupSystemType("System.AttributeUsageAttribute").GetConstructors().First(c => c.Parameters.Count == 1 && c.Parameters[0].ParameterType.Name == "AttributeTargets");
 
 			var attributeDefinition = new TypeDefinition(@namespace, name, TypeAttributes.Public | TypeAttributes.BeforeFieldInit, systemAttributeReference);
 
-			module.Types.Add(attributeDefinition);
+			module.TopLevelTypes.Add(attributeDefinition);
 			ConstructorUtils.AddDefaultConstructor(attributeDefinition);
 
-			var attrDef = new CustomAttribute(module.ImportReference(constructorMethod));
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(attributeTargetsReference, targets));
+			var attrDef = new CustomAttribute(module.ImportMethod(constructorMethod));
+			attrDef. ConstructorArguments.Add(new CustomAttributeArgument(attributeTargetsReference, targets));
 			attributeDefinition.CustomAttributes.Add(attrDef);
 
 			return attributeDefinition;
 		}
 
-		public static TypeDefinition CreateSingleValueAttribute(AssemblyDefinition assembly, string @namespace, string name, AttributeTargets targets, string fieldName, TypeReference fieldType, object defaultValue, bool hasDefaultConstructor, out MethodDefinition singleParamConstructor)
+		public static TypeDefinition CreateSingleValueAttribute(AssemblyDefinition assembly, string @namespace, string name, AttributeTargets targets, string fieldName, ITypeDefOrRef fieldType, object defaultValue, bool hasDefaultConstructor, out MethodDefinition singleParamConstructor)
 		{
-			var module = assembly.MainModule;
+			var module = assembly.ManifestModule;
 
-			TypeReference systemAttributeReference = module.ImportSystemType("System.Attribute");
-			TypeReference attributeTargetsReference = module.ImportSystemType("System.AttributeTargets");
+			ITypeDefOrRef systemAttributeReference = module.ImportSystemType("System.Attribute");
+			ITypeDefOrRef attributeTargetsReference = module.ImportSystemType("System.AttributeTargets");
 
-			MethodReference usageConstructorMethod = module.ImportReference(SystemTypeGetter.LookupSystemType("System.AttributeUsageAttribute").GetConstructors().First(c => c.Parameters.Count == 1 && c.Parameters[0].ParameterType.Name == "AttributeTargets"));
-			MethodReference defaultAttributeConstructor = module.ImportReference(SystemTypeGetter.LookupSystemType("System.Attribute").GetDefaultConstructor());
+			IMethodDefOrRef usageConstructorMethod = module.ImportReference(SystemTypeGetter.LookupSystemType("System.AttributeUsageAttribute").GetConstructors().First(c => c.Parameters.Count == 1 && c.Parameters[0].ParameterType.Name == "AttributeTargets"));
+			IMethodDefOrRef defaultAttributeConstructor = module.ImportReference(SystemTypeGetter.LookupSystemType("System.Attribute").GetDefaultConstructor());
 
 			var attributeDefinition = new TypeDefinition(@namespace, name, TypeAttributes.Public | TypeAttributes.BeforeFieldInit, systemAttributeReference);
 
-			module.Types.Add(attributeDefinition);
+			module.TopLevelTypes.Add(attributeDefinition);
 			if (hasDefaultConstructor)
 			{
 				var defaultConstructor = new MethodDefinition(
@@ -50,10 +51,10 @@ namespace AssemblyDumper.Utils
 					module.ImportReference(typeof(void))
 				);
 
-				var defaultProcessor = defaultConstructor.Body.GetILProcessor();
-				defaultProcessor.Emit(OpCodes.Ldarg_0);
-				defaultProcessor.Emit(OpCodes.Call, defaultAttributeConstructor);
-				defaultProcessor.Emit(OpCodes.Ret);
+				var defaultProcessor = defaultConstructor.CilMethodBody.Instructions;
+				defaultprocessor.Add(CilOpCodes.Ldarg_0);
+				defaultprocessor.Add(CilOpCodes.Call, defaultAttributeConstructor);
+				defaultprocessor.Add(CilOpCodes.Ret);
 
 				attributeDefinition.Methods.Add(defaultConstructor);
 			}
@@ -76,13 +77,13 @@ namespace AssemblyDumper.Utils
 			);
 			singleParamConstructor.Parameters.Add(new ParameterDefinition(fieldName, ParameterAttributes.None, fieldType));
 
-			var processor = singleParamConstructor.Body.GetILProcessor();
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Call, defaultAttributeConstructor);
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldarg_1);
-			processor.Emit(OpCodes.Stfld, field);
-			processor.Emit(OpCodes.Ret);
+			var processor = singleParamConstructor.CilMethodBody.Instructions;
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Call, defaultAttributeConstructor);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldarg_1);
+			processor.Add(CilOpCodes.Stfld, field);
+			processor.Add(CilOpCodes.Ret);
 
 			attributeDefinition.Methods.Add(singleParamConstructor);
 
@@ -91,3 +92,4 @@ namespace AssemblyDumper.Utils
 		}
 	}
 }
+*/

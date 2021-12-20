@@ -1,6 +1,7 @@
-﻿using AssemblyDumper.Unity;
+﻿using AsmResolver.DotNet;
+using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
+using AssemblyDumper.Unity;
 using AssemblyDumper.Utils;
-using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,9 +9,14 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass11_AddConstructors
 	{
+		private const MethodAttributes PublicInstanceConstructorAttributes = 
+			MethodAttributes.Public | 
+			MethodAttributes.HideBySig | 
+			MethodAttributes.SpecialName | 
+			MethodAttributes.RuntimeSpecialName;
 		private readonly static List<string> processed = new List<string>();
-		private static TypeReference AssetInfoRef;
-		private static TypeReference LayoutInfoRef;
+		private static ITypeDefOrRef AssetInfoRef;
+		private static ITypeDefOrRef LayoutInfoRef;
 
 		public static void DoPass()
 		{
@@ -36,36 +42,32 @@ namespace AssemblyDumper.Passes
 
 			TypeDefinition type = SharedState.TypeDictionary[typeInfo.Name];
 			ConstructorUtils.AddDefaultConstructor(type);
-			AddLayoutInfoConstructor(type);
+			type.AddLayoutInfoConstructor();
 			if(typeInfo.TypeID >= 0)
 			{
-				AddAssetInfoConstructor(type);
+				type.AddAssetInfoConstructor();
 			}
 			processed.Add(typeInfo.Name);
 		}
 
-		private static MethodDefinition AddAssetInfoConstructor(TypeDefinition typeDefinition)
+		private static MethodDefinition AddAssetInfoConstructor(this TypeDefinition typeDefinition)
 		{
 			return AddSingleParameterConstructor(typeDefinition, AssetInfoRef, "info");
 		}
 
-		private static MethodDefinition AddLayoutInfoConstructor(TypeDefinition typeDefinition)
+		private static MethodDefinition AddLayoutInfoConstructor(this TypeDefinition typeDefinition)
 		{
 			return AddSingleParameterConstructor(typeDefinition, LayoutInfoRef, "info");
 		}
 
-		private static MethodDefinition AddSingleParameterConstructor(TypeDefinition typeDefinition, TypeReference parameterType, string parameterName)
+		private static MethodDefinition AddSingleParameterConstructor(this TypeDefinition typeDefinition, ITypeDefOrRef parameterType, string parameterName)
 		{
-			var constructor = new MethodDefinition(
+			var constructor = typeDefinition.AddMethod(
 				".ctor",
-				MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
+				PublicInstanceConstructorAttributes,
 				SystemTypeGetter.Void
 			);
-
-			ParameterDefinition parameter = new ParameterDefinition(parameterName, ParameterAttributes.None, parameterType);
-			constructor.Parameters.Add(parameter);
-
-			typeDefinition.Methods.Add(constructor);
+			constructor.AddParameter(parameterName, parameterType);
 			return constructor;
 		}
 	}

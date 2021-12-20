@@ -1,6 +1,8 @@
-﻿using AssemblyDumper.Utils;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+﻿using AsmResolver.DotNet;
+using AsmResolver.DotNet.Code.Cil;
+using AsmResolver.PE.DotNet.Cil;
+using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
+using AssemblyDumper.Utils;
 using System;
 using System.Linq;
 
@@ -23,8 +25,8 @@ namespace AssemblyDumper.Passes
 
 		private static TypeDefinition CreateFactoryDefinition()
 		{
-			var result = new TypeDefinition(SharedState.RootNamespace, "AssetImporterFactory", SealedClassAttributes, SystemTypeGetter.Object);
-			SharedState.Module.Types.Add(result);
+			var result = new TypeDefinition(SharedState.RootNamespace, "AssetImporterFactory", SealedClassAttributes, SystemTypeGetter.Object.ToTypeDefOrRef());
+			SharedState.Module.TopLevelTypes.Add(result);
 			result.Interfaces.Add(new InterfaceImplementation(SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Asset.IAssetImporterFactory>()));
 			ConstructorUtils.AddDefaultConstructor(result);
 			return result;
@@ -32,38 +34,36 @@ namespace AssemblyDumper.Passes
 
 		private static void AddCreateDefaultImporter(this TypeDefinition factoryDefinition)
 		{
-			TypeReference idefaultImporter = SharedState.Module.ImportCommonType<AssetRipper.Core.Classes.Meta.Importers.IDefaultImporter>();
-			TypeReference layoutInfoType = SharedState.Module.ImportCommonType<AssetRipper.Core.Layout.LayoutInfo>();
+			ITypeDefOrRef idefaultImporter = SharedState.Module.ImportCommonType<AssetRipper.Core.Classes.Meta.Importers.IDefaultImporter>();
+			ITypeDefOrRef layoutInfoType = SharedState.Module.ImportCommonType<AssetRipper.Core.Layout.LayoutInfo>();
 
 			MethodDefinition constructor = SharedState.TypeDictionary["DefaultImporter"].Methods
 				.Single(m => m.IsConstructor && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.Name == "LayoutInfo");
 
-			MethodDefinition method = new MethodDefinition("CreateDefaultImporter", InterfaceOverrideAttributes, idefaultImporter);
-			var parameter = new ParameterDefinition("layout", ParameterAttributes.None, layoutInfoType);
-			method.Parameters.Add(parameter);
-			ILProcessor processor = method.Body.GetILProcessor();
-			processor.Emit(OpCodes.Ldarg, parameter);
-			processor.Emit(OpCodes.Newobj, constructor);
-			processor.Emit(OpCodes.Ret);
-			factoryDefinition.Methods.Add(method);
+			MethodDefinition method = factoryDefinition.AddMethod("CreateDefaultImporter", InterfaceOverrideAttributes, idefaultImporter);
+			method.AddParameter("layout", layoutInfoType);
+			
+			CilInstructionCollection processor = method.CilMethodBody.Instructions;
+			processor.Add(CilOpCodes.Ldarg_1); //layout
+			processor.Add(CilOpCodes.Newobj, constructor);
+			processor.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddCreateNativeFormatImporter(this TypeDefinition factoryDefinition)
 		{
-			TypeReference inativeImporter = SharedState.Module.ImportCommonType<AssetRipper.Core.Classes.Meta.Importers.INativeFormatImporter>();
-			TypeReference layoutInfoType = SharedState.Module.ImportCommonType<AssetRipper.Core.Layout.LayoutInfo>();
+			ITypeDefOrRef inativeImporter = SharedState.Module.ImportCommonType<AssetRipper.Core.Classes.Meta.Importers.INativeFormatImporter>();
+			ITypeDefOrRef layoutInfoType = SharedState.Module.ImportCommonType<AssetRipper.Core.Layout.LayoutInfo>();
 
 			MethodDefinition constructor = SharedState.TypeDictionary["NativeFormatImporter"].Methods
 				.Single(m => m.IsConstructor && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.Name == "LayoutInfo");
 
-			MethodDefinition method = new MethodDefinition("CreateNativeFormatImporter", InterfaceOverrideAttributes, inativeImporter);
-			var parameter = new ParameterDefinition("layout", ParameterAttributes.None, layoutInfoType);
-			method.Parameters.Add(parameter);
-			ILProcessor processor = method.Body.GetILProcessor();
-			processor.Emit(OpCodes.Ldarg, parameter);
-			processor.Emit(OpCodes.Newobj, constructor);
-			processor.Emit(OpCodes.Ret);
-			factoryDefinition.Methods.Add(method);
+			MethodDefinition method = factoryDefinition.AddMethod("CreateNativeFormatImporter", InterfaceOverrideAttributes, inativeImporter);
+			method.AddParameter("layout", layoutInfoType);
+
+			CilInstructionCollection processor = method.CilMethodBody.Instructions;
+			processor.Add(CilOpCodes.Ldarg_1); //layout
+			processor.Add(CilOpCodes.Newobj, constructor);
+			processor.Add(CilOpCodes.Ret);
 		}
 	}
 }

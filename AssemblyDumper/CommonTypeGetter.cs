@@ -1,5 +1,5 @@
-﻿using AssemblyDumper.Utils;
-using Mono.Cecil;
+﻿using AsmResolver.DotNet;
+using AssemblyDumper.Utils;
 using System;
 using System.Linq;
 
@@ -11,32 +11,32 @@ namespace AssemblyDumper
 		private static ModuleDefinition generatedModule;
 
 		//Reading
-		public static TypeReference AssetReaderDefinition => generatedModule.ImportCommonType<AssetRipper.Core.IO.Asset.AssetReader>();
-		public static TypeReference EndianReaderDefinition => generatedModule.ImportCommonType<AssetRipper.Core.IO.Endian.EndianReader>();
-		public static TypeReference EndianReaderExtensionsDefinition => generatedModule.ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.EndianReaderExtensions));
-		public static TypeReference AssetReaderExtensionsDefinition => generatedModule.ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.AssetReaderExtensions));
+		public static ITypeDefOrRef AssetReaderDefinition => generatedModule.ImportCommonType<AssetRipper.Core.IO.Asset.AssetReader>();
+		public static ITypeDefOrRef EndianReaderDefinition => generatedModule.ImportCommonType<AssetRipper.Core.IO.Endian.EndianReader>();
+		public static ITypeDefOrRef EndianReaderExtensionsDefinition => ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.EndianReaderExtensions));
+		public static ITypeDefOrRef AssetReaderExtensionsDefinition => ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.AssetReaderExtensions));
 
 		//Writing
-		public static TypeReference AssetWriterDefinition => generatedModule.ImportCommonType<AssetRipper.Core.IO.Asset.AssetWriter>();
+		public static ITypeDefOrRef AssetWriterDefinition => generatedModule.ImportCommonType<AssetRipper.Core.IO.Asset.AssetWriter>();
 
 		//Yaml Export
-		public static TypeReference IExportContainerDefinition => generatedModule.ImportCommonType<AssetRipper.Core.Project.IExportContainer>();
-		public static TypeReference YAMLNodeDefinition => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLNode>();
-		public static TypeReference YAMLMappingNodeDefinition => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLMappingNode>();
-		public static TypeReference YAMLSequenceNodeDefinition => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLSequenceNode>();
-		public static MethodReference YAMLMappingNodeConstructor => generatedModule.ImportCommonConstructor<AssetRipper.Core.YAML.YAMLMappingNode>();
-		public static MethodReference YAMLSequenceNodeConstructor => generatedModule.ImportCommonConstructor<AssetRipper.Core.YAML.YAMLSequenceNode>(1);
+		public static ITypeDefOrRef IExportContainerDefinition => generatedModule.ImportCommonType<AssetRipper.Core.Project.IExportContainer>();
+		public static ITypeDefOrRef YAMLNodeDefinition => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLNode>();
+		public static ITypeDefOrRef YAMLMappingNodeDefinition => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLMappingNode>();
+		public static ITypeDefOrRef YAMLSequenceNodeDefinition => generatedModule.ImportCommonType<AssetRipper.Core.YAML.YAMLSequenceNode>();
+		public static IMethodDefOrRef YAMLMappingNodeConstructor => generatedModule.ImportCommonConstructor<AssetRipper.Core.YAML.YAMLMappingNode>();
+		public static IMethodDefOrRef YAMLSequenceNodeConstructor => generatedModule.ImportCommonConstructor<AssetRipper.Core.YAML.YAMLSequenceNode>(1);
 
 		//Generics
-		public static TypeReference AssetDictionaryType => generatedModule.ImportCommonType("AssetRipper.Core.IO.AssetDictionary`2");
-		public static TypeReference NullableKeyValuePair => generatedModule.ImportCommonType("AssetRipper.Core.IO.NullableKeyValuePair`2");
+		public static ITypeDefOrRef AssetDictionaryType => generatedModule.ImportCommonType("AssetRipper.Core.IO.AssetDictionary`2");
+		public static ITypeDefOrRef NullableKeyValuePair => generatedModule.ImportCommonType("AssetRipper.Core.IO.NullableKeyValuePair`2");
 
 		public static void Initialize(ModuleDefinition module)
 		{
 			generatedModule = module;
 		}
 
-		public static TypeDefinition LookupCommonType(string typeFullName) => CommonAssembly.MainModule.GetType(typeFullName);
+		public static TypeDefinition LookupCommonType(string typeFullName) => CommonAssembly.ManifestModule.TopLevelTypes.SingleOrDefault(t => t.GetTypeFullName() == typeFullName);
 		public static TypeDefinition LookupCommonType(Type type) => LookupCommonType(type.FullName);
 		public static TypeDefinition LookupCommonType<T>() => LookupCommonType(typeof(T));
 
@@ -44,32 +44,32 @@ namespace AssemblyDumper
 		public static MethodDefinition LookupCommonMethod(Type type, Func<MethodDefinition, bool> filter) => LookupCommonMethod(type.FullName, filter);
 		public static MethodDefinition LookupCommonMethod<T>(Func<MethodDefinition, bool> filter) => LookupCommonMethod(typeof(T), filter);
 
-		public static TypeReference ImportCommonType(this ModuleDefinition module, string typeFullName) => module.ImportReference(LookupCommonType(typeFullName));
-		public static TypeReference ImportCommonType(this ModuleDefinition module, System.Type type) => module.ImportReference(LookupCommonType(type));
-		public static TypeReference ImportCommonType<T>(this ModuleDefinition module) => module.ImportReference(LookupCommonType<T>());
+		public static ITypeDefOrRef ImportCommonType(this ModuleDefinition module, string typeFullName) => SharedState.Importer.ImportType(LookupCommonType(typeFullName));
+		public static ITypeDefOrRef ImportCommonType(System.Type type) => SharedState.Importer.ImportType(LookupCommonType(type));
+		public static ITypeDefOrRef ImportCommonType<T>(this ModuleDefinition module) => SharedState.Importer.ImportType(LookupCommonType<T>());
 
-		public static MethodReference ImportCommonMethod(this ModuleDefinition module, string typeFullName, Func<MethodDefinition, bool> filter)
+		public static IMethodDefOrRef ImportCommonMethod(this ModuleDefinition module, string typeFullName, Func<MethodDefinition, bool> filter)
 		{
-			return module.ImportReference(LookupCommonMethod(typeFullName, filter));
+			return SharedState.Importer.ImportMethod(LookupCommonMethod(typeFullName, filter));
 		}
-		public static MethodReference ImportCommonMethod(this ModuleDefinition module, System.Type type, Func<MethodDefinition, bool> filter)
+		public static IMethodDefOrRef ImportCommonMethod(this ModuleDefinition module, System.Type type, Func<MethodDefinition, bool> filter)
 		{
-			return module.ImportReference(LookupCommonMethod(type, filter));
+			return SharedState.Importer.ImportMethod(LookupCommonMethod(type, filter));
 		}
-		public static MethodReference ImportCommonMethod<T>(this ModuleDefinition module, Func<MethodDefinition, bool> filter)
+		public static IMethodDefOrRef ImportCommonMethod<T>(this ModuleDefinition module, Func<MethodDefinition, bool> filter)
 		{
-			return module.ImportReference(LookupCommonMethod<T>(filter));
+			return SharedState.Importer.ImportMethod(LookupCommonMethod<T>(filter));
 		}
 
 		/// <summary>
 		/// Import the default constructor for this type
 		/// </summary>
-		public static MethodReference ImportCommonConstructor<T>(this ModuleDefinition module) => module.ImportCommonConstructor(typeof(T).FullName, 0);
-		public static MethodReference ImportCommonConstructor<T>(this ModuleDefinition module, int numParameters) => module.ImportCommonConstructor(typeof(T).FullName, numParameters);
-		public static MethodReference ImportCommonConstructor(this ModuleDefinition module, string typeFullName) => module.ImportCommonConstructor(typeFullName, 0);
-		public static MethodReference ImportCommonConstructor(this ModuleDefinition module, string typeFullName, int numParameters)
+		public static IMethodDefOrRef ImportCommonConstructor<T>(this ModuleDefinition module) => module.ImportCommonConstructor(typeof(T).FullName, 0);
+		public static IMethodDefOrRef ImportCommonConstructor<T>(this ModuleDefinition module, int numParameters) => module.ImportCommonConstructor(typeof(T).FullName, numParameters);
+		public static IMethodDefOrRef ImportCommonConstructor(this ModuleDefinition module, string typeFullName) => module.ImportCommonConstructor(typeFullName, 0);
+		public static IMethodDefOrRef ImportCommonConstructor(this ModuleDefinition module, string typeFullName, int numParameters)
 		{
-			return module.ImportReference(LookupCommonType(typeFullName).GetConstructor(numParameters));
+			return SharedState.Importer.ImportMethod(LookupCommonType(typeFullName).GetConstructor(numParameters));
 		}
 	}
 }

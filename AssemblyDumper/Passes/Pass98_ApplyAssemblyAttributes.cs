@@ -1,5 +1,9 @@
-﻿using AssetRipper.Core.Attributes;
-using Mono.Cecil;
+﻿using AsmResolver.DotNet;
+using AssemblyDumper.Unity;
+using AssemblyDumper.Utils;
+using AssetRipper.Core.Attributes;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace AssemblyDumper.Passes
@@ -11,41 +15,61 @@ namespace AssemblyDumper.Passes
 			System.Console.WriteLine("Pass 98: Apply Assembly Attributes");
 			SharedState.Assembly.AddVersionAttribute();
 			SharedState.Assembly.AddVersionHandlerAttribute();
-			foreach (var pair in SharedState.ClassDictionary)
+			/*List<KeyValuePair<string, UnityClass>> classList = SharedState.ClassDictionary.ToList();
+			classList.Sort(Compare);
+			foreach (var pair in classList)
 			{
 				if (!SystemTypeGetter.primitiveNamesCsharp.Contains(pair.Key))
 				{
+					//Console.WriteLine(pair.Key);
 					SharedState.Assembly.AddAssetTypeAttribute(pair.Key, pair.Value.TypeID, SharedState.TypeDictionary[pair.Key]);
 				}
 			}
+			foreach (var attribute in SharedState.Assembly.CustomAttributes)
+			{
+				Console.WriteLine(attribute.Signature.FixedArguments[0].Element);
+			}*/
 		}
 
 		private static void AddVersionAttribute(this AssemblyDefinition _this)
 		{
 			string versionString = SharedState.Version;
-			var registerAssemblyAttributeConstructor = _this.MainModule.ImportCommonConstructor<RegisterAssemblyAttribute>(1);
-			var attrDef = new CustomAttribute(registerAssemblyAttributeConstructor);
-			var unityVersionDefinition = _this.MainModule.ImportCommonType<AssetRipper.Core.Parser.Files.UnityVersion>();
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(unityVersionDefinition, versionString));
-			_this.CustomAttributes.Add(attrDef);
+			var registerAssemblyAttributeConstructor = _this.ManifestModule.ImportCommonConstructor<RegisterAssemblyAttribute>(1);
+			_this.AddCustomAttribute(registerAssemblyAttributeConstructor, SystemTypeGetter.String, versionString);
 		}
 
-		private static void AddAssetTypeAttribute(this AssemblyDefinition _this, string typeName, int idNumber, TypeReference type)
+		private static void AddAssetTypeAttribute(this AssemblyDefinition _this, string typeName, int idNumber, ITypeDefOrRef type)
 		{
-			var registerAssetTypeAttributeConstructor = _this.MainModule.ImportCommonConstructor<RegisterAssetTypeAttribute>(3);
-			var attrDef = new CustomAttribute(registerAssetTypeAttributeConstructor);
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.String, typeName));
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.Int32, idNumber));
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.Type, type));
-			_this.CustomAttributes.Add(attrDef);
+			var registerAssetTypeAttributeConstructor = _this.ManifestModule.ImportCommonConstructor<RegisterAssetTypeAttribute>(3);
+			var attrDef = _this.AddCustomAttribute(registerAssetTypeAttributeConstructor);
+			attrDef.AddFixedArgument(SystemTypeGetter.String, typeName);
+			attrDef.AddFixedArgument(SystemTypeGetter.Int32, idNumber);
+			attrDef.AddFixedArgument(SystemTypeGetter.Type.ToTypeSignature(), type.ToTypeSignature());
 		}
 
 		private static void AddVersionHandlerAttribute(this AssemblyDefinition _this)
 		{
-			var registerVersionHandlerAttributeConstructor = _this.MainModule.ImportCommonConstructor<RegisterVersionHandlerAttribute>(1);
-			var attrDef = new CustomAttribute(registerVersionHandlerAttributeConstructor);
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.Type, Pass95_UnityVersionHandler.HandlerDefinition));
-			_this.CustomAttributes.Add(attrDef);
+			var registerVersionHandlerAttributeConstructor = _this.ManifestModule.ImportCommonConstructor<RegisterVersionHandlerAttribute>(1);
+			var attrDef = _this.AddCustomAttribute(registerVersionHandlerAttributeConstructor, SystemTypeGetter.Type.ToTypeSignature(), Pass95_UnityVersionHandler.HandlerDefinition.ToTypeSignature());
+		}
+
+		private static int Compare(KeyValuePair<string, UnityClass> left, KeyValuePair<string, UnityClass> right)
+		{
+			if(left.Value.TypeID != right.Value.TypeID)
+			{
+				if (left.Value.TypeID == -1)
+					return 1;
+				if(right.Value.TypeID == -1)
+					return -1;
+				if (left.Value.TypeID < right.Value.TypeID)
+					return -1;
+				else
+					return 1;
+			}
+			else
+			{
+				return left.Key.CompareTo(right.Key);
+			}
 		}
 	}
 }

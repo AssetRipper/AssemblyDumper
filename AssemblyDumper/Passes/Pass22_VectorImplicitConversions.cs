@@ -1,12 +1,15 @@
-﻿using AssetRipper.Core.Math;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+﻿using AsmResolver.DotNet;
+using AsmResolver.PE.DotNet.Cil;
+using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
+using AssemblyDumper.Utils;
+using AssetRipper.Core.Math;
 using System.Linq;
 
 namespace AssemblyDumper.Passes
 {
 	public static class Pass22_VectorImplicitConversions
 	{
+		const MethodAttributes ConversionAttributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.HideBySig;
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 22: Vector Implicit Conversions");
@@ -50,40 +53,37 @@ namespace AssemblyDumper.Passes
 
 		private static void AddConversion<T>(TypeDefinition type, int size)
 		{
-			TypeReference commonType = SharedState.Module.ImportCommonType<T>();
-			MethodReference constructor = SharedState.Module.ImportCommonConstructor<T>(size);
+			ITypeDefOrRef commonType = SharedState.Module.ImportCommonType<T>();
+			IMethodDefOrRef constructor = SharedState.Module.ImportCommonConstructor<T>(size);
 
-			var implicitMethod = new MethodDefinition("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.HideBySig, SystemTypeGetter.Void);
-			implicitMethod.ReturnType = commonType;
-			type.Methods.Add(implicitMethod);
-			implicitMethod.Body.InitLocals = true;
-			var processor = implicitMethod.Body.GetILProcessor();
+			MethodDefinition implicitMethod = type.AddMethod("op_Implicit", ConversionAttributes, commonType);
+			implicitMethod.AddParameter("value", type);
 
-			var value = new ParameterDefinition("value", ParameterAttributes.None, type);
-			implicitMethod.Parameters.Add(value);
+			implicitMethod.CilMethodBody.InitializeLocals = true;
+			var processor = implicitMethod.CilMethodBody.Instructions;
 
 			FieldDefinition x = type.Fields.Single(field => field.Name == "x");
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldfld, x);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, x);
 			FieldDefinition y = type.Fields.Single(field => field.Name == "y");
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldfld, y);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, y);
 
 			if(size > 2)
 			{
 				FieldDefinition z = type.Fields.Single(field => field.Name == "z");
-				processor.Emit(OpCodes.Ldarg_0);
-				processor.Emit(OpCodes.Ldfld, z);
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldfld, z);
 			}
 			if(size > 3)
 			{
 				FieldDefinition w = type.Fields.Single(field => field.Name == "w");
-				processor.Emit(OpCodes.Ldarg_0);
-				processor.Emit(OpCodes.Ldfld, w);
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldfld, w);
 			}
 
-			processor.Emit(OpCodes.Newobj, constructor);
-			processor.Emit(OpCodes.Ret);
+			processor.Add(CilOpCodes.Newobj, constructor);
+			processor.Add(CilOpCodes.Ret);
 		}
 	}
 }

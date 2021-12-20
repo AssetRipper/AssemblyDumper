@@ -1,12 +1,15 @@
-﻿using AssetRipper.Core.Classes.Misc;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+﻿using AsmResolver.DotNet;
+using AsmResolver.PE.DotNet.Cil;
+using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
+using AssemblyDumper.Utils;
+using AssetRipper.Core.Classes.Misc;
 using System.Linq;
 
 namespace AssemblyDumper.Passes
 {
 	public static class Pass21_GuidImplicitConversion
 	{
+		const MethodAttributes ConversionAttributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.HideBySig;
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 21: GUID Implicit Conversion");
@@ -18,32 +21,30 @@ namespace AssemblyDumper.Passes
 
 		private static void AddGuidConversion(TypeDefinition guidType)
 		{
-			TypeReference commonGuidType = SharedState.Module.ImportCommonType<UnityGUID>();
-			MethodReference constructor = SharedState.Module.ImportCommonConstructor<UnityGUID>(4);
+			ITypeDefOrRef commonGuidType = SharedState.Module.ImportCommonType<UnityGUID>();
+			IMethodDefOrRef constructor = SharedState.Module.ImportCommonConstructor<UnityGUID>(4);
 
 			FieldDefinition data0 = guidType.Fields.Single(field => field.Name == "data_0_");
 			FieldDefinition data1 = guidType.Fields.Single(field => field.Name == "data_1_");
 			FieldDefinition data2 = guidType.Fields.Single(field => field.Name == "data_2_");
 			FieldDefinition data3 = guidType.Fields.Single(field => field.Name == "data_3_");
 
-			var implicitMethod = new MethodDefinition("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.HideBySig, SystemTypeGetter.Void);
-			implicitMethod.ReturnType = commonGuidType;
-			guidType.Methods.Add(implicitMethod);
-			implicitMethod.Body.InitLocals = true;
-			var processor = implicitMethod.Body.GetILProcessor();
+			MethodDefinition implicitMethod = guidType.AddMethod("op_Implicit", ConversionAttributes, commonGuidType);
+			implicitMethod.AddParameter("value", guidType);
 
-			var value = new ParameterDefinition("value", ParameterAttributes.None, guidType);
-			implicitMethod.Parameters.Add(value);
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldfld, data0);
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldfld, data1);
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldfld, data2);
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldfld, data3);
-			processor.Emit(OpCodes.Newobj, constructor);
-			processor.Emit(OpCodes.Ret);
+			implicitMethod.CilMethodBody.InitializeLocals = true;
+			var processor = implicitMethod.CilMethodBody.Instructions;
+
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, data0);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, data1);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, data2);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, data3);
+			processor.Add(CilOpCodes.Newobj, constructor);
+			processor.Add(CilOpCodes.Ret);
 		}
 	}
 }

@@ -1,16 +1,17 @@
-﻿using AssemblyDumper.Utils;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
+﻿using AsmResolver.DotNet;
+using AsmResolver.DotNet.Signatures.Types;
+using AsmResolver.PE.DotNet.Cil;
+using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
+using AssemblyDumper.Utils;
 using System.Linq;
 
 namespace AssemblyDumper.Passes
 {
 	public static class Pass20_PPtrConversions
 	{
-		private static TypeReference commonPPtrType;
-		private static TypeReference unityObjectBaseInterface;
-		private static GenericInstanceType unityObjectBasePPtr;
+		private static ITypeDefOrRef commonPPtrType;
+		private static ITypeDefOrRef unityObjectBaseInterface;
+		private static GenericInstanceTypeSignature unityObjectBasePPtr;
 		const MethodAttributes ConversionAttributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.HideBySig;
 
 		public static void DoPass()
@@ -19,7 +20,7 @@ namespace AssemblyDumper.Passes
 
 			commonPPtrType = SharedState.Module.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
 			unityObjectBaseInterface = SharedState.Module.ImportCommonType<AssetRipper.Core.Interfaces.IUnityObjectBase>();
-			unityObjectBasePPtr = commonPPtrType.MakeGenericInstanceType(unityObjectBaseInterface);
+			unityObjectBasePPtr = commonPPtrType.MakeGenericInstanceType(unityObjectBaseInterface.ToTypeSignature());
 
 			foreach (string name in SharedState.ClassDictionary.Keys)
 			{
@@ -36,47 +37,45 @@ namespace AssemblyDumper.Passes
 
 		private static void AddImplicitConversion(TypeDefinition pptrType, TypeDefinition parameterType)
 		{
-			GenericInstanceType conversionResultType = commonPPtrType.MakeGenericInstanceType(parameterType);
-			MethodReference constructor = MethodUtils.MakeConstructorOnGenericType(conversionResultType, 2);
+			GenericInstanceTypeSignature conversionResultType = commonPPtrType.MakeGenericInstanceType(parameterType.ToTypeSignature());
+			MethodSpecification constructor = MethodUtils.MakeConstructorOnGenericType(conversionResultType, 2);
 
 			FieldDefinition fileID = pptrType.Fields.Single(field => field.Name == "m_FileID");
 			FieldDefinition pathID = pptrType.Fields.Single(f => f.Name == "m_PathID");
-			
-			var implicitMethod = new MethodDefinition("op_Implicit", ConversionAttributes, conversionResultType);
-			pptrType.Methods.Add(implicitMethod);
-			implicitMethod.Body.InitLocals = true;
-			var processor = implicitMethod.Body.GetILProcessor();
 
-			var value = new ParameterDefinition("value", ParameterAttributes.None, pptrType);
-			implicitMethod.Parameters.Add(value);
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldfld, fileID);
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldfld, pathID);
-			processor.Emit(OpCodes.Newobj, constructor);
-			processor.Emit(OpCodes.Ret);
+			MethodDefinition implicitMethod = pptrType.AddMethod("op_Implicit", ConversionAttributes, conversionResultType);
+			implicitMethod.AddParameter("value", pptrType);
+
+			implicitMethod.CilMethodBody.InitializeLocals = true;
+			var processor = implicitMethod.CilMethodBody.Instructions;
+
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, fileID);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, pathID);
+			processor.Add(CilOpCodes.Newobj, constructor);
+			processor.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddExplicitConversion(TypeDefinition pptrType)
 		{
-			MethodReference constructor = MethodUtils.MakeConstructorOnGenericType(unityObjectBasePPtr, 2);
+			MethodSpecification constructor = MethodUtils.MakeConstructorOnGenericType(unityObjectBasePPtr, 2);
 
 			FieldDefinition fileID = pptrType.Fields.Single(field => field.Name == "m_FileID");
 			FieldDefinition pathID = pptrType.Fields.Single(f => f.Name == "m_PathID");
 
-			var implicitMethod = new MethodDefinition("op_Explicit", ConversionAttributes, unityObjectBasePPtr);
-			pptrType.Methods.Add(implicitMethod);
-			implicitMethod.Body.InitLocals = true;
-			var processor = implicitMethod.Body.GetILProcessor();
+			MethodDefinition explicitMethod = pptrType.AddMethod("op_Explicit", ConversionAttributes, unityObjectBasePPtr);
+			explicitMethod.AddParameter("value", pptrType);
 
-			var value = new ParameterDefinition("value", ParameterAttributes.None, pptrType);
-			implicitMethod.Parameters.Add(value);
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldfld, fileID);
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Ldfld, pathID);
-			processor.Emit(OpCodes.Newobj, constructor);
-			processor.Emit(OpCodes.Ret);
+			explicitMethod.CilMethodBody.InitializeLocals = true;
+			var processor = explicitMethod.CilMethodBody.Instructions;
+
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, fileID);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, pathID);
+			processor.Add(CilOpCodes.Newobj, constructor);
+			processor.Add(CilOpCodes.Ret);
 		}
 	}
 }

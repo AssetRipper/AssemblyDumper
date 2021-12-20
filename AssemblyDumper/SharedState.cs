@@ -1,5 +1,5 @@
-﻿using AssemblyDumper.Unity;
-using Mono.Cecil;
+﻿using AsmResolver.DotNet;
+using AssemblyDumper.Unity;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,7 +8,8 @@ namespace AssemblyDumper
 	public static class SharedState
 	{
 		public static AssemblyDefinition Assembly { get; set; }
-		public static ModuleDefinition Module => Assembly.MainModule;
+		public static ModuleDefinition Module => Assembly.ManifestModule;
+		public static ReferenceImporter Importer { get; set; }
 		public static string Version { get; private set; }
 		public static List<UnityString> Strings { get; private set; }
 		/// <summary>

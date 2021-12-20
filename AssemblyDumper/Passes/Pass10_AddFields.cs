@@ -1,22 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AsmResolver.DotNet;
+using AsmResolver.DotNet.Signatures;
+using AsmResolver.DotNet.Signatures.Types;
+using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using AssemblyDumper.Unity;
+using AssemblyDumper.Utils;
 using AssetRipper.Core.Attributes;
-using Mono.Cecil;
-using Mono.Cecil.Rocks;
 
 namespace AssemblyDumper.Passes
 {
 	public static class Pass10_AddFields
 	{
-		private static MethodReference ReleaseOnlyAttributeConstructor { get; set; }
-		private static MethodReference EditorOnlyAttributeConstructor { get; set; }
-		private static TypeReference TransferMetaFlagsDefinition { get; set; }
-		private static MethodReference EditorMetaFlagsAttributeConstructor { get; set; }
-		private static MethodReference ReleaseMetaFlagsAttributeConstructor { get; set; }
-		private static MethodReference OriginalNameAttributeConstructor { get; set; }
-		private static TypeReference AssetDictionaryType { get; set; }
+		private static IMethodDefOrRef ReleaseOnlyAttributeConstructor { get; set; }
+		private static IMethodDefOrRef EditorOnlyAttributeConstructor { get; set; }
+		private static ITypeDefOrRef TransferMetaFlagsDefinition { get; set; }
+		private static IMethodDefOrRef EditorMetaFlagsAttributeConstructor { get; set; }
+		private static IMethodDefOrRef ReleaseMetaFlagsAttributeConstructor { get; set; }
+		private static IMethodDefOrRef OriginalNameAttributeConstructor { get; set; }
+		private static ITypeDefOrRef AssetDictionaryType { get; set; }
 
 		private static void InitializeImports()
 		{
@@ -52,19 +55,19 @@ namespace AssemblyDumper.Passes
 
 			foreach(UnityNode releaseOnlyField in releaseOnly)
 			{
-				TypeReference releaseOnlyFieldType = ResolveFieldType(releaseOnlyField);
+				TypeSignature releaseOnlyFieldType = ResolveFieldType(releaseOnlyField);
 				type.AddReleaseOnlyField(releaseOnlyField, releaseOnlyFieldType);
 			}
 
 			foreach (UnityNode editorOnlyField in editorOnly)
 			{
-				TypeReference editorOnlyFieldType = ResolveFieldType(editorOnlyField);
+				TypeSignature editorOnlyFieldType = ResolveFieldType(editorOnlyField);
 				type.AddEditorOnlyField(editorOnlyField, editorOnlyFieldType);
 			}
 
 			foreach ((UnityNode releaseField, UnityNode editorField) in releaseAndEditor)
 			{
-				TypeReference fieldType = ResolveFieldType(releaseField);
+				TypeSignature fieldType = ResolveFieldType(releaseField);
 				type.AddNormalField(releaseField, editorField, fieldType);
 			}
 		}
@@ -101,27 +104,30 @@ namespace AssemblyDumper.Passes
 			return releaseNodes.Where(node => !IsFieldInBaseType(unityClass, node.Name)).ToList();
 		}
 
-		private static void AddReleaseOnlyField(this TypeDefinition type, UnityNode releaseNode, TypeReference fieldType)
+		private static void AddReleaseOnlyField(this TypeDefinition type, UnityNode releaseNode, TypeSignature fieldType)
 		{
-			FieldDefinition fieldDefinition = new FieldDefinition(releaseNode.Name, FieldAttributes.Public, fieldType);
+			var fieldSignature = FieldSignature.CreateInstance(fieldType);
+			FieldDefinition fieldDefinition = new FieldDefinition(releaseNode.Name, FieldAttributes.Public, fieldSignature);
 			fieldDefinition.MaybeAddOriginalNameAttribute(releaseNode, null);
 			fieldDefinition.AddReleaseFlagAttribute(releaseNode.MetaFlag);
 			fieldDefinition.AddCustomAttribute(ReleaseOnlyAttributeConstructor);
 			type.Fields.Add(fieldDefinition);
 		}
 
-		private static void AddEditorOnlyField(this TypeDefinition type, UnityNode editorNode, TypeReference fieldType)
+		private static void AddEditorOnlyField(this TypeDefinition type, UnityNode editorNode, TypeSignature fieldType)
 		{
-			FieldDefinition fieldDefinition = new FieldDefinition(editorNode.Name, FieldAttributes.Public, fieldType);
+			var fieldSignature = FieldSignature.CreateInstance(fieldType);
+			FieldDefinition fieldDefinition = new FieldDefinition(editorNode.Name, FieldAttributes.Public, fieldSignature);
 			fieldDefinition.MaybeAddOriginalNameAttribute(null, editorNode);
 			fieldDefinition.AddCustomAttribute(EditorOnlyAttributeConstructor);
 			fieldDefinition.AddEditorFlagAttribute(editorNode.MetaFlag);
 			type.Fields.Add(fieldDefinition);
 		}
 
-		private static void AddNormalField(this TypeDefinition type, UnityNode releaseNode, UnityNode editorNode, TypeReference fieldType)
+		private static void AddNormalField(this TypeDefinition type, UnityNode releaseNode, UnityNode editorNode, TypeSignature fieldType)
 		{
-			FieldDefinition fieldDefinition = new FieldDefinition(editorNode.Name, FieldAttributes.Public, fieldType);
+			var fieldSignature = FieldSignature.CreateInstance(fieldType);
+			FieldDefinition fieldDefinition = new FieldDefinition(editorNode.Name, FieldAttributes.Public, fieldSignature);
 			fieldDefinition.MaybeAddOriginalNameAttribute(releaseNode, editorNode);
 			fieldDefinition.AddReleaseFlagAttribute(releaseNode.MetaFlag);
 			fieldDefinition.AddEditorFlagAttribute(editorNode.MetaFlag);
@@ -155,12 +161,12 @@ namespace AssemblyDumper.Passes
 			}
 		}
 
-		private static TypeReference ResolveFieldType(UnityNode editorField)
+		private static TypeSignature ResolveFieldType(UnityNode editorField)
 		{
-			TypeReference fieldType = SharedState.Module.GetPrimitiveType(editorField.TypeName);
+			TypeSignature fieldType = SystemTypeGetter.GetCppPrimitiveTypeSignature(editorField.TypeName);
 
 			if (fieldType == null && SharedState.TypeDictionary.TryGetValue(editorField.TypeName, out TypeDefinition result))
-				fieldType = result;
+				fieldType = result.ToTypeSignature();
 
 			if (fieldType == null)
 			{
@@ -176,7 +182,7 @@ namespace AssemblyDumper.Passes
 					case "pair":
 						return ResolvePairType(editorField);
 					case "TypelessData":
-						return SystemTypeGetter.UInt8.MakeArrayType();
+						return SystemTypeGetter.UInt8.MakeSzArrayType();
 					case "Array":
 						return ResolveArrayType(editorField);
 				}
@@ -187,24 +193,24 @@ namespace AssemblyDumper.Passes
 				throw new Exception($"Could not resolve field type {editorField.TypeName}");
 			}
 
-			return SharedState.Module.ImportReference(fieldType);
+			return fieldType;
 		}
 
-		private static TypeReference ResolveDictionaryType(UnityNode dictionaryNode)
+		private static GenericInstanceTypeSignature ResolveDictionaryType(UnityNode dictionaryNode)
 		{
 			UnityNode pairNode = dictionaryNode.SubNodes[0].SubNodes[1];
-			ResolvePairElementTypes(pairNode, out TypeReference firstType, out TypeReference secondType);
+			ResolvePairElementTypes(pairNode, out TypeSignature firstType, out TypeSignature secondType);
 			return AssetDictionaryType.MakeGenericInstanceType(firstType, secondType);
 		}
 
-		private static TypeReference ResolvePairType(UnityNode pairNode)
+		private static GenericInstanceTypeSignature ResolvePairType(UnityNode pairNode)
 		{
-			ResolvePairElementTypes(pairNode, out TypeReference firstType, out TypeReference secondType);
-			TypeReference kvpType = CommonTypeGetter.NullableKeyValuePair;
+			ResolvePairElementTypes(pairNode, out TypeSignature firstType, out TypeSignature secondType);
+			ITypeDefOrRef kvpType = CommonTypeGetter.NullableKeyValuePair;
 			return kvpType.MakeGenericInstanceType(firstType, secondType);
 		}
 
-		private static void ResolvePairElementTypes(UnityNode pairNode, out TypeReference firstType, out TypeReference secondType)
+		private static void ResolvePairElementTypes(UnityNode pairNode, out TypeSignature firstType, out TypeSignature secondType)
 		{
 			firstType = ResolveFieldType(pairNode.SubNodes[0]);
 			secondType = ResolveFieldType(pairNode.SubNodes[1]);
@@ -215,43 +221,32 @@ namespace AssemblyDumper.Passes
 			}
 		}
 
-		private static TypeReference ResolveArrayType(UnityNode arrayNode)
+		private static SzArrayTypeSignature ResolveArrayType(UnityNode arrayNode)
 		{
 			UnityNode arrayTypeNode = arrayNode.SubNodes[1];
-			TypeReference arrayType = ResolveFieldType(arrayTypeNode);
+			TypeSignature arrayType = ResolveFieldType(arrayTypeNode);
 
 			if (arrayType == null)
 			{
 				throw new Exception($"Could not resolve array parameter {arrayTypeNode.TypeName}");
 			}
-			
-			return arrayType.MakeArrayType();
+
+			return arrayType.MakeAndImportArrayType();
 		}
 
 		private static void AddReleaseFlagAttribute(this FieldDefinition _this, int flags)
 		{
-			CustomAttribute attrDef = new CustomAttribute(ReleaseMetaFlagsAttributeConstructor);
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(TransferMetaFlagsDefinition, flags));
-			_this.CustomAttributes.Add(attrDef);
+			_this.AddCustomAttribute(ReleaseMetaFlagsAttributeConstructor, TransferMetaFlagsDefinition.ToTypeSignature(), flags);
 		}
 
 		private static void AddEditorFlagAttribute(this FieldDefinition _this, int flags)
 		{
-			CustomAttribute attrDef = new CustomAttribute(EditorMetaFlagsAttributeConstructor);
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(TransferMetaFlagsDefinition, flags));
-			_this.CustomAttributes.Add(attrDef);
+			_this.AddCustomAttribute(EditorMetaFlagsAttributeConstructor, TransferMetaFlagsDefinition.ToTypeSignature(), flags);
 		}
 
 		private static void AddOriginalNameAttribute(this FieldDefinition _this, string originalName)
 		{
-			CustomAttribute attrDef = new CustomAttribute(OriginalNameAttributeConstructor);
-			attrDef.ConstructorArguments.Add(new CustomAttributeArgument(SystemTypeGetter.String, originalName));
-			_this.CustomAttributes.Add(attrDef);
-		}
-
-		private static void AddCustomAttribute(this FieldDefinition _this, MethodReference constructor)
-		{
-			_this.CustomAttributes.Add(new CustomAttribute(constructor));
+			_this.AddCustomAttribute(OriginalNameAttributeConstructor, SystemTypeGetter.String, originalName);
 		}
 
 		private static bool IsFieldInBaseType(UnityClass unityClass, string fieldName)

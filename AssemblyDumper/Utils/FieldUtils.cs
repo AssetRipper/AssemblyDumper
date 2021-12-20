@@ -1,4 +1,4 @@
-﻿using Mono.Cecil;
+﻿using AsmResolver.DotNet;
 using System.Collections.Generic;
 using System.Linq;
 

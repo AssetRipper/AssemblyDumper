@@ -1,49 +1,59 @@
-﻿using AssemblyDumper.Unity;
-using Mono.Cecil;
-using Mono.Cecil.Rocks;
+﻿using AsmResolver.DotNet;
+using AsmResolver.DotNet.Signatures.Types;
+using AssemblyDumper.Unity;
 
 namespace AssemblyDumper
 {
 	public static class GenericTypeResolver
 	{
-		public static GenericInstanceType ResolveDictionaryType(UnityNode node)
+		public static GenericInstanceTypeSignature ResolveDictionaryType(UnityNode node)
 		{
 			UnityNode pairNode = node.SubNodes[0] //Array
 				.SubNodes[1]; //Pair
 
-			GenericInstanceType genericKvp = ResolvePairType(pairNode);
-
-			return CommonTypeGetter.AssetDictionaryType.MakeGenericInstanceType(genericKvp.GenericArguments[0], genericKvp.GenericArguments[1]);
+			GenericInstanceTypeSignature genericKvp = ResolvePairType(pairNode);
+			
+			return CommonTypeGetter.AssetDictionaryType.MakeGenericInstanceType(genericKvp.TypeArguments[0], genericKvp.TypeArguments[1]);
 		}
 
-		public static ArrayType ResolveVectorType(UnityNode vectorNode)
+		public static SzArrayTypeSignature ResolveVectorType(UnityNode vectorNode)
 		{
 			return ResolveArrayType(vectorNode.SubNodes[0]);
 		}
 
-		public static ArrayType ResolveArrayType(UnityNode arrayNode)
+		public static SzArrayTypeSignature ResolveArrayType(UnityNode arrayNode)
 		{
 			UnityNode contentNode = arrayNode.SubNodes[1];
-			TypeReference elementType = ResolveNode(contentNode);
-			return SharedState.Module.ImportReference(elementType).MakeArrayType();
+			TypeSignature elementType = ResolveNode(contentNode);
+			return elementType.MakeAndImportArrayType();
 		}
 
-		public static GenericInstanceType ResolvePairType(UnityNode pairNode)
+		public static SzArrayTypeSignature MakeAndImportArrayType(this ITypeDefOrRef type)
+		{
+			return MakeAndImportArrayType(type.ToTypeSignature());
+		}
+
+		public static SzArrayTypeSignature MakeAndImportArrayType(this TypeSignature typeSignature)
+		{
+			return new SzArrayTypeSignature(SharedState.Importer.ImportTypeSignature(typeSignature));
+		}
+
+		public static GenericInstanceTypeSignature ResolvePairType(UnityNode pairNode)
 		{
 			return ResolvePairType(pairNode.SubNodes[0], pairNode.SubNodes[1]);
 		}
-		public static GenericInstanceType ResolvePairType(UnityNode first, UnityNode second)
+		public static GenericInstanceTypeSignature ResolvePairType(UnityNode first, UnityNode second)
 		{
-			TypeReference firstType = ResolveNode(first);
-			TypeReference secondType = ResolveNode(second);
+			TypeSignature firstType = ResolveNode(first);
+			TypeSignature secondType = ResolveNode(second);
 
 			//Construct a KeyValuePair
-			TypeReference kvpType = CommonTypeGetter.NullableKeyValuePair;
-			GenericInstanceType genericKvp = kvpType.MakeGenericInstanceType(firstType, secondType);
+			ITypeDefOrRef kvpType = CommonTypeGetter.NullableKeyValuePair;
+			GenericInstanceTypeSignature genericKvp = kvpType.MakeGenericInstanceType(firstType, secondType);
 			return genericKvp;
 		}
 
-		public static TypeReference ResolveNode(UnityNode node)
+		public static TypeSignature ResolveNode(UnityNode node)
 		{
 			string typeName = node.TypeName;
 			if (typeName == "pair")
@@ -68,7 +78,11 @@ namespace AssemblyDumper
 			}
 			else
 			{
-				return SharedState.Module.ImportReference(SharedState.Module.GetPrimitiveType(typeName) ?? SystemTypeGetter.LookupSystemType(typeName) ?? SharedState.TypeDictionary[typeName]);
+				return SystemTypeGetter.GetCppPrimitiveTypeSignature(typeName) ?? 
+					SharedState.Importer.ImportType( 
+						SystemTypeGetter.LookupSystemType(typeName) ?? 
+						SharedState.TypeDictionary[typeName]
+						).ToTypeSignature();
 			}
 		}
 	}

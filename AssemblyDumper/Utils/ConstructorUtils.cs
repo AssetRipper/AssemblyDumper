@@ -1,6 +1,8 @@
-﻿using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
+﻿using AsmResolver.DotNet;
+using AsmResolver.DotNet.Signatures;
+using AsmResolver.PE.DotNet.Cil;
+using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace AssemblyDumper.Utils
@@ -10,14 +12,14 @@ namespace AssemblyDumper.Utils
 		/// <summary>
 		/// Gets the default constructor for a type reference. Throws an exception if one doesn't exist.
 		/// </summary>
-		public static MethodDefinition GetDefaultConstructor(this TypeReference _this) => _this.GetConstructor(0);
+		public static MethodDefinition GetDefaultConstructor(this TypeDefinition _this) => _this.GetConstructor(0);
 
 		/// <summary>
 		/// Gets the constructor with that number of parameters. Throws an exception if there's not exactly one.
 		/// </summary>
-		public static MethodDefinition GetConstructor(this TypeReference _this, int numParameters)
+		public static MethodDefinition GetConstructor(this TypeDefinition _this, int numParameters)
 		{
-			return _this.Resolve().Methods.Where(x => x.IsConstructor && x.Parameters.Count == numParameters && !x.IsStatic).Single();
+			return _this.Methods.Where(x => x.IsConstructor && x.Parameters.Count == numParameters && !x.IsStatic).Single();
 		}
 
 		/// <summary>
@@ -26,15 +28,17 @@ namespace AssemblyDumper.Utils
 		public static MethodDefinition AddDefaultConstructor(TypeDefinition typeDefinition)
 		{
 			var module = typeDefinition.Module;
+			
 			var defaultConstructor = new MethodDefinition(
 				".ctor",
-				MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
-				module.ImportReference(typeof(void))
+				MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RuntimeSpecialName,
+				MethodSignature.CreateInstance(SystemTypeGetter.Void)
 			);
 
-			var processor = defaultConstructor.Body.GetILProcessor();
+			defaultConstructor.CilMethodBody = new(defaultConstructor);
+			var processor = defaultConstructor.CilMethodBody.Instructions;
 
-			MethodReference baseConstructor;
+			IMethodDefOrRef baseConstructor;
 			if (typeDefinition.BaseType == null)
 			{
 				baseConstructor = module.ImportSystemDefaultConstructor("System.Object");
@@ -43,9 +47,9 @@ namespace AssemblyDumper.Utils
 			{
 				if (typeDefinition.BaseType is TypeDefinition baseType)
 				{
-					baseConstructor = module.ImportReference(baseType.GetDefaultConstructor());
+					baseConstructor = baseType.GetDefaultConstructor();
 				}
-				else if (typeDefinition.BaseType.Namespace.StartsWith("AssetRipper"))
+				else if (typeDefinition.BaseType.Namespace.ToString().StartsWith("AssetRipper"))
 				{
 					baseConstructor = module.ImportCommonConstructor(typeDefinition.BaseType.FullName);
 				}
@@ -55,15 +59,24 @@ namespace AssemblyDumper.Utils
 				}
 			}
 
-			processor.Emit(OpCodes.Ldarg_0);
-			processor.Emit(OpCodes.Call, baseConstructor);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Call, baseConstructor);
+			processor.Add(CilOpCodes.Ret);
 
-			processor.Emit(OpCodes.Ret);
-
-			processor.Body.Optimize();
+			processor.OptimizeMacros();
 
 			typeDefinition.Methods.Add(defaultConstructor);
 			return defaultConstructor;
+		}
+
+		/// <summary>
+		/// Get the constructors for a type
+		/// </summary>
+		/// <param name="type">The definition for the type</param>
+		/// <returns>All the instance constructors</returns>
+		public static IEnumerable<MethodDefinition> GetConstructors(this TypeDefinition type)
+		{
+			return type.Methods.Where(m => m.IsConstructor && !m.IsStatic);
 		}
 	}
 }

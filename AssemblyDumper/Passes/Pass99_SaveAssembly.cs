@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using AsmResolver.DotNet.Builder;
+using System;
+using System.IO;
 
 namespace AssemblyDumper.Passes
 {
@@ -6,19 +8,34 @@ namespace AssemblyDumper.Passes
 	{
 		public static void DoPass(DirectoryInfo outputDirectory)
 		{
-			System.Console.WriteLine("Pass 99: Save Assembly");
+			Console.WriteLine("Pass 99: Save Assembly");
 			var assembly = SharedState.Assembly;
 
 			if (!outputDirectory.Exists) Directory.CreateDirectory(outputDirectory.FullName);
 
-			string filePath = Path.Combine(outputDirectory.FullName, SharedState.Assembly.Name.Name + ".dll");
+			string filePath = Path.Combine(outputDirectory.FullName, SharedState.Assembly.Name.ToString() + ".dll");
 
-			//var reference = assembly.MainModule.AssemblyReferences.FirstOrDefault(a => a.Name == "System.Private.CoreLib");
-			//if (reference != null)
-			//	assembly.MainModule.AssemblyReferences.Remove(reference);
+			DotNetDirectoryFactory factory = new DotNetDirectoryFactory();
+			//factory.MetadataBuilderFlags |= MetadataBuilderFlags.NoStringsStreamOptimization; //Check later, but currently less than 1% difference
+			ManagedPEImageBuilder builder = new ManagedPEImageBuilder(factory);
 
-			System.Console.WriteLine($"Saving assembly to {filePath}");
-			assembly.Write(filePath);
+			Console.WriteLine($"Saving assembly to {filePath}");
+			try
+			{
+				assembly.Write(filePath, builder);
+			}
+			catch(AggregateException aggregateException)
+			{
+				Console.WriteLine("AggregateException thrown");
+				aggregateException = aggregateException.Flatten();
+				
+				foreach(var error in aggregateException.InnerExceptions)
+				{
+					Console.WriteLine();
+					Console.WriteLine(error.ToString());
+					Console.WriteLine();
+				}
+			}
 		}
 	}
 }

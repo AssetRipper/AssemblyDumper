@@ -1,6 +1,9 @@
-﻿using AssemblyDumper.Utils;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+﻿using AsmResolver.DotNet;
+using AsmResolver.DotNet.Code.Cil;
+using AsmResolver.DotNet.Collections;
+using AsmResolver.PE.DotNet.Cil;
+using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
+using AssemblyDumper.Utils;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -23,8 +26,8 @@ namespace AssemblyDumper.Passes
 
 		private static TypeDefinition CreateFactoryDefinition()
 		{
-			var result = new TypeDefinition(SharedState.RootNamespace, "AssetFactory", SealedClassAttributes, SystemTypeGetter.Object);
-			SharedState.Module.Types.Add(result);
+			var result = new TypeDefinition(SharedState.RootNamespace, "AssetFactory", SealedClassAttributes, SystemTypeGetter.Object.ToTypeDefOrRef());
+			SharedState.Module.TopLevelTypes.Add(result);
 			result.Interfaces.Add(new InterfaceImplementation(SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Asset.IAssetFactory>()));
 			ConstructorUtils.AddDefaultConstructor(result);
 			return result;
@@ -32,63 +35,62 @@ namespace AssemblyDumper.Passes
 
 		private static void AddCreateEngineAsset(this TypeDefinition factoryDefinition)
 		{
-			TypeReference iassetType = SharedState.Module.ImportCommonType<AssetRipper.Core.IO.Asset.IAsset>();
-			MethodDefinition createEngineAsset = new MethodDefinition("CreateEngineAsset", InterfaceOverrideAttributes, iassetType);
-			createEngineAsset.Parameters.Add(new ParameterDefinition("name", ParameterAttributes.None, SystemTypeGetter.String));
-			createEngineAsset.Body.GetILProcessor().EmitNotSupportedException();
-			factoryDefinition.Methods.Add(createEngineAsset);
+			ITypeDefOrRef iassetType = SharedState.Module.ImportCommonType<AssetRipper.Core.IO.Asset.IAsset>();
+			MethodDefinition createEngineAsset = factoryDefinition.AddMethod("CreateEngineAsset", InterfaceOverrideAttributes, iassetType);
+			createEngineAsset.AddParameter("name", SystemTypeGetter.String);
+
+			createEngineAsset.CilMethodBody.Instructions.AddNotSupportedException();
 		}
 
 		private static void AddCreateAsset(this TypeDefinition factoryDefinition)
 		{
-			TypeReference iunityObjectBase = SharedState.Module.ImportCommonType<AssetRipper.Core.Interfaces.IUnityObjectBase>();
-			TypeReference assetInfoType = SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Asset.AssetInfo>();
-			MethodDefinition createAsset = new MethodDefinition("CreateAsset", InterfaceOverrideAttributes, iunityObjectBase);
-			var parameter = new ParameterDefinition("assetInfo", ParameterAttributes.None, assetInfoType);
-			createAsset.Parameters.Add(parameter);
-			createAsset.Body.InitLocals = true;
-			createAsset.Body.GetILProcessor().EmitSwitchStatement(parameter);
-			factoryDefinition.Methods.Add(createAsset);
+			ITypeDefOrRef iunityObjectBase = SharedState.Module.ImportCommonType<AssetRipper.Core.Interfaces.IUnityObjectBase>();
+			ITypeDefOrRef assetInfoType = SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Asset.AssetInfo>();
+			MethodDefinition createAsset = factoryDefinition.AddMethod("CreateAsset", InterfaceOverrideAttributes, iunityObjectBase);
+			Parameter parameter = createAsset.AddParameter("assetInfo", assetInfoType);
+			
+			createAsset.CilMethodBody.InitializeLocals = true;
+			createAsset.CilMethodBody.Instructions.EmitSwitchStatement(parameter);
 		}
 
-		private static void EmitSwitchStatement(this ILProcessor processor, ParameterDefinition parameter)
+		private static void EmitSwitchStatement(this CilInstructionCollection processor, Parameter parameter)
 		{
-			List<(int, MethodReference)> constructors = GetAllAssetInfoConstructors();
+			List<(int, IMethodDefOrRef)> constructors = GetAllAssetInfoConstructors();
 			int count = constructors.Count;
 
-			var switchCondition = new VariableDefinition(SystemTypeGetter.Int32);
-			processor.Body.Variables.Add(switchCondition);
+			var switchCondition = new CilLocalVariable(SystemTypeGetter.Int32);
+			processor.Owner.LocalVariables.Add(switchCondition);
 			{
-				processor.Emit(OpCodes.Ldarg, parameter);
-				MethodReference propertyRef = SharedState.Module.ImportCommonMethod<AssetRipper.Core.Parser.Asset.AssetInfo>(m => m.Name == "get_ClassNumber");
-				processor.Emit(OpCodes.Call, propertyRef);
+				processor.Add(CilOpCodes.Ldarg, parameter);
+				IMethodDefOrRef propertyRef = SharedState.Module.ImportCommonMethod<AssetRipper.Core.Parser.Asset.AssetInfo>(m => m.Name == "get_ClassNumber");
+				processor.Add(CilOpCodes.Call, propertyRef);
 			}
-			processor.Emit(OpCodes.Stloc, switchCondition);
+			processor.Add(CilOpCodes.Stloc, switchCondition);
 
-			Instruction[] nopInstructions = Enumerable.Range(0, count).Select(i => processor.Create(OpCodes.Nop)).ToArray();
-			Instruction defaultNop = processor.Create(OpCodes.Nop);
+			CilInstructionLabel[] nopInstructions = Enumerable.Range(0, count).Select(i => new CilInstructionLabel()).ToArray();
+			CilInstructionLabel defaultNop = new CilInstructionLabel();
 			for(int i = 0; i < count; i++)
 			{
-				processor.Emit(OpCodes.Ldloc, switchCondition);
-				processor.Emit(OpCodes.Ldc_I4, constructors[i].Item1);
-				processor.Emit(OpCodes.Beq, nopInstructions[i]);
+				processor.Add(CilOpCodes.Ldloc, switchCondition);
+				processor.Add(CilOpCodes.Ldc_I4, constructors[i].Item1);
+				processor.Add(CilOpCodes.Beq, nopInstructions[i]);
 			}
-			processor.Emit(OpCodes.Br, defaultNop);
+			processor.Add(CilOpCodes.Br, defaultNop);
 			for (int i = 0; i < count; i++)
 			{
-				processor.Append(nopInstructions[i]);
-				processor.Emit(OpCodes.Ldarg, parameter);
-				processor.Emit(OpCodes.Newobj, constructors[i].Item2);
-				processor.Emit(OpCodes.Ret);
+				nopInstructions[i].Instruction = processor.Add(CilOpCodes.Nop);
+				processor.Add(CilOpCodes.Ldarg, parameter);
+				processor.Add(CilOpCodes.Newobj, constructors[i].Item2);
+				processor.Add(CilOpCodes.Ret);
 			}
-			processor.Append(defaultNop);
-			processor.Emit(OpCodes.Ldnull);
-			processor.Emit(OpCodes.Ret);
+			defaultNop.Instruction = processor.Add(CilOpCodes.Nop);
+			processor.Add(CilOpCodes.Ldnull);
+			processor.Add(CilOpCodes.Ret);
 		}
 
-		private static List<(int, MethodReference)> GetAllAssetInfoConstructors()
+		private static List<(int, IMethodDefOrRef)> GetAllAssetInfoConstructors()
 		{
-			var result = new List<(int, MethodReference)>();
+			var result = new List<(int, IMethodDefOrRef)>();
 			foreach(var pair in SharedState.ClassDictionary)
 			{
 				if(pair.Value.TypeID >= 0 && !pair.Value.IsAbstract) //Is an object and not abstract
