@@ -354,10 +354,10 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			var loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStart.CreateLabel();
+			unconditionalBranch.Operand = loopConditionStartLabel;
 
 			//Now just store field
 			if (field != null)
@@ -432,10 +432,10 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			var loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStart.CreateLabel();
+			unconditionalBranch.Operand = loopConditionStartLabel;
 
 			//Now just store field
 			if (field != null)
@@ -503,10 +503,10 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			var loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStart.CreateLabel();
+			unconditionalBranch.Operand = loopConditionStartLabel;
 
 			//Now just store field
 			processor.Add(CilOpCodes.Ldarg_0); //Load this
@@ -570,10 +570,10 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			var loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStart.CreateLabel();
+			unconditionalBranch.Operand = loopConditionStartLabel;
 
 			//Now just store field
 			if (field != null)
