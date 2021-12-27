@@ -337,6 +337,7 @@ namespace AssemblyDumper.Passes
 
 			var genericDictType = GenericTypeResolver.ResolveDictionaryType(dictionaryNode);
 			var genericPairType = GenericTypeResolver.ResolvePairType(pairNode);
+			var genericListType = SharedState.Module.ImportSystemType("System.Collections.Generic.List`1").ToTypeSignature().MakeGenericInstanceType(genericPairType);
 			var dictLocal = new CilLocalVariable(genericDictType); //Create local
 			processor.Owner.LocalVariables.Add(dictLocal); //Add to method
 			processor.Add(CilOpCodes.Stloc, dictLocal); //Store dict in local
@@ -349,8 +350,8 @@ namespace AssemblyDumper.Passes
 
 			//Get length of dictionary
 			processor.Add(CilOpCodes.Ldloc, dictLocal);
-			MethodDefinition getCountDefinition = SystemTypeGetter.LookupSystemType("System.Collections.Generic.List`1").Methods.Single(m => m.Name == "get_Count");
-			MemberReference getCountReference = MethodUtils.MakeMethodOnGenericType(getCountDefinition, genericPairType);
+			MethodDefinition getCountDefinition = SystemTypeGetter.LookupSystemType("System.Collections.Generic.List`1").Properties.Single(m => m.Name == "Count").GetMethod;
+			MemberReference getCountReference = MethodUtils.MakeMethodOnGenericType(getCountDefinition, genericListType);
 			processor.Add(CilOpCodes.Call, getCountReference);
 
 			//Make local and store length in it
@@ -372,8 +373,8 @@ namespace AssemblyDumper.Passes
 			var jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create the dummy instruction to jump back to
 
 			//Export Yaml
-			MethodDefinition getItemDefinition = SystemTypeGetter.LookupSystemType("System.Collections.Generic.List`1").Methods.Single(m => m.Name == "get_Item");
-			MemberReference getItemReference = MethodUtils.MakeMethodOnGenericType(getItemDefinition, genericPairType);
+			MethodDefinition getItemDefinition = SystemTypeGetter.LookupSystemType("System.Collections.Generic.List`1").Properties.Single(m => m.Name == "Item").GetMethod;
+			MemberReference getItemReference = MethodUtils.MakeMethodOnGenericType(getItemDefinition, genericListType);
 			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load Dictionary
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
 			processor.Add(CilOpCodes.Call, getItemReference); //Get the i_th key value pair
