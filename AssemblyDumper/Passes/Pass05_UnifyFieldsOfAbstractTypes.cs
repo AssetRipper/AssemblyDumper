@@ -7,7 +7,7 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass05_UnifyFieldsOfAbstractTypes
 	{
-		private const float MinMatchingProportion = 0.8f;
+		private const float MinMatchingProportion = 0.7f;
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 5: Merging fields of abstract types");
