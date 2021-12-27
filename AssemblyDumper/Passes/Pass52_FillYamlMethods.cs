@@ -17,6 +17,7 @@ namespace AssemblyDumper.Passes
 		private static IMethodDefOrRef mappingAddMethod;
 		private static IMethodDefOrRef sequenceAddMethod;
 		private static IMethodDefOrRef byteArrayToYamlMethod;
+		private static CilInstructionLabel DummyInstructionLabel { get; } = new CilInstructionLabel();
 
 		private static bool emittingRelease = true;
 
@@ -293,15 +294,12 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
-			//Create a label for a dummy instruction to jump back to
-			var jumpTargetLabel = new CilInstructionLabel();
-
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, jumpTargetLabel);
+			var unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			jumpTargetLabel.Instruction = processor.Add(CilOpCodes.Nop); //Create a dummy instruction to jump back to
+			var jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			//Do stuff at index i
 			processor.Add(CilOpCodes.Ldloc, array);
@@ -323,10 +321,10 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
+			var loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
-			unconditionalBranchInstruction.Operand = loopConditionStart;
+			unconditionalBranchInstruction.Operand = loopConditionStartLabel;
 
 			processor.Add(CilOpCodes.Ldloc, sequenceNode);
 		}
@@ -366,15 +364,12 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
-			//Create a label for a dummy instruction to jump back to
-			var jumpTargetLabel = new CilInstructionLabel();
-
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, jumpTargetLabel);
+			var unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
 
 			//Now we just read key + value, increment i, compare against count, and jump back to here if it's less
-			jumpTargetLabel.Instruction = processor.Add(CilOpCodes.Nop); //Create the dummy instruction to jump back to
+			var jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create the dummy instruction to jump back to
 
 			//Export Yaml
 			MethodDefinition getItemDefinition = SystemTypeGetter.LookupSystemType("System.Collections.Generic.List`1").Methods.Single(m => m.Name == "get_Item");
@@ -399,10 +394,10 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
+			var loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
-			unconditionalBranchInstruction.Operand = loopConditionStart;
+			unconditionalBranchInstruction.Operand = loopConditionStartLabel;
 
 			//Load sequence node for next use
 			processor.Add(CilOpCodes.Ldloc, sequenceLocal);
