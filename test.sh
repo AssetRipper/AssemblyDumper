@@ -19,7 +19,7 @@ generate() {
 
 cd ./TestFiles
 vers=($(ls *.json | sort -t. -k1,1n -k2,2n -k3,3n))
-cd ../..
+cd ..
 echo Generating assemblies for ${#vers[@]} Unity versions
 for ((i=0; i<${#vers[@]}; i++)); 
 do
