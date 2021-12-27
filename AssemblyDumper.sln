@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{3849675F-86E8-496E-A73E-6053473E9995}"
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\build.yaml = .github\workflows\build.yaml
+		.github\workflows\test.yaml = .github\workflows\test.yaml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{71CA4B68-E0D5-467B-8A36-3481E12EAF67}"
@@ -16,6 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		generate_all.sh = generate_all.sh
 		LICENSE.md = LICENSE.md
 		README.md = README.md
+		test.sh = test.sh
 	EndProjectSection
 EndProject
 Global
