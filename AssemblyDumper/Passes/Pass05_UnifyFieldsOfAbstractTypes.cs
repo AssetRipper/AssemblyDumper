@@ -7,7 +7,8 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass05_UnifyFieldsOfAbstractTypes
 	{
-		private const float MinMatchingProportion = 0.7f;
+		private const float MinMatchingProportion = 0.8f;
+		private const string ObjectHideFlagsName = "m_ObjectHideFlags";
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 5: Merging fields of abstract types");
@@ -100,6 +101,9 @@ namespace AssemblyDumper.Passes
 
 		private static float GetWeightedMatching(List<UnityClass> classes, bool isRelease, string fieldName)
 		{
+			if (fieldName == ObjectHideFlagsName)
+				return 1f;
+
 			uint total = 0;
 			uint matching = 0;
 
