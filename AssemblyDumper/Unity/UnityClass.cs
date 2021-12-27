@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace AssemblyDumper.Unity
 {
@@ -60,6 +61,11 @@ namespace AssemblyDumper.Unity
 		/// </summary>
 		public bool IsEditorOnly { get; set; }
 		/// <summary>
+		/// Does the class only appear in the editor?
+		/// </summary>
+		[JsonIgnore]
+		public bool IsReleaseOnly { get; set; }
+		/// <summary>
 		/// Is the class stripped?
 		/// </summary>
 		public bool IsStripped { get; set; }
@@ -77,7 +83,7 @@ namespace AssemblyDumper.Unity
 		public UnityClass(UnityNode releaseRootNode, UnityNode editorRootNode)
 		{
 			if (releaseRootNode == null && editorRootNode == null)
-				throw new ArgumentException("Both root nodes cannot be negative");
+				throw new ArgumentException("Both root nodes cannot be null");
 
 			ReleaseRootNode = releaseRootNode;
 			EditorRootNode = editorRootNode;
@@ -92,6 +98,7 @@ namespace AssemblyDumper.Unity
 			IsAbstract = false;
 			IsSealed = true;
 			IsEditorOnly = releaseRootNode == null;
+			IsReleaseOnly = editorRootNode == null;
 			IsStripped = false;
 		}
 

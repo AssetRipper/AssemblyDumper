@@ -11,6 +11,7 @@ namespace AssemblyDumper.Passes
 	public static class Pass07_AddTypeDefinitions
 	{
 		private static IMethodDefOrRef EditorOnlyAttributeConstructor { get; set; }
+		private static IMethodDefOrRef ReleaseOnlyAttributeConstructor { get; set; }
 		private static IMethodDefOrRef StrippedAttributeConstructor { get; set; }
 		private static IMethodDefOrRef PersistentIDAttributeConstructor { get; set; }
 		private static IMethodDefOrRef OriginalNameAttributeConstructor { get; set; }
@@ -20,6 +21,7 @@ namespace AssemblyDumper.Passes
 			Console.WriteLine("Pass 7: Add Type Definitions");
 
 			EditorOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorOnlyAttribute>();
+			ReleaseOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<ReleaseOnlyAttribute>();
 			StrippedAttributeConstructor = SharedState.Module.ImportCommonConstructor<StrippedAttribute>();
 			PersistentIDAttributeConstructor = SharedState.Module.ImportCommonConstructor<PersistentIDAttribute>(1);
 			OriginalNameAttributeConstructor = SharedState.Module.ImportCommonConstructor<OriginalNameAttribute>(1);
@@ -53,6 +55,7 @@ namespace AssemblyDumper.Passes
 			}
 
 			if (@class.IsEditorOnly) typeDef.AddCustomAttribute(EditorOnlyAttributeConstructor);
+			if (@class.IsReleaseOnly) typeDef.AddCustomAttribute(ReleaseOnlyAttributeConstructor);
 			if (@class.IsStripped) typeDef.AddCustomAttribute(StrippedAttributeConstructor);
 			typeDef.AddCustomAttribute(PersistentIDAttributeConstructor, SystemTypeGetter.Int32, @class.TypeID);
 
