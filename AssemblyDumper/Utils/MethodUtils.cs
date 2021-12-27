@@ -1,40 +1,33 @@
 ﻿using AsmResolver.DotNet;
 using AsmResolver.DotNet.Signatures;
 using AsmResolver.DotNet.Signatures.Types;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace AssemblyDumper.Utils
 {
-	//Still learning about handling generics with Asm
 	public static class MethodUtils
 	{
-		public static MethodSpecification MakeConstructorOnGenericType(GenericInstanceTypeSignature instanceType, int paramCount)
+		public static MemberReference MakeConstructorOnGenericType(GenericInstanceTypeSignature instanceType, int paramCount)
 		{
 			//Get ctor
-			var ctor = instanceType.GenericType.Resolve().Methods.Single(m => m.Name == ".ctor" && m.Parameters.Count == paramCount);
+			var constructorDefinition = instanceType.GenericType.Resolve().Methods.Single(m => m.Name == ".ctor" && m.Parameters.Count == paramCount);
 
-			return MakeMethodOnGenericType(ctor, instanceType);
+			return new MemberReference(instanceType.ToTypeDefOrRef(), ".ctor", constructorDefinition.Signature);
+		}
+
+		public static MemberReference MakeMethodOnGenericType(MethodDefinition definition, GenericInstanceTypeSignature instanceType)
+		{
+			return new MemberReference(instanceType.ToTypeDefOrRef(), definition.Name, definition.Signature);
 		}
 
 		public static MethodSpecification MakeGenericInstanceMethod(IMethodDefOrRef method, params TypeSignature[] typeArguments)
 		{
-			return new MethodSpecification(method, new GenericInstanceMethodSignature(typeArguments));
+			return MakeGenericInstanceMethod(method, new GenericInstanceMethodSignature(typeArguments));
 		}
 
-		public static MethodSpecification MakeGenericInstanceMethod(IMethodDefOrRef method, IEnumerable<TypeSignature> typeArguments)
+		private static MethodSpecification MakeGenericInstanceMethod(IMethodDefOrRef method, GenericInstanceMethodSignature instanceMethodSignature)
 		{
-			return new MethodSpecification(method, new GenericInstanceMethodSignature(typeArguments));
-		}
-
-		public static MethodSpecification MakeMethodOnGenericType(MethodDefinition definition, GenericInstanceTypeSignature instanceType)
-		{
-			if(instanceType.TypeArguments.Count == 0)
-			{
-				throw new ArgumentException(nameof(instanceType));
-			}
-			return MakeGenericInstanceMethod(SharedState.Importer.ImportMethod(definition), instanceType.TypeArguments);
+			return SharedState.Importer.ImportMethod(new MethodSpecification(method, instanceMethodSignature));
 		}
 	}
 }
