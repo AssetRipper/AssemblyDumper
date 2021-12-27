@@ -7,12 +7,13 @@ using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-/*
+
 namespace AssemblyDumper.Passes
 {
 	public static class Pass50_FillReadMethods
 	{
 		private static ITypeDefOrRef AssetDictionaryType { get; set; }
+		private static CilInstructionLabel DummyInstructionLabel { get; } = new CilInstructionLabel();
 
 		public static void DoPass()
 		{
@@ -140,8 +141,6 @@ namespace AssemblyDumper.Passes
 				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth), $"ReadPrimitiveType does not support array depth '{arrayDepth}'"),
 			};
 
-			primitiveReadMethod ??= SystemTypeGetter.LookupSystemType("System.IO.BinaryReader").Methods.FirstOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}");
-
 			if (primitiveReadMethod == null)
 				throw new Exception($"Missing a read method for {csPrimitiveTypeName} in {processor.Owner.Owner.DeclaringType}");
 
@@ -191,8 +190,7 @@ namespace AssemblyDumper.Passes
 			};
 
 			//Make generic ReadAsset<T>
-			var genericInst = new GenericInstanceMethod(readMethod);
-			genericInst.GenericArguments.Add(SharedState.Importer.ImportType(fieldType));
+			var genericInst = MethodUtils.MakeGenericInstanceMethod(readMethod, fieldType.ToTypeSignature());
 
 			if (arrayDepth > 0)//ReadAssetArray and ReadAssetArrayArray have an allowAlignment parameter
 			{
@@ -200,7 +198,7 @@ namespace AssemblyDumper.Passes
 			}
 
 			//Call it
-			processor.Add(CilOpCodes.Call, processor.Body.Method.Module.ImportReference(genericInst));
+			processor.Add(CilOpCodes.Call, genericInst);
 
 			//Store result in field
 			if (field != null)
@@ -322,7 +320,7 @@ namespace AssemblyDumper.Passes
 
 			//Create empty array and local for it
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Newarr, genericKvp); //Create new array of kvp with given count
+			processor.Add(CilOpCodes.Newarr, genericKvp.ToTypeDefOrRef()); //Create new array of kvp with given count
 			var arrayLocal = new CilLocalVariable(arrayType); //Create local
 			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
 			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
@@ -333,20 +331,21 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
+			//Create a label for a dummy instruction to jump back to
+			var jumpTargetLabel = new CilInstructionLabel();
+
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch = processor.Create(CilOpCodes.Br, processor.Create(CilOpCodes.Nop));
-			processor.Append(unconditionalBranch);
+			var unconditionalBranch = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			var jumpTarget = processor.Create(CilOpCodes.Nop); //Create a dummy instruction to jump back to
-			processor.Append(jumpTarget); //Add it to the method body
+			jumpTargetLabel.Instruction = processor.Add(CilOpCodes.Nop); //Create a dummy instruction to jump back to
 
 			//Read element at index i of array
 			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array local
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
 			ReadPair(listTypeNode, processor, null); //Read the pair
-			processor.Add(CilOpCodes.Stelem_Any, genericKvp); //Store in array
+			processor.Add(CilOpCodes.Stelem, genericKvp.ToTypeDefOrRef()); //Store in array
 
 			//Increment i
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
@@ -355,11 +354,10 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Create(CilOpCodes.Ldloc, iLocal); //Load i
-			processor.Append(loopConditionStart);
+			var loopConditionStart = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStart;
+			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
+			unconditionalBranch.Operand = loopConditionStart.CreateLabel();
 
 			//Now just store field
 			if (field != null)
@@ -399,7 +397,7 @@ namespace AssemblyDumper.Passes
 
 			//Create empty array and local for it
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Newarr, arrayType); //Create new array of arrays of kvps with given count
+			processor.Add(CilOpCodes.Newarr, arrayType.ToTypeDefOrRef()); //Create new array of arrays of kvps with given count
 			var arrayLocal = new CilLocalVariable(arrayType.MakeArrayType()); //Create local
 			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
 			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
@@ -412,12 +410,10 @@ namespace AssemblyDumper.Passes
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch = processor.Create(CilOpCodes.Br, processor.Create(CilOpCodes.Nop));
-			processor.Append(unconditionalBranch);
+			var unconditionalBranch = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			var jumpTarget = processor.Create(CilOpCodes.Nop); //Create a dummy instruction to jump back to
-			processor.Append(jumpTarget); //Add it to the method body
+			var jumpTarget = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			//Read element at index i of array
 			ReadPairArray(processor, null, listTypeNode); //Read the array of pairs
@@ -427,7 +423,7 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array of arrays local
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
 			processor.Add(CilOpCodes.Ldloc, pairArrayLocal); //Load array of pairs
-			processor.Add(CilOpCodes.Stelem_Any, arrayType); //Store in array
+			processor.Add(CilOpCodes.Stelem, arrayType.ToTypeDefOrRef()); //Store in array
 
 			//Increment i
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
@@ -436,11 +432,10 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Create(CilOpCodes.Ldloc, iLocal); //Load i
-			processor.Append(loopConditionStart);
+			var loopConditionStart = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStart;
+			unconditionalBranch.Operand = loopConditionStart.CreateLabel();
 
 			//Now just store field
 			if (field != null)
@@ -477,7 +472,7 @@ namespace AssemblyDumper.Passes
 
 			//Create empty array and local for it
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Newarr, dictType); //Create new array of dictionaries with given count
+			processor.Add(CilOpCodes.Newarr, dictType.ToTypeDefOrRef()); //Create new array of dictionaries with given count
 			var arrayLocal = new CilLocalVariable(arrayType); //Create local
 			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
 			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
@@ -490,18 +485,16 @@ namespace AssemblyDumper.Passes
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch = processor.Create(CilOpCodes.Br, processor.Create(CilOpCodes.Nop));
-			processor.Append(unconditionalBranch);
+			var unconditionalBranch = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			var jumpTarget = processor.Create(CilOpCodes.Nop); //Create a dummy instruction to jump back to
-			processor.Append(jumpTarget); //Add it to the method body
+			var jumpTarget = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			//Read element at index i of array
 			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array local
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
 			ReadDictionary(dictNode, processor, null);
-			processor.Add(CilOpCodes.Stelem_Any, dictType); //Store in array
+			processor.Add(CilOpCodes.Stelem, dictType.ToTypeDefOrRef()); //Store in array
 
 			//Increment i
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
@@ -510,11 +503,10 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Create(CilOpCodes.Ldloc, iLocal); //Load i
-			processor.Append(loopConditionStart);
+			var loopConditionStart = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStart;
+			unconditionalBranch.Operand = loopConditionStart.CreateLabel();
 
 			//Now just store field
 			processor.Add(CilOpCodes.Ldarg_0); //Load this
@@ -560,12 +552,10 @@ namespace AssemblyDumper.Passes
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch = processor.Create(CilOpCodes.Br, processor.Create(CilOpCodes.Nop));
-			processor.Append(unconditionalBranch);
+			var unconditionalBranch = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
 
 			//Now we just read key + value, increment i, compare against count, and jump back to here if it's less
-			var jumpTarget = processor.Create(CilOpCodes.Nop); //Create a dummy instruction to jump back to
-			processor.Append(jumpTarget); //Add it to the method body
+			var jumpTarget = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			//Read ith key-value pair of dict 
 			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load dict local
@@ -580,11 +570,10 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Create(CilOpCodes.Ldloc, iLocal); //Load i
-			processor.Append(loopConditionStart);
+			var loopConditionStart = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStart;
+			unconditionalBranch.Operand = loopConditionStart.CreateLabel();
 
 			//Now just store field
 			if (field != null)
@@ -627,4 +616,3 @@ namespace AssemblyDumper.Passes
 		}
 	}
 }
-*/
