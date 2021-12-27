@@ -70,7 +70,7 @@ namespace AssemblyDumper
 			}
 			else if (typeName == "TypelessData")
 			{
-				return SystemTypeGetter.UInt8.MakeArrayType();
+				return SystemTypeGetter.UInt8.MakeSzArrayType();
 			}
 			else if (typeName == "Array")
 			{
