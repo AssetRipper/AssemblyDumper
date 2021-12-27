@@ -5,7 +5,7 @@ using System;
 
 namespace AssemblyDumper.Passes
 {
-	public static class Pass31_ObjectHideFlags
+	public static class Pass25_ObjectHideFlags
 	{
 		const MethodAttributes PropertyOverrideAttributes =
 			MethodAttributes.Public |
@@ -17,7 +17,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 31: Object Hide Flags");
+			Console.WriteLine("Pass 25: Object Hide Flags");
 			if (!SharedState.TypeDictionary.TryGetValue("Object", out TypeDefinition type))
 			{
 				throw new Exception("TypeDictionary has no Object");
