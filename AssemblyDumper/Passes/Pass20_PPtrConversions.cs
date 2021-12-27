@@ -38,7 +38,7 @@ namespace AssemblyDumper.Passes
 		private static void AddImplicitConversion(TypeDefinition pptrType, TypeDefinition parameterType)
 		{
 			GenericInstanceTypeSignature conversionResultType = commonPPtrType.MakeGenericInstanceType(parameterType.ToTypeSignature());
-			MethodSpecification constructor = MethodUtils.MakeConstructorOnGenericType(conversionResultType, 2);
+			MemberReference constructor = MethodUtils.MakeConstructorOnGenericType(conversionResultType, 2);
 
 			FieldDefinition fileID = pptrType.Fields.Single(field => field.Name == "m_FileID");
 			FieldDefinition pathID = pptrType.Fields.Single(f => f.Name == "m_PathID");
@@ -59,7 +59,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddExplicitConversion(TypeDefinition pptrType)
 		{
-			MethodSpecification constructor = MethodUtils.MakeConstructorOnGenericType(unityObjectBasePPtr, 2);
+			MemberReference constructor = MethodUtils.MakeConstructorOnGenericType(unityObjectBasePPtr, 2);
 
 			FieldDefinition fileID = pptrType.Fields.Single(field => field.Name == "m_FileID");
 			FieldDefinition pathID = pptrType.Fields.Single(f => f.Name == "m_PathID");
