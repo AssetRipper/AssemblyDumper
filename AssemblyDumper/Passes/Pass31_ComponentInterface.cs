@@ -19,8 +19,8 @@ namespace AssemblyDumper.Passes
 			MethodAttributes.SpecialName |
 			MethodAttributes.NewSlot |
 			MethodAttributes.Virtual;
-		const string PropertyName = "GameObject";
-		const string FieldName = "m_" + PropertyName;
+		const string PropertyName = "GameObjectPtr";
+		const string FieldName = "m_GameObject";
 
 		public static void DoPass()
 		{
