@@ -306,7 +306,7 @@ namespace AssemblyDumper.Passes
 			var second = listTypeNode.SubNodes[1];
 			var genericKvp = GenericTypeResolver.ResolvePairType(first, second);
 
-			var arrayType = genericKvp.MakeArrayType();
+			var arrayType = genericKvp.MakeSzArrayType();
 
 			//Read length of array
 			var intReader = SharedState.Importer.ImportMethod(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.Single(m => m.Name == "ReadInt32"));
@@ -324,7 +324,7 @@ namespace AssemblyDumper.Passes
 			var arrayLocal = new CilLocalVariable(arrayType); //Create local
 			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
 			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
-
+			
 			//Make an i
 			var iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
 			processor.Owner.LocalVariables.Add(iLocal); //Add to method
@@ -383,7 +383,7 @@ namespace AssemblyDumper.Passes
 			var second = listTypeNode.SubNodes[1];
 			var genericKvp = GenericTypeResolver.ResolvePairType(first, second);
 
-			var arrayType = genericKvp.MakeArrayType();
+			var arrayType = genericKvp.MakeSzArrayType();
 
 			//Read length of array
 			var intReader = SharedState.Importer.ImportMethod(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.Single(m => m.Name == "ReadInt32"));
@@ -398,7 +398,7 @@ namespace AssemblyDumper.Passes
 			//Create empty array and local for it
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Newarr, arrayType.ToTypeDefOrRef()); //Create new array of arrays of kvps with given count
-			var arrayLocal = new CilLocalVariable(arrayType.MakeArrayType()); //Create local
+			var arrayLocal = new CilLocalVariable(arrayType.MakeSzArrayType()); //Create local
 			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
 			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
 
@@ -458,7 +458,7 @@ namespace AssemblyDumper.Passes
 			//we need an array type, so let's get that
 			var dictNode = node.SubNodes[1];
 			var dictType = GenericTypeResolver.ResolveDictionaryType(dictNode);
-			var arrayType = dictType.MakeArrayType(); //cursed. that is all.
+			var arrayType = dictType.MakeSzArrayType(); //cursed. that is all.
 
 			//Read length of array
 			var intReader = SharedState.Importer.ImportMethod(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.Single(m => m.Name == "ReadInt32"));
