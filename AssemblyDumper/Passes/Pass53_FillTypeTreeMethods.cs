@@ -70,16 +70,10 @@ namespace AssemblyDumper.Passes
 
 		private static void AddTypeTreeCreation(this CilInstructionCollection processor, UnityNode rootNode)
 		{
-			processor.Owner.InitializeLocals = true;
-			CilLocalVariable resultVariable = new(typeTreeNodeList);
-			processor.Owner.LocalVariables.Add(resultVariable);
-
 			processor.Add(CilOpCodes.Newobj, typeTreeNodeListConstructor);
-			processor.Add(CilOpCodes.Stloc, resultVariable);
 
-			processor.AddTreeNodesRecursively(resultVariable, rootNode, 0);
+			processor.AddTreeNodesRecursively(rootNode, 0);
 
-			processor.Add(CilOpCodes.Ldloc, resultVariable);
 			processor.Add(CilOpCodes.Ret);
 		}
 
@@ -91,21 +85,21 @@ namespace AssemblyDumper.Passes
 		/// <param name="node">The Unity node being emitted as a type tree node</param>
 		/// <param name="currentIndex">The index of the emitted tree node relative to the root node</param>
 		/// <returns>The relative index of the next tree node to be emitted</returns>
-		private static int AddTreeNodesRecursively(this CilInstructionCollection processor, CilLocalVariable listVariable, UnityNode node, int currentIndex)
+		private static int AddTreeNodesRecursively(this CilInstructionCollection processor, UnityNode node, int currentIndex)
 		{
-			processor.AddSingleTreeNode(listVariable, node, currentIndex);
+			processor.AddSingleTreeNode(node, currentIndex);
 			currentIndex++;
 			foreach (var subNode in node.SubNodes)
 			{
-				currentIndex = processor.AddTreeNodesRecursively(listVariable, subNode, currentIndex);
+				currentIndex = processor.AddTreeNodesRecursively(subNode, currentIndex);
 			}
 			return currentIndex;
 		}
 
-		private static void AddSingleTreeNode(this CilInstructionCollection processor, CilLocalVariable listVariable, UnityNode node, int currentIndex)
+		private static void AddSingleTreeNode(this CilInstructionCollection processor, UnityNode node, int currentIndex)
 		{
 			//For the add method at the end
-			processor.Add(CilOpCodes.Ldloc, listVariable);
+			processor.Add(CilOpCodes.Dup);
 
 			processor.Add(CilOpCodes.Ldstr, node.OriginalTypeName);
 			processor.Add(CilOpCodes.Ldstr, node.OriginalName);
