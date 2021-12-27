@@ -113,14 +113,26 @@ namespace AssemblyDumper.Passes
 
 		private static void AddExportFieldContent(this CilInstructionCollection processor, UnityNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
 		{
-			processor.AddNodeForField(node, field);
-			CilLocalVariable fieldNode = new CilLocalVariable(CommonTypeGetter.YAMLNodeDefinition.ToTypeSignature());
-			processor.Owner.LocalVariables.Add(fieldNode);
-			processor.Add(CilOpCodes.Stloc, fieldNode);
+			//Primitive fields like int and string
+			//The other way works too, but this generates cleaner and more efficient code
+			if(SystemTypeGetter.GetCppPrimitiveTypeSignature(node.TypeName) != null && !SharedState.TypeDictionary.TryGetValue(node.TypeName, out var _))
+			{
+				processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
+				processor.AddScalarNodeForString(node.OriginalName);
+				processor.AddLoadField(field);
+				processor.AddScalarNodeForLoadedPrimitiveType(node.TypeName);
+			}
+			else //Other fields
+			{
+				processor.AddNodeForField(node, field);
+				CilLocalVariable fieldNode = new CilLocalVariable(CommonTypeGetter.YAMLNodeDefinition.ToTypeSignature());
+				processor.Owner.LocalVariables.Add(fieldNode);
+				processor.Add(CilOpCodes.Stloc, fieldNode);
 
-			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
-			processor.AddScalarNodeForString(node.OriginalName);
-			processor.Add(CilOpCodes.Ldloc, fieldNode);
+				processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
+				processor.AddScalarNodeForString(node.OriginalName);
+				processor.Add(CilOpCodes.Ldloc, fieldNode);
+			}
 			processor.Add(CilOpCodes.Call, mappingAddMethod);
 		}
 
