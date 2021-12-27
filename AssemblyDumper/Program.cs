@@ -49,6 +49,7 @@ namespace AssemblyDumper
 				Pass61_NativeImporterInterface.DoPass();
 
 				Pass70_FixPPtrYaml.DoPass();
+				Pass71_MonoBehaviourImplementation.DoPass();
 
 				Pass90_MakeAssetFactory.DoPass();
 				Pass91_MakeImporterFactory.DoPass();

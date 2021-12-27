@@ -10,13 +10,14 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass20_PPtrConversions
 	{
+		private static ITypeDefOrRef commonPPtrType;
 		const MethodAttributes ConversionAttributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.HideBySig;
 
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 20: PPtr Conversions");
 
-			ITypeDefOrRef commonPPtrType = SharedState.Importer.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
+			commonPPtrType = SharedState.Importer.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
 
 			foreach (string name in SharedState.ClassDictionary.Keys)
 			{
@@ -29,14 +30,18 @@ namespace AssemblyDumper.Passes
 					GenericInstanceTypeSignature implicitConversionResultType = commonPPtrType.MakeGenericInstanceType(parameterType.ToTypeSignature());
 
 					pptrType.AddImplicitConversion(implicitConversionResultType);
-					pptrType.AddExplicitConversion<IUnityObjectBase>(commonPPtrType);
+					pptrType.AddExplicitConversion<IUnityObjectBase>();
 					if (name == "PPtr_GameObject_")
 					{
-						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.GameObject.IGameObject>(commonPPtrType);
+						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.GameObject.IGameObject>();
 					}
 					else if (name == "PPtr_Component_")
 					{
-						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.IComponent>(commonPPtrType);
+						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.IComponent>();
+					}
+					else if (name == "PPtr_MonoScript_")
+					{
+						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.IMonoScript>();
 					}
 				}
 			}
@@ -52,7 +57,7 @@ namespace AssemblyDumper.Passes
 			return pptrType.AddConversion(resultTypeSignature, true);
 		}
 
-		private static MethodDefinition AddExplicitConversion<T>(this TypeDefinition pptrType, ITypeDefOrRef commonPPtrType)
+		private static MethodDefinition AddExplicitConversion<T>(this TypeDefinition pptrType)
 		{
 			ITypeDefOrRef importedInterface = SharedState.Importer.ImportCommonType<T>();
 			GenericInstanceTypeSignature resultPPtrSignature = commonPPtrType.MakeGenericInstanceType(importedInterface.ToTypeSignature());
