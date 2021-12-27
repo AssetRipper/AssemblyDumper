@@ -9,7 +9,6 @@ namespace AssemblyDumper
 	{
 		/*
 		 * 50 - stelem_any, create opcodes, generic arrays instantiation, generic methods
-		 * 52 - same as 50
 		 */
 		private static void Run(Options options)
 		{
@@ -42,7 +41,7 @@ namespace AssemblyDumper
 				Pass49_CreateEmptyMethods.DoPass();
 				//Pass50_FillReadMethods.DoPass();
 				Pass51_FillWriteMethods.DoPass();
-				//Pass52_FillYamlMethods.DoPass();
+				Pass52_FillYamlMethods.DoPass();
 				Pass53_FillTypeTreeMethods.DoPass();
 				Pass54_FillDependencyMethods.DoPass();
 

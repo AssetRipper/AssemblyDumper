@@ -8,7 +8,7 @@ using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-/*
+
 namespace AssemblyDumper.Passes
 {
 	public static class Pass52_FillYamlMethods
@@ -146,8 +146,6 @@ namespace AssemblyDumper.Passes
 					return;
 				case "map":
 					processor.AddNodeForLoadedDictionary(node);
-					//processor.Add(CilOpCodes.Pop);
-					//processor.AddScalarNodeForString("test");
 					return;
 				case "pair":
 					processor.AddNodeForLoadedPair(node);
@@ -265,8 +263,8 @@ namespace AssemblyDumper.Passes
 			UnityNode elementNode = arrayNode.SubNodes[1];
 			SzArrayTypeSignature arrayType = GenericTypeResolver.ResolveArrayType(arrayNode);
 
-			ITypeDefOrRef elementType = arrayType.ElementType;
-			if (elementType is not ArrayType && elementType.FullName == "System.Byte")
+			TypeSignature elementType = arrayType.BaseType;
+			if (elementType is not ArrayTypeSignature && elementType.FullName == "System.Byte")
 			{
 				processor.Add(CilOpCodes.Call, byteArrayToYamlMethod);
 				return;
@@ -295,19 +293,20 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
+			//Create a label for a dummy instruction to jump back to
+			var jumpTargetLabel = new CilInstructionLabel();
+
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch = processor.Create(CilOpCodes.Br, processor.Create(CilOpCodes.Nop));
-			processor.Append(unconditionalBranch);
+			var unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, jumpTargetLabel);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			var jumpTarget = processor.Create(CilOpCodes.Nop); //Create a dummy instruction to jump back to
-			processor.Append(jumpTarget); //Add it to the method body
+			jumpTargetLabel.Instruction = processor.Add(CilOpCodes.Nop); //Create a dummy instruction to jump back to
 
 			//Do stuff at index i
 			processor.Add(CilOpCodes.Ldloc, array);
 			processor.Add(CilOpCodes.Ldloc, iLocal);
-			processor.AddLoadElement(elementType);
+			processor.AddLoadElement(elementType.ToTypeDefOrRef());
 			processor.AddNodeForLoadedValue(elementNode);
 			CilLocalVariable elementLocal = new CilLocalVariable(CommonTypeGetter.YAMLNodeDefinition.ToTypeSignature());
 			processor.Owner.LocalVariables.Add(elementLocal);
@@ -324,11 +323,10 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Create(CilOpCodes.Ldloc, iLocal); //Load i
-			processor.Append(loopConditionStart);
+			var loopConditionStart = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStart;
+			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
+			unconditionalBranchInstruction.Operand = loopConditionStart;
 
 			processor.Add(CilOpCodes.Ldloc, sequenceNode);
 		}
@@ -354,7 +352,7 @@ namespace AssemblyDumper.Passes
 			//Get length of dictionary
 			processor.Add(CilOpCodes.Ldloc, dictLocal);
 			MethodDefinition getCountDefinition = SystemTypeGetter.LookupSystemType("System.Collections.Generic.List`1").Methods.Single(m => m.Name == "get_Count");
-			IMethodDefOrRef getCountReference = SharedState.Module.ImportReference(MethodUtils.MakeIMethodDefOrRefOnGenericType(getCountDefinition, genericPairType));
+			MemberReference getCountReference = MethodUtils.MakeMethodOnGenericType(getCountDefinition, genericPairType);
 			processor.Add(CilOpCodes.Call, getCountReference);
 
 			//Make local and store length in it
@@ -368,18 +366,19 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
+			//Create a label for a dummy instruction to jump back to
+			var jumpTargetLabel = new CilInstructionLabel();
+
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch = processor.Create(CilOpCodes.Br, processor.Create(CilOpCodes.Nop));
-			processor.Append(unconditionalBranch);
+			var unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, jumpTargetLabel);
 
 			//Now we just read key + value, increment i, compare against count, and jump back to here if it's less
-			var jumpTarget = processor.Create(CilOpCodes.Nop); //Create a dummy instruction to jump back to
-			processor.Append(jumpTarget); //Add it to the method body
+			jumpTargetLabel.Instruction = processor.Add(CilOpCodes.Nop); //Create the dummy instruction to jump back to
 
 			//Export Yaml
 			MethodDefinition getItemDefinition = SystemTypeGetter.LookupSystemType("System.Collections.Generic.List`1").Methods.Single(m => m.Name == "get_Item");
-			IMethodDefOrRef getItemReference = SharedState.Module.ImportReference(MethodUtils.MakeIMethodDefOrRefOnGenericType(getItemDefinition, genericPairType));
+			MemberReference getItemReference = MethodUtils.MakeMethodOnGenericType(getItemDefinition, genericPairType);
 			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load Dictionary
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
 			processor.Add(CilOpCodes.Call, getItemReference); //Get the i_th key value pair
@@ -400,11 +399,10 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStart = processor.Create(CilOpCodes.Ldloc, iLocal); //Load i
-			processor.Append(loopConditionStart);
+			var loopConditionStart = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStart;
+			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
+			unconditionalBranchInstruction.Operand = loopConditionStart;
 
 			//Load sequence node for next use
 			processor.Add(CilOpCodes.Ldloc, sequenceLocal);
@@ -495,4 +493,3 @@ namespace AssemblyDumper.Passes
 		}
 	}
 }
-*/
