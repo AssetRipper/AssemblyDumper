@@ -22,6 +22,8 @@ namespace AssemblyDumper.Passes
 			Console.WriteLine($"Saving assembly to {filePath}");
 			try
 			{
+				if(File.Exists(filePath))
+					File.Delete(filePath);
 				assembly.Write(filePath, builder);
 			}
 			catch(AggregateException aggregateException)
