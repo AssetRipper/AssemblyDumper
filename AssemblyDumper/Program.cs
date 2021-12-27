@@ -7,9 +7,6 @@ namespace AssemblyDumper
 {
 	public static class Program
 	{
-		/*
-		 * 50 - stelem_any, create opcodes, generic arrays instantiation, generic methods
-		 */
 		private static void Run(Options options)
 		{
 			Console.WriteLine("Making a new dll");
@@ -39,7 +36,7 @@ namespace AssemblyDumper
 				Pass30_ImplementHasNameInterface.DoPass();
 
 				Pass49_CreateEmptyMethods.DoPass();
-				//Pass50_FillReadMethods.DoPass();
+				Pass50_FillReadMethods.DoPass();
 				Pass51_FillWriteMethods.DoPass();
 				Pass52_FillYamlMethods.DoPass();
 				Pass53_FillTypeTreeMethods.DoPass();
