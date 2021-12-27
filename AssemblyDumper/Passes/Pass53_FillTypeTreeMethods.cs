@@ -20,8 +20,8 @@ namespace AssemblyDumper.Passes
 		{
 			System.Console.WriteLine("Pass 53: Fill Type Tree Methods");
 
-			typeTreeNode = SharedState.Module.ImportCommonType<TypeTreeNode>();
-			typeTreeNodeConstructor = SharedState.Module.ImportCommonConstructor<TypeTreeNode>(8);
+			typeTreeNode = SharedState.Importer.ImportCommonType<TypeTreeNode>();
+			typeTreeNodeConstructor = SharedState.Importer.ImportCommonConstructor<TypeTreeNode>(8);
 			typeTreeNodeList = SystemTypeGetter.List.MakeGenericInstanceType(typeTreeNode.ToTypeSignature());
 			typeTreeNodeListConstructor = MethodUtils.MakeConstructorOnGenericType(typeTreeNodeList, 0);
 			listAddMethod = MethodUtils.MakeMethodOnGenericType(typeTreeNodeList.Resolve().Methods.First(m => m.Name == "Add"), typeTreeNodeList);

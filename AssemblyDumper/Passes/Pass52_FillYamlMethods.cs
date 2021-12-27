@@ -8,6 +8,7 @@ using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using AssetRipper.Core.YAML;
 
 namespace AssemblyDumper.Passes
 {
@@ -23,17 +24,16 @@ namespace AssemblyDumper.Passes
 
 		private static void Initialize()
 		{
-			addSerializedVersionMethod = SharedState.Module.ImportCommonMethod("AssetRipper.Core.IO.Extensions.SerializedVersionYAMLExtensions", m => m.Name == "AddSerializedVersion");
-			mappingAddMethod = SharedState.Module.ImportCommonMethod<AssetRipper.Core.YAML.YAMLMappingNode>(
-				m => m.Name == "Add" &&
+			Func<MethodDefinition, bool> filter = m => m.Name == "AddSerializedVersion";
+			addSerializedVersionMethod = SharedState.Importer.ImportCommonMethod("AssetRipper.Core.IO.Extensions.SerializedVersionYAMLExtensions", filter);
+			mappingAddMethod = SharedState.Importer.ImportCommonMethod<YAMLMappingNode>(m => m.Name == "Add" &&
 				m.Parameters.Count == 2 &&
 				m.Parameters[0].ParameterType.Name == nameof(AssetRipper.Core.YAML.YAMLNode) &&
 				m.Parameters[1].ParameterType.Name == nameof(AssetRipper.Core.YAML.YAMLNode));
-			byteArrayToYamlMethod = SharedState.Module.ImportCommonMethod("AssetRipper.Core.YAML.Extensions.ArrayYAMLExtensions",
-				m => m.Name == "ExportYAML" &&
-				m.Parameters.Count == 1);
-			sequenceAddMethod = SharedState.Module.ImportCommonMethod<AssetRipper.Core.YAML.YAMLSequenceNode>(
-				m => m.Name == "Add" &&
+			Func<MethodDefinition, bool> filter1 = m => m.Name == "ExportYAML" &&
+			                                            m.Parameters.Count == 1;
+			byteArrayToYamlMethod = SharedState.Importer.ImportCommonMethod("AssetRipper.Core.YAML.Extensions.ArrayYAMLExtensions", filter1);
+			sequenceAddMethod = SharedState.Importer.ImportCommonMethod<YAMLSequenceNode>(m => m.Name == "Add" &&
 				m.Parameters.Count == 1 &&
 				m.Parameters[0].ParameterType.Name == nameof(AssetRipper.Core.YAML.YAMLNode));
 		}
@@ -337,7 +337,7 @@ namespace AssemblyDumper.Passes
 
 			var genericDictType = GenericTypeResolver.ResolveDictionaryType(dictionaryNode);
 			var genericPairType = GenericTypeResolver.ResolvePairType(pairNode);
-			var genericListType = SharedState.Module.ImportSystemType("System.Collections.Generic.List`1").ToTypeSignature().MakeGenericInstanceType(genericPairType);
+			var genericListType = ((ITypeDefOrRef) SharedState.Importer.ImportSystemType("System.Collections.Generic.List`1")).ToTypeSignature().MakeGenericInstanceType(genericPairType);
 			var dictLocal = new CilLocalVariable(genericDictType); //Create local
 			processor.Owner.LocalVariables.Add(dictLocal); //Add to method
 			processor.Add(CilOpCodes.Stloc, dictLocal); //Store dict in local
@@ -432,7 +432,7 @@ namespace AssemblyDumper.Passes
 		{
 			if (((TransferMetaFlags)rootNode.MetaFlag).IsTransferUsingFlowMappingStyle())
 			{
-				IMethodDefOrRef setter = SharedState.Module.ImportCommonMethod<AssetRipper.Core.YAML.YAMLMappingNode>(m => m.Name == "set_Style");
+				IMethodDefOrRef setter = SharedState.Importer.ImportCommonMethod<YAMLMappingNode>(m => m.Name == "set_Style");
 				processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
 				processor.Add(CilOpCodes.Ldc_I4, (int)AssetRipper.Core.YAML.MappingStyle.Flow);
 				processor.Add(CilOpCodes.Call, setter);

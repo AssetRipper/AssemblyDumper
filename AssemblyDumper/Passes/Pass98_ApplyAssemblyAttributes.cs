@@ -34,13 +34,13 @@ namespace AssemblyDumper.Passes
 		private static void AddVersionAttribute(this AssemblyDefinition _this)
 		{
 			string versionString = SharedState.Version;
-			var registerAssemblyAttributeConstructor = _this.ManifestModule.ImportCommonConstructor<RegisterAssemblyAttribute>(1);
+			var registerAssemblyAttributeConstructor = SharedState.Importer.ImportCommonConstructor<RegisterAssemblyAttribute>(1);
 			_this.AddCustomAttribute(registerAssemblyAttributeConstructor, SystemTypeGetter.String, versionString);
 		}
 
 		private static void AddAssetTypeAttribute(this AssemblyDefinition _this, string typeName, int idNumber, ITypeDefOrRef type)
 		{
-			var registerAssetTypeAttributeConstructor = _this.ManifestModule.ImportCommonConstructor<RegisterAssetTypeAttribute>(3);
+			var registerAssetTypeAttributeConstructor = SharedState.Importer.ImportCommonConstructor<RegisterAssetTypeAttribute>(3);
 			var attrDef = _this.AddCustomAttribute(registerAssetTypeAttributeConstructor);
 			attrDef.AddFixedArgument(SystemTypeGetter.String, typeName);
 			attrDef.AddFixedArgument(SystemTypeGetter.Int32, idNumber);
@@ -49,7 +49,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddVersionHandlerAttribute(this AssemblyDefinition _this)
 		{
-			var registerVersionHandlerAttributeConstructor = _this.ManifestModule.ImportCommonConstructor<RegisterVersionHandlerAttribute>(1);
+			var registerVersionHandlerAttributeConstructor = SharedState.Importer.ImportCommonConstructor<RegisterVersionHandlerAttribute>(1);
 			var attrDef = _this.AddCustomAttribute(registerVersionHandlerAttributeConstructor, SystemTypeGetter.Type.ToTypeSignature(), Pass95_UnityVersionHandler.HandlerDefinition.ToTypeSignature());
 		}
 

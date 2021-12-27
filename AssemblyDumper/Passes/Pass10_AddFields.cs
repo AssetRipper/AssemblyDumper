@@ -8,6 +8,7 @@ using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using AssemblyDumper.Unity;
 using AssemblyDumper.Utils;
 using AssetRipper.Core.Attributes;
+using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
 
 namespace AssemblyDumper.Passes
 {
@@ -23,13 +24,13 @@ namespace AssemblyDumper.Passes
 
 		private static void InitializeImports()
 		{
-			ReleaseOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<ReleaseOnlyAttribute>();
-			EditorOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorOnlyAttribute>();
-			TransferMetaFlagsDefinition = SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TransferMetaFlags>();
-			EditorMetaFlagsAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorMetaFlagsAttribute>(1);
-			ReleaseMetaFlagsAttributeConstructor = SharedState.Module.ImportCommonConstructor<ReleaseMetaFlagsAttribute>(1);
-			OriginalNameAttributeConstructor = SharedState.Module.ImportCommonConstructor<OriginalNameAttribute>(1);
-			AssetDictionaryType = SharedState.Module.ImportCommonType("AssetRipper.Core.IO.AssetDictionary`2");
+			ReleaseOnlyAttributeConstructor = SharedState.Importer.ImportCommonConstructor<ReleaseOnlyAttribute>();
+			EditorOnlyAttributeConstructor = SharedState.Importer.ImportCommonConstructor<EditorOnlyAttribute>();
+			TransferMetaFlagsDefinition = SharedState.Importer.ImportCommonType<TransferMetaFlags>();
+			EditorMetaFlagsAttributeConstructor = SharedState.Importer.ImportCommonConstructor<EditorMetaFlagsAttribute>(1);
+			ReleaseMetaFlagsAttributeConstructor = SharedState.Importer.ImportCommonConstructor<ReleaseMetaFlagsAttribute>(1);
+			OriginalNameAttributeConstructor = SharedState.Importer.ImportCommonConstructor<OriginalNameAttribute>(1);
+			AssetDictionaryType = SharedState.Importer.ImportCommonType("AssetRipper.Core.IO.AssetDictionary`2");
 		}
 
 		public static void DoPass()

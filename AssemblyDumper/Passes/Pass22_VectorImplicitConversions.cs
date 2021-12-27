@@ -53,8 +53,8 @@ namespace AssemblyDumper.Passes
 
 		private static void AddConversion<T>(TypeDefinition type, int size)
 		{
-			ITypeDefOrRef commonType = SharedState.Module.ImportCommonType<T>();
-			IMethodDefOrRef constructor = SharedState.Module.ImportCommonConstructor<T>(size);
+			ITypeDefOrRef commonType = SharedState.Importer.ImportCommonType<T>();
+			IMethodDefOrRef constructor = SharedState.Importer.ImportCommonConstructor<T>(size);
 
 			MethodDefinition implicitMethod = type.AddMethod("op_Implicit", ConversionAttributes, commonType);
 			implicitMethod.AddParameter("value", type);

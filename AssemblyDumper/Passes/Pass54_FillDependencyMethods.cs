@@ -6,6 +6,7 @@ using AsmResolver.PE.DotNet.Cil;
 using AssemblyDumper.Utils;
 using System;
 using System.Linq;
+using AssetRipper.Core.Interfaces;
 
 namespace AssemblyDumper.Passes
 {
@@ -15,10 +16,10 @@ namespace AssemblyDumper.Passes
 		{
 			Console.WriteLine("Pass 54: Fill Fetch Dependency Methods");
 
-			ITypeDefOrRef commonPPtrTypeRef = SharedState.Module.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
-			ITypeDefOrRef unityObjectBaseInterfaceRef = SharedState.Module.ImportCommonType<AssetRipper.Core.Interfaces.IUnityObjectBase>();
+			ITypeDefOrRef commonPPtrTypeRef = SharedState.Importer.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
+			ITypeDefOrRef unityObjectBaseInterfaceRef = SharedState.Importer.ImportCommonType<IUnityObjectBase>();
 			GenericInstanceTypeSignature unityObjectBasePPtrRef = commonPPtrTypeRef.MakeGenericInstanceType(unityObjectBaseInterfaceRef.ToTypeSignature());
-			IMethodDefOrRef emptyArray = SharedState.Module.ImportSystemMethod<System.Array>(method => method.Name == "Empty");
+			IMethodDefOrRef emptyArray = SharedState.Importer.ImportSystemMethod<Array>(method => method.Name == "Empty");
 
 			MethodSpecification emptyArrayMethod = MethodUtils.MakeGenericInstanceMethod(emptyArray, unityObjectBasePPtrRef);
 

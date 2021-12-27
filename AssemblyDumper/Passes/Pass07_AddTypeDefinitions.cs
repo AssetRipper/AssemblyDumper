@@ -20,11 +20,11 @@ namespace AssemblyDumper.Passes
 		{
 			Console.WriteLine("Pass 7: Add Type Definitions");
 
-			EditorOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<EditorOnlyAttribute>();
-			ReleaseOnlyAttributeConstructor = SharedState.Module.ImportCommonConstructor<ReleaseOnlyAttribute>();
-			StrippedAttributeConstructor = SharedState.Module.ImportCommonConstructor<StrippedAttribute>();
-			PersistentIDAttributeConstructor = SharedState.Module.ImportCommonConstructor<PersistentIDAttribute>(1);
-			OriginalNameAttributeConstructor = SharedState.Module.ImportCommonConstructor<OriginalNameAttribute>(1);
+			EditorOnlyAttributeConstructor = SharedState.Importer.ImportCommonConstructor<EditorOnlyAttribute>();
+			ReleaseOnlyAttributeConstructor = SharedState.Importer.ImportCommonConstructor<ReleaseOnlyAttribute>();
+			StrippedAttributeConstructor = SharedState.Importer.ImportCommonConstructor<StrippedAttribute>();
+			PersistentIDAttributeConstructor = SharedState.Importer.ImportCommonConstructor<PersistentIDAttribute>(1);
+			OriginalNameAttributeConstructor = SharedState.Importer.ImportCommonConstructor<OriginalNameAttribute>(1);
 
 			var assembly = SharedState.Assembly;
 			foreach (var pair in SharedState.ClassDictionary)

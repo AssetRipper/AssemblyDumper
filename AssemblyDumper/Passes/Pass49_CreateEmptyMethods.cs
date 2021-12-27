@@ -2,6 +2,9 @@
 using AsmResolver.DotNet.Signatures.Types;
 using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using AssemblyDumper.Utils;
+using AssetRipper.Core.Interfaces;
+using AssetRipper.Core.Parser.Asset;
+using AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TypeTree;
 
 namespace AssemblyDumper.Passes
 {
@@ -13,15 +16,15 @@ namespace AssemblyDumper.Passes
 		{
 			System.Console.WriteLine("Pass 49: Creating empty methods on generated types");
 
-			var typeTreeNodeRef = SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TypeTree.TypeTreeNode>();
+			var typeTreeNodeRef = SharedState.Importer.ImportCommonType<TypeTreeNode>();
 			var typeTreeNodeListRef = SystemTypeGetter.List.MakeGenericInstanceType(typeTreeNodeRef.ToTypeSignature());
 
-			ITypeDefOrRef commonPPtrTypeRef = SharedState.Module.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
-			ITypeDefOrRef unityObjectBaseInterfaceRef = SharedState.Module.ImportCommonType<AssetRipper.Core.Interfaces.IUnityObjectBase>();
+			ITypeDefOrRef commonPPtrTypeRef = SharedState.Importer.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
+			ITypeDefOrRef unityObjectBaseInterfaceRef = SharedState.Importer.ImportCommonType<IUnityObjectBase>();
 			GenericInstanceTypeSignature unityObjectBasePPtrRef = commonPPtrTypeRef.MakeGenericInstanceType(unityObjectBaseInterfaceRef.ToTypeSignature());
-			ITypeDefOrRef ienumerableTypeRef = SharedState.Module.ImportSystemType("System.Collections.Generic.IEnumerable`1");
+			ITypeDefOrRef ienumerableTypeRef = SharedState.Importer.ImportSystemType("System.Collections.Generic.IEnumerable`1");
 			GenericInstanceTypeSignature enumerablePPtrsRef = ienumerableTypeRef.MakeGenericInstanceType(unityObjectBasePPtrRef);
-			ITypeDefOrRef dependencyContextRef = SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Asset.DependencyContext>();
+			ITypeDefOrRef dependencyContextRef = SharedState.Importer.ImportCommonType<DependencyContext>();
 
 			foreach (TypeDefinition type in SharedState.TypeDictionary.Values)
 			{

@@ -87,19 +87,19 @@ namespace AssemblyDumper
 			Single = module.CorLibTypeFactory.Single;
 			Double = module.CorLibTypeFactory.Double;
 			String = module.CorLibTypeFactory.String;
-			Dictionary = module.ImportSystemType("System.Collections.Generic.Dictionary`2");
-			List = module.ImportSystemType("System.Collections.Generic.List`1");
-			Type = module.ImportSystemType("System.Type");
+			Dictionary = SharedState.Importer.ImportSystemType("System.Collections.Generic.Dictionary`2");
+			List = SharedState.Importer.ImportSystemType("System.Collections.Generic.List`1");
+			Type = SharedState.Importer.ImportSystemType("System.Type");
 			Void = module.CorLibTypeFactory.Void;
 			Object = module.CorLibTypeFactory.Object;
-			BinaryReader = module.ImportSystemType("System.IO.BinaryReader");
-			NotSupportedExceptionConstructor = module.ImportSystemDefaultConstructor("System.NotSupportedException");
+			BinaryReader = SharedState.Importer.ImportSystemType("System.IO.BinaryReader");
+			NotSupportedExceptionConstructor = SharedState.Importer.ImportSystemDefaultConstructor("System.NotSupportedException");
 		}
 
-		public static IMethodDefOrRef ImportSystemDefaultConstructor(this ModuleDefinition module, string typeFullName)
+		public static IMethodDefOrRef ImportSystemDefaultConstructor(this ReferenceImporter importer, string typeFullName)
 		{
 			TypeDefinition type = LookupSystemType(typeFullName) ?? throw new Exception($"{typeFullName} not found in the system assemblies");
-			return SharedState.Importer.ImportMethod(type.GetDefaultConstructor());
+			return importer.ImportMethod(type.GetDefaultConstructor());
 		}
 
 		public static TypeDefinition LookupSystemType(string typeFullName)
@@ -118,21 +118,21 @@ namespace AssemblyDumper
 		public static MethodDefinition LookupSystemMethod(Type type, Func<MethodDefinition, bool> filter) => LookupSystemMethod(type.FullName, filter);
 		public static MethodDefinition LookupSystemMethod<T>(Func<MethodDefinition, bool> filter) => LookupSystemMethod(typeof(T), filter);
 
-		public static ITypeDefOrRef ImportSystemType(this ModuleDefinition module, string typeFullName) => SharedState.Importer.ImportType(LookupSystemType(typeFullName));
-		public static ITypeDefOrRef ImportSystemType(this ModuleDefinition module, System.Type type) => SharedState.Importer.ImportType(LookupSystemType(type));
-		public static ITypeDefOrRef ImportSystemType<T>(this ModuleDefinition module) => SharedState.Importer.ImportType(LookupSystemType<T>());
+		public static ITypeDefOrRef ImportSystemType(this ReferenceImporter importer, string typeFullName) => importer.ImportType(LookupSystemType(typeFullName));
+		public static ITypeDefOrRef ImportSystemType(this ReferenceImporter importer, System.Type type) => importer.ImportType(LookupSystemType(type));
+		public static ITypeDefOrRef ImportSystemType<T>(this ReferenceImporter importer) => importer.ImportType(LookupSystemType<T>());
 
-		public static IMethodDefOrRef ImportSystemMethod(this ModuleDefinition module, string typeFullName, Func<MethodDefinition, bool> filter)
+		public static IMethodDefOrRef ImportSystemMethod(this ReferenceImporter importer, string typeFullName, Func<MethodDefinition, bool> filter)
 		{
-			return SharedState.Importer.ImportMethod(LookupSystemMethod(typeFullName, filter));
+			return importer.ImportMethod(LookupSystemMethod(typeFullName, filter));
 		}
-		public static IMethodDefOrRef ImportSystemMethod(this ModuleDefinition module, System.Type type, Func<MethodDefinition, bool> filter)
+		public static IMethodDefOrRef ImportSystemMethod(this ReferenceImporter importer, System.Type type, Func<MethodDefinition, bool> filter)
 		{
-			return SharedState.Importer.ImportMethod(LookupSystemMethod(type, filter));
+			return importer.ImportMethod(LookupSystemMethod(type, filter));
 		}
-		public static IMethodDefOrRef ImportSystemMethod<T>(this ModuleDefinition module, Func<MethodDefinition, bool> filter)
+		public static IMethodDefOrRef ImportSystemMethod<T>(this ReferenceImporter importer, Func<MethodDefinition, bool> filter)
 		{
-			return SharedState.Importer.ImportMethod(LookupSystemMethod<T>(filter));
+			return importer.ImportMethod(LookupSystemMethod<T>(filter));
 		}
 
 		public static CorLibTypeSignature GetCSharpPrimitiveTypeSignature(string cppPrimitiveName) => cppPrimitiveName switch

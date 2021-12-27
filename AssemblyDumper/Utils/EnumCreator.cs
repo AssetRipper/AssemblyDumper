@@ -66,7 +66,7 @@ namespace AssemblyDumper.Utils
 		private static TypeDefinition CreateEmptyEnum(AssemblyDefinition assembly, string @namespace, string name)
 		{
 			var module = assembly.ManifestModule;
-			var enumReference = module.ImportSystemType("System.Enum");
+			var enumReference = SharedState.Importer.ImportSystemType("System.Enum");
 			TypeDefinition definition = new TypeDefinition(@namespace, name, TypeAttributes.Public | TypeAttributes.Sealed, enumReference);
 			module.TopLevelTypes.Add(definition);
 			definition.AddEnumValue();

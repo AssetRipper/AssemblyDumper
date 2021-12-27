@@ -3,6 +3,7 @@ using AsmResolver.PE.DotNet.Cil;
 using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using AssemblyDumper.Utils;
 using System.Linq;
+using AssetRipper.Core.Interfaces;
 
 namespace AssemblyDumper.Passes
 {
@@ -20,7 +21,7 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 30: Implement the Has Name Interface");
-			ITypeDefOrRef hasName = SharedState.Module.ImportCommonType<AssetRipper.Core.Interfaces.IHasName>();
+			ITypeDefOrRef hasName = SharedState.Importer.ImportCommonType<IHasName>();
 			foreach(TypeDefinition type in SharedState.TypeDictionary.Values)
 			{
 				if (type.HasNameField())

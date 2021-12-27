@@ -41,7 +41,7 @@ namespace AssemblyDumper.Utils
 			IMethodDefOrRef baseConstructor;
 			if (typeDefinition.BaseType == null)
 			{
-				baseConstructor = module.ImportSystemDefaultConstructor("System.Object");
+				baseConstructor = SharedState.Importer.ImportSystemDefaultConstructor("System.Object");
 			}
 			else
 			{
@@ -51,11 +51,11 @@ namespace AssemblyDumper.Utils
 				}
 				else if (typeDefinition.BaseType.Namespace.ToString().StartsWith("AssetRipper"))
 				{
-					baseConstructor = module.ImportCommonConstructor(typeDefinition.BaseType.FullName);
+					baseConstructor = SharedState.Importer.ImportCommonConstructor(typeDefinition.BaseType.FullName);
 				}
 				else
 				{
-					baseConstructor = module.ImportSystemDefaultConstructor(typeDefinition.BaseType.FullName);
+					baseConstructor = SharedState.Importer.ImportSystemDefaultConstructor(typeDefinition.BaseType.FullName);
 				}
 			}
 

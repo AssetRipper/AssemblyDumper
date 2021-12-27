@@ -22,7 +22,7 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 95: Unity Version Handler");
-			ITypeDefOrRef baseHandler = SharedState.Module.ImportCommonType<AssetRipper.Core.VersionHandling.UnityHandlerBase>();
+			ITypeDefOrRef baseHandler = SharedState.Importer.ImportCommonType<UnityHandlerBase>();
 			HandlerDefinition = new TypeDefinition(SharedState.RootNamespace, "UnityVersionHandler", SealedClassAttributes, baseHandler);
 			SharedState.Module.TopLevelTypes.Add(HandlerDefinition);
 			HandlerDefinition.AddConstructor();
@@ -43,14 +43,14 @@ namespace AssemblyDumper.Passes
 
 		private static void AddBaseConstructorCall(this CilInstructionCollection processor)
 		{
-			IMethodDefOrRef baseConstructor = SharedState.Module.ImportCommonConstructor<UnityHandlerBase>();
+			IMethodDefOrRef baseConstructor = SharedState.Importer.ImportCommonConstructor<UnityHandlerBase>();
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Call, baseConstructor);
 		}
 
 		private static void AddAssetFactoryAssignment(this CilInstructionCollection processor)
 		{
-			IMethodDefOrRef baseAssetFactorySetter = SharedState.Module.ImportCommonMethod<UnityHandlerBase>(m => m.Name == "set_AssetFactory");
+			IMethodDefOrRef baseAssetFactorySetter = SharedState.Importer.ImportCommonMethod<UnityHandlerBase>(m => m.Name == "set_AssetFactory");
 			MethodDefinition assetFactoryConstructor = Pass90_MakeAssetFactory.FactoryDefinition.Methods.Single(c => c.IsConstructor && !c.IsStatic);
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Newobj, assetFactoryConstructor);
@@ -59,7 +59,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddImporterFactoryAssignment(this CilInstructionCollection processor)
 		{
-			IMethodDefOrRef baseAssetImporterFactorySetter = SharedState.Module.ImportCommonMethod<UnityHandlerBase>(m => m.Name == "set_ImporterFactory");
+			IMethodDefOrRef baseAssetImporterFactorySetter = SharedState.Importer.ImportCommonMethod<UnityHandlerBase>(m => m.Name == "set_ImporterFactory");
 			MethodDefinition assetImporterFactoryConstructor = Pass91_MakeImporterFactory.ImporterFactoryDefinition.Methods.Single(c => c.IsConstructor && !c.IsStatic);
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Newobj, assetImporterFactoryConstructor);
@@ -68,7 +68,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddUnityVersionOverride(this TypeDefinition type)
 		{
-			ITypeDefOrRef unityVersionRef = SharedState.Module.ImportCommonType<UnityVersion>();
+			ITypeDefOrRef unityVersionRef = SharedState.Importer.ImportCommonType<UnityVersion>();
 			PropertyDefinition property = type.AddGetterProperty("UnityVersion", PropertyOverrideAttributes, unityVersionRef.ToTypeSignature());
 			MethodDefinition getter = property.GetMethod;
 			CilInstructionCollection processor = getter.CilMethodBody.Instructions;
@@ -80,7 +80,7 @@ namespace AssemblyDumper.Passes
 		private static void AddUnityVersion(this CilInstructionCollection processor)
 		{
 			UnityVersion version = GetUnityVersion();
-			IMethodDefOrRef constructor = SharedState.Module.ImportCommonConstructor<UnityVersion>(5);
+			IMethodDefOrRef constructor = SharedState.Importer.ImportCommonConstructor<UnityVersion>(5);
 			processor.Add(CilOpCodes.Ldc_I4, version.Major);
 			processor.Add(CilOpCodes.Ldc_I4, version.Minor);
 			processor.Add(CilOpCodes.Ldc_I4, version.Build);

@@ -21,8 +21,8 @@ namespace AssemblyDumper.Passes
 
 		private static void AddGuidConversion(TypeDefinition guidType)
 		{
-			ITypeDefOrRef commonGuidType = SharedState.Module.ImportCommonType<UnityGUID>();
-			IMethodDefOrRef constructor = SharedState.Module.ImportCommonConstructor<UnityGUID>(4);
+			ITypeDefOrRef commonGuidType = SharedState.Importer.ImportCommonType<UnityGUID>();
+			IMethodDefOrRef constructor = SharedState.Importer.ImportCommonConstructor<UnityGUID>(4);
 
 			FieldDefinition data0 = guidType.Fields.Single(field => field.Name == "data_0_");
 			FieldDefinition data1 = guidType.Fields.Single(field => field.Name == "data_1_");

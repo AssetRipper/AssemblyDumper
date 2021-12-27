@@ -1,4 +1,5 @@
-﻿using AsmResolver.DotNet;
+﻿using System;
+using AsmResolver.DotNet;
 using AsmResolver.DotNet.Code.Cil;
 using AsmResolver.DotNet.Collections;
 using AsmResolver.PE.DotNet.Cil;
@@ -6,6 +7,9 @@ using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using AssemblyDumper.Utils;
 using System.Collections.Generic;
 using System.Linq;
+using AssetRipper.Core.Interfaces;
+using AssetRipper.Core.IO.Asset;
+using AssetRipper.Core.Parser.Asset;
 
 namespace AssemblyDumper.Passes
 {
@@ -28,14 +32,14 @@ namespace AssemblyDumper.Passes
 		{
 			var result = new TypeDefinition(SharedState.RootNamespace, "AssetFactory", SealedClassAttributes, SystemTypeGetter.Object.ToTypeDefOrRef());
 			SharedState.Module.TopLevelTypes.Add(result);
-			result.Interfaces.Add(new InterfaceImplementation(SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Asset.IAssetFactory>()));
+			result.Interfaces.Add(new InterfaceImplementation(SharedState.Importer.ImportCommonType<IAssetFactory>()));
 			ConstructorUtils.AddDefaultConstructor(result);
 			return result;
 		}
 
 		private static void AddCreateEngineAsset(this TypeDefinition factoryDefinition)
 		{
-			ITypeDefOrRef iassetType = SharedState.Module.ImportCommonType<AssetRipper.Core.IO.Asset.IAsset>();
+			ITypeDefOrRef iassetType = SharedState.Importer.ImportCommonType<IAsset>();
 			MethodDefinition createEngineAsset = factoryDefinition.AddMethod("CreateEngineAsset", InterfaceOverrideAttributes, iassetType);
 			createEngineAsset.AddParameter("name", SystemTypeGetter.String);
 
@@ -44,8 +48,8 @@ namespace AssemblyDumper.Passes
 
 		private static void AddCreateAsset(this TypeDefinition factoryDefinition)
 		{
-			ITypeDefOrRef iunityObjectBase = SharedState.Module.ImportCommonType<AssetRipper.Core.Interfaces.IUnityObjectBase>();
-			ITypeDefOrRef assetInfoType = SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Asset.AssetInfo>();
+			ITypeDefOrRef iunityObjectBase = SharedState.Importer.ImportCommonType<IUnityObjectBase>();
+			ITypeDefOrRef assetInfoType = SharedState.Importer.ImportCommonType<AssetInfo>();
 			MethodDefinition createAsset = factoryDefinition.AddMethod("CreateAsset", InterfaceOverrideAttributes, iunityObjectBase);
 			Parameter parameter = createAsset.AddParameter("assetInfo", assetInfoType);
 			
@@ -62,7 +66,7 @@ namespace AssemblyDumper.Passes
 			processor.Owner.LocalVariables.Add(switchCondition);
 			{
 				processor.Add(CilOpCodes.Ldarg, parameter);
-				IMethodDefOrRef propertyRef = SharedState.Module.ImportCommonMethod<AssetRipper.Core.Parser.Asset.AssetInfo>(m => m.Name == "get_ClassNumber");
+				IMethodDefOrRef propertyRef = SharedState.Importer.ImportCommonMethod<AssetInfo>(m => m.Name == "get_ClassNumber");
 				processor.Add(CilOpCodes.Call, propertyRef);
 			}
 			processor.Add(CilOpCodes.Stloc, switchCondition);

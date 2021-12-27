@@ -31,7 +31,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddInterface<T>(this TypeDefinition type)
 		{
-			ITypeDefOrRef @interface = SharedState.Module.ImportCommonType<T>();
+			ITypeDefOrRef @interface = SharedState.Importer.ImportCommonType<T>();
 			type.Interfaces.Add(new InterfaceImplementation(@interface));
 		}
 	}

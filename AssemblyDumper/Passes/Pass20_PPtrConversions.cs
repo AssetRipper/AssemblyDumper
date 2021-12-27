@@ -4,6 +4,7 @@ using AsmResolver.PE.DotNet.Cil;
 using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using AssemblyDumper.Utils;
 using System.Linq;
+using AssetRipper.Core.Interfaces;
 
 namespace AssemblyDumper.Passes
 {
@@ -18,8 +19,8 @@ namespace AssemblyDumper.Passes
 		{
 			System.Console.WriteLine("Pass 20: PPtr Conversions");
 
-			commonPPtrType = SharedState.Module.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
-			unityObjectBaseInterface = SharedState.Module.ImportCommonType<AssetRipper.Core.Interfaces.IUnityObjectBase>();
+			commonPPtrType = SharedState.Importer.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
+			unityObjectBaseInterface = SharedState.Importer.ImportCommonType<IUnityObjectBase>();
 			unityObjectBasePPtr = commonPPtrType.MakeGenericInstanceType(unityObjectBaseInterface.ToTypeSignature());
 
 			foreach (string name in SharedState.ClassDictionary.Keys)

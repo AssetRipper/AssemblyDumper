@@ -10,8 +10,8 @@ namespace AssemblyDumper.Passes
 		{
 			System.Console.WriteLine("Pass 8: Apply Inheritance");
 
-			ITypeDefOrRef unityObjectBaseDefinition = SharedState.Module.ImportCommonType<UnityObjectBase>();
-			ITypeDefOrRef unityAssetBaseDefinition = SharedState.Module.ImportCommonType<UnityAssetBase>();
+			ITypeDefOrRef unityObjectBaseDefinition = SharedState.Importer.ImportCommonType<UnityObjectBase>();
+			ITypeDefOrRef unityAssetBaseDefinition = SharedState.Importer.ImportCommonType<UnityAssetBase>();
 
 			foreach (var pair in SharedState.ClassDictionary)
 			{

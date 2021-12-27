@@ -1,4 +1,5 @@
-﻿using AsmResolver.DotNet;
+﻿using System;
+using AsmResolver.DotNet;
 using AsmResolver.DotNet.Code.Cil;
 using AsmResolver.PE.DotNet.Cil;
 using AssemblyDumper.Utils;
@@ -26,7 +27,8 @@ namespace AssemblyDumper.Passes
 
 		private static void FixYaml(TypeDefinition pptrType, TypeDefinition parameterType)
 		{
-			IMethodDefOrRef exportGeneric = SharedState.Module.ImportCommonMethod("AssetRipper.Core.Classes.Misc.PPtr", m => m.Name == "ExportYAML");
+			Func<MethodDefinition, bool> filter = m => m.Name == "ExportYAML";
+			IMethodDefOrRef exportGeneric = SharedState.Importer.ImportCommonMethod("AssetRipper.Core.Classes.Misc.PPtr", filter);
 			MethodSpecification commonExportReference = MethodUtils.MakeGenericInstanceMethod(exportGeneric, parameterType.ToTypeSignature());
 			
 			MethodDefinition releaseYamlMethod = pptrType.Methods.Single(m => m.Name == "ExportYAMLRelease");

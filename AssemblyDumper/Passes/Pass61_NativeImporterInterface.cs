@@ -5,6 +5,7 @@ using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using AssemblyDumper.Utils;
 using System;
 using System.Linq;
+using AssetRipper.Core.Classes.Meta.Importers;
 
 namespace AssemblyDumper.Passes
 {
@@ -25,7 +26,7 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 61: Implement Native Format Importer Interface");
-			ITypeDefOrRef nativeImporterInterface = SharedState.Module.ImportCommonType<AssetRipper.Core.Classes.Meta.Importers.INativeFormatImporter>();
+			ITypeDefOrRef nativeImporterInterface = SharedState.Importer.ImportCommonType<INativeFormatImporter>();
 			if (SharedState.TypeDictionary.TryGetValue("NativeFormatImporter", out TypeDefinition type))
 			{
 				type.Interfaces.Add(new InterfaceImplementation(nativeImporterInterface));

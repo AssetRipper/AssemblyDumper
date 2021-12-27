@@ -19,7 +19,7 @@ namespace AssemblyDumper.Passes
 		{
 			Console.WriteLine("Pass 50: Filling read methods");
 
-			AssetDictionaryType = SharedState.Module.ImportCommonType("AssetRipper.Core.IO.AssetDictionary`2");
+			AssetDictionaryType = SharedState.Importer.ImportCommonType("AssetRipper.Core.IO.AssetDictionary`2");
 
 			foreach (var (name, klass) in SharedState.ClassDictionary)
 			{

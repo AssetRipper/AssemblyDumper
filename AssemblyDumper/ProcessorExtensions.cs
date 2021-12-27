@@ -42,7 +42,7 @@ namespace AssemblyDumper
 		public static void AddLogStatement(this CilInstructionCollection processor, string text)
 		{
 			Func<MethodDefinition, bool> func = m => m.IsStatic && m.Name == "Info" && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.Name == "String";
-			IMethodDefOrRef writeMethod = SharedState.Module.ImportCommonMethod("AssetRipper.Core.Logging.Logger", func);
+			IMethodDefOrRef writeMethod = SharedState.Importer.ImportCommonMethod("AssetRipper.Core.Logging.Logger", func);
 			processor.Add(CilOpCodes.Ldstr, text);
 			processor.Add(CilOpCodes.Call, writeMethod);
 		}

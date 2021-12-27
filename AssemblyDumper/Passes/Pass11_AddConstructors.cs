@@ -4,6 +4,8 @@ using AssemblyDumper.Unity;
 using AssemblyDumper.Utils;
 using System.Collections.Generic;
 using System.Linq;
+using AssetRipper.Core.Layout;
+using AssetRipper.Core.Parser.Asset;
 
 namespace AssemblyDumper.Passes
 {
@@ -21,8 +23,8 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 11: Add Constructors");
-			AssetInfoRef = SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Asset.AssetInfo>();
-			LayoutInfoRef = SharedState.Module.ImportCommonType<AssetRipper.Core.Layout.LayoutInfo>();
+			AssetInfoRef = SharedState.Importer.ImportCommonType<AssetInfo>();
+			LayoutInfoRef = SharedState.Importer.ImportCommonType<LayoutInfo>();
 			foreach (var pair in SharedState.ClassDictionary)
 			{
 				if (processed.Contains(pair.Key))

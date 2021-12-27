@@ -16,7 +16,7 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 12: Fill Constructors");
-			emptyArray = SharedState.Module.ImportSystemMethod<System.Array>(method => method.Name == "Empty");
+			emptyArray = SharedState.Importer.ImportSystemMethod<Array>(method => method.Name == "Empty");
 			foreach(TypeDefinition type in SharedState.TypeDictionary.Values)
 			{
 				type.FillDefaultConstructor();

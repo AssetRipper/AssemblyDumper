@@ -5,6 +5,9 @@ using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using AssemblyDumper.Utils;
 using System;
 using System.Linq;
+using AssetRipper.Core.Classes.Meta.Importers;
+using AssetRipper.Core.Layout;
+using AssetRipper.Core.Parser.Asset;
 
 namespace AssemblyDumper.Passes
 {
@@ -27,15 +30,15 @@ namespace AssemblyDumper.Passes
 		{
 			var result = new TypeDefinition(SharedState.RootNamespace, "AssetImporterFactory", SealedClassAttributes, SystemTypeGetter.Object.ToTypeDefOrRef());
 			SharedState.Module.TopLevelTypes.Add(result);
-			result.Interfaces.Add(new InterfaceImplementation(SharedState.Module.ImportCommonType<AssetRipper.Core.Parser.Asset.IAssetImporterFactory>()));
+			result.Interfaces.Add(new InterfaceImplementation(SharedState.Importer.ImportCommonType<IAssetImporterFactory>()));
 			ConstructorUtils.AddDefaultConstructor(result);
 			return result;
 		}
 
 		private static void AddCreateDefaultImporter(this TypeDefinition factoryDefinition)
 		{
-			ITypeDefOrRef idefaultImporter = SharedState.Module.ImportCommonType<AssetRipper.Core.Classes.Meta.Importers.IDefaultImporter>();
-			ITypeDefOrRef layoutInfoType = SharedState.Module.ImportCommonType<AssetRipper.Core.Layout.LayoutInfo>();
+			ITypeDefOrRef idefaultImporter = SharedState.Importer.ImportCommonType<IDefaultImporter>();
+			ITypeDefOrRef layoutInfoType = SharedState.Importer.ImportCommonType<LayoutInfo>();
 
 			MethodDefinition constructor = SharedState.TypeDictionary["DefaultImporter"].Methods
 				.Single(m => m.IsConstructor && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.Name == "LayoutInfo");
@@ -51,8 +54,8 @@ namespace AssemblyDumper.Passes
 
 		private static void AddCreateNativeFormatImporter(this TypeDefinition factoryDefinition)
 		{
-			ITypeDefOrRef inativeImporter = SharedState.Module.ImportCommonType<AssetRipper.Core.Classes.Meta.Importers.INativeFormatImporter>();
-			ITypeDefOrRef layoutInfoType = SharedState.Module.ImportCommonType<AssetRipper.Core.Layout.LayoutInfo>();
+			ITypeDefOrRef inativeImporter = SharedState.Importer.ImportCommonType<INativeFormatImporter>();
+			ITypeDefOrRef layoutInfoType = SharedState.Importer.ImportCommonType<LayoutInfo>();
 
 			MethodDefinition constructor = SharedState.TypeDictionary["NativeFormatImporter"].Methods
 				.Single(m => m.IsConstructor && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.Name == "LayoutInfo");
