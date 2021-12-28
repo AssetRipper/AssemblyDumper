@@ -32,6 +32,7 @@ namespace AssemblyDumper
 				Pass21_GuidImplicitConversion.DoPass();
 				Pass22_VectorImplicitConversions.DoPass();
 				Pass23_OffsetPtrImplicitConversions.DoPass();
+				Pass24_Hash128ImplicitConversion.DoPass();
 
 				Pass25_ObjectHideFlags.DoPass();
 
