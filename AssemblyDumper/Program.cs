@@ -38,6 +38,7 @@ namespace AssemblyDumper
 
 				Pass30_ImplementHasNameInterface.DoPass();
 				Pass31_ComponentInterface.DoPass();
+				Pass32_MonoScriptInterface.DoPass();
 
 				Pass49_CreateEmptyMethods.DoPass();
 				Pass50_FillReadMethods.DoPass();
