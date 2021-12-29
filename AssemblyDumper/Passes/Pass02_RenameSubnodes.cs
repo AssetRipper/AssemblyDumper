@@ -80,7 +80,16 @@ namespace AssemblyDumper.Passes
 		/// <returns></returns>
 		private static string GetValidName(string originalName)
 		{
-			return badCharactersRegex.Replace(originalName, "_");
+			if (string.IsNullOrWhiteSpace(originalName))
+			{
+				throw new ArgumentException("Nodes cannot have a null or whitespace type name", nameof(originalName));
+			}
+			string result = badCharactersRegex.Replace(originalName, "_");
+			if (char.IsDigit(result[0]))
+			{
+				result = "_" + result;
+			}
+			return result;
 		}
 
 		private static void DoSecondaryRenamingRecursively(this UnityNode node)
