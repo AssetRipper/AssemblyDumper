@@ -24,7 +24,7 @@ namespace AssemblyDumper.Passes
 			typeTreeNodeConstructor = SharedState.Importer.ImportCommonConstructor<TypeTreeNode>(8);
 			typeTreeNodeList = SystemTypeGetter.List.MakeGenericInstanceType(typeTreeNode.ToTypeSignature());
 			typeTreeNodeListConstructor = MethodUtils.MakeConstructorOnGenericType(typeTreeNodeList, 0);
-			listAddMethod = MethodUtils.MakeMethodOnGenericType(typeTreeNodeList.Resolve().Methods.First(m => m.Name == "Add"), typeTreeNodeList);
+			listAddMethod = MethodUtils.MakeMethodOnGenericType(typeTreeNodeList, typeTreeNodeList.Resolve().Methods.First(m => m.Name == "Add"));
 
 			foreach (var (name, klass) in SharedState.ClassDictionary)
 			{

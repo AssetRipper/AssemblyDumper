@@ -33,7 +33,7 @@ namespace AssemblyDumper.Passes
 
 			var uintStringDictionary = SystemTypeGetter.Dictionary.MakeGenericInstanceType(SystemTypeGetter.UInt32, SystemTypeGetter.String);
 			var dictionaryConstructor = MethodUtils.MakeConstructorOnGenericType(uintStringDictionary, 0);
-			var addMethod = MethodUtils.MakeMethodOnGenericType(uintStringDictionary.Resolve().Methods.First(m => m.Name == "Add"), uintStringDictionary);
+			var addMethod = MethodUtils.MakeMethodOnGenericType(uintStringDictionary, uintStringDictionary.Resolve().Methods.First(m => m.Name == "Add"));
 
 			FieldDefinition field = new FieldDefinition("dictionary", FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly, FieldSignature.CreateStatic(uintStringDictionary));
 			newTypeDef.Fields.Add(field);

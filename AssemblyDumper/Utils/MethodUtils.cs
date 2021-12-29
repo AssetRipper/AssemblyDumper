@@ -15,7 +15,7 @@ namespace AssemblyDumper.Utils
 			return new MemberReference(instanceType.ToTypeDefOrRef(), ".ctor", constructorDefinition.Signature);
 		}
 
-		public static MemberReference MakeMethodOnGenericType(MethodDefinition definition, GenericInstanceTypeSignature instanceType)
+		public static MemberReference MakeMethodOnGenericType(GenericInstanceTypeSignature instanceType, MethodDefinition definition)
 		{
 			return new MemberReference(instanceType.ToTypeDefOrRef(), definition.Name, definition.Signature);
 		}

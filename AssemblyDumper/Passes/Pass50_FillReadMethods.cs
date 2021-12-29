@@ -526,7 +526,7 @@ namespace AssemblyDumper.Passes
 			//Resolve things we'll need
 			var genericDictType = GenericTypeResolver.ResolveDictionaryType(node);
 			var genericDictCtor = MethodUtils.MakeConstructorOnGenericType(genericDictType, 0);
-			var addMethod = MethodUtils.MakeMethodOnGenericType(genericDictType.Resolve().Methods.Single(m => m.Name == "Add" && m.Parameters.Count == 2), genericDictType);
+			var addMethod = MethodUtils.MakeMethodOnGenericType(genericDictType, genericDictType.Resolve().Methods.Single(m => m.Name == "Add" && m.Parameters.Count == 2));
 
 			//Read length of array
 			var intReader = SharedState.Importer.ImportMethod(CommonTypeGetter.EndianReaderDefinition.Resolve().Methods.Single(m => m.Name == "ReadInt32"));
