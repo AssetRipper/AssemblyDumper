@@ -25,7 +25,7 @@ jobs:
      - name: Checkout TypeTreeDumps Repository
        uses: actions/checkout@v2
        with:
-        repository: 'ds5678/TypeTreeDumps'
+        repository: 'AssetRipper/TypeTreeDumps'
         path: TypeTreeDumps
       
      - name: Run Generation
