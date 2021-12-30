@@ -107,7 +107,6 @@ namespace AssemblyDumper.Passes
 			if (field == null)
 				throw new Exception($"Field {node.Name} cannot be found in {processor.Owner.Owner.DeclaringType} (fields are {string.Join(", ", fields.Select(f => f.Name))})");
 
-			//ExportFieldContent(node, processor, field, yamlMappingNode);
 			processor.AddExportFieldContent(node, field, yamlMappingNode);
 		}
 
@@ -115,31 +114,33 @@ namespace AssemblyDumper.Passes
 		{
 			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out TypeDefinition typeDefinition))
 			{
-				processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
-				processor.AddScalarNodeForString(node.OriginalName);
-				processor.AddLoadField(field);
-				processor.AddNodeForLoadedAssetValue(typeDefinition);
+				processor.AddExportAssetField(node, field, yamlMappingNode, typeDefinition);
+				return;
 			}
-			else if (SystemTypeGetter.GetCppPrimitiveTypeSignature(node.TypeName) != null)
-			{
-				processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
-				processor.AddScalarNodeForString(node.OriginalName);
-				processor.AddLoadField(field);
-				processor.AddScalarNodeForLoadedPrimitiveType(node.TypeName);
-			}
-			else //Other fields like arrays and dicitionaries. Also works on normal fields but the above generates cleaner and more efficient code
-			{
-				processor.AddLoadField(field);
-				processor.AddNodeForLoadedValue(node);
-				CilLocalVariable fieldNode = new CilLocalVariable(CommonTypeGetter.YAMLNodeDefinition.ToTypeSignature());
-				processor.Owner.LocalVariables.Add(fieldNode);
-				processor.Add(CilOpCodes.Stloc, fieldNode);
 
-				processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
-				processor.AddScalarNodeForString(node.OriginalName);
-				processor.Add(CilOpCodes.Ldloc, fieldNode);
+			switch (node.TypeName)
+			{
+				case "vector":
+				case "set":
+				case "staticvector":
+					processor.AddExportVectorField(node, field, yamlMappingNode);
+					return;
+				case "map":
+					processor.AddExportDictionaryField(node, field, yamlMappingNode);
+					return;
+				case "pair":
+					processor.AddExportPairField(node, field, yamlMappingNode);
+					return;
+				case "TypelessData": //byte array
+					processor.AddExportByteArrayField(node, field, yamlMappingNode);
+					return;
+				case "Array":
+					processor.AddExportArrayField(node, field, yamlMappingNode);
+					return;
+				default:
+					processor.AddExportPrimitiveField(node, field, yamlMappingNode);
+					return;
 			}
-			processor.Add(CilOpCodes.Call, mappingAddMethod);
 		}
 
 		private static void AddNodeForLoadedValue(this CilInstructionCollection processor, UnityNode node)
@@ -175,22 +176,22 @@ namespace AssemblyDumper.Passes
 			}
 		}
 
-		private static void AddLoadField(this CilInstructionCollection processor, FieldDefinition field)
+		private static void AddExportAssetField(this CilInstructionCollection processor, UnityNode node, FieldDefinition field, CilLocalVariable yamlMappingNode, TypeDefinition typeDefinition)
 		{
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, field);
+			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
+			processor.AddScalarNodeForString(node.OriginalName);
+			processor.AddLoadField(field);
+			processor.AddNodeForLoadedAssetValue(typeDefinition);
+			processor.Add(CilOpCodes.Call, mappingAddMethod);
 		}
 
-		private static void AddScalarNodeForString(this CilInstructionCollection processor, string name)
+		private static void AddExportPrimitiveField(this CilInstructionCollection processor, UnityNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
 		{
-			processor.Add(CilOpCodes.Ldstr, name);
-			processor.Add(CilOpCodes.Newobj, GetScalarNodeConstructor(SystemTypeGetter.String));
-		}
-
-		private static void AddScalarNodeForLoadedPrimitiveType(this CilInstructionCollection processor, string typeName)
-		{
-			var type = SystemTypeGetter.GetCppPrimitiveTypeSignature(typeName) ?? throw new ArgumentException(nameof(typeName));
-			processor.Add(CilOpCodes.Newobj, GetScalarNodeConstructor(type));
+			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
+			processor.AddScalarNodeForString(node.OriginalName);
+			processor.AddLoadField(field);
+			processor.AddScalarNodeForLoadedPrimitiveType(node.TypeName);
+			processor.Add(CilOpCodes.Call, mappingAddMethod);
 		}
 
 		private static void AddNodeForLoadedAssetValue(this CilInstructionCollection processor, TypeDefinition type)
@@ -200,7 +201,23 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Call, exportMethod);
 		}
 
+		private static void AddExportPairField(this CilInstructionCollection processor, UnityNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
+		{
+			processor.AddLoadField(field);
+			processor.AddLocalForLoadedPair(node, out CilLocalVariable pairNodeLocal);
+			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
+			processor.AddScalarNodeForString(node.OriginalName);
+			processor.Add(CilOpCodes.Ldloc, pairNodeLocal);
+			processor.Add(CilOpCodes.Call, mappingAddMethod);
+		}
+
 		private static void AddNodeForLoadedPair(this CilInstructionCollection processor, UnityNode pairNode)
+		{
+			processor.AddLocalForLoadedPair(pairNode, out CilLocalVariable mappingLocal);
+			processor.Add(CilOpCodes.Ldloc, mappingLocal);
+		}
+
+		private static void AddLocalForLoadedPair(this CilInstructionCollection processor, UnityNode pairNode, out CilLocalVariable localVariableForOutputNode)
 		{
 			UnityNode firstSubNode = pairNode.SubNodes[0];
 			UnityNode secondSubNode = pairNode.SubNodes[1];
@@ -215,11 +232,11 @@ namespace AssemblyDumper.Passes
 			CilLocalVariable pair = new CilLocalVariable(pairType);
 			processor.Owner.LocalVariables.Add(pair);
 			processor.Add(CilOpCodes.Stloc, pair);
-			
-			CilLocalVariable mappingLocal = new CilLocalVariable(CommonTypeGetter.YAMLMappingNodeDefinition.ToTypeSignature());
-			processor.Owner.LocalVariables.Add(mappingLocal);
+
+			localVariableForOutputNode = new CilLocalVariable(CommonTypeGetter.YAMLMappingNodeDefinition.ToTypeSignature());
+			processor.Owner.LocalVariables.Add(localVariableForOutputNode);
 			processor.Add(CilOpCodes.Newobj, CommonTypeGetter.YAMLMappingNodeConstructor);
-			processor.Add(CilOpCodes.Stloc, mappingLocal);
+			processor.Add(CilOpCodes.Stloc, localVariableForOutputNode);
 
 			if (firstIsScalar)
 			{
@@ -239,31 +256,32 @@ namespace AssemblyDumper.Passes
 				processor.Owner.LocalVariables.Add(secondExportLocal);
 				processor.Add(CilOpCodes.Stloc, secondExportLocal);
 
-				processor.Add(CilOpCodes.Ldloc, mappingLocal);
+				processor.Add(CilOpCodes.Ldloc, localVariableForOutputNode);
 				processor.Add(CilOpCodes.Ldloc, firstExportLocal);
 				processor.Add(CilOpCodes.Ldloc, secondExportLocal);
 				processor.Add(CilOpCodes.Call, mappingAddMethod);
-
-				processor.Add(CilOpCodes.Ldloc, mappingLocal);
 			}
 			else
 			{
-				processor.Add(CilOpCodes.Ldloc, mappingLocal);
+				processor.Add(CilOpCodes.Ldloc, localVariableForOutputNode);
 				processor.AddScalarNodeForString("first");
 				processor.Add(CilOpCodes.Ldloc, pair);
 				processor.Add(CilOpCodes.Call, getKeyReference);
 				processor.AddNodeForLoadedValue(firstSubNode);
 				processor.Add(CilOpCodes.Call, mappingAddMethod);
 
-				processor.Add(CilOpCodes.Ldloc, mappingLocal);
+				processor.Add(CilOpCodes.Ldloc, localVariableForOutputNode);
 				processor.AddScalarNodeForString("second");
 				processor.Add(CilOpCodes.Ldloc, pair);
 				processor.Add(CilOpCodes.Call, getValueReference);
 				processor.AddNodeForLoadedValue(secondSubNode);
 				processor.Add(CilOpCodes.Call, mappingAddMethod);
-
-				processor.Add(CilOpCodes.Ldloc, mappingLocal);
 			}
+		}
+
+		private static void AddExportVectorField(this CilInstructionCollection processor, UnityNode vectorNode, FieldDefinition field, CilLocalVariable yamlMappingNode)
+		{
+			processor.AddExportArrayField(vectorNode.SubNodes[0], field, yamlMappingNode);
 		}
 
 		private static void AddNodeForLoadedVector(this CilInstructionCollection processor, UnityNode vectorNode)
@@ -271,7 +289,48 @@ namespace AssemblyDumper.Passes
 			processor.AddNodeForLoadedArray(vectorNode.SubNodes[0]);
 		}
 
+		private static void AddExportByteArrayField(this CilInstructionCollection processor, UnityNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
+		{
+			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
+			processor.AddScalarNodeForString(node.OriginalName);
+			processor.AddLoadField(field);
+			processor.Add(CilOpCodes.Call, byteArrayToYamlMethod);
+			processor.Add(CilOpCodes.Call, mappingAddMethod);
+		}
+
+		private static void AddExportArrayField(this CilInstructionCollection processor, UnityNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
+		{
+			TypeSignature elementType = GenericTypeResolver.ResolveArrayType(node).BaseType;
+			if (elementType is not ArrayTypeSignature && elementType.FullName == "System.Byte")
+			{
+				processor.AddExportByteArrayField(node, field, yamlMappingNode);
+			}
+			else
+			{
+				processor.AddLoadField(field);
+				processor.AddLocalForLoadedArray(node, out CilLocalVariable sequenceNode);
+				processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
+				processor.AddScalarNodeForString(node.OriginalName);
+				processor.Add(CilOpCodes.Ldloc, sequenceNode);
+				processor.Add(CilOpCodes.Call, mappingAddMethod);
+			}
+		}
+
 		private static void AddNodeForLoadedArray(this CilInstructionCollection processor, UnityNode arrayNode)
+		{
+			TypeSignature elementType = GenericTypeResolver.ResolveArrayType(arrayNode).BaseType;
+			if (elementType is not ArrayTypeSignature && elementType.FullName == "System.Byte")
+			{
+				processor.Add(CilOpCodes.Call, byteArrayToYamlMethod);
+			}
+			else
+			{
+				processor.AddLocalForLoadedArray(arrayNode, out CilLocalVariable sequenceNode);
+				processor.Add(CilOpCodes.Ldloc, sequenceNode);
+			}
+		}
+
+		private static void AddLocalForLoadedArray(this CilInstructionCollection processor, UnityNode arrayNode, out CilLocalVariable sequenceNode)
 		{
 			UnityNode elementNode = arrayNode.SubNodes[1];
 			SzArrayTypeSignature arrayType = GenericTypeResolver.ResolveArrayType(arrayNode);
@@ -279,15 +338,14 @@ namespace AssemblyDumper.Passes
 			TypeSignature elementType = arrayType.BaseType;
 			if (elementType is not ArrayTypeSignature && elementType.FullName == "System.Byte")
 			{
-				processor.Add(CilOpCodes.Call, byteArrayToYamlMethod);
-				return;
+				throw new NotSupportedException("Byte arrays not supported");
 			}
 
 			CilLocalVariable array = new CilLocalVariable(arrayType);
 			processor.Owner.LocalVariables.Add(array);
 			processor.Add(CilOpCodes.Stloc, array);
 
-			CilLocalVariable sequenceNode = new CilLocalVariable(CommonTypeGetter.YAMLSequenceNodeDefinition.ToTypeSignature());
+			sequenceNode = new CilLocalVariable(CommonTypeGetter.YAMLSequenceNodeDefinition.ToTypeSignature());
 			processor.Owner.LocalVariables.Add(sequenceNode);
 			processor.Add(CilOpCodes.Ldc_I4, 0); //SequenceStyle.Block
 			processor.Add(CilOpCodes.Newobj, CommonTypeGetter.YAMLSequenceNodeConstructor);
@@ -337,11 +395,25 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
 			unconditionalBranchInstruction.Operand = loopConditionStartLabel;
+		}
 
-			processor.Add(CilOpCodes.Ldloc, sequenceNode);
+		private static void AddExportDictionaryField(this CilInstructionCollection processor, UnityNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
+		{
+			processor.AddLoadField(field);
+			processor.AddLocalForLoadedDictionary(node, out CilLocalVariable dictionaryNodeLocal);
+			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
+			processor.AddScalarNodeForString(node.OriginalName);
+			processor.Add(CilOpCodes.Ldloc, dictionaryNodeLocal);
+			processor.Add(CilOpCodes.Call, mappingAddMethod);
 		}
 
 		private static void AddNodeForLoadedDictionary(this CilInstructionCollection processor, UnityNode dictionaryNode)
+		{
+			processor.AddLocalForLoadedDictionary(dictionaryNode, out CilLocalVariable local);
+			processor.Add(CilOpCodes.Ldloc, local);
+		}
+
+		private static void AddLocalForLoadedDictionary(this CilInstructionCollection processor, UnityNode dictionaryNode, out CilLocalVariable sequenceLocal)
 		{
 			UnityNode pairNode = dictionaryNode.SubNodes[0].SubNodes[1];
 			UnityNode firstNode = dictionaryNode.SubNodes[0].SubNodes[1].SubNodes[0];
@@ -349,12 +421,12 @@ namespace AssemblyDumper.Passes
 
 			var genericDictType = GenericTypeResolver.ResolveDictionaryType(dictionaryNode);
 			var genericPairType = GenericTypeResolver.ResolvePairType(pairNode);
-			var genericListType = ((ITypeDefOrRef) SharedState.Importer.ImportSystemType("System.Collections.Generic.List`1")).ToTypeSignature().MakeGenericInstanceType(genericPairType);
+			var genericListType = ((ITypeDefOrRef)SharedState.Importer.ImportSystemType("System.Collections.Generic.List`1")).ToTypeSignature().MakeGenericInstanceType(genericPairType);
 			var dictLocal = new CilLocalVariable(genericDictType); //Create local
 			processor.Owner.LocalVariables.Add(dictLocal); //Add to method
 			processor.Add(CilOpCodes.Stloc, dictLocal); //Store dict in local
 
-			CilLocalVariable sequenceLocal = new CilLocalVariable(CommonTypeGetter.YAMLSequenceNodeDefinition.ToTypeSignature());
+			sequenceLocal = new CilLocalVariable(CommonTypeGetter.YAMLSequenceNodeDefinition.ToTypeSignature());
 			processor.Owner.LocalVariables.Add(sequenceLocal);
 			processor.Add(CilOpCodes.Ldc_I4, 1); //SequenceStyle.BlockCurve
 			processor.Add(CilOpCodes.Newobj, CommonTypeGetter.YAMLSequenceNodeConstructor);
@@ -397,7 +469,7 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, pairExportLocal);
 
 			processor.Add(CilOpCodes.Ldloc, sequenceLocal);
-			processor.Add(CilOpCodes.Ldloc, pairExportLocal); 
+			processor.Add(CilOpCodes.Ldloc, pairExportLocal);
 			processor.Add(CilOpCodes.Call, sequenceAddMethod); //Call the add method
 
 			//Increment i
@@ -411,9 +483,24 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
 			unconditionalBranchInstruction.Operand = loopConditionStartLabel;
+		}
 
-			//Load sequence node for next use
-			processor.Add(CilOpCodes.Ldloc, sequenceLocal);
+		private static void AddLoadField(this CilInstructionCollection processor, FieldDefinition field)
+		{
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, field);
+		}
+
+		private static void AddScalarNodeForString(this CilInstructionCollection processor, string name)
+		{
+			processor.Add(CilOpCodes.Ldstr, name);
+			processor.Add(CilOpCodes.Newobj, GetScalarNodeConstructor(SystemTypeGetter.String));
+		}
+
+		private static void AddScalarNodeForLoadedPrimitiveType(this CilInstructionCollection processor, string typeName)
+		{
+			var type = SystemTypeGetter.GetCppPrimitiveTypeSignature(typeName) ?? throw new ArgumentException(nameof(typeName));
+			processor.Add(CilOpCodes.Newobj, GetScalarNodeConstructor(type));
 		}
 
 		private static MethodDefinition GetYamlExportMethod(this TypeDefinition type)
