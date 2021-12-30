@@ -16,7 +16,6 @@ namespace AssemblyDumper.Passes
 		private static ITypeDefOrRef commonPPtrTypeRef;
 		private static ITypeDefOrRef unityObjectBaseInterfaceRef;
 		private static GenericInstanceTypeSignature unityObjectBasePPtrRef;
-		private static SzArrayTypeSignature unityObjectBasePPtrArrayType;
 		private static GenericInstanceTypeSignature unityObjectBasePPtrListType;
 		private static IMethodDefOrRef unityObjectBasePPtrListConstructor;
 		private static IMethodDefOrRef unityObjectBasePPtrListAddRange;
@@ -25,6 +24,7 @@ namespace AssemblyDumper.Passes
 		private static ITypeDefOrRef dependencyContextRef;
 		private static IMethodDefOrRef fetchDependenciesFromDependent;
 		private static IMethodDefOrRef fetchDependenciesFromArray;
+		private static IMethodDefOrRef fetchDependenciesFromArrayArray;
 
 		private readonly static List<TypeDefinition> processedTypes = new List<TypeDefinition>();
 		private readonly static List<TypeDefinition> nonDependentTypes = new List<TypeDefinition>();
@@ -34,7 +34,6 @@ namespace AssemblyDumper.Passes
 			commonPPtrTypeRef = SharedState.Importer.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
 			unityObjectBaseInterfaceRef = SharedState.Importer.ImportCommonType<IUnityObjectBase>();
 			unityObjectBasePPtrRef = commonPPtrTypeRef.MakeGenericInstanceType(unityObjectBaseInterfaceRef.ToTypeSignature());
-			unityObjectBasePPtrArrayType = unityObjectBasePPtrRef.MakeSzArrayType();
 			unityObjectBasePPtrListType = SystemTypeGetter.List.MakeGenericInstanceType(unityObjectBasePPtrRef);
 			unityObjectBasePPtrListConstructor = MethodUtils.MakeConstructorOnGenericType(unityObjectBasePPtrListType, 0);
 			unityObjectBasePPtrListAddRange = MethodUtils.MakeMethodOnGenericType(unityObjectBasePPtrListType, "AddRange");
@@ -45,6 +44,7 @@ namespace AssemblyDumper.Passes
 			dependencyContextRef = SharedState.Importer.ImportCommonType<AssetRipper.Core.Parser.Asset.DependencyContext>();
 			fetchDependenciesFromDependent = SharedState.Importer.ImportCommonMethod<AssetRipper.Core.Parser.Asset.DependencyContext>(m => m.Name == "FetchDependenciesFromDependent");
 			fetchDependenciesFromArray = SharedState.Importer.ImportCommonMethod<AssetRipper.Core.Parser.Asset.DependencyContext>(m => m.Name == "FetchDependenciesFromArray");
+			fetchDependenciesFromArrayArray = SharedState.Importer.ImportCommonMethod<AssetRipper.Core.Parser.Asset.DependencyContext>(m => m.Name == "FetchDependenciesFromArrayArray");
 		}
 
 		public static void DoPass()
@@ -122,7 +122,11 @@ namespace AssemblyDumper.Passes
 		private static bool AddFetchDependenciesFromNormalField(this CilInstructionCollection processor, FieldDefinition field, CilLocalVariable listVariable)
 		{
 			TypeSignature fieldType = field.Signature.FieldType;
-			if (fieldType is GenericInstanceTypeSignature genericInstanceType)
+			if (fieldType.IsPrimitiveType())
+			{
+				return false;
+			}
+			else if (fieldType is GenericInstanceTypeSignature genericInstanceType)
 			{
 				processor.AddFetchDependenciesFromField(field, fieldType, listVariable, 0);
 			}
@@ -146,11 +150,17 @@ namespace AssemblyDumper.Passes
 			if(fieldType is not SzArrayTypeSignature arrayType)
 				throw new ArgumentException(nameof(field));
 			TypeSignature genericTypeParameter = arrayType.BaseType;
-			if (genericTypeParameter is GenericInstanceTypeSignature genericInstanceType)
+			TypeSignature elementType = arrayType.BaseType;
+
+			if (elementType.IsPrimitiveType())
+			{
+				return false;
+			}
+			else if (elementType is GenericInstanceTypeSignature genericInstanceType)
 			{
 				processor.AddFetchDependenciesFromField(field, genericTypeParameter, listVariable, 1);
 			}
-			else if (genericTypeParameter.ToTypeDefOrRef() is TypeDefinition fieldTypeDef)
+			else if (elementType.ToTypeDefOrRef() is TypeDefinition fieldTypeDef)
 			{
 				fieldTypeDef.MaybeProcessType();
 				if (nonDependentTypes.Contains(fieldTypeDef))
@@ -159,7 +169,40 @@ namespace AssemblyDumper.Passes
 			}
 			else
 			{
-				throw new NotSupportedException($"{genericTypeParameter.Name} {field.DeclaringType.Name}.{field.Name}");
+				throw new NotSupportedException($"{fieldType.Name} {field.DeclaringType.Name}.{field.Name}");
+			}
+			return true;
+		}
+
+		private static bool AddFetchDependenciesFromArrayArrayField(this CilInstructionCollection processor, FieldDefinition field, CilLocalVariable listVariable)
+		{
+			TypeSignature fieldType = field.Signature.FieldType;
+			if (fieldType is not SzArrayTypeSignature arrayType)
+				throw new ArgumentException(nameof(field));
+			if (arrayType.BaseType is not SzArrayTypeSignature subArrayType)
+				throw new ArgumentException(nameof(field));
+
+			TypeSignature genericTypeParameter = subArrayType;
+			TypeSignature elementType = subArrayType.BaseType;
+
+			if (elementType.IsPrimitiveType())
+			{
+				return false;
+			}
+			else if (elementType is GenericInstanceTypeSignature genericInstanceType)
+			{
+				processor.AddFetchDependenciesFromField(field, genericTypeParameter, listVariable, 2);
+			}
+			else if (elementType.ToTypeDefOrRef() is TypeDefinition fieldTypeDef)
+			{
+				fieldTypeDef.MaybeProcessType();
+				if (nonDependentTypes.Contains(fieldTypeDef))
+					return false;
+				processor.AddFetchDependenciesFromField(field, genericTypeParameter, listVariable, 2);
+			}
+			else
+			{
+				throw new NotSupportedException($"{fieldType.Name} {field.DeclaringType.Name}.{field.Name}");
 			}
 			return true;
 		}
@@ -167,27 +210,12 @@ namespace AssemblyDumper.Passes
 		private static bool AddFetchDependenciesFromField(this CilInstructionCollection processor, FieldDefinition field, CilLocalVariable listVariable)
 		{
 			TypeSignature fieldType = field.Signature.FieldType;
-			if (fieldType.IsPrimitiveType())
-				return false;
+			
 			if (fieldType is SzArrayTypeSignature arrayType)
 			{
-				TypeSignature arrayBaseType = arrayType.BaseType;
-				if (arrayBaseType.IsPrimitiveType())
-					return false;
-				if (arrayBaseType is SzArrayTypeSignature subArrayType)
+				if (arrayType.BaseType is SzArrayTypeSignature)
 				{
-					TypeSignature subArrayBaseType = subArrayType.BaseType;
-					if (subArrayBaseType.IsPrimitiveType())
-						return false;
-
-					if (subArrayBaseType.ToTypeDefOrRef() is TypeDefinition fieldTypeDef)
-					{
-						fieldTypeDef.MaybeProcessType();
-						if (nonDependentTypes.Contains(fieldTypeDef))
-							return false;
-					}
-
-					throw new NotSupportedException($"{fieldType.Name} {field.DeclaringType.Name}.{field.Name}");
+					return processor.AddFetchDependenciesFromArrayArrayField(field, listVariable);
 				}
 				else
 				{
@@ -206,6 +234,7 @@ namespace AssemblyDumper.Passes
 			{
 				0 => MethodUtils.MakeGenericInstanceMethod(fetchDependenciesFromDependent, genericTypeParameter),
 				1 => MethodUtils.MakeGenericInstanceMethod(fetchDependenciesFromArray, genericTypeParameter),
+				2 => MethodUtils.MakeGenericInstanceMethod(fetchDependenciesFromArrayArray, genericTypeParameter),
 				_ => throw new ArgumentOutOfRangeException(nameof(depth)),
 			};
 			processor.Add(CilOpCodes.Ldloc, listVariable);
