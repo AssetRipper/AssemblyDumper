@@ -113,18 +113,24 @@ namespace AssemblyDumper.Passes
 
 		private static void AddExportFieldContent(this CilInstructionCollection processor, UnityNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
 		{
-			//Primitive fields like int and string
-			//The other way works too, but this generates cleaner and more efficient code
-			if(SystemTypeGetter.GetCppPrimitiveTypeSignature(node.TypeName) != null && !SharedState.TypeDictionary.TryGetValue(node.TypeName, out var _))
+			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out TypeDefinition typeDefinition))
+			{
+				processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
+				processor.AddScalarNodeForString(node.OriginalName);
+				processor.AddLoadField(field);
+				processor.AddNodeForLoadedAssetValue(typeDefinition);
+			}
+			else if (SystemTypeGetter.GetCppPrimitiveTypeSignature(node.TypeName) != null)
 			{
 				processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
 				processor.AddScalarNodeForString(node.OriginalName);
 				processor.AddLoadField(field);
 				processor.AddScalarNodeForLoadedPrimitiveType(node.TypeName);
 			}
-			else //Other fields
+			else //Other fields like arrays and dicitionaries. Also works on normal fields but the above generates cleaner and more efficient code
 			{
-				processor.AddNodeForField(node, field);
+				processor.AddLoadField(field);
+				processor.AddNodeForLoadedValue(node);
 				CilLocalVariable fieldNode = new CilLocalVariable(CommonTypeGetter.YAMLNodeDefinition.ToTypeSignature());
 				processor.Owner.LocalVariables.Add(fieldNode);
 				processor.Add(CilOpCodes.Stloc, fieldNode);
@@ -134,12 +140,6 @@ namespace AssemblyDumper.Passes
 				processor.Add(CilOpCodes.Ldloc, fieldNode);
 			}
 			processor.Add(CilOpCodes.Call, mappingAddMethod);
-		}
-
-		private static void AddNodeForField(this CilInstructionCollection processor, UnityNode node, FieldDefinition field)
-		{
-			processor.AddLoadField(field);
-			processor.AddNodeForLoadedValue(node);
 		}
 
 		private static void AddNodeForLoadedValue(this CilInstructionCollection processor, UnityNode node)
