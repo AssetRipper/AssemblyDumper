@@ -277,12 +277,20 @@ namespace AssemblyDumper.Passes
 
 		private static void AddExportVectorField(this CilInstructionCollection processor, UnityNode vectorNode, FieldDefinition field, CilLocalVariable yamlMappingNode)
 		{
-			processor.AddExportArrayField(vectorNode.SubNodes[0], field, yamlMappingNode);
+			//This cloning is necessary to prevent the code from using "Array" instead of the actual name
+			var arrayNode = vectorNode.SubNodes[0].DeepClone();
+			arrayNode.Name = vectorNode.Name;
+			arrayNode.OriginalName = vectorNode.OriginalName;
+			processor.AddExportArrayField(arrayNode, field, yamlMappingNode);
 		}
 
 		private static void AddLocalForLoadedVector(this CilInstructionCollection processor, UnityNode vectorNode, out CilLocalVariable localVariable)
 		{
-			processor.AddLocalForLoadedArray(vectorNode.SubNodes[0], out localVariable);
+			//This cloning is necessary to prevent the code from using "Array" instead of the actual name
+			var arrayNode = vectorNode.SubNodes[0].DeepClone();
+			arrayNode.Name = vectorNode.Name;
+			arrayNode.OriginalName = vectorNode.OriginalName;
+			processor.AddLocalForLoadedArray(arrayNode, out localVariable);
 		}
 
 		private static void AddExportByteArrayField(this CilInstructionCollection processor, UnityNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
