@@ -25,7 +25,11 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 31: Component Interface");
-			if (SharedState.TypeDictionary.TryGetValue("Component", out TypeDefinition type))
+			if (!SharedState.TypeDictionary.TryGetValue("Component", out TypeDefinition type))
+			{
+				throw new Exception("Component not found");
+			}
+			else
 			{
 				ITypeDefOrRef componentInterface = SharedState.Importer.ImportCommonType<IComponent>();
 				type.Interfaces.Add(new InterfaceImplementation(componentInterface));
@@ -38,10 +42,6 @@ namespace AssemblyDumper.Passes
 				processor.Add(CilOpCodes.Ldfld, field);
 				processor.Add(CilOpCodes.Call, explicitConversionMethod);
 				processor.Add(CilOpCodes.Ret);
-			}
-			else
-			{
-				throw new Exception("Component not found");
 			}
 		}
 	}
