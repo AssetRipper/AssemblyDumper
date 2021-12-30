@@ -1,5 +1,6 @@
 ﻿using AsmResolver.DotNet;
 using AsmResolver.DotNet.Code.Cil;
+using AsmResolver.DotNet.Signatures.Types;
 using AsmResolver.PE.DotNet.Cil;
 using AssemblyDumper.Unity;
 using AssemblyDumper.Utils;
@@ -81,7 +82,7 @@ namespace AssemblyDumper.Passes
 		{
 			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out var fieldType))
 			{
-				ReadAssetType(node, processor, field, fieldType, 0);
+				ReadAssetTypeToField(node, processor, field, fieldType, 0);
 				return;
 			}
 
@@ -90,23 +91,49 @@ namespace AssemblyDumper.Passes
 				case "vector":
 				case "set":
 				case "staticvector":
-					ReadVector(node, processor, field, 1);
+					ReadVectorToField(node, processor, field, 1);
 					return;
 				case "map":
-					ReadDictionary(node, processor, field);
+					ReadDictionaryToField(node, processor, field);
 					return;
 				case "pair":
-					ReadPair(node, processor, field);
+					ReadPairToField(node, processor, field);
 					return;
 				case "TypelessData": //byte array
-					ReadByteArray(node, processor, field);
+					ReadByteArrayToField(node, processor, field);
 					return;
 				case "Array":
-					ReadArray(node, processor, field, 1);
+					ReadArrayToField(node, processor, field, 1);
 					return;
 			}
 
-			ReadPrimitiveType(node, processor, field, 0);
+			ReadPrimitiveTypeToField(node, processor, field, 0);
+		}
+
+		private static CilLocalVariable ReadContentToLocal(UnityNode node, CilInstructionCollection processor)
+		{
+			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out var fieldType))
+			{
+				return ReadAssetTypeToLocal(node, processor, fieldType, 0);
+			}
+
+			switch (node.TypeName)
+			{
+				case "vector":
+				case "set":
+				case "staticvector":
+					return ReadVectorToLocal(node, processor, 1);
+				case "map":
+					return ReadDictionaryToLocal(node, processor);
+				case "pair":
+					return ReadPairToLocal(node, processor);
+				case "TypelessData": //byte array
+					return ReadByteArrayToLocal(node, processor);
+				case "Array":
+					return ReadArrayToLocal(node, processor, 1);
+				default:
+					return ReadPrimitiveTypeToLocal(node, processor, 0);
+			}
 		}
 
 		private static void MaybeAlignBytes(UnityNode node, CilInstructionCollection processor)
@@ -124,7 +151,30 @@ namespace AssemblyDumper.Passes
 			}
 		}
 
-		private static void ReadPrimitiveType(UnityNode node, CilInstructionCollection processor, FieldDefinition field, int arrayDepth)
+		private static void ReadPrimitiveTypeToField(UnityNode node, CilInstructionCollection processor, FieldDefinition field, int arrayDepth)
+		{
+			//Load this
+			processor.Add(CilOpCodes.Ldarg_0);
+
+			ReadPrimitiveTypeWithoutAligning(node, processor, arrayDepth);
+
+			//Store result in field
+			processor.Add(CilOpCodes.Stfld, field);
+
+			MaybeAlignBytes(node, processor);
+		}
+
+		private static CilLocalVariable ReadPrimitiveTypeToLocal(UnityNode node, CilInstructionCollection processor, int arrayDepth)
+		{
+			TypeSignature fieldType = ReadPrimitiveTypeWithoutAligning(node, processor, arrayDepth);
+			CilLocalVariable local = new CilLocalVariable(fieldType);
+			processor.Owner.LocalVariables.Add(local);
+			processor.Add(CilOpCodes.Stloc, local);
+			MaybeAlignBytes(node, processor);
+			return local;
+		}
+
+		private static TypeSignature ReadPrimitiveTypeWithoutAligning(UnityNode node, CilInstructionCollection processor, int arrayDepth)
 		{
 			//Primitives
 			var csPrimitiveTypeName = SystemTypeGetter.CppPrimitivesToCSharpPrimitives[node.TypeName];
@@ -144,10 +194,6 @@ namespace AssemblyDumper.Passes
 			if (primitiveReadMethod == null)
 				throw new Exception($"Missing a read method for {csPrimitiveTypeName} in {processor.Owner.Owner.DeclaringType}");
 
-			//Load this
-			if (field != null)
-				processor.Add(CilOpCodes.Ldarg_0);
-
 			//Load reader
 			processor.Add(CilOpCodes.Ldarg_1);
 
@@ -159,24 +205,42 @@ namespace AssemblyDumper.Passes
 			//Call read method
 			processor.Add(CilOpCodes.Call, SharedState.Importer.ImportMethod(primitiveReadMethod));
 
+			return arrayDepth switch
+			{
+				0 => csPrimitiveType,
+				1 => csPrimitiveType.MakeSzArrayType(),
+				2 => csPrimitiveType.MakeSzArrayType().MakeSzArrayType(),
+				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth)),
+			};
+		}
+
+		private static void ReadAssetTypeToField(UnityNode node, CilInstructionCollection processor, FieldDefinition field, TypeDefinition fieldType, int arrayDepth)
+		{
+			//Load "this" for field store later
+			processor.Add(CilOpCodes.Ldarg_0);
+
+			ReadAssetTypeWithoutAligning(node, processor, fieldType, arrayDepth);
+
 			//Store result in field
-			if (field != null)
-				processor.Add(CilOpCodes.Stfld, field);
+			processor.Add(CilOpCodes.Stfld, field);
 
 			//Maybe Align Bytes
-			//Note: string has its own alignment built-in. That's why this doesn't appear to align strings
 			MaybeAlignBytes(node, processor);
 		}
 
-		/// <summary>
-		/// Complex field type, IAssetReadable, call read
-		/// </summary>
-		private static void ReadAssetType(UnityNode node, CilInstructionCollection processor, FieldDefinition field, TypeDefinition fieldType, int arrayDepth)
+		private static CilLocalVariable ReadAssetTypeToLocal(UnityNode node, CilInstructionCollection processor, TypeDefinition fieldBaseType, int arrayDepth)
 		{
-			//Load "this" for field store later
-			if (field != null)
-				processor.Add(CilOpCodes.Ldarg_0);
+			TypeSignature fieldSignature = ReadAssetTypeWithoutAligning(node, processor, fieldBaseType, arrayDepth);
+			CilLocalVariable local = new CilLocalVariable(fieldSignature);
+			processor.Owner.LocalVariables.Add(local);
+			processor.Add(CilOpCodes.Stloc, local);
+			MaybeAlignBytes(node, processor);
+			return local;
+		}
 
+		private static TypeSignature ReadAssetTypeWithoutAligning(UnityNode node, CilInstructionCollection processor, TypeDefinition fieldBaseType, int arrayDepth)
+		{
+			TypeSignature fieldBaseSignature = fieldBaseType.ToTypeSignature();
 			//Load reader
 			processor.Add(CilOpCodes.Ldarg_1);
 
@@ -190,7 +254,7 @@ namespace AssemblyDumper.Passes
 			};
 
 			//Make generic ReadAsset<T>
-			var genericInst = MethodUtils.MakeGenericInstanceMethod(readMethod, fieldType.ToTypeSignature());
+			var genericInst = MethodUtils.MakeGenericInstanceMethod(readMethod, fieldBaseSignature);
 
 			if (arrayDepth > 0)//ReadAssetArray and ReadAssetArrayArray have an allowAlignment parameter
 			{
@@ -200,20 +264,37 @@ namespace AssemblyDumper.Passes
 			//Call it
 			processor.Add(CilOpCodes.Call, genericInst);
 
-			//Store result in field
-			if (field != null)
-				processor.Add(CilOpCodes.Stfld, field);
+			return arrayDepth switch
+			{
+				0 => fieldBaseSignature,
+				1 => fieldBaseSignature.MakeSzArrayType(),
+				2 => fieldBaseSignature.MakeSzArrayType().MakeSzArrayType(),
+				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth)),
+			};
+		}
 
-			//Maybe Align Bytes
+		private static void ReadByteArrayToField(UnityNode node, CilInstructionCollection processor, FieldDefinition field)
+		{
+			//Load "this" for field store later
+			processor.Add(CilOpCodes.Ldarg_0);
+			ReadByteArrayWithoutAligning(node, processor);
+			//Store result in field
+			processor.Add(CilOpCodes.Stfld, field);
 			MaybeAlignBytes(node, processor);
 		}
 
-		private static void ReadByteArray(UnityNode node, CilInstructionCollection processor, FieldDefinition field)
+		private static CilLocalVariable ReadByteArrayToLocal(UnityNode node, CilInstructionCollection processor)
 		{
-			//Load "this" for field store later
-			if (field != null)
-				processor.Add(CilOpCodes.Ldarg_0);
+			ReadByteArrayWithoutAligning(node, processor);
+			CilLocalVariable local = new CilLocalVariable(SystemTypeGetter.UInt8.MakeSzArrayType());
+			processor.Owner.LocalVariables.Add(local);
+			processor.Add(CilOpCodes.Stloc, local);
+			MaybeAlignBytes(node, processor);
+			return local;
+		}
 
+		private static void ReadByteArrayWithoutAligning(UnityNode node, CilInstructionCollection processor)
+		{
 			//Load reader
 			processor.Add(CilOpCodes.Ldarg_1);
 
@@ -222,55 +303,59 @@ namespace AssemblyDumper.Passes
 
 			//Call it
 			processor.Add(CilOpCodes.Call, SharedState.Importer.ImportMethod(readMethod));
-
-			//Store result in field
-			if (field != null)
-				processor.Add(CilOpCodes.Stfld, field);
-
-			//Maybe Align Bytes
-			//warning: this will generate incorrect reads
-			//there will be a double alignment from the endian reader aligning itself
-			MaybeAlignBytes(node, processor);
 		}
 
-		private static void ReadVector(UnityNode node, CilInstructionCollection processor, FieldDefinition field, int arrayDepth)
+		private static void ReadVectorToField(UnityNode node, CilInstructionCollection processor, FieldDefinition field, int arrayDepth)
 		{
 			var listTypeNode = node.SubNodes[0];
 			if (listTypeNode.TypeName is "Array")
 			{
-				ReadArray(listTypeNode, processor, field, arrayDepth);
+				ReadArrayToField(listTypeNode, processor, field, arrayDepth);
 			}
 			else
 			{
 				throw new ArgumentException($"Invalid subnode for {node.TypeName}", nameof(node));
 			}
 
-			//warning: this will generate incorrect reads
-			//there will be a double alignment from the endian reader aligning itself
 			MaybeAlignBytes(node, processor);
 		}
 
-		private static void ReadArray(UnityNode node, CilInstructionCollection processor, FieldDefinition field, int arrayDepth)
+		private static CilLocalVariable ReadVectorToLocal(UnityNode node, CilInstructionCollection processor, int arrayDepth)
+		{
+			var listTypeNode = node.SubNodes[0];
+			if (listTypeNode.TypeName is "Array")
+			{
+				var result = ReadArrayToLocal(listTypeNode, processor, arrayDepth);
+				MaybeAlignBytes(node, processor);
+				return result;
+			}
+			else
+			{
+				throw new ArgumentException($"Invalid subnode for {node.TypeName}", nameof(node));
+			}
+		}
+
+		private static void ReadArrayToField(UnityNode node, CilInstructionCollection processor, FieldDefinition field, int arrayDepth)
 		{
 			var listTypeNode = node.SubNodes[1];
 			if (SharedState.TypeDictionary.TryGetValue(listTypeNode.TypeName, out var fieldType))
 			{
-				ReadAssetType(listTypeNode, processor, field, fieldType, arrayDepth);
+				ReadAssetTypeToField(listTypeNode, processor, field, fieldType, arrayDepth);
 			}
 			else
 				switch (listTypeNode.TypeName)
 				{
 					case "vector" or "set" or "staticvector":
-						ReadVector(listTypeNode, processor, field, arrayDepth + 1);
+						ReadVectorToField(listTypeNode, processor, field, arrayDepth + 1);
 						break;
 					case "Array":
-						ReadArray(listTypeNode, processor, field, arrayDepth + 1);
+						ReadArrayToField(listTypeNode, processor, field, arrayDepth + 1);
 						break;
 					case "map":
 						if (arrayDepth > 1)
 							throw new("ReadArray does not support dictionary arrays with a depth > 1. Found in {node.Name} (field {field}) of {processor.Body.Method.DeclaringType}");
 
-						ReadDictionaryArray(node, processor, field);
+						ReadDictionaryArrayToField(processor, field, node);
 						break;
 					case "pair":
 						if (arrayDepth > 2)
@@ -278,21 +363,64 @@ namespace AssemblyDumper.Passes
 
 						if (arrayDepth == 2)
 						{
-							ReadPairArrayArray(processor, field, listTypeNode);
+							ReadPairArrayArrayToField(processor, field, listTypeNode);
 							break;
 						}
 
-						ReadPairArray(processor, field, listTypeNode);
+						ReadPairArrayToField(processor, field, listTypeNode);
 						break;
 					default:
-						ReadPrimitiveType(listTypeNode, processor, field, arrayDepth);
+						ReadPrimitiveTypeToField(listTypeNode, processor, field, arrayDepth);
 						break;
 				}
 
 			MaybeAlignBytes(node, processor);
 		}
 
-		private static void ReadPairArray(CilInstructionCollection processor, FieldDefinition field, UnityNode listTypeNode)
+		private static CilLocalVariable ReadArrayToLocal(UnityNode node, CilInstructionCollection processor, int arrayDepth)
+		{
+			var listTypeNode = node.SubNodes[1];
+			if (SharedState.TypeDictionary.TryGetValue(listTypeNode.TypeName, out var fieldType))
+			{
+				return ReadAssetTypeToLocal(listTypeNode, processor, fieldType, arrayDepth);
+			}
+			else
+				switch (listTypeNode.TypeName)
+				{
+					case "vector" or "set" or "staticvector":
+						return ReadVectorToLocal(listTypeNode, processor, arrayDepth + 1);
+					case "Array":
+						return ReadArrayToLocal(listTypeNode, processor, arrayDepth + 1);
+					case "map":
+						if (arrayDepth > 1)
+							throw new NotSupportedException($"ReadArray does not support dictionary arrays with a depth > 1. Found in {node.Name} of {processor.Owner.Owner.DeclaringType}");
+
+						return ReadDictionaryArrayToLocal(processor, node);
+					case "pair":
+						if (arrayDepth > 2)
+							throw new($"ReadArray does not support Pair arrays with a depth > 2. Found in {node.Name} of {processor.Owner.Owner.DeclaringType}");
+
+						if (arrayDepth == 2)
+						{
+							return ReadPairArrayArray(processor, listTypeNode);
+						}
+
+						return ReadPairArrayToLocal(processor, listTypeNode);
+					default:
+						return ReadPrimitiveTypeToLocal(listTypeNode, processor, arrayDepth);
+				}
+		}
+
+		private static void ReadPairArrayToField(CilInstructionCollection processor, FieldDefinition field, UnityNode listTypeNode)
+		{
+			var arrayLocal = ReadPairArrayToLocal(processor, listTypeNode);
+			//Now just store field
+			processor.Add(CilOpCodes.Ldarg_0); //Load this
+			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array
+			processor.Add(CilOpCodes.Stfld, field); //Store field
+		}
+
+		private static CilLocalVariable ReadPairArrayToLocal(CilInstructionCollection processor, UnityNode listTypeNode)
 		{
 			//Strategy:
 			//Read Count
@@ -342,9 +470,10 @@ namespace AssemblyDumper.Passes
 			jumpTargetLabel.Instruction = processor.Add(CilOpCodes.Nop); //Create a dummy instruction to jump back to
 
 			//Read element at index i of array
+			var pairLocal = ReadPairToLocal(listTypeNode, processor); //Read the pair
 			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array local
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			ReadPair(listTypeNode, processor, null); //Read the pair
+			processor.Add(CilOpCodes.Ldloc, pairLocal);
 			processor.Add(CilOpCodes.Stelem, genericKvp.ToTypeDefOrRef()); //Store in array
 
 			//Increment i
@@ -359,17 +488,19 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
 			unconditionalBranch.Operand = loopConditionStartLabel;
 
-			//Now just store field
-			if (field != null)
-				processor.Add(CilOpCodes.Ldarg_0); //Load this
-			
-			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array
-
-			if (field != null)
-				processor.Add(CilOpCodes.Stfld, field); //Store field
+			return arrayLocal;
 		}
 
-		private static void ReadPairArrayArray(CilInstructionCollection processor, FieldDefinition field, UnityNode listTypeNode)
+		private static void ReadPairArrayArrayToField(CilInstructionCollection processor, FieldDefinition field, UnityNode listTypeNode)
+		{
+			var arrayLocal = ReadPairArrayArray(processor, listTypeNode);
+			//Now just store field
+			processor.Add(CilOpCodes.Ldarg_0); //Load this
+			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array
+			processor.Add(CilOpCodes.Stfld, field); //Store field
+		}
+
+		private static CilLocalVariable ReadPairArrayArray(CilInstructionCollection processor, UnityNode pairNode)
 		{
 			//Strategy:
 			//Read Count
@@ -379,8 +510,8 @@ namespace AssemblyDumper.Passes
 			//Store array in field
 
 			//Resolve things we'll need
-			var first = listTypeNode.SubNodes[0];
-			var second = listTypeNode.SubNodes[1];
+			var first = pairNode.SubNodes[0];
+			var second = pairNode.SubNodes[1];
 			var genericKvp = GenericTypeResolver.ResolvePairType(first, second);
 
 			var arrayType = genericKvp.MakeSzArrayType();
@@ -416,10 +547,8 @@ namespace AssemblyDumper.Passes
 			var jumpTarget = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			//Read element at index i of array
-			ReadPairArray(processor, null, listTypeNode); //Read the array of pairs
-			var pairArrayLocal = new CilLocalVariable(arrayType); //Create local for array of pairs
-			processor.Owner.LocalVariables.Add(pairArrayLocal); //Add to method
-			processor.Add(CilOpCodes.Stloc, pairArrayLocal); //Store pair array
+			var pairArrayLocal = ReadPairArrayToLocal(processor, pairNode); //Read the array of pairs
+			
 			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array of arrays local
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
 			processor.Add(CilOpCodes.Ldloc, pairArrayLocal); //Load array of pairs
@@ -437,16 +566,21 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
 			unconditionalBranch.Operand = loopConditionStartLabel;
 
-			//Now just store field
-			if (field != null)
-				processor.Add(CilOpCodes.Ldarg_0); //Load this
-			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array
+			MaybeAlignBytes(pairNode, processor);
 
-			if (field != null)
-				processor.Add(CilOpCodes.Stfld, field); //Store field
+			return arrayLocal;
 		}
 
-		private static void ReadDictionaryArray(UnityNode node, CilInstructionCollection processor, FieldDefinition field)
+		private static void ReadDictionaryArrayToField(CilInstructionCollection processor, FieldDefinition field, UnityNode node)
+		{
+			var arrayLocal = ReadDictionaryArrayToLocal(processor, node);
+			//Now just store field
+			processor.Add(CilOpCodes.Ldarg_0); //Load this
+			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array
+			processor.Add(CilOpCodes.Stfld, field); //Store field
+		}
+
+		private static CilLocalVariable ReadDictionaryArrayToLocal(CilInstructionCollection processor, UnityNode node)
 		{
 			//you know the drill
 			//read count
@@ -491,9 +625,10 @@ namespace AssemblyDumper.Passes
 			var jumpTarget = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			//Read element at index i of array
+			var dictLocal = ReadDictionaryToLocal(dictNode, processor);
 			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array local
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			ReadDictionary(dictNode, processor, null);
+			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load dict
 			processor.Add(CilOpCodes.Stelem, dictType.ToTypeDefOrRef()); //Store in array
 
 			//Increment i
@@ -508,13 +643,23 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
 			unconditionalBranch.Operand = loopConditionStartLabel;
 
+			MaybeAlignBytes(node, processor);
+
+			return arrayLocal;
+		}
+
+		private static void ReadDictionaryToField(UnityNode node, CilInstructionCollection processor, FieldDefinition field)
+		{
+			CilLocalVariable dictLocal = ReadDictionaryToLocal(node, processor);
 			//Now just store field
 			processor.Add(CilOpCodes.Ldarg_0); //Load this
-			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array
+
+			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load dict
+
 			processor.Add(CilOpCodes.Stfld, field); //Store field
 		}
 
-		private static void ReadDictionary(UnityNode node, CilInstructionCollection processor, FieldDefinition field)
+		private static CilLocalVariable ReadDictionaryToLocal(UnityNode node, CilInstructionCollection processor)
 		{
 			//Strategy:
 			//Read Count
@@ -558,9 +703,11 @@ namespace AssemblyDumper.Passes
 			var jumpTarget = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			//Read ith key-value pair of dict 
+			var local1 = ReadContentToLocal(node.SubNodes[0].SubNodes[1].SubNodes[0], processor); //Load first
+			var local2 = ReadContentToLocal(node.SubNodes[0].SubNodes[1].SubNodes[1], processor); //Load second
 			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load dict local
-			ReadFieldContent(node.SubNodes[0].SubNodes[1].SubNodes[0], processor, null); //Load first
-			ReadFieldContent(node.SubNodes[0].SubNodes[1].SubNodes[1], processor, null); //Load second
+			processor.Add(CilOpCodes.Ldloc, local1); //Load 1st local
+			processor.Add(CilOpCodes.Ldloc, local2); //Load 2nd local
 			processor.Add(CilOpCodes.Call, addMethod); //Call Add(TKey, TValue)
 
 			//Increment i
@@ -575,17 +722,32 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
 			unconditionalBranch.Operand = loopConditionStartLabel;
 
-			//Now just store field
-			if (field != null)
-				processor.Add(CilOpCodes.Ldarg_0); //Load this
+			MaybeAlignBytes(node, processor);
 
-			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load dict
-
-			if (field != null)
-				processor.Add(CilOpCodes.Stfld, field); //Store field
+			return dictLocal;
 		}
 
-		private static void ReadPair(UnityNode node, CilInstructionCollection processor, FieldDefinition field)
+		private static void ReadPairToField(UnityNode node, CilInstructionCollection processor, FieldDefinition field)
+		{
+			//Load this for later usage
+			processor.Add(CilOpCodes.Ldarg_0);
+
+			ReadPair(node, processor);
+
+			//Store in field if desired
+			processor.Add(CilOpCodes.Stfld, field);
+		}
+
+		private static CilLocalVariable ReadPairToLocal(UnityNode node, CilInstructionCollection processor)
+		{
+			TypeSignature pairType = ReadPair(node, processor);
+			CilLocalVariable local = new CilLocalVariable(pairType);
+			processor.Owner.LocalVariables.Add(local);
+			processor.Add(CilOpCodes.Stloc, local);
+			return local;
+		}
+
+		private static TypeSignature ReadPair(UnityNode node, CilInstructionCollection processor)
 		{
 			//Read one, read two, construct tuple, store field
 			//Passing a null field to any of the Read generators causes no field store or this load to be emitted
@@ -593,15 +755,14 @@ namespace AssemblyDumper.Passes
 			var first = node.SubNodes[0];
 			var second = node.SubNodes[1];
 
-			//Load this for later usage
-			if (field != null)
-				processor.Add(CilOpCodes.Ldarg_0);
-
 			//Load the left side of the pair
-			ReadFieldContent(first, processor, null);
+			var local1 = ReadContentToLocal(first, processor);
 
 			//Load the right side of the pair
-			ReadFieldContent(second, processor, null);
+			var local2 = ReadContentToLocal(second, processor);
+
+			processor.Add(CilOpCodes.Ldloc, local1);
+			processor.Add(CilOpCodes.Ldloc, local2);
 
 			var genericKvp = GenericTypeResolver.ResolvePairType(first, second);
 
@@ -610,9 +771,7 @@ namespace AssemblyDumper.Passes
 			//Call constructor
 			processor.Add(CilOpCodes.Newobj, genericCtor);
 
-			//Store in field if desired
-			if (field != null)
-				processor.Add(CilOpCodes.Stfld, field);
+			return genericKvp;
 		}
 	}
 }
