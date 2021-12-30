@@ -28,6 +28,7 @@ namespace AssemblyDumper
 		public static ITypeDefOrRef YAMLNodeDefinition => SharedState.Importer.ImportCommonType<YAMLNode>();
 		public static ITypeDefOrRef YAMLMappingNodeDefinition => SharedState.Importer.ImportCommonType<YAMLMappingNode>();
 		public static ITypeDefOrRef YAMLSequenceNodeDefinition => SharedState.Importer.ImportCommonType<YAMLSequenceNode>();
+		public static ITypeDefOrRef YAMLScalarNodeDefinition => SharedState.Importer.ImportCommonType<YAMLScalarNode>();
 		public static IMethodDefOrRef YAMLMappingNodeConstructor => SharedState.Importer.ImportCommonConstructor<YAMLMappingNode>();
 		public static IMethodDefOrRef YAMLSequenceNodeConstructor => SharedState.Importer.ImportCommonConstructor<YAMLSequenceNode>(1);
 
