@@ -56,7 +56,7 @@ namespace AssemblyDumper.Passes
 			return resolvedBaseType;
 		}
 
-		private static MemberReference GetDefaultConstructor(this GenericInstanceTypeSignature type)
+		private static IMethodDefOrRef GetDefaultConstructor(this GenericInstanceTypeSignature type)
 		{
 			return MethodUtils.MakeConstructorOnGenericType(type, 0);
 		}

@@ -14,8 +14,8 @@ namespace AssemblyDumper.Passes
 		private static ITypeDefOrRef typeTreeNode;
 		private static IMethodDefOrRef typeTreeNodeConstructor;
 		private static GenericInstanceTypeSignature typeTreeNodeList;
-		private static MemberReference typeTreeNodeListConstructor;
-		private static MemberReference listAddMethod;
+		private static IMethodDefOrRef typeTreeNodeListConstructor;
+		private static IMethodDefOrRef listAddMethod;
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 53: Fill Type Tree Methods");

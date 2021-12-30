@@ -66,7 +66,7 @@ namespace AssemblyDumper.Passes
 
 		private static MethodDefinition AddConversion(this TypeDefinition pptrType, GenericInstanceTypeSignature resultTypeSignature, bool isExplicit)
 		{
-			MemberReference constructor = MethodUtils.MakeConstructorOnGenericType(resultTypeSignature, 2);
+			IMethodDefOrRef constructor = MethodUtils.MakeConstructorOnGenericType(resultTypeSignature, 2);
 
 			FieldDefinition fileID = pptrType.Fields.Single(field => field.Name == "m_FileID");
 			FieldDefinition pathID = pptrType.Fields.Single(f => f.Name == "m_PathID");

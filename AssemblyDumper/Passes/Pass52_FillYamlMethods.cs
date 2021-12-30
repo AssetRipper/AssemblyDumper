@@ -208,9 +208,9 @@ namespace AssemblyDumper.Passes
 			bool firstIsScalar = SystemTypeGetter.GetCppPrimitiveTypeSignature(firstSubNode.TypeName) != null;
 
 			MethodDefinition getKeyDefinition = CommonTypeGetter.LookupCommonMethod("AssetRipper.Core.IO.NullableKeyValuePair`2", m => m.Name == "get_Key");
-			IMethodDefOrRef getKeyReference = SharedState.Importer.ImportMethod(MethodUtils.MakeMethodOnGenericType(pairType, getKeyDefinition));
+			IMethodDefOrRef getKeyReference = MethodUtils.MakeMethodOnGenericType(pairType, getKeyDefinition);
 			MethodDefinition getValueDefinition = CommonTypeGetter.LookupCommonMethod("AssetRipper.Core.IO.NullableKeyValuePair`2", m => m.Name == "get_Value");
-			IMethodDefOrRef getValueReference = SharedState.Importer.ImportMethod(MethodUtils.MakeMethodOnGenericType(pairType, getValueDefinition));
+			IMethodDefOrRef getValueReference = MethodUtils.MakeMethodOnGenericType(pairType, getValueDefinition);
 
 			CilLocalVariable pair = new CilLocalVariable(pairType);
 			processor.Owner.LocalVariables.Add(pair);
@@ -363,7 +363,7 @@ namespace AssemblyDumper.Passes
 			//Get length of dictionary
 			processor.Add(CilOpCodes.Ldloc, dictLocal);
 			MethodDefinition getCountDefinition = SystemTypeGetter.LookupSystemType("System.Collections.Generic.List`1").Properties.Single(m => m.Name == "Count").GetMethod;
-			MemberReference getCountReference = MethodUtils.MakeMethodOnGenericType(genericListType, getCountDefinition);
+			IMethodDefOrRef getCountReference = MethodUtils.MakeMethodOnGenericType(genericListType, getCountDefinition);
 			processor.Add(CilOpCodes.Call, getCountReference);
 
 			//Make local and store length in it
@@ -386,7 +386,7 @@ namespace AssemblyDumper.Passes
 
 			//Export Yaml
 			MethodDefinition getItemDefinition = SystemTypeGetter.LookupSystemType("System.Collections.Generic.List`1").Properties.Single(m => m.Name == "Item").GetMethod;
-			MemberReference getItemReference = MethodUtils.MakeMethodOnGenericType(genericListType, getItemDefinition);
+			IMethodDefOrRef getItemReference = MethodUtils.MakeMethodOnGenericType(genericListType, getItemDefinition);
 			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load Dictionary
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
 			processor.Add(CilOpCodes.Call, getItemReference); //Get the i_th key value pair
