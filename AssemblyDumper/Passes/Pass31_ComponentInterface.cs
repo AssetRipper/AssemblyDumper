@@ -25,9 +25,9 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 31: Component Interface");
-			ITypeDefOrRef componentInterface = SharedState.Importer.ImportCommonType<IComponent>();
 			if (SharedState.TypeDictionary.TryGetValue("Component", out TypeDefinition type))
 			{
+				ITypeDefOrRef componentInterface = SharedState.Importer.ImportCommonType<IComponent>();
 				type.Interfaces.Add(new InterfaceImplementation(componentInterface));
 				FieldDefinition field = type.GetFieldByName(FieldName);
 				TypeSignature fieldType = field.Signature.FieldType;
