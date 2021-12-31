@@ -14,7 +14,6 @@ namespace AssemblyDumper.Passes
 			TryImplementInterface<AssetRipper.Core.Classes.IGlobalGameManager>("GlobalGameManager");
 			TryImplementInterface<AssetRipper.Core.Classes.ILevelGameManager>("LevelGameManager");
 			TryImplementInterface<AssetRipper.Core.Classes.ILightmapParameters>("LightmapParameters");
-			TryImplementInterface<AssetRipper.Core.Classes.EditorSettings.IEditorSettings>("EditorSettings");
 			TryImplementInterface<AssetRipper.Core.Classes.Meta.Importers.Asset.IAssetImporter>("AssetImporter");
 			TryImplementInterface<AssetRipper.Core.Classes.Meta.Importers.IDefaultImporter>("DefaultImporter");
 		}
