@@ -5,17 +5,25 @@ using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using AssemblyDumper.Utils;
 using System.Linq;
 using AssetRipper.Core.Interfaces;
+using AssetRipper.Core.Classes.Misc;
 
 namespace AssemblyDumper.Passes
 {
 	public static class Pass20_PPtrConversions
 	{
 		private static ITypeDefOrRef commonPPtrType;
+		const MethodAttributes InterfacePropertyImplementationAttributes =
+			MethodAttributes.Public |
+			MethodAttributes.Final |
+			MethodAttributes.HideBySig |
+			MethodAttributes.SpecialName |
+			MethodAttributes.NewSlot |
+			MethodAttributes.Virtual;
 		const MethodAttributes ConversionAttributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.HideBySig;
 
 		public static void DoPass()
 		{
-			System.Console.WriteLine("Pass 20: PPtr Conversions");
+			System.Console.WriteLine("Pass 20: PPtr Interface and Conversions");
 
 			commonPPtrType = SharedState.Importer.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
 
@@ -24,6 +32,8 @@ namespace AssemblyDumper.Passes
 				if (name.StartsWith("PPtr_"))
 				{
 					TypeDefinition pptrType = SharedState.TypeDictionary[name];
+
+					pptrType.ImplementPPtrInterface();
 
 					string parameterTypeName = name.Substring(5, name.LastIndexOf('_') - 5);
 					TypeDefinition parameterType = SharedState.TypeDictionary[parameterTypeName];
@@ -47,8 +57,39 @@ namespace AssemblyDumper.Passes
 					{
 						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.ITransform>();
 					}
+					else if (name == "PPtr_PrefabInstance_")
+					{
+						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.PrefabInstance.IPrefabInstance>();
+					}
+					else if (name == "PPtr_DataTemplate_")
+					{
+						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.PrefabInstance.IPrefabInstance>();
+					}
+					else if (name == "PPtr_Prefab_")// && !SharedState.TypeDictionary.ContainsKey("PPtr_PrefabInstance_"))
+					{
+						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.PrefabInstance.IPrefabInstance>();
+					}
 				}
 			}
+		}
+
+		private static void ImplementPPtrInterface(this TypeDefinition pptrType)
+		{
+			pptrType.Interfaces.Add(new InterfaceImplementation(SharedState.Importer.ImportCommonType<IPPtr>()));
+			pptrType.ImplementFullProperty(nameof(IPPtr.FileIndex), InterfacePropertyImplementationAttributes, SystemTypeGetter.Int32, pptrType.GetFieldByName("m_FileID"));
+			FieldDefinition pathidField = pptrType.GetFieldByName("m_PathID");
+			PropertyDefinition property = pptrType.AddFullProperty(nameof(IPPtr.PathID), InterfacePropertyImplementationAttributes, SystemTypeGetter.Int64);
+			var getProcessor = property.GetMethod.CilMethodBody.Instructions;
+			getProcessor.Add(CilOpCodes.Ldarg_0);
+			getProcessor.Add(CilOpCodes.Ldfld, pathidField);
+			getProcessor.Add(CilOpCodes.Ret);
+			var setProcessor = property.SetMethod.CilMethodBody.Instructions;
+			setProcessor.Add(CilOpCodes.Ldarg_0);
+			setProcessor.Add(CilOpCodes.Ldarg_1);
+			if(pathidField.Signature.FieldType.Name == "Int32")
+				setProcessor.Add(CilOpCodes.Conv_Ovf_I4);
+			setProcessor.Add(CilOpCodes.Stfld, pathidField);
+			setProcessor.Add(CilOpCodes.Ret);
 		}
 
 		private static MethodDefinition AddImplicitConversion(this TypeDefinition pptrType, GenericInstanceTypeSignature resultTypeSignature)

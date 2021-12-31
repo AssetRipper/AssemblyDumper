@@ -26,7 +26,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 34: GameObject Interface");
+			Console.WriteLine("Pass 35: Transform Interface");
 			if (!SharedState.TypeDictionary.TryGetValue("Transform", out TypeDefinition type))
 			{
 				throw new Exception("Transform not found");

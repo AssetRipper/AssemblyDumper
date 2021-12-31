@@ -42,6 +42,7 @@ namespace AssemblyDumper
 				Pass33_BehaviourInterface.DoPass();
 				Pass34_GameObjectInterface.DoPass();
 				Pass35_TransformInterface.DoPass();
+				Pass36_PrefabInstanceInterface.DoPass();
 
 				Pass49_CreateEmptyMethods.DoPass();
 				Pass50_FillReadMethods.DoPass();
