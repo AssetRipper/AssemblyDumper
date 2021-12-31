@@ -18,6 +18,7 @@ namespace AssemblyDumper.Passes
 		private static IMethodDefOrRef mappingAddMethod;
 		private static IMethodDefOrRef sequenceAddMethod;
 		private static IMethodDefOrRef byteArrayToYamlMethod;
+		private static IMethodDefOrRef addTypelessDataMethod;
 		private static CilInstructionLabel DummyInstructionLabel { get; } = new CilInstructionLabel();
 
 		private static bool emittingRelease = true;
@@ -25,15 +26,21 @@ namespace AssemblyDumper.Passes
 		private static void Initialize()
 		{
 			Func<MethodDefinition, bool> filter = m => m.Name == "AddSerializedVersion";
-			addSerializedVersionMethod = SharedState.Importer.ImportCommonMethod("AssetRipper.Core.IO.Extensions.SerializedVersionYAMLExtensions", filter);
-			mappingAddMethod = SharedState.Importer.ImportCommonMethod<YAMLMappingNode>(m => m.Name == "Add" &&
+			addSerializedVersionMethod = SharedState.Importer.ImportCommonMethod(typeof(AssetRipper.Core.IO.Extensions.SerializedVersionYAMLExtensions), filter);
+
+			mappingAddMethod = SharedState.Importer.ImportCommonMethod<YAMLMappingNode>(
+				m => m.Name == "Add" &&
 				m.Parameters.Count == 2 &&
 				m.Parameters[0].ParameterType.Name == nameof(AssetRipper.Core.YAML.YAMLNode) &&
 				m.Parameters[1].ParameterType.Name == nameof(AssetRipper.Core.YAML.YAMLNode));
-			Func<MethodDefinition, bool> filter1 = m => m.Name == "ExportYAML" &&
-			                                            m.Parameters.Count == 1;
-			byteArrayToYamlMethod = SharedState.Importer.ImportCommonMethod("AssetRipper.Core.YAML.Extensions.ArrayYAMLExtensions", filter1);
-			sequenceAddMethod = SharedState.Importer.ImportCommonMethod<YAMLSequenceNode>(m => m.Name == "Add" &&
+
+			Func<MethodDefinition, bool> filter1 = m => m.Name == "ExportYAML" && m.Parameters.Count == 1;
+			byteArrayToYamlMethod = SharedState.Importer.ImportCommonMethod(typeof(AssetRipper.Core.YAML.Extensions.ArrayYAMLExtensions), filter1);
+
+			addTypelessDataMethod = SharedState.Importer.ImportCommonMethod(typeof(AssetRipper.Core.YAML.Extensions.ArrayYAMLExtensions), m => m.Name == "AddTypelessData");
+
+			sequenceAddMethod = SharedState.Importer.ImportCommonMethod<YAMLSequenceNode>(
+				m => m.Name == "Add" &&
 				m.Parameters.Count == 1 &&
 				m.Parameters[0].ParameterType.Name == nameof(AssetRipper.Core.YAML.YAMLNode));
 		}
@@ -132,7 +139,7 @@ namespace AssemblyDumper.Passes
 					processor.AddExportPairField(node, field, yamlMappingNode);
 					return;
 				case "TypelessData": //byte array
-					processor.AddExportByteArrayField(node, field, yamlMappingNode);
+					processor.AddExportTypelessDataField(node, field, yamlMappingNode);
 					return;
 				case "Array":
 					processor.AddExportArrayField(node, field, yamlMappingNode);
@@ -165,8 +172,9 @@ namespace AssemblyDumper.Passes
 					processor.AddLocalForLoadedPair(node, out localVariable);
 					return;
 				case "TypelessData": //byte array
-					processor.AddLocalForLoadedByteArray(out localVariable);
-					return;
+					//processor.AddLocalForLoadedByteArray(out localVariable);
+					//return;
+					throw new NotSupportedException("TypelessData");
 				case "Array":
 					processor.AddLocalForLoadedArray(node, out localVariable);
 					return;
@@ -291,6 +299,14 @@ namespace AssemblyDumper.Passes
 			arrayNode.Name = vectorNode.Name;
 			arrayNode.OriginalName = vectorNode.OriginalName;
 			processor.AddLocalForLoadedArray(arrayNode, out localVariable);
+		}
+
+		private static void AddExportTypelessDataField(this CilInstructionCollection processor, UnityNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
+		{
+			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
+			processor.Add(CilOpCodes.Ldstr, node.OriginalName);
+			processor.AddLoadField(field);
+			processor.Add(CilOpCodes.Call, addTypelessDataMethod);
 		}
 
 		private static void AddExportByteArrayField(this CilInstructionCollection processor, UnityNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
