@@ -26,7 +26,6 @@ namespace AssemblyDumper.Passes
 			HandlerDefinition = new TypeDefinition(SharedState.RootNamespace, "UnityVersionHandler", SealedClassAttributes, baseHandler);
 			SharedState.Module.TopLevelTypes.Add(HandlerDefinition);
 			HandlerDefinition.AddConstructor();
-			HandlerDefinition.AddUnityVersionOverride();
 		}
 
 		private static void AddConstructor(this TypeDefinition type)
@@ -37,6 +36,9 @@ namespace AssemblyDumper.Passes
 			processor.AddBaseConstructorCall();
 			processor.AddAssetFactoryAssignment();
 			processor.AddImporterFactoryAssignment();
+			processor.AddUnityVersionAssignment();
+			processor.AddCommonStringAssignment();
+			processor.AddClassIDTypeEnumAssignment();
 			processor.Add(CilOpCodes.Ret);
 			processor.OptimizeMacros();
 		}
@@ -66,15 +68,33 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Call, baseAssetImporterFactorySetter);
 		}
 
-		private static void AddUnityVersionOverride(this TypeDefinition type)
+		private static void AddCommonStringAssignment(this CilInstructionCollection processor)
 		{
+			IMethodDefOrRef baseCommonStringSetter = SharedState.Importer.ImportCommonMethod<UnityHandlerBase>(m => m.Name == "set_CommonStringDictionary");
+			FieldDefinition field = Pass01_CreateBasicTypes.CommonStringTypeDefinition.GetFieldByName("dictionary");
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldsfld, field);
+			processor.Add(CilOpCodes.Call, baseCommonStringSetter);
+		}
+
+		private static void AddClassIDTypeEnumAssignment(this CilInstructionCollection processor)
+		{
+			IMethodDefOrRef baseClassIdSetter = SharedState.Importer.ImportCommonMethod<UnityHandlerBase>(m => m.Name == "set_ClassIDTypeEnum");
+			IMethodDefOrRef getTypeFromHandle = SharedState.Importer.ImportSystemMethod<Type>(m => m.Name == "GetTypeFromHandle");
+			TypeDefinition type = Pass01_CreateBasicTypes.ClassIDTypeDefinition;
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldtoken, type);
+			processor.Add(CilOpCodes.Call, getTypeFromHandle);
+			processor.Add(CilOpCodes.Call, baseClassIdSetter);
+		}
+
+		private static void AddUnityVersionAssignment(this CilInstructionCollection processor)
+		{
+			IMethodDefOrRef baseUnityVersionSetter = SharedState.Importer.ImportCommonMethod<UnityHandlerBase>(m => m.Name == "set_UnityVersion");
 			ITypeDefOrRef unityVersionRef = SharedState.Importer.ImportCommonType<UnityVersion>();
-			PropertyDefinition property = type.AddGetterProperty("UnityVersion", PropertyOverrideAttributes, unityVersionRef.ToTypeSignature());
-			MethodDefinition getter = property.GetMethod;
-			CilInstructionCollection processor = getter.CilMethodBody.Instructions;
+			processor.Add(CilOpCodes.Ldarg_0);
 			processor.AddUnityVersion();
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			processor.Add(CilOpCodes.Call, baseUnityVersionSetter);
 		}
 
 		private static void AddUnityVersion(this CilInstructionCollection processor)

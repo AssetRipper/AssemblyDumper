@@ -14,20 +14,22 @@ namespace AssemblyDumper.Passes
 	{
 		private const TypeAttributes StaticClassAttributes = TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Abstract;
 		private const MethodAttributes StaticConstructorAttributes = MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.RuntimeSpecialName | MethodAttributes.SpecialName | MethodAttributes.Static;
+		public static TypeDefinition ClassIDTypeDefinition;
+		public static TypeDefinition CommonStringTypeDefinition;
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 1: Create Basic Types");
-			CreateClassID();
-			CreateCommonStringClass();
+			ClassIDTypeDefinition = CreateClassID();
+			CommonStringTypeDefinition = CreateCommonStringClass();
 		}
 
-		private static void CreateClassID()
+		private static TypeDefinition CreateClassID()
 		{
 			Dictionary<string, int> classIdDictionary = SharedState.ClassDictionary.Values.ToDictionary(x => x.Name, x => x.TypeID);
-			EnumCreator.CreateFromDictionary(SharedState.Assembly, SharedState.RootNamespace, "ClassIDType", classIdDictionary);
+			return EnumCreator.CreateFromDictionary(SharedState.Assembly, SharedState.RootNamespace, "ClassIDType", classIdDictionary);
 		}
 
-		private static void CreateCommonStringClass()
+		private static TypeDefinition CreateCommonStringClass()
 		{
 			TypeDefinition newTypeDef = CreateEmptyStaticClass(SharedState.Assembly, SharedState.RootNamespace, "CommonString");
 
@@ -54,6 +56,8 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ret);
 
 			processor.OptimizeMacros();
+
+			return newTypeDef;
 		}
 
 		private static TypeDefinition CreateEmptyStaticClass(AssemblyDefinition assembly, string @namespace, string name)
