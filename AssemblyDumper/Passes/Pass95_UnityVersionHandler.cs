@@ -36,6 +36,7 @@ namespace AssemblyDumper.Passes
 			processor.AddBaseConstructorCall();
 			processor.AddAssetFactoryAssignment();
 			processor.AddImporterFactoryAssignment();
+			processor.AddSceneObjectFactoryAssignment();
 			processor.AddUnityVersionAssignment();
 			processor.AddCommonStringAssignment();
 			processor.AddClassIDTypeEnumAssignment();
@@ -57,6 +58,15 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Newobj, assetFactoryConstructor);
 			processor.Add(CilOpCodes.Call, baseAssetFactorySetter);
+		}
+
+		private static void AddSceneObjectFactoryAssignment(this CilInstructionCollection processor)
+		{
+			IMethodDefOrRef setter = SharedState.Importer.ImportCommonMethod<UnityHandlerBase>(m => m.Name == "set_SceneObjectFactory");
+			MethodDefinition constructor = Pass92_MakeSceneObjectFactory.FactoryDefinition.Methods.Single(c => c.IsConstructor && !c.IsStatic);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Newobj, constructor);
+			processor.Add(CilOpCodes.Call, setter);
 		}
 
 		private static void AddImporterFactoryAssignment(this CilInstructionCollection processor)

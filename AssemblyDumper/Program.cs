@@ -41,6 +41,7 @@ namespace AssemblyDumper
 				Pass32_MonoScriptInterface.DoPass();
 				Pass33_BehaviourInterface.DoPass();
 				Pass34_GameObjectInterface.DoPass();
+				Pass35_TransformInterface.DoPass();
 
 				Pass49_CreateEmptyMethods.DoPass();
 				Pass50_FillReadMethods.DoPass();
@@ -57,6 +58,7 @@ namespace AssemblyDumper
 
 				Pass90_MakeAssetFactory.DoPass();
 				Pass91_MakeImporterFactory.DoPass();
+				Pass92_MakeSceneObjectFactory.DoPass();
 				Pass95_UnityVersionHandler.DoPass();
 
 				Pass98_ApplyAssemblyAttributes.DoPass();

@@ -43,6 +43,10 @@ namespace AssemblyDumper.Passes
 					{
 						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.IMonoScript>();
 					}
+					else if (name == "PPtr_Transform_")
+					{
+						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.ITransform>();
+					}
 				}
 			}
 		}
