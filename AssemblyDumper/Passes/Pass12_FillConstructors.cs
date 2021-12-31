@@ -154,7 +154,13 @@ namespace AssemblyDumper.Passes
 					processor.Add(CilOpCodes.Newobj, GetLayoutInfoConstructor(typeDef));
 					processor.Add(CilOpCodes.Stfld, field);
 				}
-				else if (field.Signature.FieldType.FullName != "System.String")
+				else if (field.Signature.FieldType.FullName == "System.String")
+				{
+					processor.Add(CilOpCodes.Ldarg_0);
+					processor.Add(CilOpCodes.Ldstr, "");
+					processor.Add(CilOpCodes.Stfld, field);
+				}
+				else
 				{
 					Console.WriteLine($"Warning: skipping {type.Name}.{field.Name} of type {field.Signature.FieldType.Name} while filling layout info constructors.");
 				}
@@ -205,7 +211,13 @@ namespace AssemblyDumper.Passes
 					}
 					processor.Add(CilOpCodes.Stfld, field);
 				}
-				else if (field.Signature.FieldType.FullName != "System.String")
+				else if (field.Signature.FieldType.FullName == "System.String")
+				{
+					processor.Add(CilOpCodes.Ldarg_0);
+					processor.Add(CilOpCodes.Ldstr, "");
+					processor.Add(CilOpCodes.Stfld, field);
+				}
+				else
 				{
 					Console.WriteLine($"Warning: skipping {type.Name}.{field.Name} of type {field.Signature.FieldType.Name} while filling asset info constructors.");
 				}
