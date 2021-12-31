@@ -16,7 +16,7 @@ namespace AssemblyDumper.Passes
 	public static class Pass90_MakeAssetFactory
 	{
 		const TypeAttributes SealedClassAttributes = TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.Public | TypeAttributes.Sealed;
-		const MethodAttributes InterfaceOverrideAttributes = MethodAttributes.Public | MethodAttributes.NewSlot | MethodAttributes.HideBySig | MethodAttributes.Final | MethodAttributes.Virtual;
+		const MethodAttributes MethodOverrideAttributes = MethodAttributes.Public | MethodAttributes.ReuseSlot | MethodAttributes.HideBySig | MethodAttributes.Virtual;
 
 		public static TypeDefinition FactoryDefinition { get; private set; }
 
@@ -24,33 +24,22 @@ namespace AssemblyDumper.Passes
 		{
 			System.Console.WriteLine("Pass 90: Make Asset Factory");
 			FactoryDefinition = CreateFactoryDefinition();
-			FactoryDefinition.AddCreateEngineAsset();
 			FactoryDefinition.AddCreateAsset();
 		}
 
 		private static TypeDefinition CreateFactoryDefinition()
 		{
-			var result = new TypeDefinition(SharedState.RootNamespace, "AssetFactory", SealedClassAttributes, SystemTypeGetter.Object.ToTypeDefOrRef());
+			var result = new TypeDefinition(SharedState.RootNamespace, "AssetFactory", SealedClassAttributes, SharedState.Importer.ImportCommonType<AssetFactoryBase>());
 			SharedState.Module.TopLevelTypes.Add(result);
-			result.Interfaces.Add(new InterfaceImplementation(SharedState.Importer.ImportCommonType<IAssetFactory>()));
 			ConstructorUtils.AddDefaultConstructor(result);
 			return result;
-		}
-
-		private static void AddCreateEngineAsset(this TypeDefinition factoryDefinition)
-		{
-			ITypeDefOrRef iassetType = SharedState.Importer.ImportCommonType<IAsset>();
-			MethodDefinition createEngineAsset = factoryDefinition.AddMethod("CreateEngineAsset", InterfaceOverrideAttributes, iassetType);
-			createEngineAsset.AddParameter("name", SystemTypeGetter.String);
-
-			createEngineAsset.CilMethodBody.Instructions.AddNotSupportedException();
 		}
 
 		private static void AddCreateAsset(this TypeDefinition factoryDefinition)
 		{
 			ITypeDefOrRef iunityObjectBase = SharedState.Importer.ImportCommonType<IUnityObjectBase>();
 			ITypeDefOrRef assetInfoType = SharedState.Importer.ImportCommonType<AssetInfo>();
-			MethodDefinition createAsset = factoryDefinition.AddMethod("CreateAsset", InterfaceOverrideAttributes, iunityObjectBase);
+			MethodDefinition createAsset = factoryDefinition.AddMethod("CreateAsset", MethodOverrideAttributes, iunityObjectBase);
 			Parameter parameter = createAsset.AddParameter("assetInfo", assetInfoType);
 			
 			createAsset.CilMethodBody.InitializeLocals = true;
