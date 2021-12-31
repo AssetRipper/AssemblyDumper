@@ -1,4 +1,5 @@
 ﻿using AsmResolver.DotNet;
+using AsmResolver.DotNet.Collections;
 using AsmResolver.PE.DotNet.Cil;
 using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using AssemblyDumper.Utils;
@@ -15,11 +16,12 @@ namespace AssemblyDumper.Passes
 			System.Console.WriteLine("Pass 21: GUID Implicit Conversion");
 			if(SharedState.TypeDictionary.TryGetValue("GUID", out TypeDefinition guidType))
 			{
-				AddGuidConversion(guidType);
+				AddImplicitConversion(guidType);
+				AddExplicitConversion(guidType);
 			}
 		}
 
-		private static void AddGuidConversion(TypeDefinition guidType)
+		private static void AddImplicitConversion(TypeDefinition guidType)
 		{
 			ITypeDefOrRef commonGuidType = SharedState.Importer.ImportCommonType<UnityGUID>();
 			IMethodDefOrRef constructor = SharedState.Importer.ImportCommonConstructor<UnityGUID>(4);
@@ -44,6 +46,46 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldfld, data3);
 			processor.Add(CilOpCodes.Newobj, constructor);
+			processor.Add(CilOpCodes.Ret);
+		}
+
+		private static void AddExplicitConversion(TypeDefinition guidType)
+		{
+			ITypeDefOrRef commonGuidType = SharedState.Importer.ImportCommonType<UnityGUID>();
+			IMethodDefOrRef constructor = guidType.Methods.Single(m => m.IsConstructor && m.Parameters.Count == 0 && !m.IsStatic);
+
+			FieldDefinition data_0_ = guidType.Fields.Single(field => field.Name == "data_0_");
+			FieldDefinition data_1_ = guidType.Fields.Single(field => field.Name == "data_1_");
+			FieldDefinition data_2_ = guidType.Fields.Single(field => field.Name == "data_2_");
+			FieldDefinition data_3_ = guidType.Fields.Single(field => field.Name == "data_3_");
+
+			IMethodDefOrRef getData0 = SharedState.Importer.ImportCommonMethod<UnityGUID>(m => m.Name == "get_Data0");
+			IMethodDefOrRef getData1 = SharedState.Importer.ImportCommonMethod<UnityGUID>(m => m.Name == "get_Data1");
+			IMethodDefOrRef getData2 = SharedState.Importer.ImportCommonMethod<UnityGUID>(m => m.Name == "get_Data2");
+			IMethodDefOrRef getData3 = SharedState.Importer.ImportCommonMethod<UnityGUID>(m => m.Name == "get_Data3");
+
+			MethodDefinition explicitMethod = guidType.AddMethod("op_Explicit", ConversionAttributes, guidType);
+			Parameter parameter = explicitMethod.AddParameter("value", commonGuidType);
+
+			var processor = explicitMethod.CilMethodBody.Instructions;
+
+			processor.Add(CilOpCodes.Newobj, constructor);
+			processor.Add(CilOpCodes.Dup);
+			processor.Add(CilOpCodes.Ldarga, parameter);
+			processor.Add(CilOpCodes.Call, getData0);
+			processor.Add(CilOpCodes.Stfld, data_0_);
+			processor.Add(CilOpCodes.Dup);
+			processor.Add(CilOpCodes.Ldarga, parameter);
+			processor.Add(CilOpCodes.Call, getData1);
+			processor.Add(CilOpCodes.Stfld, data_1_);
+			processor.Add(CilOpCodes.Dup);
+			processor.Add(CilOpCodes.Ldarga, parameter);
+			processor.Add(CilOpCodes.Call, getData2);
+			processor.Add(CilOpCodes.Stfld, data_2_);
+			processor.Add(CilOpCodes.Dup);
+			processor.Add(CilOpCodes.Ldarga, parameter);
+			processor.Add(CilOpCodes.Call, getData3);
+			processor.Add(CilOpCodes.Stfld, data_3_);
 			processor.Add(CilOpCodes.Ret);
 		}
 	}
