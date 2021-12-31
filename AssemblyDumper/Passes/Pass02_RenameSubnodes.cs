@@ -132,6 +132,10 @@ namespace AssemblyDumper.Passes
 			{
 				node.TypeName = newBitVectorName;
 			}
+			else if (node.IsEditorScene())
+			{
+				node.TypeName = "EditorScene";
+			}
 		}
 
 		private static bool IsOffsetPtr(this UnityNode node, out string elementType)
@@ -237,6 +241,16 @@ namespace AssemblyDumper.Passes
 				return true;
 			}
 
+			return false;
+		}
+
+		private static bool IsEditorScene(this UnityNode node)
+		{
+			var subnodes = node.SubNodes;
+			if (node.TypeName == "Scene" && subnodes != null && subnodes.Any(n => n.Name == "enabled") && subnodes.Any(n => n.Name == "path"))
+			{
+				return true;
+			}
 			return false;
 		}
 	}
