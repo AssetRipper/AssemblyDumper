@@ -45,6 +45,7 @@ namespace AssemblyDumper
 
 				Pass40_BuildSettingsInterfaces.DoPass();
 				Pass41_ManagerInterfaces.DoPass();
+				Pass42_AssetBundleInterfaces.DoPass();
 
 				Pass49_CreateEmptyMethods.DoPass();
 				Pass50_FillReadMethods.DoPass();
