@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using AssemblyDumper.Unity;
+﻿using AssemblyDumper.Unity;
 
 namespace AssemblyDumper.Passes
 {

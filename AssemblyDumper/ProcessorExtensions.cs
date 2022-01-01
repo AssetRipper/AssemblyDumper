@@ -1,10 +1,4 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.DotNet.Code.Cil;
-using AsmResolver.DotNet.Signatures.Types;
-using AsmResolver.PE.DotNet.Cil;
-using System;
-
-namespace AssemblyDumper
+﻿namespace AssemblyDumper
 {
 	internal static class ProcessorExtensions
 	{

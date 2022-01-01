@@ -1,14 +1,5 @@
-﻿using System;
-using AsmResolver.DotNet;
-using AsmResolver.DotNet.Code.Cil;
-using AsmResolver.DotNet.Collections;
-using AsmResolver.PE.DotNet.Cil;
-using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
-using AssemblyDumper.Utils;
-using System.Collections.Generic;
-using System.Linq;
+﻿using AssemblyDumper.Utils;
 using AssetRipper.Core.Interfaces;
-using AssetRipper.Core.IO.Asset;
 using AssetRipper.Core.Parser.Asset;
 
 namespace AssemblyDumper.Passes

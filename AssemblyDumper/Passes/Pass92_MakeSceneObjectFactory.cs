@@ -1,10 +1,6 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.DotNet.Code.Cil;
-using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
-using AssemblyDumper.Utils;
+﻿using AssemblyDumper.Utils;
 using AssetRipper.Core.Classes.OcclusionCullingData;
 using AssetRipper.Core.Parser.Asset;
-using System;
 
 namespace AssemblyDumper.Passes
 {

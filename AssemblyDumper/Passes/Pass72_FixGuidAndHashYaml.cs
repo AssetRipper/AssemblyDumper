@@ -1,9 +1,4 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.DotNet.Code.Cil;
-using AsmResolver.PE.DotNet.Cil;
-using AssetRipper.Core.Classes.Misc;
-using System;
-using System.Linq;
+﻿using AssetRipper.Core.Classes.Misc;
 
 namespace AssemblyDumper.Passes
 {

@@ -1,8 +1,4 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.DotNet.Signatures;
-using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
-using System;
-using System.Collections.Generic;
+﻿using AsmResolver.DotNet.Signatures;
 
 namespace AssemblyDumper.Utils
 {

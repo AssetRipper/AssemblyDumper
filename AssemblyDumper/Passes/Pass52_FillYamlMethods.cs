@@ -1,13 +1,6 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.DotNet.Code.Cil;
-using AsmResolver.DotNet.Signatures.Types;
-using AsmResolver.PE.DotNet.Cil;
-using AssemblyDumper.Unity;
+﻿using AssemblyDumper.Unity;
 using AssemblyDumper.Utils;
 using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using AssetRipper.Core.YAML;
 
 namespace AssemblyDumper.Passes

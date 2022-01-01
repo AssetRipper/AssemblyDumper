@@ -1,6 +1,4 @@
-﻿using AsmResolver.DotNet;
-using AssemblyDumper.Unity;
-using System;
+﻿using AssemblyDumper.Unity;
 using System.IO;
 using System.Text.Json;
 

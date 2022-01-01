@@ -1,7 +1,4 @@
-﻿using AsmResolver.DotNet;
-using AssemblyDumper.Unity;
-using System.Collections.Generic;
-using System.Linq;
+﻿using AssemblyDumper.Unity;
 
 namespace AssemblyDumper
 {

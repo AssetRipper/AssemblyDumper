@@ -1,7 +1,4 @@
-﻿using AsmResolver.DotNet;
-using AssemblyDumper.Utils;
-using System;
-using System.Linq;
+﻿using AssemblyDumper.Utils;
 using AssetRipper.Core.IO.Asset;
 using AssetRipper.Core.IO.Endian;
 using AssetRipper.Core.Project;

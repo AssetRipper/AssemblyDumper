@@ -1,9 +1,5 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
-using AssemblyDumper.Unity;
+﻿using AssemblyDumper.Unity;
 using AssemblyDumper.Utils;
-using System.Collections.Generic;
-using System.Linq;
 using AssetRipper.Core.Layout;
 using AssetRipper.Core.Parser.Asset;
 

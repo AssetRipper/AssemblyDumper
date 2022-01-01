@@ -1,12 +1,4 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.DotNet.Code.Cil;
-using AsmResolver.DotNet.Collections;
-using AsmResolver.DotNet.Signatures;
-using AsmResolver.DotNet.Signatures.Types;
-using AsmResolver.PE.DotNet.Cil;
-using AssemblyDumper.Utils;
-using System;
-using System.Linq;
+﻿using AssemblyDumper.Utils;
 
 namespace AssemblyDumper.Passes
 {

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using AsmResolver.DotNet;
-using AsmResolver.DotNet.Code.Cil;
-using AsmResolver.PE.DotNet.Cil;
-using AssemblyDumper.Unity;
+﻿using AssemblyDumper.Unity;
 using AssemblyDumper.Utils;
 using AssetRipper.Core.IO.Asset;
 using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;

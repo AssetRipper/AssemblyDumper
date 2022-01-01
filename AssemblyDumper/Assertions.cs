@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace AssemblyDumper
+﻿namespace AssemblyDumper
 {
 	public static class Assertions
 	{

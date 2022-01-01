@@ -1,7 +1,4 @@
-﻿using AsmResolver.DotNet;
-using System;
-
-namespace AssemblyDumper.Passes
+﻿namespace AssemblyDumper.Passes
 {
 	public static class Pass60_AddMarkerInterfaces
 	{

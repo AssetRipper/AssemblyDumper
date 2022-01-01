@@ -1,7 +1,4 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.DotNet.Signatures;
-using AsmResolver.DotNet.Signatures.Types;
-using System.Linq;
+﻿using AsmResolver.DotNet.Signatures;
 
 namespace AssemblyDumper.Utils
 {

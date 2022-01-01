@@ -1,7 +1,4 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
-
-namespace AssemblyDumper.Utils
+﻿namespace AssemblyDumper.Utils
 {
 	public static class InterfaceUtils
 	{

@@ -1,10 +1,6 @@
-﻿using AsmResolver.DotNet;
-using AssemblyDumper.Unity;
+﻿using AssemblyDumper.Unity;
 using AssemblyDumper.Utils;
 using AssetRipper.Core.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace AssemblyDumper.Passes
 {

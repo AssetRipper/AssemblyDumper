@@ -1,7 +1,4 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.DotNet.Signatures.Types;
-using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
-using AssemblyDumper.Utils;
+﻿using AssemblyDumper.Utils;
 using AssetRipper.Core.Interfaces;
 using AssetRipper.Core.Parser.Asset;
 using AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TypeTree;

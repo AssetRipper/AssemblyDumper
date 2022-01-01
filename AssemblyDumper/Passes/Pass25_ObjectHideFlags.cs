@@ -1,7 +1,4 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
-using AssemblyDumper.Utils;
-using System;
+﻿using AssemblyDumper.Utils;
 
 namespace AssemblyDumper.Passes
 {

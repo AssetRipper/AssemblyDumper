@@ -1,5 +1,4 @@
 ﻿using AsmResolver.DotNet.Builder;
-using System;
 using System.IO;
 
 namespace AssemblyDumper.Passes

@@ -1,10 +1,4 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.DotNet.Code.Cil;
-using AsmResolver.PE.DotNet.Cil;
-using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
-using AssemblyDumper.Utils;
-using System;
-using System.Linq;
+﻿using AssemblyDumper.Utils;
 using AssetRipper.Core.Classes.Meta.Importers;
 using AssetRipper.Core.Layout;
 using AssetRipper.Core.Parser.Asset;

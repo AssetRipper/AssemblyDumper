@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace AssemblyDumper.Unity
+﻿namespace AssemblyDumper.Unity
 {
 	public class UnityInfo
 	{

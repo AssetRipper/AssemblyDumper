@@ -1,10 +1,5 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.DotNet.Collections;
-using AsmResolver.PE.DotNet.Cil;
-using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
-using AssemblyDumper.Utils;
+﻿using AssemblyDumper.Utils;
 using AssetRipper.Core.Classes.Misc;
-using System.Linq;
 
 namespace AssemblyDumper.Passes
 {

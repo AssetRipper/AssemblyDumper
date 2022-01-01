@@ -1,7 +1,4 @@
-﻿using AsmResolver.DotNet;
-using System.Linq;
-
-namespace AssemblyDumper.Utils
+﻿namespace AssemblyDumper.Utils
 {
 	public static class PPtrUtils
 	{

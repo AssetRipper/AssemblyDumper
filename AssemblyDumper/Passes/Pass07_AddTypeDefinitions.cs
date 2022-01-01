@@ -1,10 +1,6 @@
-﻿using AsmResolver.DotNet;
-using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
-using AssemblyDumper.Unity;
+﻿using AssemblyDumper.Unity;
 using AssemblyDumper.Utils;
 using AssetRipper.Core.Attributes;
-using System;
-using System.Linq;
 
 namespace AssemblyDumper.Passes
 {

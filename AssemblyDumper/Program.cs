@@ -1,6 +1,5 @@
 ﻿using AssemblyDumper.Passes;
 using CommandLine;
-using System;
 using System.IO;
 
 namespace AssemblyDumper
