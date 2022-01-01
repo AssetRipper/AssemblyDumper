@@ -30,7 +30,16 @@ namespace AssemblyDumper.Passes
 			ITypeDefOrRef returnType = SharedState.Importer.ImportCommonType<ISceneObjectIdentifier>();
 			MethodDefinition method = type.AddMethod("CreateSceneObjectIdentifier", MethodOverrideAttributes, returnType);
 			CilInstructionCollection processor = method.CilMethodBody.Instructions;
-			processor.AddNotSupportedException();
+			if (SharedState.TypeDictionary.TryGetValue("SceneObjectIdentifier", out TypeDefinition sceneObjectIdentifier))
+			{
+				processor.Add(CilOpCodes.Newobj, sceneObjectIdentifier.GetDefaultConstructor());
+				processor.Add(CilOpCodes.Ret);
+			}
+			else
+			{
+				processor.Add(CilOpCodes.Ldnull);
+				processor.Add(CilOpCodes.Ret);
+			}
 		}
 
 		private static void AddCreateOcclusionScene(this TypeDefinition type)
@@ -38,7 +47,16 @@ namespace AssemblyDumper.Passes
 			ITypeDefOrRef returnType = SharedState.Importer.ImportCommonType<IOcclusionScene>();
 			MethodDefinition method = type.AddMethod("CreateOcclusionScene", MethodOverrideAttributes, returnType);
 			CilInstructionCollection processor = method.CilMethodBody.Instructions;
-			processor.AddNotSupportedException();
+			if (SharedState.TypeDictionary.TryGetValue("OcclusionScene", out TypeDefinition occlusionScene))
+			{
+				processor.Add(CilOpCodes.Newobj, occlusionScene.GetDefaultConstructor());
+				processor.Add(CilOpCodes.Ret);
+			}
+			else
+			{
+				processor.Add(CilOpCodes.Ldnull);
+				processor.Add(CilOpCodes.Ret);
+			}
 		}
 	}
 }
