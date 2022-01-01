@@ -46,6 +46,7 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldarg_1);
 			processor.Add(CilOpCodes.Call, exportMethod);
 			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
 		}
 	}
 }
