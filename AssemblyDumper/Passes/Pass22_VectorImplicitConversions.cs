@@ -9,23 +9,23 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 22: Vector Implicit Conversions");
-			if (SharedState.TypeDictionary.TryGetValue("float2", out TypeDefinition float2Type)) //not sure if this exists
+			if (SharedState.TypeDictionary.TryGetValue("Float2", out TypeDefinition float2Type)) //not sure if this exists
 			{
 				AddConversion<Vector2f>(float2Type, 2);
 			}
-			if (SharedState.TypeDictionary.TryGetValue("float3", out TypeDefinition float3Type))
+			if (SharedState.TypeDictionary.TryGetValue("Float3", out TypeDefinition float3Type))
 			{
 				AddConversion<Vector3f>(float3Type, 3);
 			}
-			if (SharedState.TypeDictionary.TryGetValue("float4", out TypeDefinition float4Type))
+			if (SharedState.TypeDictionary.TryGetValue("Float4", out TypeDefinition float4Type))
 			{
 				AddConversion<Vector4f>(float4Type, 4);
 			}
-			if (SharedState.TypeDictionary.TryGetValue("int2_storage", out TypeDefinition int2storageType))
+			if (SharedState.TypeDictionary.TryGetValue("Int2_storage", out TypeDefinition int2storageType))
 			{
 				AddConversion<Vector2i>(int2storageType, 2);
 			}
-			if (SharedState.TypeDictionary.TryGetValue("int3_storage", out TypeDefinition int3storageType))
+			if (SharedState.TypeDictionary.TryGetValue("Int3_storage", out TypeDefinition int3storageType))
 			{
 				AddConversion<Vector3i>(int3storageType, 3);
 			}

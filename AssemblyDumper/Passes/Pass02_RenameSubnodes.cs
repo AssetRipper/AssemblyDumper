@@ -11,6 +11,11 @@ namespace AssemblyDumper.Passes
 		private const string AnimationCurveName = "AnimationCurve";
 		private const string ColorRGBAName = "ColorRGBA";
 		private const string PackedBitVectorName = "PackedBitVector";
+		private const string VFXEntryExposedName = "VFXEntryExposed";
+		private const string VFXEntryExpressionValueName = "VFXEntryExpressionValue";
+		private const string VFXFieldName = "VFXField";
+		private const string VFXPropertySheetSerializedBaseName = "VFXPropertySheetSerializedBase";
+		private const string TilemapRefCountedDataName = "TilemapRefCountedData";
 
 		public static void DoPass()
 		{
@@ -60,7 +65,7 @@ namespace AssemblyDumper.Passes
 			if (!PrimitiveTypes.primitives.Contains(node.TypeName))
 			{
 				node.OriginalTypeName = node.TypeName;
-				node.TypeName = GetValidName(node.TypeName);
+				node.TypeName = GetValidTypeName(node.TypeName);
 			}
 			if(node.SubNodes != null)
 			{
@@ -82,13 +87,30 @@ namespace AssemblyDumper.Passes
 			{
 				throw new ArgumentException("Nodes cannot have a null or whitespace type name", nameof(originalName));
 			}
-			string result = badCharactersRegex.Replace(originalName, "_");
+			string result = originalName.ReplaceBadCharacters();
 			if (char.IsDigit(result[0]))
 			{
 				result = "_" + result;
 			}
 			return result;
 		}
+
+		/// <summary>
+		/// Replace unusable characters in a string with the underscore
+		/// </summary>
+		/// <param name="originalName"></param>
+		/// <returns></returns>
+		private static string GetValidTypeName(string originalName)
+		{
+			string result = GetValidName(originalName);
+			if (char.IsLower(result[0]) && result.Length > 1)
+			{
+				result = char.ToUpperInvariant(result[0]) + result.Substring(1);
+			}
+			return result;
+		}
+
+		private static string ReplaceBadCharacters(this string str) => badCharactersRegex.Replace(str, "_");
 
 		private static void DoSecondaryRenamingRecursively(this UnityNode node)
 		{
@@ -133,6 +155,26 @@ namespace AssemblyDumper.Passes
 			else if (node.IsEditorScene())
 			{
 				node.TypeName = "EditorScene";
+			}
+			else if (node.IsVFXEntryExposed(out string vfxEntryExposedElement))
+			{
+				node.TypeName = $"{VFXEntryExposedName}_{vfxEntryExposedElement}";
+			}
+			else if (node.IsVFXEntryExpressionValue(out string vfxEntryExpressionValueElement))
+			{
+				node.TypeName = $"{VFXEntryExpressionValueName}_{vfxEntryExpressionValueElement}";
+			}
+			else if (node.IsVFXField(out string vfxFieldElement))
+			{
+				node.TypeName = $"{VFXFieldName}_{vfxFieldElement}";
+			}
+			else if (node.IsVFXPropertySheetSerializedBase(out string vfxPropertySheetElement))
+			{
+				node.TypeName = $"{VFXPropertySheetSerializedBaseName}_{vfxPropertySheetElement}";
+			}
+			else if (node.IsTilemapRefCountedData(out string tilemapRefCountedDataElement))
+			{
+				node.TypeName = $"{TilemapRefCountedDataName}_{tilemapRefCountedDataElement}";
 			}
 		}
 
@@ -249,6 +291,87 @@ namespace AssemblyDumper.Passes
 			{
 				return true;
 			}
+			return false;
+		}
+
+		private static bool IsVFXEntryExposed(this UnityNode node, out string elementType)
+		{
+			var subnodes = node.SubNodes;
+			if (node.TypeName == VFXEntryExposedName && subnodes != null && subnodes.Any(n => n.Name == "m_Value"))
+			{
+				elementType = subnodes.Single(n => n.Name == "m_Value").TypeName.ReplaceBadCharacters();
+				return true;
+			}
+
+			elementType = null;
+			return false;
+		}
+
+		private static bool IsVFXEntryExpressionValue(this UnityNode node, out string elementType)
+		{
+			var subnodes = node.SubNodes;
+			if (node.TypeName == VFXEntryExpressionValueName && subnodes != null && subnodes.Any(n => n.Name == "m_Value"))
+			{
+				elementType = subnodes.Single(n => n.Name == "m_Value").TypeName.ReplaceBadCharacters();
+				return true;
+			}
+
+			elementType = null;
+			return false;
+		}
+
+		private static bool IsVFXField(this UnityNode node, out string elementType)
+		{
+			elementType = null;
+
+			if (node.TypeName != VFXFieldName)
+				return false;
+
+			var subnodes = node.SubNodes;
+			if (subnodes == null)
+				return false;
+
+			UnityNode arrayNode = subnodes.SingleOrDefault(subnode => subnode.Name == "m_Array");
+			if (arrayNode == null || arrayNode.TypeName != "vector")
+				return false;
+			UnityNode elementNode = arrayNode.SubNodes[0].SubNodes[1];
+
+			elementType = elementNode.TypeName;
+			return true;
+		}
+
+		private static bool IsVFXPropertySheetSerializedBase(this UnityNode node, out string elementType)
+		{
+			elementType = null;
+			var subnodes = node.SubNodes;
+			if (node.TypeName == VFXPropertySheetSerializedBaseName && subnodes != null && subnodes.Any(n => n.Name == "m_Float"))
+			{
+				string floatFieldType = subnodes.Single(n => n.Name == "m_Float").TypeName;
+				if (floatFieldType.StartsWith($"{VFXFieldName}_{VFXEntryExposedName}"))
+				{
+					elementType = VFXEntryExposedName;
+					return true;
+				}
+				else if (floatFieldType.StartsWith($"{VFXFieldName}_{VFXEntryExpressionValueName}"))
+				{
+					elementType = VFXEntryExpressionValueName;
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		private static bool IsTilemapRefCountedData(this UnityNode node, out string elementType)
+		{
+			var subnodes = node.SubNodes;
+			if (node.TypeName == TilemapRefCountedDataName && subnodes != null && subnodes.Any(n => n.Name == "m_Data"))
+			{
+				elementType = subnodes.Single(n => n.Name == "m_Data").TypeName.ReplaceBadCharacters();
+				return true;
+			}
+
+			elementType = null;
 			return false;
 		}
 	}
