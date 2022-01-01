@@ -50,7 +50,8 @@ namespace AssemblyDumper.Passes
 		}
 
 		/// <summary>
-		/// Uses a regex to replace invalid characters with an underscore, ie data[0] to data_0_
+		/// Fix all type and field names to be valid if decompiled<br/>
+		/// For example, it uses a regex to replace invalid characters with an underscore, ie data[0] to data_0_
 		/// </summary>
 		/// <param name="node"></param>
 		private static void FixNamesRecursively(this UnityNode node)
@@ -62,7 +63,7 @@ namespace AssemblyDumper.Passes
 
 			node.OriginalName = node.Name;
 			node.Name = GetValidName(node.Name);
-			if (!PrimitiveTypes.primitives.Contains(node.TypeName))
+			if (!PrimitiveTypes.primitives.Contains(node.TypeName)) //don't rename special type names like long long, map, or Array
 			{
 				node.OriginalTypeName = node.TypeName;
 				node.TypeName = GetValidTypeName(node.TypeName);
@@ -77,10 +78,10 @@ namespace AssemblyDumper.Passes
 		}
 
 		/// <summary>
-		/// Replace unusable characters in a string with the underscore
+		/// Fixes the string to be a valid field name
 		/// </summary>
 		/// <param name="originalName"></param>
-		/// <returns></returns>
+		/// <returns>A new string with the valid content</returns>
 		private static string GetValidName(string originalName)
 		{
 			if (string.IsNullOrWhiteSpace(originalName))
@@ -96,10 +97,10 @@ namespace AssemblyDumper.Passes
 		}
 
 		/// <summary>
-		/// Replace unusable characters in a string with the underscore
+		/// Fixes the string to be a valid type name
 		/// </summary>
 		/// <param name="originalName"></param>
-		/// <returns></returns>
+		/// <returns>A new string with the valid content</returns>
 		private static string GetValidTypeName(string originalName)
 		{
 			string result = GetValidName(originalName);
