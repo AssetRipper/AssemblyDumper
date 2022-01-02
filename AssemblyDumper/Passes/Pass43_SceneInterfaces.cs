@@ -12,19 +12,19 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 43: Scene Interfaces");
-			if(SharedState.TypeDictionary.TryGetValue("SceneObjectIdentifier", out TypeDefinition sceneObjectIdentifier))
+			if(SharedState.TypeDictionary.TryGetValue("SceneObjectIdentifier", out TypeDefinition? sceneObjectIdentifier))
 			{
 				sceneObjectIdentifier.ImplementSceneObjectIdentifier();
 			}
-			if (SharedState.TypeDictionary.TryGetValue("OcclusionScene", out TypeDefinition occlusionScene))
+			if (SharedState.TypeDictionary.TryGetValue("OcclusionScene", out TypeDefinition? occlusionScene))
 			{
 				occlusionScene.ImplementOcclusionScene();
 			}
-			if (SharedState.TypeDictionary.TryGetValue("OcclusionCullingData", out TypeDefinition occlusionCullingData))
+			if (SharedState.TypeDictionary.TryGetValue("OcclusionCullingData", out TypeDefinition? occlusionCullingData))
 			{
 				occlusionCullingData.ImplementOcclusionCullingData();
 			}
-			if (SharedState.TypeDictionary.TryGetValue("OcclusionCullingSettings", out TypeDefinition occlusionCullingSettings)
+			if (SharedState.TypeDictionary.TryGetValue("OcclusionCullingSettings", out TypeDefinition? occlusionCullingSettings)
 				|| SharedState.TypeDictionary.TryGetValue("SceneSettings", out occlusionCullingSettings)
 				|| SharedState.TypeDictionary.TryGetValue("Scene", out occlusionCullingSettings))
 			{
@@ -50,18 +50,18 @@ namespace AssemblyDumper.Passes
 			FieldDefinition guidField = type.GetFieldByName("scene");
 
 			//specific to common
-			MethodDefinition implicitConversion = guidField.Signature.FieldType.Resolve().Methods.Single(m => m.Name == "op_Implicit");
+			MethodDefinition implicitConversion = guidField.Signature!.FieldType.Resolve()!.Methods.Single(m => m.Name == "op_Implicit");
 			//common to specific
-			MethodDefinition explicitConversion = guidField.Signature.FieldType.Resolve().Methods.Single(m => m.Name == "op_Explicit");
+			MethodDefinition explicitConversion = guidField.Signature.FieldType.Resolve()!.Methods.Single(m => m.Name == "op_Explicit");
 
 			ITypeDefOrRef unityGuid = SharedState.Importer.ImportCommonType<AssetRipper.Core.Classes.Misc.UnityGUID>();
 			PropertyDefinition property = type.AddFullProperty(nameof(IOcclusionScene.Scene), InterfaceUtils.InterfacePropertyImplementation, unityGuid.ToTypeSignature());
-			var getProcessor = property.GetMethod.CilMethodBody.Instructions;
+			CilInstructionCollection getProcessor = property.GetMethod!.CilMethodBody!.Instructions;
 			getProcessor.Add(CilOpCodes.Ldarg_0);
 			getProcessor.Add(CilOpCodes.Ldfld, guidField);
 			getProcessor.Add(CilOpCodes.Call, implicitConversion);
 			getProcessor.Add(CilOpCodes.Ret);
-			var setProcessor = property.SetMethod.CilMethodBody.Instructions;
+			CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
 			setProcessor.Add(CilOpCodes.Call, explicitConversion);
@@ -87,10 +87,10 @@ namespace AssemblyDumper.Passes
 		{
 			MethodDefinition initializeMethod = type.AddMethod(methodName, InterfaceUtils.InterfaceMethodImplementation, SystemTypeGetter.Void);
 			initializeMethod.AddParameter("count", SystemTypeGetter.Int32);
-			initializeMethod.CilMethodBody.InitializeLocals = true;
+			initializeMethod.CilMethodBody!.InitializeLocals = true;
 			CilInstructionCollection processor = initializeMethod.CilMethodBody.Instructions;
 
-			if(type.TryGetFieldByName(fieldName, out FieldDefinition field))
+			if(type.TryGetFieldByName(fieldName, out FieldDefinition? field))
 			{
 				processor.AddInitializeArrayField(field);
 			}
@@ -111,20 +111,20 @@ namespace AssemblyDumper.Passes
 		private static void ImplementSceneGuidProperty(this TypeDefinition type)
 		{
 			TypeSignature commonGuidSignature = SharedState.Importer.ImportCommonType<AssetRipper.Core.Classes.Misc.UnityGUID>().ToTypeSignature();
-			if (type.TryGetFieldByName("m_SceneGUID", out FieldDefinition sceneGuidField))
+			if (type.TryGetFieldByName("m_SceneGUID", out FieldDefinition? sceneGuidField))
 			{
 				//specific to common
-				MethodDefinition implicitConversion = sceneGuidField.Signature.FieldType.Resolve().Methods.Single(m => m.Name == "op_Implicit");
+				MethodDefinition implicitConversion = sceneGuidField.Signature!.FieldType.Resolve()!.Methods.Single(m => m.Name == "op_Implicit");
 				//common to specific
-				MethodDefinition explicitConversion = sceneGuidField.Signature.FieldType.Resolve().Methods.Single(m => m.Name == "op_Explicit");
+				MethodDefinition explicitConversion = sceneGuidField.Signature.FieldType.Resolve()!.Methods.Single(m => m.Name == "op_Explicit");
 
 				PropertyDefinition property = type.AddFullProperty(nameof(IOcclusionCullingSettings.SceneGUID), InterfaceUtils.InterfacePropertyImplementation, commonGuidSignature);
-				var getProcessor = property.GetMethod.CilMethodBody.Instructions;
+				CilInstructionCollection getProcessor = property.GetMethod!.CilMethodBody!.Instructions;
 				getProcessor.Add(CilOpCodes.Ldarg_0);
 				getProcessor.Add(CilOpCodes.Ldfld, sceneGuidField);
 				getProcessor.Add(CilOpCodes.Call, implicitConversion);
 				getProcessor.Add(CilOpCodes.Ret);
-				var setProcessor = property.SetMethod.CilMethodBody.Instructions;
+				CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
 				setProcessor.Add(CilOpCodes.Ldarg_0);
 				setProcessor.Add(CilOpCodes.Ldarg_1);
 				setProcessor.Add(CilOpCodes.Call, explicitConversion);
@@ -141,17 +141,17 @@ namespace AssemblyDumper.Passes
 		{
 			TypeSignature rendererTypeSignature = SharedState.Importer.ImportCommonType<IRenderer>().ToTypeSignature();
 			TypeSignature returnTypeSignature = SharedState.Importer.ImportTypeSignature(
-				CommonTypeGetter.LookupCommonType<IOcclusionCullingSettings>()
+				CommonTypeGetter.LookupCommonType<IOcclusionCullingSettings>()!
 				.Properties
 				.Single(m => m.Name == nameof(IOcclusionCullingSettings.StaticRenderers))
-				.Signature
+				.Signature!
 				.ReturnType);
-			if (type.TryGetFieldByName("m_StaticRenderers", out FieldDefinition field) || type.TryGetFieldByName("m_PVSObjectsArray", out field))
+			if (type.TryGetFieldByName("m_StaticRenderers", out FieldDefinition? field) || type.TryGetFieldByName("m_PVSObjectsArray", out field))
 			{
 				IMethodDefOrRef castMethod = SharedState.Importer.ImportCommonMethod(typeof(PPtr), m => m.Name == nameof(PPtr.CastArray));
-				var castMethodInstance = MethodUtils.MakeGenericInstanceMethod(castMethod, rendererTypeSignature);
+				MethodSpecification? castMethodInstance = MethodUtils.MakeGenericInstanceMethod(castMethod, rendererTypeSignature);
 				PropertyDefinition property = type.AddGetterProperty(nameof(IOcclusionCullingSettings.StaticRenderers), InterfaceUtils.InterfacePropertyImplementation, returnTypeSignature);
-				var processor = property.GetMethod.CilMethodBody.Instructions;
+				CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Ldfld, field);
 				processor.Add(CilOpCodes.Call, castMethodInstance);
@@ -167,17 +167,17 @@ namespace AssemblyDumper.Passes
 		{
 			TypeSignature portalTypeSignature = SharedState.Importer.ImportCommonType<IOcclusionPortal>().ToTypeSignature();
 			TypeSignature returnTypeSignature = SharedState.Importer.ImportTypeSignature(
-				CommonTypeGetter.LookupCommonType<IOcclusionCullingSettings>()
+				CommonTypeGetter.LookupCommonType<IOcclusionCullingSettings>()!
 				.Properties
 				.Single(m => m.Name == nameof(IOcclusionCullingSettings.Portals))
-				.Signature
+				.Signature!
 				.ReturnType);
-			if (type.TryGetFieldByName("m_Portals", out FieldDefinition field) || type.TryGetFieldByName("m_PVSPortalsArray", out field))
+			if (type.TryGetFieldByName("m_Portals", out FieldDefinition? field) || type.TryGetFieldByName("m_PVSPortalsArray", out field))
 			{
 				IMethodDefOrRef castMethod = SharedState.Importer.ImportCommonMethod(typeof(PPtr), m => m.Name == nameof(PPtr.CastArray));
-				var castMethodInstance = MethodUtils.MakeGenericInstanceMethod(castMethod, portalTypeSignature);
+				MethodSpecification? castMethodInstance = MethodUtils.MakeGenericInstanceMethod(castMethod, portalTypeSignature);
 				PropertyDefinition property = type.AddGetterProperty(nameof(IOcclusionCullingSettings.Portals), InterfaceUtils.InterfacePropertyImplementation, returnTypeSignature);
-				var processor = property.GetMethod.CilMethodBody.Instructions;
+				CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Ldfld, field);
 				processor.Add(CilOpCodes.Call, castMethodInstance);
@@ -192,17 +192,17 @@ namespace AssemblyDumper.Passes
 		private static void ImplementOcclusionCullingDataProperty(this TypeDefinition type)
 		{
 			TypeSignature returnTypeSignature = SharedState.Importer.ImportTypeSignature(
-				CommonTypeGetter.LookupCommonType<IOcclusionCullingSettings>()
+				CommonTypeGetter.LookupCommonType<IOcclusionCullingSettings>()!
 				.Properties
 				.Single(m => m.Name == nameof(IOcclusionCullingSettings.OcclusionCullingData))
-				.Signature
+				.Signature!
 				.ReturnType);
-			if (type.TryGetFieldByName("m_OcclusionCullingData", out FieldDefinition field))
+			if (type.TryGetFieldByName("m_OcclusionCullingData", out FieldDefinition? field))
 			{
-				TypeSignature fieldType = field.Signature.FieldType;
-				MethodDefinition explicitConversionMethod = PPtrUtils.GetExplicitConversion<IOcclusionCullingData>(fieldType.Resolve());
+				TypeSignature fieldType = field.Signature!.FieldType;
+				MethodDefinition explicitConversionMethod = PPtrUtils.GetExplicitConversion<IOcclusionCullingData>(fieldType.Resolve()!);
 				PropertyDefinition property = type.AddGetterProperty(nameof(IOcclusionCullingSettings.OcclusionCullingData), InterfaceUtils.InterfacePropertyImplementation, returnTypeSignature);
-				CilInstructionCollection processor = property.GetMethod.CilMethodBody.Instructions;
+				CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Ldfld, field);
 				processor.Add(CilOpCodes.Call, explicitConversionMethod);

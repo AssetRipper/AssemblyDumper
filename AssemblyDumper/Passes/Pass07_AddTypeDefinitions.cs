@@ -6,11 +6,13 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass07_AddTypeDefinitions
 	{
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static IMethodDefOrRef EditorOnlyAttributeConstructor { get; set; }
 		private static IMethodDefOrRef ReleaseOnlyAttributeConstructor { get; set; }
 		private static IMethodDefOrRef StrippedAttributeConstructor { get; set; }
 		private static IMethodDefOrRef PersistentIDAttributeConstructor { get; set; }
 		private static IMethodDefOrRef OriginalNameAttributeConstructor { get; set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		public static void DoPass()
 		{
@@ -22,16 +24,16 @@ namespace AssemblyDumper.Passes
 			PersistentIDAttributeConstructor = SharedState.Importer.ImportCommonConstructor<PersistentIDAttribute>(1);
 			OriginalNameAttributeConstructor = SharedState.Importer.ImportCommonConstructor<OriginalNameAttribute>(1);
 
-			var assembly = SharedState.Assembly;
-			foreach (var pair in SharedState.ClassDictionary)
+			AssemblyDefinition? assembly = SharedState.Assembly;
+			foreach (KeyValuePair<string, UnityClass> pair in SharedState.ClassDictionary)
 			{
-				var typeDef = assembly.CreateType(pair.Value);
+				TypeDefinition? typeDef = assembly.CreateType(pair.Value);
 				if (typeDef != null)
 					SharedState.TypeDictionary.Add(pair.Key, typeDef);
 			}
 		}
 
-		private static TypeDefinition CreateType(this AssemblyDefinition _this, UnityClass @class)
+		private static TypeDefinition? CreateType(this AssemblyDefinition _this, UnityClass @class)
 		{
 			string name = @class.Name;
 			if (SystemTypeGetter.primitiveNamesCsharp.Contains(name))
@@ -55,7 +57,7 @@ namespace AssemblyDumper.Passes
 			if (@class.IsStripped) typeDef.AddCustomAttribute(StrippedAttributeConstructor);
 			typeDef.AddCustomAttribute(PersistentIDAttributeConstructor, SystemTypeGetter.Int32, @class.TypeID);
 
-			_this.ManifestModule.TopLevelTypes.Add(typeDef);
+			_this.ManifestModule!.TopLevelTypes.Add(typeDef);
 
 			return typeDef;
 		}

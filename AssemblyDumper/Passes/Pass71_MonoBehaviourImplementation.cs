@@ -16,14 +16,16 @@ namespace AssemblyDumper.Passes
 			MethodAttributes.SpecialName |
 			MethodAttributes.NewSlot |
 			MethodAttributes.Virtual;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static TypeSignature serializableStructureSignature;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 71: MonoBehaviour Implementation");
 			ITypeDefOrRef monobehaviourInterface = SharedState.Importer.ImportCommonType<IMonoBehaviour>();
 			serializableStructureSignature = SharedState.Importer.ImportCommonType<AssetRipper.Core.Structure.Assembly.Serializable.SerializableStructure>().ToTypeSignature();
-			if (SharedState.TypeDictionary.TryGetValue("MonoBehaviour", out TypeDefinition type))
+			if (SharedState.TypeDictionary.TryGetValue("MonoBehaviour", out TypeDefinition? type))
 			{
 				type.Interfaces.Add(new InterfaceImplementation(monobehaviourInterface));
 				FieldDefinition structureField = type.AddStructureField();
@@ -48,10 +50,10 @@ namespace AssemblyDumper.Passes
 		private static PropertyDefinition AddScriptPtrProperty(this TypeDefinition type)
 		{
 			FieldDefinition field = type.GetFieldByName("m_Script");
-			TypeSignature fieldType = field.Signature.FieldType;
-			MethodDefinition explicitConversionMethod = PPtrUtils.GetExplicitConversion<IMonoScript>(fieldType.Resolve());
-			PropertyDefinition property = type.AddGetterProperty("ScriptPtr", InterfacePropertyImplementationAttributes, explicitConversionMethod.Signature.ReturnType);
-			CilInstructionCollection processor = property.GetMethod.CilMethodBody.Instructions;
+			TypeSignature fieldType = field.Signature!.FieldType;
+			MethodDefinition explicitConversionMethod = PPtrUtils.GetExplicitConversion<IMonoScript>(fieldType.Resolve()!);
+			PropertyDefinition property = type.AddGetterProperty("ScriptPtr", InterfacePropertyImplementationAttributes, explicitConversionMethod.Signature!.ReturnType);
+			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldfld, field);
 			processor.Add(CilOpCodes.Call, explicitConversionMethod);
@@ -69,7 +71,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddReadStructure(this MethodDefinition method)
 		{
-			CilInstructionCollection processor = method.CilMethodBody.Instructions;
+			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
 			processor.Pop();//Remove the return
 			IMethodDefOrRef readStructureMethod = SharedState.Importer.ImportCommonMethod(typeof(MonoBehaviourExtensions), m => m.Name == "ReadStructure");
 			processor.Add(CilOpCodes.Ldarg_0);
@@ -88,7 +90,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddExportStructureYaml(this MethodDefinition method)
 		{
-			CilInstructionCollection processor = method.CilMethodBody.Instructions;
+			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
 			processor.Pop();//Remove the return
 			processor.Pop();//Remove the mapping node load
 			IMethodDefOrRef exportStructureMethod = SharedState.Importer.ImportCommonMethod(typeof(MonoBehaviourExtensions), m => m.Name == "MaybeExportYamlForStructure");

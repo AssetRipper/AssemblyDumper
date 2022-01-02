@@ -7,25 +7,25 @@ namespace AssemblyDumper.Unity
 		/// <summary>
 		/// The unique type name used in the <see cref = "SharedState"/> dictionaries
 		/// </summary>
-		public string TypeName { get; set; }
+		public string TypeName { get => typeName; set => typeName = value ?? ""; }
 		/// <summary>
 		/// The original type name as obtained from the json file
 		/// </summary>
 		[JsonIgnore]
-		public string OriginalTypeName 
+		public string OriginalTypeName
 		{
-			get => string.IsNullOrEmpty(m_OriginalTypeName) ? TypeName : m_OriginalTypeName;
-			set => m_OriginalTypeName = value;
+			get => string.IsNullOrEmpty(originalTypeName) ? TypeName : originalTypeName;
+			set => originalTypeName = value ?? "";
 		}
-		public string Name { get; set; }
+		public string Name { get => name; set => name = value ?? ""; }
 		/// <summary>
 		/// The original name as obtained from the json file
 		/// </summary>
 		[JsonIgnore]
 		public string OriginalName
 		{
-			get => string.IsNullOrEmpty(m_OriginalName) ? Name : m_OriginalName;
-			set => m_OriginalName = value;
+			get => string.IsNullOrEmpty(originalName) ? Name : originalName;
+			set => originalName = value ?? "";
 		}
 		public byte Level { get; set; }
 		public int ByteSize { get; set; }
@@ -33,10 +33,13 @@ namespace AssemblyDumper.Unity
 		public short Version { get; set; }
 		public byte TypeFlags { get; set; }
 		public int MetaFlag { get; set; }
-		public List<UnityNode> SubNodes { get; set; }
+		public List<UnityNode> SubNodes { get => subNodes; set => subNodes = value ?? new(); }
 
-		private string m_OriginalTypeName;
-		private string m_OriginalName;
+		private string originalTypeName = "";
+		private string originalName = "";
+		private string typeName = "";
+		private string name = "";
+		private List<UnityNode> subNodes = new();
 
 		/// <summary>
 		/// Deep clones a node and all its subnodes<br/>
@@ -45,11 +48,11 @@ namespace AssemblyDumper.Unity
 		/// <returns>The new node</returns>
 		public UnityNode DeepClone()
 		{
-			var cloned = new UnityNode();
+			UnityNode? cloned = new UnityNode();
 			cloned.TypeName = CloneString(TypeName);
-			cloned.m_OriginalTypeName = CloneString(m_OriginalTypeName);
+			cloned.originalTypeName = CloneString(originalTypeName);
 			cloned.Name = CloneString(Name);
-			cloned.m_OriginalName = CloneString(m_OriginalName);
+			cloned.originalName = CloneString(originalName);
 			cloned.Level = Level;
 			cloned.ByteSize = ByteSize;
 			cloned.Index = Index;
@@ -60,9 +63,9 @@ namespace AssemblyDumper.Unity
 			return cloned;
 		}
 
-		private static string CloneString(string @string)
+		private static string CloneString(string? @string)
 		{
-			return @string == null ? null : new string(@string);
+			return @string == null ? "" : new string(@string);
 		}
 	}
 }

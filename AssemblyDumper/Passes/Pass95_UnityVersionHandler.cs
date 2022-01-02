@@ -10,7 +10,9 @@ namespace AssemblyDumper.Passes
 		const MethodAttributes ConstructorAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RuntimeSpecialName;
 		const MethodAttributes PropertyOverrideAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.Virtual;
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public static TypeDefinition HandlerDefinition { get; private set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		public static void DoPass()
 		{
@@ -23,9 +25,9 @@ namespace AssemblyDumper.Passes
 
 		private static void AddConstructor(this TypeDefinition type)
 		{
-			var constructor = type.AddMethod(".ctor", ConstructorAttributes, SystemTypeGetter.Void);
+			MethodDefinition? constructor = type.AddMethod(".ctor", ConstructorAttributes, SystemTypeGetter.Void);
 			
-			CilInstructionCollection processor = constructor.CilMethodBody.Instructions;
+			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
 			processor.AddBaseConstructorCall();
 			processor.AddAssetFactoryAssignment();
 			processor.AddImporterFactoryAssignment();

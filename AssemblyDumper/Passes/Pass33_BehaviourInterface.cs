@@ -17,7 +17,7 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 33: Behaviour Interface");
-			if (!SharedState.TypeDictionary.TryGetValue("Behaviour", out TypeDefinition type))
+			if (!SharedState.TypeDictionary.TryGetValue("Behaviour", out TypeDefinition? type))
 			{
 				throw new Exception("Behaviour not found");
 			}
@@ -28,7 +28,7 @@ namespace AssemblyDumper.Passes
 				FieldDefinition field = type.GetFieldByName(FieldName);
 				
 				PropertyDefinition property = type.AddFullProperty(PropertyName, InterfacePropertyImplementationAttributes, SystemTypeGetter.Boolean);
-				CilInstructionCollection getProcessor = property.GetMethod.CilMethodBody.Instructions;
+				CilInstructionCollection getProcessor = property.GetMethod!.CilMethodBody!.Instructions;
 				getProcessor.Add(CilOpCodes.Ldarg_0);
 				getProcessor.Add(CilOpCodes.Ldfld, field);
 				getProcessor.Add(CilOpCodes.Ldc_I4_0);
@@ -36,7 +36,7 @@ namespace AssemblyDumper.Passes
 				getProcessor.Add(CilOpCodes.Ret);
 				getProcessor.OptimizeMacros();
 
-				CilInstructionCollection setProcessor = property.SetMethod.CilMethodBody.Instructions;
+				CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
 				CilInstructionLabel jumpTrue = new CilInstructionLabel();
 				CilInstructionLabel jumpFalse = new CilInstructionLabel();
 				setProcessor.Add(CilOpCodes.Ldarg_0);

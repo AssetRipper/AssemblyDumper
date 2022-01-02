@@ -21,7 +21,7 @@ namespace AssemblyDumper.Passes
 			TypeDefinition type = SharedState.TypeDictionary["BuildSettings"];
 			type.AddInterfaceImplementation<IBuildSettings>();
 			type.ImplementFullProperty(nameof(IBuildSettings.Version), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String, type.GetFieldByName("m_Version"));
-			if(type.TryGetFieldByName("scenes", out FieldDefinition field))
+			if(type.TryGetFieldByName("scenes", out FieldDefinition? field))
 			{
 				type.ImplementFullProperty(nameof(IBuildSettings.Scenes), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String.MakeSzArrayType(), field);
 			}
@@ -60,10 +60,10 @@ namespace AssemblyDumper.Passes
 			type.ImplementInterfacePropertyForgiving("CacheServerEnableUpload", SystemTypeGetter.Boolean);
 		}
 
-		private static void ImplementInterfacePropertyForgiving(this TypeDefinition type, string propertyName, TypeSignature returnType, string fieldName = null)
+		private static void ImplementInterfacePropertyForgiving(this TypeDefinition type, string propertyName, TypeSignature returnType, string? fieldName = null)
 		{
 			fieldName ??= $"m_{propertyName}";
-			if (type.TryGetFieldByName(fieldName, out var field))
+			if (type.TryGetFieldByName(fieldName, out FieldDefinition? field))
 			{
 				type.ImplementFullProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, returnType, field);
 			}
@@ -81,20 +81,20 @@ namespace AssemblyDumper.Passes
 			type.ImplementFullProperty(nameof(IEditorScene.Path), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String, type.GetFieldByName("path"));
 
 			ITypeDefOrRef unityGuid = SharedState.Importer.ImportCommonType<AssetRipper.Core.Classes.Misc.UnityGUID>();
-			if(type.TryGetFieldByName("guid", out FieldDefinition guidField))
+			if(type.TryGetFieldByName("guid", out FieldDefinition? guidField))
 			{
 				//specific to common
-				MethodDefinition implicitConversion = guidField.Signature.FieldType.Resolve().Methods.Single(m => m.Name == "op_Implicit");
+				MethodDefinition implicitConversion = guidField.Signature!.FieldType.Resolve()!.Methods.Single(m => m.Name == "op_Implicit");
 				//common to specific
-				MethodDefinition explicitConversion = guidField.Signature.FieldType.Resolve().Methods.Single(m => m.Name == "op_Explicit");
+				MethodDefinition explicitConversion = guidField.Signature.FieldType.Resolve()!.Methods.Single(m => m.Name == "op_Explicit");
 
 				PropertyDefinition property = type.AddFullProperty(nameof(IEditorScene.GUID), InterfaceUtils.InterfacePropertyImplementation, unityGuid.ToTypeSignature());
-				var getProcessor = property.GetMethod.CilMethodBody.Instructions;
+				CilInstructionCollection getProcessor = property.GetMethod!.CilMethodBody!.Instructions;
 				getProcessor.Add(CilOpCodes.Ldarg_0);
 				getProcessor.Add(CilOpCodes.Ldfld, guidField);
 				getProcessor.Add(CilOpCodes.Call, implicitConversion);
 				getProcessor.Add(CilOpCodes.Ret);
-				var setProcessor = property.SetMethod.CilMethodBody.Instructions;
+				CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
 				setProcessor.Add(CilOpCodes.Ldarg_0);
 				setProcessor.Add(CilOpCodes.Ldarg_1);
 				setProcessor.Add(CilOpCodes.Call, explicitConversion);
@@ -119,7 +119,7 @@ namespace AssemblyDumper.Passes
 
 			MethodDefinition initializeScenesMethod = type.AddMethod(nameof(IEditorBuildSettings.InitializeScenesArray), InterfaceUtils.InterfaceMethodImplementation, SystemTypeGetter.Void);
 			initializeScenesMethod.AddParameter("length", SystemTypeGetter.Int32);
-			initializeScenesMethod.CilMethodBody.InitializeLocals = true;
+			initializeScenesMethod.CilMethodBody!.InitializeLocals = true;
 			CilInstructionCollection processor = initializeScenesMethod.CilMethodBody.Instructions;
 
 			processor.AddInitializeArrayField(field);

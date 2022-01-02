@@ -13,15 +13,17 @@ namespace AssemblyDumper.Passes
 			MethodAttributes.SpecialName | 
 			MethodAttributes.RuntimeSpecialName;
 		private readonly static List<string> processed = new List<string>();
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static ITypeDefOrRef AssetInfoRef;
 		private static ITypeDefOrRef LayoutInfoRef;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 11: Add Constructors");
 			AssetInfoRef = SharedState.Importer.ImportCommonType<AssetInfo>();
 			LayoutInfoRef = SharedState.Importer.ImportCommonType<LayoutInfo>();
-			foreach (var pair in SharedState.ClassDictionary)
+			foreach (KeyValuePair<string, UnityClass> pair in SharedState.ClassDictionary)
 			{
 				if (processed.Contains(pair.Key))
 					continue;
@@ -60,7 +62,7 @@ namespace AssemblyDumper.Passes
 
 		private static MethodDefinition AddSingleParameterConstructor(this TypeDefinition typeDefinition, ITypeDefOrRef parameterType, string parameterName)
 		{
-			var constructor = typeDefinition.AddMethod(
+			MethodDefinition? constructor = typeDefinition.AddMethod(
 				".ctor",
 				PublicInstanceConstructorAttributes,
 				SystemTypeGetter.Void

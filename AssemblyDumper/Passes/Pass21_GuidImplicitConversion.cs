@@ -9,7 +9,7 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 21: GUID Implicit Conversion");
-			if(SharedState.TypeDictionary.TryGetValue("GUID", out TypeDefinition guidType))
+			if(SharedState.TypeDictionary.TryGetValue("GUID", out TypeDefinition? guidType))
 			{
 				AddImplicitConversion(guidType);
 				AddExplicitConversion(guidType);
@@ -29,8 +29,8 @@ namespace AssemblyDumper.Passes
 			MethodDefinition implicitMethod = guidType.AddMethod("op_Implicit", ConversionAttributes, commonGuidType);
 			implicitMethod.AddParameter("value", guidType);
 
-			implicitMethod.CilMethodBody.InitializeLocals = true;
-			var processor = implicitMethod.CilMethodBody.Instructions;
+			implicitMethod.CilMethodBody!.InitializeLocals = true;
+			CilInstructionCollection processor = implicitMethod.CilMethodBody.Instructions;
 
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldfld, data0);
@@ -62,7 +62,7 @@ namespace AssemblyDumper.Passes
 			MethodDefinition explicitMethod = guidType.AddMethod("op_Explicit", ConversionAttributes, guidType);
 			Parameter parameter = explicitMethod.AddParameter("value", commonGuidType);
 
-			var processor = explicitMethod.CilMethodBody.Instructions;
+			CilInstructionCollection processor = explicitMethod.CilMethodBody!.Instructions;
 
 			processor.Add(CilOpCodes.Newobj, constructor);
 			processor.Add(CilOpCodes.Dup);

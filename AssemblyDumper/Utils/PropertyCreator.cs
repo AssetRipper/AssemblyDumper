@@ -12,9 +12,9 @@ namespace AssemblyDumper.Utils
 			return property;
 		}
 
-		public static PropertyDefinition ImplementFullProperty(this TypeDefinition type, string propertyName, MethodAttributes methodAttributes, TypeSignature returnTypeSignature, FieldDefinition field, PropertyAttributes propertyAttributes = PropertyAttributes.None)
+		public static PropertyDefinition ImplementFullProperty(this TypeDefinition type, string propertyName, MethodAttributes methodAttributes, TypeSignature? returnTypeSignature, FieldDefinition? field, PropertyAttributes propertyAttributes = PropertyAttributes.None)
 		{
-			TypeSignature returnType = returnTypeSignature ?? field.Signature.FieldType;
+			TypeSignature returnType = returnTypeSignature ?? field?.Signature!.FieldType ?? throw new Exception($"{nameof(returnTypeSignature)} and {nameof(field)} cannot both be null");
 			PropertyDefinition property = type.AddFullProperty(propertyName, methodAttributes, returnType, propertyAttributes);
 			property.FillGetter(field, returnType);
 			property.FillSetter(field);
@@ -28,9 +28,9 @@ namespace AssemblyDumper.Utils
 			return property;
 		}
 
-		public static PropertyDefinition ImplementGetterProperty(this TypeDefinition type, string propertyName, MethodAttributes methodAttributes, TypeSignature returnTypeSignature, FieldDefinition field, PropertyAttributes propertyAttributes = PropertyAttributes.None)
+		public static PropertyDefinition ImplementGetterProperty(this TypeDefinition type, string propertyName, MethodAttributes methodAttributes, TypeSignature? returnTypeSignature, FieldDefinition? field, PropertyAttributes propertyAttributes = PropertyAttributes.None)
 		{
-			TypeSignature returnType = returnTypeSignature ?? field.Signature.FieldType;
+			TypeSignature returnType = returnTypeSignature ?? field?.Signature!.FieldType ?? throw new Exception($"{nameof(returnTypeSignature)} and {nameof(field)} cannot both be null");
 			PropertyDefinition property = type.AddGetterProperty(propertyName, methodAttributes, returnType, propertyAttributes);
 			property.FillGetter(field, returnType);
 			return property;
@@ -54,7 +54,7 @@ namespace AssemblyDumper.Utils
 		{
 			if(property.GetMethod != null)
 				throw new ArgumentException("Property already has a get method",nameof(property));
-			MethodDefinition getter = property.DeclaringType.AddMethod($"get_{propertyName}", methodAttributes, returnType);
+			MethodDefinition getter = property.DeclaringType!.AddMethod($"get_{propertyName}", methodAttributes, returnType);
 			property.Semantics.Add(new MethodSemantics(getter, MethodSemanticsAttributes.Getter));
 			return getter;
 		}
@@ -63,17 +63,17 @@ namespace AssemblyDumper.Utils
 		{
 			if (property.SetMethod != null)
 				throw new ArgumentException("Property already has a set method", nameof(property));
-			MethodDefinition setter = property.DeclaringType.AddMethod($"set_{propertyName}", methodAttributes, SystemTypeGetter.Void);
+			MethodDefinition setter = property.DeclaringType!.AddMethod($"set_{propertyName}", methodAttributes, SystemTypeGetter.Void!);
 			setter.AddParameter("value", returnType);
 			property.Semantics.Add(new MethodSemantics(setter, MethodSemanticsAttributes.Setter));
 			return setter;
 		}
 
-		private static MethodDefinition FillGetter(this PropertyDefinition property, FieldDefinition field, TypeSignature returnType = null)
+		private static MethodDefinition FillGetter(this PropertyDefinition property, FieldDefinition? field, TypeSignature? returnType = null)
 		{
-			MethodDefinition getter = property.GetMethod;
+			MethodDefinition getter = property.GetMethod!;
 
-			var processor = getter.CilMethodBody.Instructions;
+			CilInstructionCollection processor = getter.CilMethodBody!.Instructions;
 			if (field != null)
 			{
 				processor.Add(CilOpCodes.Ldarg_0);
@@ -92,11 +92,11 @@ namespace AssemblyDumper.Utils
 			return getter;
 		}
 
-		private static MethodDefinition FillSetter(this PropertyDefinition property, FieldDefinition field)
+		private static MethodDefinition FillSetter(this PropertyDefinition property, FieldDefinition? field)
 		{
-			MethodDefinition setter = property.SetMethod;
+			MethodDefinition setter = property.SetMethod!;
 
-			var processor = setter.CilMethodBody.Instructions;
+			CilInstructionCollection processor = setter.CilMethodBody!.Instructions;
 			if (field != null)
 			{
 				processor.Add(CilOpCodes.Ldarg_0);

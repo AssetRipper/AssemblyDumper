@@ -8,7 +8,7 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 24: Hash128 Implicit Conversion");
-			if (SharedState.TypeDictionary.TryGetValue("Hash128", out TypeDefinition type))
+			if (SharedState.TypeDictionary.TryGetValue("Hash128", out TypeDefinition? type))
 			{
 				type.AddConversion();
 			}
@@ -19,7 +19,7 @@ namespace AssemblyDumper.Passes
 			ITypeDefOrRef returnType = SharedState.Importer.ImportCommonType<AssetRipper.Core.Classes.Misc.Hash128>();
 			MethodDefinition method = type.AddMethod("op_Implicit", ConversionAttributes, returnType);
 			method.AddParameter("value", type);
-			method.CilMethodBody.InitializeLocals = true;
+			method.CilMethodBody!.InitializeLocals = true;
 
 			CilInstructionCollection processor = method.CilMethodBody.Instructions;
 			SzArrayTypeSignature arrayType = SystemTypeGetter.UInt8.MakeSzArrayType();

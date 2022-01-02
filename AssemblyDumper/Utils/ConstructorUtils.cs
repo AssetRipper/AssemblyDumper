@@ -22,16 +22,14 @@ namespace AssemblyDumper.Utils
 		/// </summary>
 		public static MethodDefinition AddDefaultConstructor(TypeDefinition typeDefinition)
 		{
-			var module = typeDefinition.Module;
-			
-			var defaultConstructor = new MethodDefinition(
+			MethodDefinition defaultConstructor = new MethodDefinition(
 				".ctor",
 				MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RuntimeSpecialName,
-				MethodSignature.CreateInstance(SystemTypeGetter.Void)
+				MethodSignature.CreateInstance(SystemTypeGetter.Void!)
 			);
 
 			defaultConstructor.CilMethodBody = new(defaultConstructor);
-			var processor = defaultConstructor.CilMethodBody.Instructions;
+			CilInstructionCollection processor = defaultConstructor.CilMethodBody.Instructions;
 
 			IMethodDefOrRef baseConstructor;
 			if (typeDefinition.BaseType == null)
@@ -44,7 +42,7 @@ namespace AssemblyDumper.Utils
 				{
 					baseConstructor = baseType.GetDefaultConstructor();
 				}
-				else if (typeDefinition.BaseType.Namespace.ToString().StartsWith("AssetRipper"))
+				else if (typeDefinition.BaseType.Namespace?.ToString().StartsWith("AssetRipper") ?? false)
 				{
 					baseConstructor = SharedState.Importer.ImportCommonConstructor(typeDefinition.BaseType.FullName);
 				}

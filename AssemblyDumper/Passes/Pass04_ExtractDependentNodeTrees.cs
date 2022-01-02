@@ -7,7 +7,7 @@ namespace AssemblyDumper.Passes
 		/// <summary>
 		/// OriginalTypeName : List(newTypeName,releaseRoot,editorRoot)
 		/// </summary>
-		private static readonly Dictionary<string, List<(string, UnityNode, UnityNode)>> generatedTypes = new Dictionary<string, List<(string, UnityNode, UnityNode)>>();
+		private static readonly Dictionary<string, List<(string, UnityNode?, UnityNode?)>> generatedTypes = new Dictionary<string, List<(string, UnityNode?, UnityNode?)>>();
 
 		public static void DoPass()
 		{
@@ -22,21 +22,21 @@ namespace AssemblyDumper.Passes
 		{
 			foreach(UnityClass unityClass in SharedState.ClassDictionary.Values)
 			{
-				var newList = new List<(string, UnityNode, UnityNode)>();
-				newList.Add((unityClass.Name, unityClass.ReleaseRootNode, unityClass.EditorRootNode));
-				generatedTypes.Add(unityClass.Name, newList);
+				List<(string, UnityNode?, UnityNode?)> newList = new List<(string, UnityNode?, UnityNode?)>();
+				newList.Add((unityClass.Name!, unityClass.ReleaseRootNode, unityClass.EditorRootNode));
+				generatedTypes.Add(unityClass.Name!, newList);
 			}
 		}
 
 		private static void CreateNewClasses()
 		{
-			foreach ((string originalName, var variantList) in generatedTypes)
+			foreach ((string originalName, List<(string, UnityNode?, UnityNode?)> variantList) in generatedTypes)
 			{
-				foreach((string uniqueName, UnityNode releaseNode, UnityNode editorNode) in variantList)
+				foreach((string uniqueName, UnityNode? releaseNode, UnityNode? editorNode) in variantList)
 				{
-					if(!SharedState.ClassDictionary.TryGetValue(uniqueName, out var _))
+					if(!SharedState.ClassDictionary.TryGetValue(uniqueName, out UnityClass _))
 					{
-						var newClass = new UnityClass(releaseNode, editorNode);
+						UnityClass? newClass = new UnityClass(releaseNode, editorNode);
 						//newClass.Name = uniqueName;
 						//newClass.FullName = uniqueName;
 						SharedState.ClassDictionary.Add(uniqueName, newClass);
@@ -58,33 +58,33 @@ namespace AssemblyDumper.Passes
 
 		private static void AddDependentTypes()
 		{
-			foreach(var pair in SharedState.ClassDictionary)
+			foreach(KeyValuePair<string, UnityClass> pair in SharedState.ClassDictionary)
 			{
 				AddDependentTypes(pair.Value);
 			}
 		}
 
 		private static void AddDependentTypes(UnityClass unityClass) => AddDependentTypes(unityClass.ReleaseRootNode, unityClass.EditorRootNode);
-		private static void AddDependentTypes(UnityNode releaseNode, UnityNode editorNode)
+		private static void AddDependentTypes(UnityNode? releaseNode, UnityNode? editorNode)
 		{
-			List<(UnityNode, UnityNode)> fieldList = GenerateFieldDictionary(releaseNode, editorNode);
-			foreach((UnityNode releaseField,UnityNode editorField) in fieldList)
+			List<(UnityNode?, UnityNode?)> fieldList = GenerateFieldDictionary(releaseNode, editorNode);
+			foreach((UnityNode? releaseField,UnityNode? editorField) in fieldList)
 			{
-				string originalTypeName = releaseField?.OriginalTypeName ?? editorField.OriginalTypeName;
+				string originalTypeName = releaseField?.OriginalTypeName! ?? editorField!.OriginalTypeName!;
 				if (PrimitiveTypes.primitiveNames.Contains(originalTypeName))
 					continue;
 
-				string typeName = releaseField?.TypeName ?? editorField.TypeName;
+				string typeName = releaseField?.TypeName! ?? editorField!.TypeName!;
 
 				AddDependentTypes(releaseField, editorField);
 
-				if (generatedTypes.TryGetValue(typeName, out var list))
+				if (generatedTypes.TryGetValue(typeName, out List<(string, UnityNode?, UnityNode?)>? list))
 				{
 					bool alreadyCovered = false;
 					int relevantIndex = -1;
 					for(int i = 0; i < list.Count; i++)
 					{
-						(string elementTypeName, UnityNode releaseTypeNode, UnityNode editorTypeNode) = list[i];
+						(string elementTypeName, UnityNode? releaseTypeNode, UnityNode? editorTypeNode) = list[i];
 						bool releaseIsEqual = AreEqual(releaseField, releaseTypeNode, true);
 						bool editorIsEqual = AreEqual(editorField, editorTypeNode, true);
 
@@ -107,7 +107,7 @@ namespace AssemblyDumper.Passes
 
 						if (existingHasIdenticalReleaseButNoEditor || incomingEditorExistingRelease)
 						{
-							var newEditorNode = editorField.DeepClone();
+							UnityNode newEditorNode = editorField!.DeepClone();
 							newEditorNode.Name = "Base";
 							newEditorNode.OriginalName = "Base";
 							newEditorNode.OriginalTypeName = originalTypeName;
@@ -129,7 +129,7 @@ namespace AssemblyDumper.Passes
 
 						if (existingHasIdenticalEditorButNoRelease || incomingReleaseExistingEditor)
 						{
-							var newReleaseNode = releaseField.DeepClone();
+							UnityNode newReleaseNode = releaseField!.DeepClone();
 							newReleaseNode.Name = "Base";
 							newReleaseNode.OriginalName = "Base";
 							newReleaseNode.OriginalTypeName= originalTypeName;
@@ -148,7 +148,7 @@ namespace AssemblyDumper.Passes
 					{
 						relevantIndex = list.Count;
 						string newTypeName = $"{typeName}_{list.Count}";
-						var newReleaseNode = releaseField?.DeepClone();
+						UnityNode? newReleaseNode = releaseField?.DeepClone();
 						if (newReleaseNode != null)
 						{
 							newReleaseNode.Name = "Base";
@@ -157,7 +157,7 @@ namespace AssemblyDumper.Passes
 							newReleaseNode.TypeName = newTypeName;
 							newReleaseNode.RecalculateLevel(0); //Needed for type tree method generation
 						}
-						var newEditorNode = editorField?.DeepClone();
+						UnityNode? newEditorNode = editorField?.DeepClone();
 						if (newEditorNode != null)
 						{
 							newEditorNode.Name = "Base";
@@ -189,21 +189,21 @@ namespace AssemblyDumper.Passes
 				{
 					if (!PrimitiveTypes.generics.Contains(typeName) && !SharedState.ClassDictionary.ContainsKey(typeName))
 					{
-						var newReleaseNode = releaseField?.DeepClone();
+						UnityNode? newReleaseNode = releaseField?.DeepClone();
 						if(newReleaseNode != null)
 						{
 							newReleaseNode.Name = "Base";
 							newReleaseNode.OriginalName = "Base";
 							newReleaseNode.RecalculateLevel(0); //Needed for type tree method generation
 						}
-						var newEditorNode = editorField?.DeepClone();
+						UnityNode? newEditorNode = editorField?.DeepClone();
 						if(newEditorNode != null)
 						{
 							newEditorNode.Name = "Base";
 							newEditorNode.OriginalName = "Base";
 							newEditorNode.RecalculateLevel(0); //Needed for type tree method generation
 						}
-						var newList = new List<(string,UnityNode,UnityNode)>();
+						List<(string, UnityNode?, UnityNode?)> newList = new List<(string,UnityNode?,UnityNode?)>();
 						newList.Add((typeName, newReleaseNode, newEditorNode));
 						generatedTypes.Add(typeName, newList);
 					}
@@ -211,29 +211,29 @@ namespace AssemblyDumper.Passes
 			}
 		}
 		
-		private static List<(UnityNode,UnityNode)> GenerateFieldDictionary(UnityNode releaseRoot, UnityNode editorRoot)
+		private static List<(UnityNode?,UnityNode?)> GenerateFieldDictionary(UnityNode? releaseRoot, UnityNode? editorRoot)
 		{
 			if(releaseRoot?.SubNodes == null)
 			{
-				var func = new Func<UnityNode, (UnityNode, UnityNode)>(node => (null, node));
-				return editorRoot?.SubNodes?.Select(func).ToList() ?? new List<(UnityNode, UnityNode)>();
+				Func<UnityNode, (UnityNode?, UnityNode?)> func = new Func<UnityNode, (UnityNode?, UnityNode?)>(node => (null, node));
+				return editorRoot?.SubNodes?.Select(func).ToList() ?? new List<(UnityNode?, UnityNode?)>();
 			}
 			else if (editorRoot?.SubNodes == null)
 			{
-				var func = new Func<UnityNode, (UnityNode, UnityNode)>(node => (node, null));
-				return releaseRoot?.SubNodes?.Select(func).ToList() ?? new List<(UnityNode, UnityNode)>();
+				Func<UnityNode, (UnityNode?, UnityNode?)>? func = new Func<UnityNode, (UnityNode?, UnityNode?)>(node => (node, null));
+				return releaseRoot?.SubNodes?.Select(func).ToList() ?? new List<(UnityNode?, UnityNode?)>();
 			}
-			var result = new Dictionary<string, (UnityNode, UnityNode)>();
+			Dictionary<string, (UnityNode?, UnityNode?)> result = new Dictionary<string, (UnityNode?, UnityNode?)>();
 			foreach(UnityNode releaseNode in releaseRoot.SubNodes)
 			{
-				UnityNode editorNode = editorRoot.SubNodes.FirstOrDefault(node => node.Name == releaseNode.Name);
-				result.Add(releaseNode.Name, (releaseNode, editorNode));
+				UnityNode? editorNode = editorRoot.SubNodes.FirstOrDefault(node => node.Name == releaseNode.Name);
+				result.Add(releaseNode.Name!, (releaseNode, editorNode));
 			}
 			foreach(UnityNode editorNode in editorRoot.SubNodes)
 			{
-				if (!result.ContainsKey(editorNode.Name))
+				if (!result.ContainsKey(editorNode.Name!))
 				{
-					result.Add(editorNode.Name, (null, editorNode));
+					result.Add(editorNode.Name!, (null, editorNode));
 				}
 			}
 			return result.Values.ToList();
@@ -242,13 +242,16 @@ namespace AssemblyDumper.Passes
 		private static void RecalculateLevel(this UnityNode node, int depth)
 		{
 			node.Level = (byte)depth;
-			foreach(var subNode in node.SubNodes)
+			if(node.SubNodes != null)
 			{
-				RecalculateLevel(subNode, depth + 1);
+				foreach (UnityNode subNode in node.SubNodes)
+				{
+					RecalculateLevel(subNode, depth + 1);
+				}
 			}
 		}
 
-		private static bool AreEqual(UnityNode left, UnityNode right, bool root)
+		private static bool AreEqual(UnityNode? left, UnityNode? right, bool root)
 		{
 			if(left == null || right == null)
 			{
@@ -264,7 +267,7 @@ namespace AssemblyDumper.Passes
 				//Console.WriteLine($"\tInequal because type name {left.OriginalTypeName} doesn't match {right.OriginalTypeName}");
 				return false;
 			}
-			if (left.SubNodes.Count != right.SubNodes.Count)
+			if (left.SubNodes!.Count != right.SubNodes!.Count)
 			{
 				//Console.WriteLine($"\tInequal because subnode count {left.SubNodes.Count} doesn't match {right.SubNodes.Count}");
 				return false;
@@ -287,11 +290,11 @@ namespace AssemblyDumper.Passes
 				return false;
 			if (releaseNode.SubNodes == null || editorNode.SubNodes == null)
 				return true;
-			var releaseFields = releaseNode.SubNodes.ToDictionary(x => x.Name, x => x);
-			var editorFields = editorNode.SubNodes.ToDictionary(x => x.Name, x => x);
-			foreach(var releasePair in releaseFields)
+			Dictionary<string, UnityNode> releaseFields = releaseNode.SubNodes.ToDictionary(x => x.Name!, x => x);
+			Dictionary<string, UnityNode> editorFields = editorNode.SubNodes.ToDictionary(x => x.Name!, x => x);
+			foreach(KeyValuePair<string, UnityNode> releasePair in releaseFields)
 			{
-				if(editorFields.TryGetValue(releasePair.Key, out UnityNode editorField))
+				if(editorFields.TryGetValue(releasePair.Key, out UnityNode? editorField))
 				{
 					if(!AreCompatible(releasePair.Value, editorField, false))
 					{
@@ -302,7 +305,7 @@ namespace AssemblyDumper.Passes
 			return true;
 		}
 
-		private static bool AreCompatibleWithLogging(UnityNode releaseNode, UnityNode editorNode, bool root)
+		private static bool AreCompatibleWithLogging(UnityNode? releaseNode, UnityNode? editorNode, bool root)
 		{
 			if (releaseNode == null || editorNode == null)
 			{
@@ -326,11 +329,11 @@ namespace AssemblyDumper.Passes
 				return true;
 			}
 
-			var releaseFields = releaseNode.SubNodes.ToDictionary(x => x.Name, x => x);
-			var editorFields = editorNode.SubNodes.ToDictionary(x => x.Name, x => x);
-			foreach (var releasePair in releaseFields)
+			Dictionary<string, UnityNode> releaseFields = releaseNode.SubNodes.ToDictionary(x => x.Name!, x => x);
+			Dictionary<string, UnityNode> editorFields = editorNode.SubNodes.ToDictionary(x => x.Name!, x => x);
+			foreach (KeyValuePair<string, UnityNode> releasePair in releaseFields)
 			{
-				if (editorFields.TryGetValue(releasePair.Key, out UnityNode editorField))
+				if (editorFields.TryGetValue(releasePair.Key, out UnityNode? editorField))
 				{
 					if (!AreCompatibleWithLogging(releasePair.Value, editorField, false))
 					{

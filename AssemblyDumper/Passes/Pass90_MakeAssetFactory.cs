@@ -9,7 +9,9 @@ namespace AssemblyDumper.Passes
 		const TypeAttributes SealedClassAttributes = TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.Public | TypeAttributes.Sealed;
 		const MethodAttributes MethodOverrideAttributes = MethodAttributes.Public | MethodAttributes.ReuseSlot | MethodAttributes.HideBySig | MethodAttributes.Virtual;
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public static TypeDefinition FactoryDefinition { get; private set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		public static void DoPass()
 		{
@@ -20,7 +22,7 @@ namespace AssemblyDumper.Passes
 
 		private static TypeDefinition CreateFactoryDefinition()
 		{
-			var result = new TypeDefinition(SharedState.RootNamespace, "AssetFactory", SealedClassAttributes, SharedState.Importer.ImportCommonType<AssetFactoryBase>());
+			TypeDefinition? result = new TypeDefinition(SharedState.RootNamespace, "AssetFactory", SealedClassAttributes, SharedState.Importer.ImportCommonType<AssetFactoryBase>());
 			SharedState.Module.TopLevelTypes.Add(result);
 			ConstructorUtils.AddDefaultConstructor(result);
 			return result;
@@ -33,7 +35,7 @@ namespace AssemblyDumper.Passes
 			MethodDefinition createAsset = factoryDefinition.AddMethod("CreateAsset", MethodOverrideAttributes, iunityObjectBase);
 			Parameter parameter = createAsset.AddParameter("assetInfo", assetInfoType);
 			
-			createAsset.CilMethodBody.InitializeLocals = true;
+			createAsset.CilMethodBody!.InitializeLocals = true;
 			createAsset.CilMethodBody.Instructions.EmitSwitchStatement(parameter);
 		}
 
@@ -42,7 +44,7 @@ namespace AssemblyDumper.Passes
 			List<(int, IMethodDefOrRef)> constructors = GetAllAssetInfoConstructors();
 			int count = constructors.Count;
 
-			var switchCondition = new CilLocalVariable(SystemTypeGetter.Int32);
+			CilLocalVariable? switchCondition = new CilLocalVariable(SystemTypeGetter.Int32);
 			processor.Owner.LocalVariables.Add(switchCondition);
 			{
 				processor.Add(CilOpCodes.Ldarg, parameter);
@@ -74,8 +76,8 @@ namespace AssemblyDumper.Passes
 
 		private static List<(int, IMethodDefOrRef)> GetAllAssetInfoConstructors()
 		{
-			var result = new List<(int, IMethodDefOrRef)>();
-			foreach(var pair in SharedState.ClassDictionary)
+			List<(int, IMethodDefOrRef)>? result = new List<(int, IMethodDefOrRef)>();
+			foreach(KeyValuePair<string, Unity.UnityClass> pair in SharedState.ClassDictionary)
 			{
 				if(pair.Value.TypeID >= 0 && !pair.Value.IsAbstract) //Is an object and not abstract
 				{

@@ -17,7 +17,7 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 35: Transform Interface");
-			if (!SharedState.TypeDictionary.TryGetValue("Transform", out TypeDefinition type))
+			if (!SharedState.TypeDictionary.TryGetValue("Transform", out TypeDefinition? type))
 			{
 				throw new Exception("Transform not found");
 			}
@@ -46,7 +46,7 @@ namespace AssemblyDumper.Passes
 			FieldDefinition field = type.GetFieldByName("m_Father");
 
 			PropertyDefinition property = type.AddGetterProperty(nameof(ITransform.FatherPtr), InterfacePropertyImplementationAttributes, transformPPtrType);
-			CilInstructionCollection processor = property.GetMethod.CilMethodBody.Instructions;
+			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldfld, field);
@@ -68,10 +68,10 @@ namespace AssemblyDumper.Passes
 			FieldDefinition field = type.GetFieldByName("m_Children");
 
 			PropertyDefinition property = type.AddGetterProperty(nameof(ITransform.ChildrenPtrs), InterfacePropertyImplementationAttributes, transformPPtrArray);
-			CilInstructionCollection processor = property.GetMethod.CilMethodBody.Instructions;
+			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 
 			//Make local and store length in it
-			var countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			CilLocalVariable? countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
 			processor.Owner.LocalVariables.Add(countLocal); //Add to method
 			processor.Add(CilOpCodes.Ldarg_0); //Load this
 			processor.Add(CilOpCodes.Ldfld, field); //Load array
@@ -81,12 +81,12 @@ namespace AssemblyDumper.Passes
 			//Create empty array and local for it
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Newarr, transformPPtrType.ToTypeDefOrRef()); //Create new array of kvp with given count
-			var arrayLocal = new CilLocalVariable(transformPPtrArray); //Create local
+			CilLocalVariable? arrayLocal = new CilLocalVariable(transformPPtrArray); //Create local
 			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
 			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
 
 			//Make an i
-			var iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			CilLocalVariable? iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
 			processor.Owner.LocalVariables.Add(iLocal); //Add to method
 			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
@@ -97,7 +97,7 @@ namespace AssemblyDumper.Passes
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranch = processor.Add(CilOpCodes.Br, loopConditionStartLabel);
+			CilInstruction? unconditionalBranch = processor.Add(CilOpCodes.Br, loopConditionStartLabel);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
 			jumpTargetLabel.Instruction = processor.Add(CilOpCodes.Nop); //Create a dummy instruction to jump back to
@@ -146,37 +146,37 @@ namespace AssemblyDumper.Passes
 		{
 			ITypeDefOrRef commonVector3 = SharedState.Importer.ImportCommonType<Vector3f>();
 			FieldDefinition field = type.GetFieldByName(fieldName);
-			TypeSignature fieldType = field.Signature.FieldType;
-			TypeDefinition fieldTypeDefinition = fieldType.Resolve();
+			TypeSignature fieldType = field.Signature!.FieldType;
+			TypeDefinition fieldTypeDefinition = fieldType.Resolve()!;
 			PropertyDefinition property = type.AddFullProperty(propertyName, InterfacePropertyImplementationAttributes, commonVector3.ToTypeSignature());
 
-			CilInstructionCollection getProcessor = property.GetMethod.CilMethodBody.Instructions;
+			CilInstructionCollection getProcessor = property.GetMethod!.CilMethodBody!.Instructions;
 			MethodDefinition conversionMethod = fieldTypeDefinition.Methods.Single(m => m.Name == "op_Implicit");
 			getProcessor.Add(CilOpCodes.Ldarg_0);
 			getProcessor.Add(CilOpCodes.Ldfld, field);
 			getProcessor.Add(CilOpCodes.Call, conversionMethod);
 			getProcessor.Add(CilOpCodes.Ret);
 
-			CilInstructionCollection setProcessor = property.SetMethod.CilMethodBody.Instructions;
+			CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
 
-			var commonX = SharedState.Importer.ImportField(commonVector3.Resolve().Fields.Single(m => m.Name == "X"));
-			var specificX = fieldTypeDefinition.Fields.Single(m => m.Name == "x");
+			IFieldDescriptor? commonX = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "X"));
+			FieldDefinition? specificX = fieldTypeDefinition.Fields.Single(m => m.Name == "x");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
 			setProcessor.Add(CilOpCodes.Ldfld, commonX);
 			setProcessor.Add(CilOpCodes.Stfld, specificX);
 
-			var commonY = SharedState.Importer.ImportField(commonVector3.Resolve().Fields.Single(m => m.Name == "Y"));
-			var specificY = fieldTypeDefinition.Fields.Single(m => m.Name == "y");
+			IFieldDescriptor? commonY = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "Y"));
+			FieldDefinition? specificY = fieldTypeDefinition.Fields.Single(m => m.Name == "y");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
 			setProcessor.Add(CilOpCodes.Ldfld, commonY);
 			setProcessor.Add(CilOpCodes.Stfld, specificY);
 
-			var commonZ = SharedState.Importer.ImportField(commonVector3.Resolve().Fields.Single(m => m.Name == "Z"));
-			var specificZ = fieldTypeDefinition.Fields.Single(m => m.Name == "z");
+			IFieldDescriptor? commonZ = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "Z"));
+			FieldDefinition? specificZ = fieldTypeDefinition.Fields.Single(m => m.Name == "z");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
@@ -191,45 +191,45 @@ namespace AssemblyDumper.Passes
 		{
 			ITypeDefOrRef commonVector3 = SharedState.Importer.ImportCommonType<Quaternionf>();
 			FieldDefinition field = type.GetFieldByName(fieldName);
-			TypeSignature fieldType = field.Signature.FieldType;
-			TypeDefinition fieldTypeDefinition = fieldType.Resolve();
+			TypeSignature fieldType = field.Signature!.FieldType;
+			TypeDefinition fieldTypeDefinition = fieldType.Resolve()!;
 			PropertyDefinition property = type.AddFullProperty(propertyName, InterfacePropertyImplementationAttributes, commonVector3.ToTypeSignature());
 
-			CilInstructionCollection getProcessor = property.GetMethod.CilMethodBody.Instructions;
+			CilInstructionCollection getProcessor = property.GetMethod!.CilMethodBody!.Instructions;
 			MethodDefinition conversionMethod = fieldTypeDefinition.Methods.Single(m => m.Name == "op_Implicit");
 			getProcessor.Add(CilOpCodes.Ldarg_0);
 			getProcessor.Add(CilOpCodes.Ldfld, field);
 			getProcessor.Add(CilOpCodes.Call, conversionMethod);
 			getProcessor.Add(CilOpCodes.Ret);
 
-			CilInstructionCollection setProcessor = property.SetMethod.CilMethodBody.Instructions;
+			CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
 
-			var commonX = SharedState.Importer.ImportField(commonVector3.Resolve().Fields.Single(m => m.Name == "X"));
-			var specificX = fieldTypeDefinition.Fields.Single(m => m.Name == "x");
+			IFieldDescriptor? commonX = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "X"));
+			FieldDefinition? specificX = fieldTypeDefinition.Fields.Single(m => m.Name == "x");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
 			setProcessor.Add(CilOpCodes.Ldfld, commonX);
 			setProcessor.Add(CilOpCodes.Stfld, specificX);
 
-			var commonY = SharedState.Importer.ImportField(commonVector3.Resolve().Fields.Single(m => m.Name == "Y"));
-			var specificY = fieldTypeDefinition.Fields.Single(m => m.Name == "y");
+			IFieldDescriptor? commonY = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "Y"));
+			FieldDefinition? specificY = fieldTypeDefinition.Fields.Single(m => m.Name == "y");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
 			setProcessor.Add(CilOpCodes.Ldfld, commonY);
 			setProcessor.Add(CilOpCodes.Stfld, specificY);
 
-			var commonZ = SharedState.Importer.ImportField(commonVector3.Resolve().Fields.Single(m => m.Name == "Z"));
-			var specificZ = fieldTypeDefinition.Fields.Single(m => m.Name == "z");
+			IFieldDescriptor? commonZ = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "Z"));
+			FieldDefinition? specificZ = fieldTypeDefinition.Fields.Single(m => m.Name == "z");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
 			setProcessor.Add(CilOpCodes.Ldfld, commonZ);
 			setProcessor.Add(CilOpCodes.Stfld, specificZ);
 
-			var commonW = SharedState.Importer.ImportField(commonVector3.Resolve().Fields.Single(m => m.Name == "W"));
-			var specificW = fieldTypeDefinition.Fields.Single(m => m.Name == "w");
+			IFieldDescriptor? commonW = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "W"));
+			FieldDefinition? specificW = fieldTypeDefinition.Fields.Single(m => m.Name == "w");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);

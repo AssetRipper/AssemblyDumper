@@ -3,13 +3,15 @@ using AssetRipper.Core.IO.Asset;
 using AssetRipper.Core.IO.Endian;
 using AssetRipper.Core.Project;
 using AssetRipper.Core.YAML;
+using System.Diagnostics.CodeAnalysis;
 
 namespace AssemblyDumper
 {
 	public static class CommonTypeGetter
 	{
-		public static AssemblyDefinition CommonAssembly { get; set; }
+		public static AssemblyDefinition? CommonAssembly { get; set; }
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		//Reading
 		public static ITypeDefOrRef AssetReaderDefinition { get; private set; }
 		public static ITypeDefOrRef EndianReaderDefinition { get; private set; }
@@ -31,6 +33,7 @@ namespace AssemblyDumper
 		//Generics
 		public static ITypeDefOrRef AssetDictionaryType { get; private set; }
 		public static ITypeDefOrRef NullableKeyValuePair { get; private set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		public static void Initialize()
 		{
@@ -57,36 +60,36 @@ namespace AssemblyDumper
 		}
 
 
-		private static readonly Dictionary<string, TypeDefinition> typeLookupCache = new Dictionary<string, TypeDefinition>();
-		public static TypeDefinition LookupCommonType(string typeFullName)
+		private static readonly Dictionary<string, TypeDefinition?> typeLookupCache = new Dictionary<string, TypeDefinition?>();
+		public static TypeDefinition? LookupCommonType(string typeFullName)
 		{
-			if(!typeLookupCache.TryGetValue(typeFullName, out TypeDefinition type))
+			if(!typeLookupCache.TryGetValue(typeFullName, out TypeDefinition? type))
 			{
-				type = CommonAssembly.ManifestModule.TopLevelTypes.SingleOrDefault(t => t.GetTypeFullName() == typeFullName);
+				type = CommonAssembly!.ManifestModule!.TopLevelTypes.SingleOrDefault(t => t.GetTypeFullName() == typeFullName);
 				typeLookupCache.Add(typeFullName, type);
 			}
 			return type;
 		}
-		public static TypeDefinition LookupCommonType(Type type) => LookupCommonType(type.FullName);
-		public static TypeDefinition LookupCommonType<T>() => LookupCommonType(typeof(T));
+		public static TypeDefinition? LookupCommonType(Type type) => LookupCommonType(type.FullName!);
+		public static TypeDefinition? LookupCommonType<T>() => LookupCommonType(typeof(T));
 
-		public static MethodDefinition LookupCommonMethod(string typeFullName, Func<MethodDefinition, bool> filter) => LookupCommonType(typeFullName).Methods.Single(filter);
-		public static MethodDefinition LookupCommonMethod(Type type, Func<MethodDefinition, bool> filter) => LookupCommonMethod(type.FullName, filter);
+		public static MethodDefinition LookupCommonMethod(string typeFullName, Func<MethodDefinition, bool> filter) => LookupCommonType(typeFullName)!.Methods.Single(filter);
+		public static MethodDefinition LookupCommonMethod(Type type, Func<MethodDefinition, bool> filter) => LookupCommonMethod(type.FullName!, filter);
 		public static MethodDefinition LookupCommonMethod<T>(Func<MethodDefinition, bool> filter) => LookupCommonMethod(typeof(T), filter);
 
 
 		private static readonly Dictionary<string, ITypeDefOrRef> importedTypeCache = new Dictionary<string, ITypeDefOrRef>();
 		public static ITypeDefOrRef ImportCommonType(this ReferenceImporter importer, string typeFullName)
 		{
-			if(!importedTypeCache.TryGetValue(typeFullName, out var type))
+			if(!importedTypeCache.TryGetValue(typeFullName, out ITypeDefOrRef? type))
 			{
-				type = importer.ImportType(LookupCommonType(typeFullName));
+				type = importer.ImportType(LookupCommonType(typeFullName)!);
 				importedTypeCache.Add(typeFullName, type);
 			}
 			return type;
 		}
-		public static ITypeDefOrRef ImportCommonType(this ReferenceImporter importer, System.Type type) => importer.ImportType(LookupCommonType(type));
-		public static ITypeDefOrRef ImportCommonType<T>(this ReferenceImporter importer) => importer.ImportType(LookupCommonType<T>());
+		public static ITypeDefOrRef ImportCommonType(this ReferenceImporter importer, System.Type type) => importer.ImportType(LookupCommonType(type)!);
+		public static ITypeDefOrRef ImportCommonType<T>(this ReferenceImporter importer) => importer.ImportType(LookupCommonType<T>()!);
 
 		public static IMethodDefOrRef ImportCommonMethod(this ReferenceImporter importer, string typeFullName, Func<MethodDefinition, bool> filter)
 		{
@@ -104,12 +107,12 @@ namespace AssemblyDumper
 		/// <summary>
 		/// Import the default constructor for this type
 		/// </summary>
-		public static IMethodDefOrRef ImportCommonConstructor<T>(this ReferenceImporter importer) => importer.ImportCommonConstructor(typeof(T).FullName, 0);
-		public static IMethodDefOrRef ImportCommonConstructor<T>(this ReferenceImporter importer, int numParameters) => importer.ImportCommonConstructor(typeof(T).FullName, numParameters);
+		public static IMethodDefOrRef ImportCommonConstructor<T>(this ReferenceImporter importer) => importer.ImportCommonConstructor(typeof(T).FullName!, 0);
+		public static IMethodDefOrRef ImportCommonConstructor<T>(this ReferenceImporter importer, int numParameters) => importer.ImportCommonConstructor(typeof(T).FullName!, numParameters);
 		public static IMethodDefOrRef ImportCommonConstructor(this ReferenceImporter importer, string typeFullName) => importer.ImportCommonConstructor(typeFullName, 0);
 		public static IMethodDefOrRef ImportCommonConstructor(this ReferenceImporter importer, string typeFullName, int numParameters)
 		{
-			return importer.ImportMethod(LookupCommonType(typeFullName).GetConstructor(numParameters));
+			return importer.ImportMethod(LookupCommonType(typeFullName)!.GetConstructor(numParameters));
 		}
 	}
 }

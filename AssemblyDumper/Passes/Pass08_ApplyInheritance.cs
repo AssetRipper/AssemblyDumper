@@ -11,7 +11,7 @@ namespace AssemblyDumper.Passes
 			ITypeDefOrRef unityObjectBaseDefinition = SharedState.Importer.ImportCommonType<UnityObjectBase>();
 			ITypeDefOrRef unityAssetBaseDefinition = SharedState.Importer.ImportCommonType<UnityAssetBase>();
 
-			foreach (var pair in SharedState.ClassDictionary)
+			foreach (KeyValuePair<string, Unity.UnityClass> pair in SharedState.ClassDictionary)
 			{
 				if (PrimitiveTypes.primitives.Contains(pair.Key))
 					continue;

@@ -6,7 +6,7 @@ namespace AssemblyDumper
 	{
 		public static void AddNotSupportedException(this CilInstructionCollection processor)
 		{
-			processor.Add(CilOpCodes.Newobj, SystemTypeGetter.NotSupportedExceptionConstructor);
+			processor.Add(CilOpCodes.Newobj, SystemTypeGetter.NotSupportedExceptionConstructor!);
 			processor.Add(CilOpCodes.Throw);
 		}
 
@@ -23,7 +23,7 @@ namespace AssemblyDumper
 			}
 			else if (targetType.IsValueType)
 			{
-				var variable = new CilLocalVariable(targetType);
+				CilLocalVariable? variable = new CilLocalVariable(targetType);
 				processor.Owner.LocalVariables.Add(variable);
 				processor.Add(CilOpCodes.Ldloca, variable);
 				processor.Add(CilOpCodes.Initobj, targetType.ToTypeDefOrRef());
@@ -57,26 +57,26 @@ namespace AssemblyDumper
 		/// <exception cref="Exception"></exception>
 		public static void AddInitializeArrayField(this CilInstructionCollection processor, FieldDefinition field)
 		{
-			SzArrayTypeSignature fieldType = field.Signature.FieldType as SzArrayTypeSignature ?? throw new Exception("Field type is not an sz array");
+			SzArrayTypeSignature fieldType = field.Signature!.FieldType as SzArrayTypeSignature ?? throw new Exception("Field type is not an sz array");
 			TypeSignature elementType = fieldType.BaseType;
-			IMethodDefOrRef constructor = SharedState.Importer.ImportMethod(elementType.Resolve().GetDefaultConstructor());
+			IMethodDefOrRef constructor = SharedState.Importer.ImportMethod(elementType.Resolve()!.GetDefaultConstructor());
 
 			//Create empty array and local for it
 			processor.Add(CilOpCodes.Ldarg_1); //Load length argument
 			processor.Add(CilOpCodes.Newarr, elementType.ToTypeDefOrRef()); //Create new array of kvp with given count
-			var arrayLocal = new CilLocalVariable(fieldType); //Create local
+			CilLocalVariable? arrayLocal = new CilLocalVariable(fieldType); //Create local
 			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
 			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
 
 			//Make local and store length in it
-			var countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			CilLocalVariable? countLocal = new CilLocalVariable(SystemTypeGetter.Int32!); //Create local
 			processor.Owner.LocalVariables.Add(countLocal); //Add to method
 			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array local
 			processor.Add(CilOpCodes.Ldlen); //Get length
 			processor.Add(CilOpCodes.Stloc, countLocal); //Store it
 
 			//Make an i
-			var iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			CilLocalVariable? iLocal = new CilLocalVariable(SystemTypeGetter.Int32!); //Create local
 			processor.Owner.LocalVariables.Add(iLocal); //Add to method
 			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count

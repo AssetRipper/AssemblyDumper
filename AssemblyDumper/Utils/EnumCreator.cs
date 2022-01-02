@@ -18,7 +18,7 @@ namespace AssemblyDumper.Utils
 		public static TypeDefinition CreateFromDictionary(AssemblyDefinition assembly, string @namespace, string name, Dictionary<string, int> fields)
 		{
 			TypeDefinition definition = CreateEmptyEnum(assembly, @namespace, name);
-			foreach (var pair in fields)
+			foreach (KeyValuePair<string, int> pair in fields)
 			{
 				definition.AddEnumField(pair.Key, pair.Value);
 			}
@@ -44,25 +44,23 @@ namespace AssemblyDumper.Utils
 
 		private static void AddEnumValue(this TypeDefinition typeDefinition)
 		{
-			var module = typeDefinition.Module;
-			var fieldSignature = FieldSignature.CreateStatic(SystemTypeGetter.Int32);
-			var fieldDef = new FieldDefinition("value__", FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RuntimeSpecialName, fieldSignature);
+			FieldSignature fieldSignature = FieldSignature.CreateStatic(SystemTypeGetter.Int32);
+			FieldDefinition fieldDef = new FieldDefinition("value__", FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RuntimeSpecialName, fieldSignature);
 			typeDefinition.Fields.Add(fieldDef);
 		}
 
 		private static void AddEnumField(this TypeDefinition typeDefinition, string name, int value)
 		{
-			var module = typeDefinition.Module;
-			var fieldSignature = FieldSignature.CreateStatic(typeDefinition.ToTypeSignature());
-			var fieldDef = new FieldDefinition(name, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal | FieldAttributes.HasDefault, fieldSignature);
+			FieldSignature fieldSignature = FieldSignature.CreateStatic(typeDefinition.ToTypeSignature());
+			FieldDefinition fieldDef = new FieldDefinition(name, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal | FieldAttributes.HasDefault, fieldSignature);
 			fieldDef.Constant = new Constant(ElementType.I4, new DataBlobSignature(BitConverter.GetBytes(value)));
 			typeDefinition.Fields.Add(fieldDef);
 		}
 
 		private static TypeDefinition CreateEmptyEnum(AssemblyDefinition assembly, string @namespace, string name)
 		{
-			var module = assembly.ManifestModule;
-			var enumReference = SharedState.Importer.ImportSystemType("System.Enum");
+			ModuleDefinition module = assembly.ManifestModule!;
+			ITypeDefOrRef enumReference = SharedState.Importer.ImportSystemType("System.Enum");
 			TypeDefinition definition = new TypeDefinition(@namespace, name, TypeAttributes.Public | TypeAttributes.Sealed, enumReference);
 			module.TopLevelTypes.Add(definition);
 			definition.AddEnumValue();

@@ -18,7 +18,7 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 34: GameObject Interface");
-			if (!SharedState.TypeDictionary.TryGetValue("GameObject", out TypeDefinition type))
+			if (!SharedState.TypeDictionary.TryGetValue("GameObject", out TypeDefinition? type))
 			{
 				throw new Exception("GameObject not found");
 			}
@@ -40,14 +40,14 @@ namespace AssemblyDumper.Passes
 				MethodDefinition explicitConversionMethod = PPtrUtils.GetExplicitConversion<IComponent>(SharedState.TypeDictionary["PPtr_Component_"]);
 
 				FieldDefinition field = type.GetFieldByName("m_Component");
-				SzArrayTypeSignature fieldType = field.Signature.FieldType as SzArrayTypeSignature;
+				SzArrayTypeSignature fieldType = (SzArrayTypeSignature)field.Signature!.FieldType;
 				TypeSignature elementType = fieldType.BaseType;
 				MethodDefinition fetchComponentsMethod = type.AddMethod("FetchComponents", InterfaceMethodImplementationAttributes, componentPPtrArray);
-				fetchComponentsMethod.CilMethodBody.InitializeLocals = true;
+				fetchComponentsMethod.CilMethodBody!.InitializeLocals = true;
 				CilInstructionCollection processor = fetchComponentsMethod.CilMethodBody.Instructions;
 
 				//Make local and store length in it
-				var countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+				CilLocalVariable? countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
 				processor.Owner.LocalVariables.Add(countLocal); //Add to method
 				processor.Add(CilOpCodes.Ldarg_0); //Load this
 				processor.Add(CilOpCodes.Ldfld, field); //Load array
@@ -57,12 +57,12 @@ namespace AssemblyDumper.Passes
 				//Create empty array and local for it
 				processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 				processor.Add(CilOpCodes.Newarr, componentPPtrType.ToTypeDefOrRef()); //Create new array of kvp with given count
-				var arrayLocal = new CilLocalVariable(componentPPtrArray); //Create local
+				CilLocalVariable? arrayLocal = new CilLocalVariable(componentPPtrArray); //Create local
 				processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
 				processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
 
 				//Make an i
-				var iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+				CilLocalVariable? iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
 				processor.Owner.LocalVariables.Add(iLocal); //Add to method
 				processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
 				processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
@@ -73,7 +73,7 @@ namespace AssemblyDumper.Passes
 
 				//Create an empty, unconditional branch which will jump down to the loop condition.
 				//This converts the do..while loop into a for loop.
-				var unconditionalBranch = processor.Add(CilOpCodes.Br, loopConditionStartLabel);
+				CilInstruction? unconditionalBranch = processor.Add(CilOpCodes.Br, loopConditionStartLabel);
 
 				//Now we just read pair, increment i, compare against count, and jump back to here if it's less
 				jumpTargetLabel.Instruction = processor.Add(CilOpCodes.Nop); //Create a dummy instruction to jump back to
@@ -87,12 +87,12 @@ namespace AssemblyDumper.Passes
 				processor.Add(CilOpCodes.Ldelem, elementType.ToTypeDefOrRef()); //Store in array
 				if (elementType.Name == "ComponentPair")
 				{
-					FieldDefinition pptrField = elementType.Resolve().GetFieldByName("component");
+					FieldDefinition pptrField = elementType.Resolve()!.GetFieldByName("component");
 					processor.Add(CilOpCodes.Ldfld, pptrField);
 				}
 				else
 				{
-					IMethodDefOrRef nullableGetValue = SharedState.Importer.ImportMethod(elementType.Resolve().Methods.Single(m => m.Name == "get_Value"));
+					IMethodDefOrRef nullableGetValue = SharedState.Importer.ImportMethod(elementType.Resolve()!.Methods.Single(m => m.Name == "get_Value"));
 					processor.Add(CilOpCodes.Call, nullableGetValue);
 				}
 				

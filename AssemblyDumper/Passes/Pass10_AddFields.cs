@@ -8,6 +8,7 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass10_AddFields
 	{
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static IMethodDefOrRef ReleaseOnlyAttributeConstructor { get; set; }
 		private static IMethodDefOrRef EditorOnlyAttributeConstructor { get; set; }
 		private static ITypeDefOrRef TransferMetaFlagsDefinition { get; set; }
@@ -15,6 +16,7 @@ namespace AssemblyDumper.Passes
 		private static IMethodDefOrRef ReleaseMetaFlagsAttributeConstructor { get; set; }
 		private static IMethodDefOrRef OriginalNameAttributeConstructor { get; set; }
 		private static ITypeDefOrRef AssetDictionaryType { get; set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		private static void InitializeImports()
 		{
@@ -101,7 +103,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddReleaseOnlyField(this TypeDefinition type, UnityNode releaseNode, TypeSignature fieldType)
 		{
-			var fieldSignature = FieldSignature.CreateInstance(fieldType);
+			FieldSignature? fieldSignature = FieldSignature.CreateInstance(fieldType);
 			FieldDefinition fieldDefinition = new FieldDefinition(releaseNode.Name, FieldAttributes.Public, fieldSignature);
 			fieldDefinition.MaybeAddOriginalNameAttribute(releaseNode, null);
 			fieldDefinition.AddReleaseFlagAttribute(releaseNode.MetaFlag);
@@ -111,7 +113,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddEditorOnlyField(this TypeDefinition type, UnityNode editorNode, TypeSignature fieldType)
 		{
-			var fieldSignature = FieldSignature.CreateInstance(fieldType);
+			FieldSignature? fieldSignature = FieldSignature.CreateInstance(fieldType);
 			FieldDefinition fieldDefinition = new FieldDefinition(editorNode.Name, FieldAttributes.Public, fieldSignature);
 			fieldDefinition.MaybeAddOriginalNameAttribute(null, editorNode);
 			fieldDefinition.AddCustomAttribute(EditorOnlyAttributeConstructor);
@@ -121,7 +123,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddNormalField(this TypeDefinition type, UnityNode releaseNode, UnityNode editorNode, TypeSignature fieldType)
 		{
-			var fieldSignature = FieldSignature.CreateInstance(fieldType);
+			FieldSignature? fieldSignature = FieldSignature.CreateInstance(fieldType);
 			FieldDefinition fieldDefinition = new FieldDefinition(editorNode.Name, FieldAttributes.Public, fieldSignature);
 			fieldDefinition.MaybeAddOriginalNameAttribute(releaseNode, editorNode);
 			fieldDefinition.AddReleaseFlagAttribute(releaseNode.MetaFlag);
@@ -129,10 +131,13 @@ namespace AssemblyDumper.Passes
 			type.Fields.Add(fieldDefinition);
 		}
 
-		private static void MaybeAddOriginalNameAttribute(this FieldDefinition field, UnityNode releaseNode, UnityNode editorNode)
+		private static void MaybeAddOriginalNameAttribute(this FieldDefinition field, UnityNode? releaseNode, UnityNode? editorNode)
 		{
 			if(releaseNode == null)
 			{
+				if (editorNode == null)
+					throw new Exception("Release and editor nodes can't both be null");
+
 				if(editorNode.Name != editorNode.OriginalName)
 				{
 					field.AddOriginalNameAttribute(editorNode.OriginalName);
@@ -158,9 +163,9 @@ namespace AssemblyDumper.Passes
 
 		private static TypeSignature ResolveFieldType(UnityNode editorField)
 		{
-			TypeSignature fieldType = SystemTypeGetter.GetCppPrimitiveTypeSignature(editorField.TypeName);
+			TypeSignature? fieldType = SystemTypeGetter.GetCppPrimitiveTypeSignature(editorField.TypeName);
 
-			if (fieldType == null && SharedState.TypeDictionary.TryGetValue(editorField.TypeName, out TypeDefinition result))
+			if (fieldType == null && SharedState.TypeDictionary.TryGetValue(editorField.TypeName, out TypeDefinition? result))
 				fieldType = result.ToTypeSignature();
 
 			if (fieldType == null)

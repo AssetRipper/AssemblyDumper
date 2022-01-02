@@ -19,10 +19,10 @@ namespace AssemblyDumper.Passes
 		{
 			Console.WriteLine("Pass 61: Implement Native Format Importer Interface");
 			ITypeDefOrRef nativeImporterInterface = SharedState.Importer.ImportCommonType<INativeFormatImporter>();
-			if (SharedState.TypeDictionary.TryGetValue("NativeFormatImporter", out TypeDefinition type))
+			if (SharedState.TypeDictionary.TryGetValue("NativeFormatImporter", out TypeDefinition? type))
 			{
 				type.Interfaces.Add(new InterfaceImplementation(nativeImporterInterface));
-				type.TryGetFieldByName(FieldName, out FieldDefinition field);
+				FieldDefinition? field = type.TryGetFieldByName(FieldName);
 				type.ImplementFullProperty(PropertyName, InterfacePropertyImplementationAttributes, SystemTypeGetter.Int64, field);
 			}
 			else

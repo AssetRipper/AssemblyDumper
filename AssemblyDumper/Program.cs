@@ -13,7 +13,7 @@ namespace AssemblyDumper
 			try
 			{
 #endif
-				Pass00_Initialize.DoPass(options.JsonPath.FullName, options.SystemRuntimeAssembly.FullName, options.SystemCollectionsAssembly.FullName);
+				Pass00_Initialize.DoPass(options.JsonPath!.FullName, options.SystemRuntimeAssembly!.FullName, options.SystemCollectionsAssembly!.FullName);
 				Pass01_CreateBasicTypes.DoPass();
 				Pass02_RenameSubnodes.DoPass();
 				Pass04_ExtractDependentNodeTrees.DoPass();
@@ -67,7 +67,7 @@ namespace AssemblyDumper
 				Pass95_UnityVersionHandler.DoPass();
 
 				Pass98_ApplyAssemblyAttributes.DoPass();
-				Pass99_SaveAssembly.DoPass(options.OutputDirectory);
+				Pass99_SaveAssembly.DoPass(options.OutputDirectory!);
 				Console.WriteLine("Done!");
 #if DEBUG
 			}
@@ -81,16 +81,16 @@ namespace AssemblyDumper
 		internal class Options
 		{
 			[Value(0, Required = true, HelpText = "Information Json to parse")]
-			public FileInfo JsonPath { get; set; }
+			public FileInfo? JsonPath { get; set; }
 
 			[Option('o', "output", HelpText = "Directory to export to. Will not be cleared if already exists.")]
-			public DirectoryInfo OutputDirectory { get; set; }
+			public DirectoryInfo? OutputDirectory { get; set; }
 
 			[Option("runtime", HelpText = "System.Runtime.dll from Net 6")]
-			public FileInfo SystemRuntimeAssembly { get; set; }
+			public FileInfo? SystemRuntimeAssembly { get; set; }
 
 			[Option("collections", HelpText = "System.Collections.dll from Net 6")]
-			public FileInfo SystemCollectionsAssembly { get; set; }
+			public FileInfo? SystemCollectionsAssembly { get; set; }
 		}
 
 		public static void Main(string[] args)

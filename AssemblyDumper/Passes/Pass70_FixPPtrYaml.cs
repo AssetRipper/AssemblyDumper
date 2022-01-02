@@ -35,9 +35,9 @@ namespace AssemblyDumper.Passes
 
 		private static void FixMethod(MethodDefinition yamlMethod, MethodSpecification exportMethod)
 		{
-			FieldDefinition fileID = yamlMethod.DeclaringType.Fields.Single(f => f.Name == "m_FileID");
+			FieldDefinition fileID = yamlMethod.DeclaringType!.Fields.Single(f => f.Name == "m_FileID");
 			FieldDefinition pathID = yamlMethod.DeclaringType.Fields.Single(f => f.Name == "m_PathID");
-			CilInstructionCollection processor = yamlMethod.CilMethodBody.Instructions;
+			CilInstructionCollection processor = yamlMethod.CilMethodBody!.Instructions;
 			processor.Clear();
 			processor.Add(CilOpCodes.Ldarg_1);
 			processor.Add(CilOpCodes.Ldarg_0);

@@ -8,8 +8,8 @@ namespace AssemblyDumper.Utils
 		{
 			if (constructor is ICustomAttributeType usableConstructor)
 			{
-				var attributeSignature = new CustomAttributeSignature();
-				var attrDef = new CustomAttribute(usableConstructor, attributeSignature);
+				CustomAttributeSignature attributeSignature = new CustomAttributeSignature();
+				CustomAttribute attrDef = new CustomAttribute(usableConstructor, attributeSignature);
 				_this.CustomAttributes.Add(attrDef);
 				return attrDef;
 			}
@@ -28,8 +28,8 @@ namespace AssemblyDumper.Utils
 
 		public static CustomAttributeArgument AddFixedArgument(this CustomAttribute attribute, TypeSignature paramType, object paramValue)
 		{
-			var argument = new CustomAttributeArgument(paramType, paramValue);
-			attribute.Signature.FixedArguments.Add(argument);
+			CustomAttributeArgument argument = new CustomAttributeArgument(paramType, paramValue);
+			attribute.Signature!.FixedArguments.Add(argument);
 			return argument;
 		}
 	}

@@ -10,7 +10,9 @@ namespace AssemblyDumper.Passes
 		const TypeAttributes SealedClassAttributes = TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.Public | TypeAttributes.Sealed;
 		const MethodAttributes InterfaceOverrideAttributes = MethodAttributes.Public | MethodAttributes.NewSlot | MethodAttributes.HideBySig | MethodAttributes.Final | MethodAttributes.Virtual;
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public static TypeDefinition ImporterFactoryDefinition { get; private set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		public static void DoPass()
 		{
@@ -22,7 +24,7 @@ namespace AssemblyDumper.Passes
 
 		private static TypeDefinition CreateFactoryDefinition()
 		{
-			var result = new TypeDefinition(SharedState.RootNamespace, "AssetImporterFactory", SealedClassAttributes, SystemTypeGetter.Object.ToTypeDefOrRef());
+			TypeDefinition? result = new TypeDefinition(SharedState.RootNamespace, "AssetImporterFactory", SealedClassAttributes, SystemTypeGetter.Object.ToTypeDefOrRef());
 			SharedState.Module.TopLevelTypes.Add(result);
 			result.Interfaces.Add(new InterfaceImplementation(SharedState.Importer.ImportCommonType<IAssetImporterFactory>()));
 			ConstructorUtils.AddDefaultConstructor(result);
@@ -40,7 +42,7 @@ namespace AssemblyDumper.Passes
 			MethodDefinition method = factoryDefinition.AddMethod("CreateDefaultImporter", InterfaceOverrideAttributes, idefaultImporter);
 			method.AddParameter("layout", layoutInfoType);
 			
-			CilInstructionCollection processor = method.CilMethodBody.Instructions;
+			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
 			processor.Add(CilOpCodes.Ldarg_1); //layout
 			processor.Add(CilOpCodes.Newobj, constructor);
 			processor.Add(CilOpCodes.Ret);
@@ -57,7 +59,7 @@ namespace AssemblyDumper.Passes
 			MethodDefinition method = factoryDefinition.AddMethod("CreateNativeFormatImporter", InterfaceOverrideAttributes, inativeImporter);
 			method.AddParameter("layout", layoutInfoType);
 
-			CilInstructionCollection processor = method.CilMethodBody.Instructions;
+			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
 			processor.Add(CilOpCodes.Ldarg_1); //layout
 			processor.Add(CilOpCodes.Newobj, constructor);
 			processor.Add(CilOpCodes.Ret);

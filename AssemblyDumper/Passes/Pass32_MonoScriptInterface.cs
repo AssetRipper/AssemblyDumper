@@ -16,7 +16,7 @@ namespace AssemblyDumper.Passes
 		{
 			Console.WriteLine("Pass 32: MonoScript Interface");
 			ITypeDefOrRef componentInterface = SharedState.Importer.ImportCommonType<IMonoScript>();
-			if (SharedState.TypeDictionary.TryGetValue("MonoScript", out TypeDefinition type))
+			if (SharedState.TypeDictionary.TryGetValue("MonoScript", out TypeDefinition? type))
 			{
 				type.Interfaces.Add(new InterfaceImplementation(componentInterface));
 				type.ImplementGetterProperty("ClassName", InterfacePropertyImplementationAttributes, SystemTypeGetter.String, type.GetFieldByName("m_ClassName"));
@@ -36,12 +36,12 @@ namespace AssemblyDumper.Passes
 			TypeSignature returnTypeSignature = SharedState.Importer.ImportCommonType<AssetRipper.Core.Classes.Misc.Hash128>().ToTypeSignature();
 
 			PropertyDefinition property = type.AddGetterProperty("PropertiesHash", InterfacePropertyImplementationAttributes, returnTypeSignature);
-			CilInstructionCollection processor = property.GetMethod.CilMethodBody.Instructions;
+			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 
 			FieldDefinition field = type.GetFieldByName("m_PropertiesHash");
-			if(field.Signature.FieldType.Name == "Hash128")
+			if(field.Signature!.FieldType.Name == "Hash128")
 			{
-				MethodDefinition conversionMethod = field.Signature.FieldType.Resolve().Methods.Single(m => m.Name == "op_Implicit");
+				MethodDefinition conversionMethod = field.Signature.FieldType.Resolve()!.Methods.Single(m => m.Name == "op_Implicit");
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Ldfld, field);
 				processor.Add(CilOpCodes.Call, conversionMethod);

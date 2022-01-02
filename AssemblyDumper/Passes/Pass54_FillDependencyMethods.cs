@@ -5,6 +5,7 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass54_FillDependencyMethods
 	{
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static ITypeDefOrRef commonPPtrTypeRef;
 		private static ITypeDefOrRef unityObjectBaseInterfaceRef;
 		private static GenericInstanceTypeSignature unityObjectBasePPtrRef;
@@ -17,6 +18,7 @@ namespace AssemblyDumper.Passes
 		private static IMethodDefOrRef fetchDependenciesFromDependent;
 		private static IMethodDefOrRef fetchDependenciesFromArray;
 		private static IMethodDefOrRef fetchDependenciesFromArrayArray;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		private readonly static List<TypeDefinition> processedTypes = new List<TypeDefinition>();
 		private readonly static List<TypeDefinition> nonDependentTypes = new List<TypeDefinition>();
@@ -80,13 +82,13 @@ namespace AssemblyDumper.Passes
 
 		private static bool IsPPtrType(this TypeDefinition type)
 		{
-			return type.Name.ToString().StartsWith("PPtr_");
+			return type.Name!.ToString().StartsWith("PPtr_");
 		}
 
 		private static void FillPPtrType(this TypeDefinition type)
 		{
-			var dependencyMethod = type.GetDependencyMethod();
-			CilInstructionCollection processor = dependencyMethod.CilMethodBody.Instructions;
+			MethodDefinition? dependencyMethod = type.GetDependencyMethod();
+			CilInstructionCollection processor = dependencyMethod.CilMethodBody!.Instructions;
 
 			processor.Add(CilOpCodes.Ldc_I4_1);
 			processor.Add(CilOpCodes.Newarr, unityObjectBasePPtrRef.ToTypeDefOrRef());
@@ -113,7 +115,7 @@ namespace AssemblyDumper.Passes
 
 		private static bool AddFetchDependenciesFromNormalField(this CilInstructionCollection processor, FieldDefinition field, CilLocalVariable listVariable)
 		{
-			TypeSignature fieldType = field.Signature.FieldType;
+			TypeSignature fieldType = field.Signature!.FieldType;
 			if (fieldType.IsPrimitiveType())
 			{
 				return false;
@@ -131,14 +133,14 @@ namespace AssemblyDumper.Passes
 			}
 			else
 			{
-				throw new NotSupportedException($"{fieldType.Name} {field.DeclaringType.Name}.{field.Name}");
+				throw new NotSupportedException($"{fieldType.Name} {field.DeclaringType!.Name}.{field.Name}");
 			}
 			return true;
 		}
 
 		private static bool AddFetchDependenciesFromArrayField(this CilInstructionCollection processor, FieldDefinition field, CilLocalVariable listVariable)
 		{
-			TypeSignature fieldType = field.Signature.FieldType;
+			TypeSignature fieldType = field.Signature!.FieldType;
 			if(fieldType is not SzArrayTypeSignature arrayType)
 				throw new ArgumentException(nameof(field));
 			TypeSignature genericTypeParameter = arrayType.BaseType;
@@ -161,14 +163,14 @@ namespace AssemblyDumper.Passes
 			}
 			else
 			{
-				throw new NotSupportedException($"{fieldType.Name} {field.DeclaringType.Name}.{field.Name}");
+				throw new NotSupportedException($"{fieldType.Name} {field.DeclaringType!.Name}.{field.Name}");
 			}
 			return true;
 		}
 
 		private static bool AddFetchDependenciesFromArrayArrayField(this CilInstructionCollection processor, FieldDefinition field, CilLocalVariable listVariable)
 		{
-			TypeSignature fieldType = field.Signature.FieldType;
+			TypeSignature fieldType = field.Signature!.FieldType;
 			if (fieldType is not SzArrayTypeSignature arrayType)
 				throw new ArgumentException(nameof(field));
 			if (arrayType.BaseType is not SzArrayTypeSignature subArrayType)
@@ -194,14 +196,14 @@ namespace AssemblyDumper.Passes
 			}
 			else
 			{
-				throw new NotSupportedException($"{fieldType.Name} {field.DeclaringType.Name}.{field.Name}");
+				throw new NotSupportedException($"{fieldType.Name} {field.DeclaringType!.Name}.{field.Name}");
 			}
 			return true;
 		}
 
 		private static bool AddFetchDependenciesFromField(this CilInstructionCollection processor, FieldDefinition field, CilLocalVariable listVariable)
 		{
-			TypeSignature fieldType = field.Signature.FieldType;
+			TypeSignature fieldType = field.Signature!.FieldType;
 			
 			if (fieldType is SzArrayTypeSignature arrayType)
 			{
@@ -222,7 +224,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddFetchDependenciesFromField(this CilInstructionCollection processor, FieldDefinition field, TypeSignature genericTypeParameter, CilLocalVariable listVariable, int depth)
 		{
-			var fetchMethod = depth switch
+			MethodSpecification? fetchMethod = depth switch
 			{
 				0 => MethodUtils.MakeGenericInstanceMethod(fetchDependenciesFromDependent, genericTypeParameter),
 				1 => MethodUtils.MakeGenericInstanceMethod(fetchDependenciesFromArray, genericTypeParameter),
@@ -233,7 +235,7 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldarg_1);
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldfld, field);
-			processor.Add(CilOpCodes.Ldstr, field.Name);
+			processor.Add(CilOpCodes.Ldstr, field.Name!);
 			processor.Add(CilOpCodes.Call, fetchMethod);
 			processor.Add(CilOpCodes.Call, unityObjectBasePPtrListAddRange);
 		}
@@ -241,7 +243,7 @@ namespace AssemblyDumper.Passes
 		private static void FillNormalType(this TypeDefinition type)
 		{
 			MethodDefinition dependencyMethod = type.GetDependencyMethod();
-			CilInstructionCollection processor = dependencyMethod.CilMethodBody.Instructions;
+			CilInstructionCollection processor = dependencyMethod.CilMethodBody!.Instructions;
 			dependencyMethod.CilMethodBody.InitializeLocals = true;
 
 			processor.Add(CilOpCodes.Newobj, unityObjectBasePPtrListConstructor);

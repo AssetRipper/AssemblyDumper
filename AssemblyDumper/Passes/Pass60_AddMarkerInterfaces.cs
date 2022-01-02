@@ -19,7 +19,7 @@
 
 		private static bool TryImplementInterface<T>(string typeName)
 		{
-			if (SharedState.TypeDictionary.TryGetValue(typeName, out TypeDefinition type))
+			if (SharedState.TypeDictionary.TryGetValue(typeName, out TypeDefinition? type))
 			{
 				type.AddInterface<T>();
 				return true;

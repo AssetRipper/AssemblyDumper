@@ -7,11 +7,13 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass52_FillYamlMethods
 	{
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static IMethodDefOrRef addSerializedVersionMethod;
 		private static IMethodDefOrRef mappingAddMethod;
 		private static IMethodDefOrRef sequenceAddMethod;
 		private static IMethodDefOrRef byteArrayToYamlMethod;
 		private static IMethodDefOrRef addTypelessDataMethod;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static CilInstructionLabel DummyInstructionLabel { get; } = new CilInstructionLabel();
 
 		private static bool emittingRelease = true;
@@ -42,9 +44,9 @@ namespace AssemblyDumper.Passes
 		{
 			Console.WriteLine("Pass 52: Filling yaml methods");
 			Initialize();
-			foreach (var (name, klass) in SharedState.ClassDictionary)
+			foreach ((string name, UnityClass klass) in SharedState.ClassDictionary)
 			{
-				var type = SharedState.TypeDictionary[name];
+				TypeDefinition? type = SharedState.TypeDictionary[name];
 				List<FieldDefinition> fields = FieldUtils.GetAllFieldsInTypeAndBase(type).Distinct().ToList();
 				emittingRelease = false;
 				type.FillEditorMethod(klass, fields);
@@ -55,20 +57,20 @@ namespace AssemblyDumper.Passes
 
 		private static void FillEditorMethod(this TypeDefinition type, UnityClass klass, List<FieldDefinition> fields)
 		{
-			var editorModeYamlMethod = type.Methods.Single(m => m.Name == "ExportYAMLEditor");
+			MethodDefinition editorModeYamlMethod = type.Methods.Single(m => m.Name == "ExportYAMLEditor");
 			editorModeYamlMethod.FillMethod(klass.EditorRootNode, fields);
 		}
 
 		private static void FillReleaseMethod(this TypeDefinition type, UnityClass klass, List<FieldDefinition> fields)
 		{
-			var releaseModeYamlMethod = type.Methods.Single(m => m.Name == "ExportYAMLRelease");
+			MethodDefinition? releaseModeYamlMethod = type.Methods.Single(m => m.Name == "ExportYAMLRelease");
 			releaseModeYamlMethod.FillMethod(klass.ReleaseRootNode, fields);
 		}
 
-		private static void FillMethod(this MethodDefinition method, UnityNode rootNode, List<FieldDefinition> fields)
+		private static void FillMethod(this MethodDefinition method, UnityNode? rootNode, List<FieldDefinition> fields)
 		{
-			var body = method.CilMethodBody;
-			var processor = body.Instructions;
+			CilMethodBody body = method.CilMethodBody!;
+			CilInstructionCollection processor = body.Instructions;
 
 			body.InitializeLocals = true;
 			CilLocalVariable resultNode = new CilLocalVariable(CommonTypeGetter.YAMLMappingNodeDefinition.ToTypeSignature());
@@ -81,7 +83,7 @@ namespace AssemblyDumper.Passes
 			{
 				processor.MaybeEmitFlowMappingStyle(rootNode, resultNode);
 				processor.AddAddSerializedVersion(resultNode, rootNode.Version);
-				foreach (var unityNode in rootNode.SubNodes)
+				foreach (UnityNode? unityNode in rootNode.SubNodes)
 				{
 					AddExportToProcessor(unityNode, processor, fields, resultNode);
 				}
@@ -102,7 +104,7 @@ namespace AssemblyDumper.Passes
 		private static void AddExportToProcessor(UnityNode node, CilInstructionCollection processor, List<FieldDefinition> fields, CilLocalVariable yamlMappingNode)
 		{
 			//Get field
-			FieldDefinition field = fields.SingleOrDefault(f => f.Name == node.Name);
+			FieldDefinition? field = fields.SingleOrDefault(f => f.Name == node.Name);
 
 			if (field == null)
 				throw new Exception($"Field {node.Name} cannot be found in {processor.Owner.Owner.DeclaringType} (fields are {string.Join(", ", fields.Select(f => f.Name))})");
@@ -112,7 +114,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddExportFieldContent(this CilInstructionCollection processor, UnityNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
 		{
-			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out TypeDefinition typeDefinition))
+			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out TypeDefinition? typeDefinition))
 			{
 				processor.AddExportAssetField(node, field, yamlMappingNode, typeDefinition);
 				return;
@@ -145,7 +147,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddLocalForLoadedValue(this CilInstructionCollection processor, UnityNode node, out CilLocalVariable localVariable)
 		{
-			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out TypeDefinition typeDefinition))
+			if (SharedState.TypeDictionary.TryGetValue(node.TypeName, out TypeDefinition? typeDefinition))
 			{
 				processor.AddLocalForLoadedAssetValue(typeDefinition, out localVariable);
 				return;
@@ -260,7 +262,7 @@ namespace AssemblyDumper.Passes
 			{
 				processor.Add(CilOpCodes.Ldloc, pair);
 				processor.Add(CilOpCodes.Call, getKeyReference);
-				processor.AddLocalForLoadedValue(firstSubNode, out var local1);
+				processor.AddLocalForLoadedValue(firstSubNode, out CilLocalVariable? local1);
 				processor.Add(CilOpCodes.Ldloc, localVariableForOutputNode);
 				processor.AddScalarNodeForString("first");
 				processor.Add(CilOpCodes.Ldloc, local1);
@@ -268,7 +270,7 @@ namespace AssemblyDumper.Passes
 
 				processor.Add(CilOpCodes.Ldloc, pair);
 				processor.Add(CilOpCodes.Call, getValueReference);
-				processor.AddLocalForLoadedValue(secondSubNode, out var local2);
+				processor.AddLocalForLoadedValue(secondSubNode, out CilLocalVariable? local2);
 				processor.Add(CilOpCodes.Ldloc, localVariableForOutputNode);
 				processor.AddScalarNodeForString("second");
 				processor.Add(CilOpCodes.Ldloc, local2);
@@ -279,7 +281,7 @@ namespace AssemblyDumper.Passes
 		private static void AddExportVectorField(this CilInstructionCollection processor, UnityNode vectorNode, FieldDefinition field, CilLocalVariable yamlMappingNode)
 		{
 			//This cloning is necessary to prevent the code from using "Array" instead of the actual name
-			var arrayNode = vectorNode.SubNodes[0].DeepClone();
+			UnityNode? arrayNode = vectorNode.SubNodes[0].DeepClone();
 			arrayNode.Name = vectorNode.Name;
 			arrayNode.OriginalName = vectorNode.OriginalName;
 			processor.AddExportArrayField(arrayNode, field, yamlMappingNode);
@@ -288,7 +290,7 @@ namespace AssemblyDumper.Passes
 		private static void AddLocalForLoadedVector(this CilInstructionCollection processor, UnityNode vectorNode, out CilLocalVariable localVariable)
 		{
 			//This cloning is necessary to prevent the code from using "Array" instead of the actual name
-			var arrayNode = vectorNode.SubNodes[0].DeepClone();
+			UnityNode? arrayNode = vectorNode.SubNodes[0].DeepClone();
 			arrayNode.Name = vectorNode.Name;
 			arrayNode.OriginalName = vectorNode.OriginalName;
 			processor.AddLocalForLoadedArray(arrayNode, out localVariable);
@@ -359,24 +361,24 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, sequenceNode);
 
 			//Make local and store length in it
-			var countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			CilLocalVariable? countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
 			processor.Owner.LocalVariables.Add(countLocal); //Add to method
 			processor.Add(CilOpCodes.Ldloc, array); //Load array
 			processor.Add(CilOpCodes.Ldlen); //Get length
 			processor.Add(CilOpCodes.Stloc, countLocal); //Store it
 
 			//Make an i
-			var iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			CilLocalVariable? iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
 			processor.Owner.LocalVariables.Add(iLocal); //Add to method
 			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
+			CilInstruction? unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			var jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
+			ICilLabel? jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			//Do stuff at index i
 			processor.Add(CilOpCodes.Ldloc, array);
@@ -395,7 +397,7 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
+			ICilLabel? loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
 			unconditionalBranchInstruction.Operand = loopConditionStartLabel;
@@ -417,10 +419,10 @@ namespace AssemblyDumper.Passes
 			UnityNode firstNode = dictionaryNode.SubNodes[0].SubNodes[1].SubNodes[0];
 			UnityNode secondNode = dictionaryNode.SubNodes[0].SubNodes[1].SubNodes[1];
 
-			var genericDictType = GenericTypeResolver.ResolveDictionaryType(dictionaryNode);
-			var genericPairType = GenericTypeResolver.ResolvePairType(pairNode);
-			var genericListType = ((ITypeDefOrRef)SharedState.Importer.ImportSystemType("System.Collections.Generic.List`1")).ToTypeSignature().MakeGenericInstanceType(genericPairType);
-			var dictLocal = new CilLocalVariable(genericDictType); //Create local
+			GenericInstanceTypeSignature? genericDictType = GenericTypeResolver.ResolveDictionaryType(dictionaryNode);
+			GenericInstanceTypeSignature? genericPairType = GenericTypeResolver.ResolvePairType(pairNode);
+			GenericInstanceTypeSignature? genericListType = ((ITypeDefOrRef)SharedState.Importer.ImportSystemType("System.Collections.Generic.List`1")).ToTypeSignature().MakeGenericInstanceType(genericPairType);
+			CilLocalVariable? dictLocal = new CilLocalVariable(genericDictType); //Create local
 			processor.Owner.LocalVariables.Add(dictLocal); //Add to method
 			processor.Add(CilOpCodes.Stloc, dictLocal); //Store dict in local
 
@@ -432,30 +434,30 @@ namespace AssemblyDumper.Passes
 
 			//Get length of dictionary
 			processor.Add(CilOpCodes.Ldloc, dictLocal);
-			MethodDefinition getCountDefinition = SystemTypeGetter.LookupSystemType("System.Collections.Generic.List`1").Properties.Single(m => m.Name == "Count").GetMethod;
+			MethodDefinition getCountDefinition = SystemTypeGetter.LookupSystemType("System.Collections.Generic.List`1")!.Properties.Single(m => m.Name == "Count").GetMethod!;
 			IMethodDefOrRef getCountReference = MethodUtils.MakeMethodOnGenericType(genericListType, getCountDefinition);
 			processor.Add(CilOpCodes.Call, getCountReference);
 
 			//Make local and store length in it
-			var countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			CilLocalVariable countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
 			processor.Owner.LocalVariables.Add(countLocal); //Add to method
 			processor.Add(CilOpCodes.Stloc, countLocal); //Store count in it
 
 			//Make an i
-			var iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
+			CilLocalVariable iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
 			processor.Owner.LocalVariables.Add(iLocal); //Add to method
 			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			var unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
+			CilInstruction unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
 
 			//Now we just read key + value, increment i, compare against count, and jump back to here if it's less
-			var jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create the dummy instruction to jump back to
+			ICilLabel jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create the dummy instruction to jump back to
 
 			//Export Yaml
-			MethodDefinition getItemDefinition = SystemTypeGetter.LookupSystemType("System.Collections.Generic.List`1").Properties.Single(m => m.Name == "Item").GetMethod;
+			MethodDefinition getItemDefinition = SystemTypeGetter.LookupSystemType("System.Collections.Generic.List`1")!.Properties.Single(m => m.Name == "Item").GetMethod!;
 			IMethodDefOrRef getItemReference = MethodUtils.MakeMethodOnGenericType(genericListType, getItemDefinition);
 			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load Dictionary
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
@@ -473,7 +475,7 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			var loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
+			ICilLabel? loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
 			unconditionalBranchInstruction.Operand = loopConditionStartLabel;
@@ -493,7 +495,7 @@ namespace AssemblyDumper.Passes
 
 		private static void AddScalarNodeForLoadedPrimitiveValue(this CilInstructionCollection processor, string typeName)
 		{
-			var type = SystemTypeGetter.GetCppPrimitiveTypeSignature(typeName) ?? throw new ArgumentException(nameof(typeName));
+			CorLibTypeSignature? type = SystemTypeGetter.GetCppPrimitiveTypeSignature(typeName) ?? throw new ArgumentException(nameof(typeName));
 			processor.Add(CilOpCodes.Newobj, GetScalarNodeConstructor(type));
 		}
 
@@ -518,11 +520,11 @@ namespace AssemblyDumper.Passes
 			return TryGetScalarNodeConstructor(parameterType) ?? throw new InvalidOperationException($"Could not find a scalar node constructor for {parameterType.FullName}");
 		}
 
-		private static readonly Dictionary<TypeSignature, IMethodDefOrRef> scalarNodeConstructorCache = new Dictionary<TypeSignature, IMethodDefOrRef>();
+		private static readonly Dictionary<TypeSignature, IMethodDefOrRef?> scalarNodeConstructorCache = new Dictionary<TypeSignature, IMethodDefOrRef?>();
 
-		private static IMethodDefOrRef TryGetScalarNodeConstructor(TypeSignature parameterType)
+		private static IMethodDefOrRef? TryGetScalarNodeConstructor(TypeSignature parameterType)
 		{
-			if(scalarNodeConstructorCache.TryGetValue(parameterType, out IMethodDefOrRef constructor))
+			if(scalarNodeConstructorCache.TryGetValue(parameterType, out IMethodDefOrRef? constructor))
 			{
 				return constructor;
 			}
@@ -530,7 +532,7 @@ namespace AssemblyDumper.Passes
 			{
 				TypeDefinition scalarType = CommonTypeGetter.LookupCommonType<AssetRipper.Core.YAML.YAMLScalarNode>()
 				?? throw new Exception("Could not find the yaml scalar node type");
-				MethodDefinition constructorDefinition = scalarType.Methods.SingleOrDefault(m =>
+				MethodDefinition? constructorDefinition = scalarType.Methods.SingleOrDefault(m =>
 					m.IsConstructor &&
 					m.Parameters.Count == 1 &&
 					m.Parameters[0].ParameterType.FullName == parameterType.FullName);

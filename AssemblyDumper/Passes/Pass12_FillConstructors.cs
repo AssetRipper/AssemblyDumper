@@ -1,10 +1,13 @@
 ﻿using AssemblyDumper.Utils;
+using System.Diagnostics.CodeAnalysis;
 
 namespace AssemblyDumper.Passes
 {
 	public static class Pass12_FillConstructors
 	{
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static IMethodDefOrRef emptyArray;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 12: Fill Constructors");
@@ -13,7 +16,7 @@ namespace AssemblyDumper.Passes
 			{
 				type.FillDefaultConstructor();
 				type.FillLayoutInfoConstructor();
-				if(type.TryGetAssetInfoConstructor(out MethodDefinition assetInfoConstructor))
+				if(type.TryGetAssetInfoConstructor(out MethodDefinition? assetInfoConstructor))
 				{
 					type.FillAssetInfoConstructor(assetInfoConstructor);
 				}
@@ -32,18 +35,23 @@ namespace AssemblyDumper.Passes
 
 		private static TypeDefinition GetResolvedBaseType(this TypeDefinition type)
 		{
-			if(type?.BaseType == null)
+			if (type == null)
 			{
-				return null;
+				throw new ArgumentNullException(nameof(type));
 			}
+			if (type.BaseType == null)
+			{
+				throw new ArgumentException(nameof(type));
+			}
+
 			if(type.BaseType is TypeDefinition baseTypeDefinition)
 			{
 				return baseTypeDefinition;
 			}
-			TypeDefinition resolvedBaseType = type.BaseType.Resolve();
+			TypeDefinition? resolvedBaseType = type.BaseType.Resolve();
 			if(resolvedBaseType == null)
 			{
-				throw new Exception($"Could not resolve base type {type.BaseType} of derived type {type} from module {type.Module} in assembly {type.Module.Assembly}");
+				throw new Exception($"Could not resolve base type {type.BaseType} of derived type {type} from module {type.Module} in assembly {type.Module!.Assembly}");
 			}
 			return resolvedBaseType;
 		}
@@ -58,7 +66,7 @@ namespace AssemblyDumper.Passes
 			return type.Methods.Where(x => x.IsConstructor && x.Parameters.Count == 1 && x.Parameters[0].ParameterType.Name == "LayoutInfo").Single();
 		}
 
-		private static bool TryGetAssetInfoConstructor(this TypeDefinition type, out MethodDefinition constructor)
+		private static bool TryGetAssetInfoConstructor(this TypeDefinition type, [NotNullWhen(true)] out MethodDefinition? constructor)
 		{
 			constructor = type.Methods.FirstOrDefault(x => x.IsConstructor && x.Parameters.Count == 1 && x.Parameters[0].ParameterType.Name == "AssetInfo");
 			return constructor != null;
@@ -67,14 +75,14 @@ namespace AssemblyDumper.Passes
 		private static void FillDefaultConstructor(this TypeDefinition type)
 		{
 			MethodDefinition constructor = GetDefaultConstructor(type);
-			CilInstructionCollection processor = constructor.CilMethodBody.Instructions;
+			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
 			processor.Clear();
 			IMethodDefOrRef baseConstructor = SharedState.Importer.ImportMethod(type.GetResolvedBaseType().GetDefaultConstructor());
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Call, baseConstructor);
 			foreach(FieldDefinition field in type.Fields)
 			{
-				if(field.IsStatic || field.Signature.FieldType.IsValueType)
+				if(field.IsStatic || field.Signature!.FieldType.IsValueType)
 					continue;
 				
 				if(field.Signature.FieldType is GenericInstanceTypeSignature generic)
@@ -86,7 +94,7 @@ namespace AssemblyDumper.Passes
 				else if (field.Signature.FieldType is SzArrayTypeSignature array)
 				{
 					processor.Add(CilOpCodes.Ldarg_0);
-					var method = MethodUtils.MakeGenericInstanceMethod(emptyArray, array.BaseType);
+					MethodSpecification? method = MethodUtils.MakeGenericInstanceMethod(emptyArray, array.BaseType);
 					processor.Add(CilOpCodes.Call, method);
 					processor.Add(CilOpCodes.Stfld, field);
 				}
@@ -115,7 +123,7 @@ namespace AssemblyDumper.Passes
 		{
 			MethodDefinition constructor = GetLayoutInfoConstructor(type);
 			Parameter parameter = constructor.Parameters[0];
-			CilInstructionCollection processor = constructor.CilMethodBody.Instructions;
+			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
 			processor.Clear();
 			IMethodDefOrRef baseConstructor = SharedState.Importer.ImportMethod(type.GetResolvedBaseType().GetLayoutInfoConstructor());
 			processor.Add(CilOpCodes.Ldarg_0);
@@ -123,7 +131,7 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Call, baseConstructor);
 			foreach (FieldDefinition field in type.Fields)
 			{
-				if (field.IsStatic || field.Signature.FieldType.IsValueType)
+				if (field.IsStatic || field.Signature!.FieldType.IsValueType)
 					continue;
 
 				if (field.Signature.FieldType is GenericInstanceTypeSignature generic)
@@ -135,7 +143,7 @@ namespace AssemblyDumper.Passes
 				else if (field.Signature.FieldType is SzArrayTypeSignature array)
 				{
 					processor.Add(CilOpCodes.Ldarg_0);
-					var method = MethodUtils.MakeGenericInstanceMethod(emptyArray, array.BaseType);
+					MethodSpecification? method = MethodUtils.MakeGenericInstanceMethod(emptyArray, array.BaseType);
 					processor.Add(CilOpCodes.Call, method);
 					processor.Add(CilOpCodes.Stfld, field);
 				}
@@ -164,16 +172,19 @@ namespace AssemblyDumper.Passes
 		private static void FillAssetInfoConstructor(this TypeDefinition type, MethodDefinition constructor)
 		{
 			Parameter parameter = constructor.Parameters[0];
-			CilInstructionCollection processor = constructor.CilMethodBody.Instructions;
+			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
 			processor.Clear();
-			type.GetResolvedBaseType().TryGetAssetInfoConstructor(out MethodDefinition baseConstructorDefinition);
+			if(!type.GetResolvedBaseType().TryGetAssetInfoConstructor(out MethodDefinition? baseConstructorDefinition))
+			{
+				throw new Exception($"Base type for {type} did not have an asset info constructor");
+			}
 			IMethodDefOrRef baseConstructor = SharedState.Importer.ImportMethod(baseConstructorDefinition);
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldarg, parameter);
 			processor.Add(CilOpCodes.Call, baseConstructor);
 			foreach (FieldDefinition field in type.Fields)
 			{
-				if (field.IsStatic || field.Signature.FieldType.IsValueType)
+				if (field.IsStatic || field.Signature!.FieldType.IsValueType)
 					continue;
 
 				if (field.Signature.FieldType is GenericInstanceTypeSignature generic)
@@ -185,14 +196,14 @@ namespace AssemblyDumper.Passes
 				else if (field.Signature.FieldType is SzArrayTypeSignature array)
 				{
 					processor.Add(CilOpCodes.Ldarg_0);
-					var method = MethodUtils.MakeGenericInstanceMethod(emptyArray, array.BaseType);
+					MethodSpecification? method = MethodUtils.MakeGenericInstanceMethod(emptyArray, array.BaseType);
 					processor.Add(CilOpCodes.Call, method);
 					processor.Add(CilOpCodes.Stfld, field);
 				}
 				else if (field.Signature.FieldType.ToTypeDefOrRef() is TypeDefinition typeDef)
 				{
 					processor.Add(CilOpCodes.Ldarg_0);
-					if (typeDef.TryGetAssetInfoConstructor(out MethodDefinition fieldAssetInfoConstructor))
+					if (typeDef.TryGetAssetInfoConstructor(out MethodDefinition? fieldAssetInfoConstructor))
 					{
 						processor.Add(CilOpCodes.Ldarg, parameter);
 						processor.Add(CilOpCodes.Newobj, fieldAssetInfoConstructor);

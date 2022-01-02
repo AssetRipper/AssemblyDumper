@@ -23,10 +23,10 @@ namespace AssemblyDumper.Passes
 		{
 			FieldDefinition field = type.GetField();
 			
-			MethodDefinition implicitMethod = type.AddMethod("op_Implicit", ConversionAttributes, field.Signature.FieldType);
+			MethodDefinition implicitMethod = type.AddMethod("op_Implicit", ConversionAttributes, field.Signature!.FieldType);
 			implicitMethod.AddParameter("value", type);
 
-			var processor = implicitMethod.CilMethodBody.Instructions;
+			CilInstructionCollection processor = implicitMethod.CilMethodBody!.Instructions;
 
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldfld, field);

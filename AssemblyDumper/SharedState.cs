@@ -4,8 +4,9 @@ namespace AssemblyDumper
 {
 	public static class SharedState
 	{
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public static AssemblyDefinition Assembly { get; set; }
-		public static ModuleDefinition Module => Assembly.ManifestModule;
+		public static ModuleDefinition Module => Assembly.ManifestModule!;
 		public static ReferenceImporter Importer { get; set; }
 		public static string Version { get; private set; }
 		public static List<UnityString> Strings { get; private set; }
@@ -13,6 +14,7 @@ namespace AssemblyDumper
 		/// The name of the class (no namespace) : its UnityClass object
 		/// </summary>
 		public static Dictionary<string, UnityClass> ClassDictionary { get; private set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		/// <summary>
 		/// The name of the class (no namespace) : its generated TypeDefinition
 		/// </summary>
@@ -32,9 +34,9 @@ namespace AssemblyDumper
 
 		public static void Initialize(UnityInfo info)
 		{
-			Version = info.Version;
-			Strings = info.Strings;
-			ClassDictionary = info.Classes.Where(y => y.TypeID < 100_000 || y.TypeID > 100_011).ToDictionary(x => x.Name, x => x);
+			Version = info.Version!;
+			Strings = info.Strings ?? new List<UnityString>();
+			ClassDictionary = info.Classes!.Where(y => y.TypeID < 100_000 || y.TypeID > 100_011).ToDictionary(x => x.Name!, x => x);
 			//100,000 to 100,011 are excluded here because they always have null root nodes
 			//The non primitives will get re-added in pass 4
 
@@ -56,7 +58,7 @@ namespace AssemblyDumper
 		{
 			if (unityClass.DescendantCount == 0)
 			{
-				foreach(string derivedClassName in unityClass.Derived)
+				foreach(string derivedClassName in unityClass.Derived!)
 				{
 					UnityClass derivedClass = ClassDictionary[derivedClassName];
 					derivedClass.FixDescendantCount();

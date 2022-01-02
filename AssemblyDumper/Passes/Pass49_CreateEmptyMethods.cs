@@ -13,8 +13,8 @@ namespace AssemblyDumper.Passes
 		{
 			System.Console.WriteLine("Pass 49: Creating empty methods on generated types");
 
-			var typeTreeNodeRef = SharedState.Importer.ImportCommonType<TypeTreeNode>();
-			var typeTreeNodeListRef = SystemTypeGetter.List.MakeGenericInstanceType(typeTreeNodeRef.ToTypeSignature());
+			ITypeDefOrRef? typeTreeNodeRef = SharedState.Importer.ImportCommonType<TypeTreeNode>();
+			GenericInstanceTypeSignature? typeTreeNodeListRef = SystemTypeGetter.List.MakeGenericInstanceType(typeTreeNodeRef.ToTypeSignature());
 
 			ITypeDefOrRef commonPPtrTypeRef = SharedState.Importer.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
 			ITypeDefOrRef unityObjectBaseInterfaceRef = SharedState.Importer.ImportCommonType<IUnityObjectBase>();
@@ -25,33 +25,33 @@ namespace AssemblyDumper.Passes
 
 			foreach (TypeDefinition type in SharedState.TypeDictionary.Values)
 			{
-				var releaseReadDef = type.AddMethod("ReadRelease", OverrideMethodAttributes, SystemTypeGetter.Void);
+				MethodDefinition? releaseReadDef = type.AddMethod("ReadRelease", OverrideMethodAttributes, SystemTypeGetter.Void);
 				releaseReadDef.AddParameter("reader", CommonTypeGetter.AssetReaderDefinition);
 
-				var editorReadDef = type.AddMethod("ReadEditor", OverrideMethodAttributes, SystemTypeGetter.Void);
+				MethodDefinition? editorReadDef = type.AddMethod("ReadEditor", OverrideMethodAttributes, SystemTypeGetter.Void);
 				editorReadDef.AddParameter("reader", CommonTypeGetter.AssetReaderDefinition);
 
-				var releaseWriteDef = type.AddMethod("WriteRelease", OverrideMethodAttributes, SystemTypeGetter.Void);
+				MethodDefinition? releaseWriteDef = type.AddMethod("WriteRelease", OverrideMethodAttributes, SystemTypeGetter.Void);
 				releaseWriteDef.AddParameter("writer", CommonTypeGetter.AssetWriterDefinition);
 
-				var editorWriteDef = type.AddMethod("WriteEditor", OverrideMethodAttributes, SystemTypeGetter.Void);
+				MethodDefinition? editorWriteDef = type.AddMethod("WriteEditor", OverrideMethodAttributes, SystemTypeGetter.Void);
 				editorWriteDef.AddParameter("writer", CommonTypeGetter.AssetWriterDefinition);
 
-				var releaseYamlDef = type.AddMethod("ExportYAMLRelease", OverrideMethodAttributes, CommonTypeGetter.YAMLNodeDefinition);
+				MethodDefinition? releaseYamlDef = type.AddMethod("ExportYAMLRelease", OverrideMethodAttributes, CommonTypeGetter.YAMLNodeDefinition);
 				releaseYamlDef.AddParameter("container", CommonTypeGetter.IExportContainerDefinition);
 
-				var editorYamlDef = type.AddMethod("ExportYAMLEditor", OverrideMethodAttributes, CommonTypeGetter.YAMLNodeDefinition);
+				MethodDefinition? editorYamlDef = type.AddMethod("ExportYAMLEditor", OverrideMethodAttributes, CommonTypeGetter.YAMLNodeDefinition);
 				editorYamlDef.AddParameter("container", CommonTypeGetter.IExportContainerDefinition);
 
-				var releaseTypeTreeDef = type.AddMethod("MakeReleaseTypeTreeNodes", OverrideMethodAttributes, typeTreeNodeListRef);
+				MethodDefinition? releaseTypeTreeDef = type.AddMethod("MakeReleaseTypeTreeNodes", OverrideMethodAttributes, typeTreeNodeListRef);
 				releaseTypeTreeDef.AddParameter("depth", SystemTypeGetter.Int32);
 				releaseTypeTreeDef.AddParameter("startingIndex", SystemTypeGetter.Int32);
 
-				var editorTypeTreeDef = type.AddMethod("MakeEditorTypeTreeNodes", OverrideMethodAttributes, typeTreeNodeListRef);
+				MethodDefinition? editorTypeTreeDef = type.AddMethod("MakeEditorTypeTreeNodes", OverrideMethodAttributes, typeTreeNodeListRef);
 				editorTypeTreeDef.AddParameter("depth", SystemTypeGetter.Int32);
 				editorTypeTreeDef.AddParameter("startingIndex", SystemTypeGetter.Int32);
 
-				var fetchDependenciesDef = type.AddMethod("FetchDependencies", OverrideMethodAttributes, enumerablePPtrsRef);
+				MethodDefinition? fetchDependenciesDef = type.AddMethod("FetchDependencies", OverrideMethodAttributes, enumerablePPtrsRef);
 				fetchDependenciesDef.AddParameter("context", dependencyContextRef);
 			}
 		}

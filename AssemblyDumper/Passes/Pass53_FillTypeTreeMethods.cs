@@ -6,11 +6,13 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass53_FillTypeTreeMethods
 	{
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static ITypeDefOrRef typeTreeNode;
 		private static IMethodDefOrRef typeTreeNodeConstructor;
 		private static GenericInstanceTypeSignature typeTreeNodeList;
 		private static IMethodDefOrRef typeTreeNodeListConstructor;
 		private static IMethodDefOrRef listAddMethod;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 53: Fill Type Tree Methods");
@@ -19,24 +21,24 @@ namespace AssemblyDumper.Passes
 			typeTreeNodeConstructor = SharedState.Importer.ImportCommonConstructor<TypeTreeNode>(8);
 			typeTreeNodeList = SystemTypeGetter.List.MakeGenericInstanceType(typeTreeNode.ToTypeSignature());
 			typeTreeNodeListConstructor = MethodUtils.MakeConstructorOnGenericType(typeTreeNodeList, 0);
-			listAddMethod = MethodUtils.MakeMethodOnGenericType(typeTreeNodeList, typeTreeNodeList.Resolve().Methods.First(m => m.Name == "Add"));
+			listAddMethod = MethodUtils.MakeMethodOnGenericType(typeTreeNodeList, typeTreeNodeList.Resolve()!.Methods.First(m => m.Name == "Add"));
 
-			foreach (var (name, klass) in SharedState.ClassDictionary)
+			foreach ((string name, UnityClass klass) in SharedState.ClassDictionary)
 			{
 				if (!SharedState.TypeDictionary.ContainsKey(name))
 					//Skip primitive types
 					continue;
 
-				var type = SharedState.TypeDictionary[name];
+				TypeDefinition type = SharedState.TypeDictionary[name];
 
-				var editorModeYamlMethod = type.Methods.Single(m => m.Name == "MakeEditorTypeTreeNodes");
-				var releaseModeYamlMethod = type.Methods.Single(m => m.Name == "MakeReleaseTypeTreeNodes");
+				MethodDefinition editorModeYamlMethod = type.Methods.Single(m => m.Name == "MakeEditorTypeTreeNodes");
+				MethodDefinition releaseModeYamlMethod = type.Methods.Single(m => m.Name == "MakeReleaseTypeTreeNodes");
 
-				var editorModeBody = editorModeYamlMethod.CilMethodBody;
-				var releaseModeBody = releaseModeYamlMethod.CilMethodBody;
+				CilMethodBody editorModeBody = editorModeYamlMethod.CilMethodBody!;
+				CilMethodBody releaseModeBody = releaseModeYamlMethod.CilMethodBody!;
 
-				var editorModeProcessor = editorModeBody.Instructions;
-				var releaseModeProcessor = releaseModeBody.Instructions;
+				CilInstructionCollection editorModeProcessor = editorModeBody.Instructions;
+				CilInstructionCollection releaseModeProcessor = releaseModeBody.Instructions;
 				
 				//Console.WriteLine($"Generating the editor read method for {name}");
 				if (klass.EditorRootNode == null)
@@ -84,7 +86,7 @@ namespace AssemblyDumper.Passes
 		{
 			processor.AddSingleTreeNode(node, currentIndex);
 			currentIndex++;
-			foreach (var subNode in node.SubNodes)
+			foreach (UnityNode? subNode in node.SubNodes)
 			{
 				currentIndex = processor.AddTreeNodesRecursively(subNode, currentIndex);
 			}

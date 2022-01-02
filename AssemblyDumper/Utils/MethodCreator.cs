@@ -32,7 +32,7 @@ namespace AssemblyDumper.Utils
 
 			MethodDefinition result = new MethodDefinition(methodName, methodAttributes, methodSignature);
 
-			result.CilMethodBody = new AsmResolver.DotNet.Code.Cil.CilMethodBody(result);
+			result.CilMethodBody = new CilMethodBody(result);
 
 			return result;
 		}
@@ -44,7 +44,7 @@ namespace AssemblyDumper.Utils
 
 		public static Parameter AddParameter(this MethodDefinition method, string parameterName, TypeSignature parameterSignature)
 		{
-			ParameterDefinition parameterDefinition = new ParameterDefinition((ushort)(method.Signature.ParameterTypes.Count + 1), parameterName, default);
+			ParameterDefinition parameterDefinition = new ParameterDefinition((ushort)(method.Signature!.ParameterTypes.Count + 1), parameterName, default);
 			method.Signature.ParameterTypes.Add(parameterSignature);
 			method.ParameterDefinitions.Add(parameterDefinition);
 			Assertions.AssertEquality(method.Signature.ParameterTypes.Count, method.ParameterDefinitions.Count);

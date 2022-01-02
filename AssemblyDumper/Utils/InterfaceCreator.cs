@@ -4,16 +4,16 @@
 	{
 		public static TypeDefinition CreateEmptyInterface(AssemblyDefinition assembly, string @namespace, string name)
 		{
-			var module = assembly.ManifestModule;
+			ModuleDefinition? module = assembly.ManifestModule;
 			TypeDefinition definition = new TypeDefinition(@namespace, name, TypeAttributes.Public | TypeAttributes.Interface);
-			module.TopLevelTypes.Add(definition);
+			module!.TopLevelTypes.Add(definition);
 			return definition;
 		}
 
 		public static TypeDefinition CreateEmptyInterface(AssemblyDefinition assembly, string @namespace, string name, ITypeDefOrRef[] interfaces)
 		{
-			var emptyInterface = CreateEmptyInterface(assembly, @namespace, name);
-			foreach (var implementedInterface in interfaces)
+			TypeDefinition emptyInterface = CreateEmptyInterface(assembly, @namespace, name);
+			foreach (ITypeDefOrRef implementedInterface in interfaces)
 			{
 				emptyInterface.Interfaces.Add(new InterfaceImplementation(implementedInterface));
 			}

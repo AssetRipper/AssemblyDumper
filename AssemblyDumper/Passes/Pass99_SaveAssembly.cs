@@ -8,11 +8,11 @@ namespace AssemblyDumper.Passes
 		public static void DoPass(DirectoryInfo outputDirectory)
 		{
 			Console.WriteLine("Pass 99: Save Assembly");
-			var assembly = SharedState.Assembly;
+			AssemblyDefinition? assembly = SharedState.Assembly;
 
 			if (!outputDirectory.Exists) Directory.CreateDirectory(outputDirectory.FullName);
 
-			string filePath = Path.Combine(outputDirectory.FullName, SharedState.Assembly.Name.ToString() + ".dll");
+			string filePath = Path.Combine(outputDirectory.FullName, SharedState.Assembly.Name!.ToString() + ".dll");
 
 			DotNetDirectoryFactory factory = new DotNetDirectoryFactory();
 			//factory.MetadataBuilderFlags |= MetadataBuilderFlags.NoStringsStreamOptimization; //Check later, but currently less than 1% difference
@@ -30,7 +30,7 @@ namespace AssemblyDumper.Passes
 				Console.WriteLine("AggregateException thrown");
 				aggregateException = aggregateException.Flatten();
 				
-				foreach(var error in aggregateException.InnerExceptions)
+				foreach(Exception? error in aggregateException.InnerExceptions)
 				{
 					Console.WriteLine();
 					Console.WriteLine(error.ToString());

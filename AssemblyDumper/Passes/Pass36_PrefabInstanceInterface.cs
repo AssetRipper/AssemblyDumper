@@ -18,7 +18,7 @@ namespace AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 36: PrefabInstance Interface");
-			if (SharedState.TypeDictionary.TryGetValue("PrefabInstance", out TypeDefinition type))
+			if (SharedState.TypeDictionary.TryGetValue("PrefabInstance", out TypeDefinition? type))
 			{
 				type.ImplementPrefabInstanceInterface();
 			}
@@ -49,17 +49,17 @@ namespace AssemblyDumper.Passes
 
 			MethodDefinition explicitConversionMethod = PPtrUtils.GetExplicitConversion<IGameObject>(SharedState.TypeDictionary["PPtr_GameObject_"]);
 
-			if(type.TryGetFieldByName("m_RootGameObject", out FieldDefinition field))
+			if(type.TryGetFieldByName("m_RootGameObject", out FieldDefinition? field))
 			{
 				PropertyDefinition property = type.AddFullProperty(nameof(IPrefabInstance.RootGameObjectPtr), InterfacePropertyImplementationAttributes, gameObjectPPtrType);
 
-				CilInstructionCollection getProcessor = property.GetMethod.CilMethodBody.Instructions;
+				CilInstructionCollection getProcessor = property.GetMethod!.CilMethodBody!.Instructions;
 				getProcessor.Add(CilOpCodes.Ldarg_0);
 				getProcessor.Add(CilOpCodes.Ldfld, field);
 				getProcessor.Add(CilOpCodes.Call, explicitConversionMethod);
 				getProcessor.Add(CilOpCodes.Ret);
 
-				CilInstructionCollection setProcessor = property.SetMethod.CilMethodBody.Instructions;
+				CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
 				IMethodDefOrRef pptrSetMethod = SharedState.Importer.ImportCommonMethod(typeof(PPtr), m => m.Name == "SetValues");
 				setProcessor.Add(CilOpCodes.Ldarg_0);
 				setProcessor.Add(CilOpCodes.Ldfld, field);
@@ -82,7 +82,7 @@ namespace AssemblyDumper.Passes
 			ITypeDefOrRef prefabInstanceInterface = SharedState.Importer.ImportCommonType<IPrefabInstance>();
 			GenericInstanceTypeSignature prefabInstancePPtrType = commonPPtrType.MakeGenericInstanceType(prefabInstanceInterface.ToTypeSignature());
 
-			if (type.TryGetFieldByName("m_SourcePrefab", out FieldDefinition field))
+			if (type.TryGetFieldByName("m_SourcePrefab", out FieldDefinition? field))
 			{
 				type.ImplementSourcePrefabProperty(field, prefabInstancePPtrType);
 			}
@@ -102,17 +102,17 @@ namespace AssemblyDumper.Passes
 
 		private static void ImplementSourcePrefabProperty(this TypeDefinition type, FieldDefinition field, GenericInstanceTypeSignature prefabInstancePPtrType)
 		{
-			MethodDefinition explicitConversionMethod = PPtrUtils.GetExplicitConversion<IPrefabInstance>(field.Signature.FieldType.Resolve());
+			MethodDefinition explicitConversionMethod = PPtrUtils.GetExplicitConversion<IPrefabInstance>(field.Signature!.FieldType.Resolve()!);
 
 			PropertyDefinition property = type.AddFullProperty(nameof(IPrefabInstance.SourcePrefabPtr), InterfacePropertyImplementationAttributes, prefabInstancePPtrType);
 
-			CilInstructionCollection getProcessor = property.GetMethod.CilMethodBody.Instructions;
+			CilInstructionCollection getProcessor = property.GetMethod!.CilMethodBody!.Instructions;
 			getProcessor.Add(CilOpCodes.Ldarg_0);
 			getProcessor.Add(CilOpCodes.Ldfld, field);
 			getProcessor.Add(CilOpCodes.Call, explicitConversionMethod);
 			getProcessor.Add(CilOpCodes.Ret);
 
-			CilInstructionCollection setProcessor = property.SetMethod.CilMethodBody.Instructions;
+			CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
 			IMethodDefOrRef pptrSetMethod = SharedState.Importer.ImportCommonMethod(typeof(PPtr), m => m.Name == "SetValues");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
@@ -124,7 +124,7 @@ namespace AssemblyDumper.Passes
 
 		private static void ImplementIsPrefabAssetProperty(this TypeDefinition type)
 		{
-			if(type.TryGetFieldByName("m_IsPrefabAsset", out FieldDefinition field))
+			if(type.TryGetFieldByName("m_IsPrefabAsset", out FieldDefinition? field))
 			{
 				type.ImplementFullProperty(nameof(IPrefabInstance.IsPrefabAsset), InterfacePropertyImplementationAttributes, SystemTypeGetter.Boolean, field);
 			}

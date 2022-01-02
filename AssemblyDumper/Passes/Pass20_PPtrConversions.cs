@@ -6,7 +6,9 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass20_PPtrConversions
 	{
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static ITypeDefOrRef commonPPtrType;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		const MethodAttributes InterfacePropertyImplementationAttributes =
 			MethodAttributes.Public |
 			MethodAttributes.Final |
@@ -86,14 +88,14 @@ namespace AssemblyDumper.Passes
 			pptrType.ImplementFullProperty(nameof(IPPtr.FileIndex), InterfacePropertyImplementationAttributes, SystemTypeGetter.Int32, pptrType.GetFieldByName("m_FileID"));
 			FieldDefinition pathidField = pptrType.GetFieldByName("m_PathID");
 			PropertyDefinition property = pptrType.AddFullProperty(nameof(IPPtr.PathID), InterfacePropertyImplementationAttributes, SystemTypeGetter.Int64);
-			var getProcessor = property.GetMethod.CilMethodBody.Instructions;
+			CilInstructionCollection getProcessor = property.GetMethod!.CilMethodBody!.Instructions;
 			getProcessor.Add(CilOpCodes.Ldarg_0);
 			getProcessor.Add(CilOpCodes.Ldfld, pathidField);
 			getProcessor.Add(CilOpCodes.Ret);
-			var setProcessor = property.SetMethod.CilMethodBody.Instructions;
+			CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
-			if(pathidField.Signature.FieldType.Name == "Int32")
+			if(pathidField.Signature!.FieldType.Name == "Int32")
 				setProcessor.Add(CilOpCodes.Conv_Ovf_I4);
 			setProcessor.Add(CilOpCodes.Stfld, pathidField);
 			setProcessor.Add(CilOpCodes.Ret);
@@ -127,7 +129,7 @@ namespace AssemblyDumper.Passes
 			MethodDefinition method = pptrType.AddMethod(methodName, ConversionAttributes, resultTypeSignature);
 			method.AddParameter("value", pptrType);
 
-			var processor = method.CilMethodBody.Instructions;
+			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
 
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldfld, fileID);

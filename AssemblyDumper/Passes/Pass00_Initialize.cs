@@ -12,30 +12,20 @@ namespace AssemblyDumper.Passes
 		private static Version currentGeneratedVersion = new Version(0, 0, 0, 0);
 
 		/// <summary>
-		/// References System.Runtime.dll, Version=6.0.0.0, PublicKeyToken=B03F5F7F11D50A3A. This is used by .NET
-		/// assemblies targeting .NET 6.0.
-		/// </summary>
-		public static readonly AssemblyReference SystemRuntime_v6_0_0_0 = new AssemblyReference("System.Runtime",
-			new Version(6, 0, 0, 0), false, new byte[]
-			{
-				0xB0, 0x3F, 0x5F, 0x7F, 0x11, 0xD5, 0x0A, 0x3A
-			});
-
-		/// <summary>
 		/// Read the information json, system assembly, and AssetRipperCommon. Then create a new assembly.
 		/// </summary>
 		public static void DoPass(string jsonPath, string systemRuntimeFilePath, string systemCollectionsFilePath)
 		{
 			Console.WriteLine("Pass 0: Initialize");
 
-			using var stream = File.OpenRead(jsonPath);
-			var info = JsonSerializer.Deserialize<UnityInfo>(stream);
+			using FileStream stream = File.OpenRead(jsonPath);
+			UnityInfo info = JsonSerializer.Deserialize<UnityInfo>(stream)!;
 			SharedState.Initialize(info);
 
 			string AssemblyFileName = '_' + SharedState.Version.Replace('.', '_');
 
 			AssemblyDefinition assembly = new AssemblyDefinition(AssemblyFileName, currentGeneratedVersion);
-			ModuleDefinition module = new ModuleDefinition(AssemblyFileName, SystemRuntime_v6_0_0_0);
+			ModuleDefinition module = new ModuleDefinition(AssemblyFileName, KnownCorLibs.SystemRuntime_v6_0_0_0);
 			assembly.Modules.Add(module);
 
 			AssemblyDefinition runtimeAssembly = AssemblyDefinition.FromFile(systemRuntimeFilePath);
@@ -55,7 +45,7 @@ namespace AssemblyDumper.Passes
 			SharedState.Importer = new ReferenceImporter(module);
 
 			CommonTypeGetter.Initialize();
-			SystemTypeGetter.Initialize(assembly.ManifestModule);
+			SystemTypeGetter.Initialize(assembly.ManifestModule!);
 		}
 	}
 }

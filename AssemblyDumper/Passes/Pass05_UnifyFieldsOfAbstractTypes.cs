@@ -24,15 +24,15 @@ namespace AssemblyDumper.Passes
 				// Console.WriteLine($"\t{abstractClass.Name}");
 				abstractClass.InitializeRootNodes();
 
-				var derived = abstractClass.AllDerivedClasses();
+				List<UnityClass>? derived = abstractClass.AllDerivedClasses();
 
 				if (derived.Count == 0)
 					continue;
 
 				//Abstract classes that inherit from a nonabstract class will have the inherited fields in the json
 				//For example, Behaviour inherits from Component
-				List<string> existingEditorFields = abstractClass.EditorRootNode.SubNodes.Select(c => c.Name).ToList();
-				List<string> existingReleaseFields = abstractClass.ReleaseRootNode.SubNodes.Select(c => c.Name).ToList();
+				List<string> existingEditorFields = abstractClass.EditorRootNode!.SubNodes!.Select(c => c.Name!).ToList();
+				List<string> existingReleaseFields = abstractClass.ReleaseRootNode!.SubNodes!.Select(c => c.Name!).ToList();
 
 				//Handle editor node
 				foreach (string editorFieldName in GetAllFieldNames(derived, false))
@@ -50,7 +50,7 @@ namespace AssemblyDumper.Passes
 					//This field is common to all sub classes. Add it to base.
 					UnityNode subNode = GetFirstNode(derived, false, editorFieldName);
 					// Console.WriteLine($"\t\tCopying field {subNode.Name} to EDITOR");
-					abstractClass.EditorRootNode.SubNodes.Add(subNode.DeepClone());
+					abstractClass.EditorRootNode!.SubNodes!.Add(subNode.DeepClone());
 				}
 
 				//Handle release node
@@ -69,17 +69,17 @@ namespace AssemblyDumper.Passes
 					//This field is common to all sub classes. Add it to base.
 					UnityNode subNode = GetFirstNode(derived, true, releaseFieldName);
 					// Console.WriteLine($"\t\tCopying field {subNode.Name} to EDITOR");
-					abstractClass.ReleaseRootNode.SubNodes.Add(subNode.DeepClone());
+					abstractClass.ReleaseRootNode!.SubNodes!.Add(subNode.DeepClone());
 				}
 			}
 		}
 
-		private static List<UnityClass> AllDerivedClasses(this UnityClass parent) => parent.Derived.Select(c => SharedState.ClassDictionary[c]).ToList();
+		private static List<UnityClass> AllDerivedClasses(this UnityClass parent) => parent.Derived!.Select(c => SharedState.ClassDictionary[c]).ToList();
 
 		private static List<string> GetAllFieldNames(List<UnityClass> classes, bool isRelease)
 		{
 			return classes.SelectMany(klass => klass.GetSubNodes(isRelease)) //all the subnodes
-				.Select(s => s.Name) //convert to their field name
+				.Select(s => s.Name!) //convert to their field name
 				.Distinct() //remove duplicates
 				.ToList(); //make list
 		}
@@ -87,12 +87,12 @@ namespace AssemblyDumper.Passes
 		private static UnityNode GetFirstNode(List<UnityClass> classes, bool isRelease, string fieldName)
 		{
 			return classes.SelectMany(klass => klass.GetSubNodes(isRelease)) //all the subnodes
-				.FirstOrDefault(s => s.Name == fieldName); //where the field name matches
+				.First(s => s.Name == fieldName); //where the field name matches
 		}
 
 		private static List<UnityNode> GetSubNodes(this UnityClass klass, bool isRelease)
 		{
-			var result = isRelease ? klass.ReleaseRootNode?.SubNodes : klass.EditorRootNode?.SubNodes;
+			List<UnityNode>? result = isRelease ? klass.ReleaseRootNode?.SubNodes : klass.EditorRootNode?.SubNodes;
 			return result ?? new List<UnityNode>();
 		}
 
@@ -108,14 +108,14 @@ namespace AssemblyDumper.Passes
 			{
 				if (isRelease)
 				{
-					if (unityClass.ReleaseRootNode.ContainsField(fieldName))
+					if (unityClass.ReleaseRootNode!.ContainsField(fieldName))
 					{
 						matching += unityClass.DescendantCount;
 					}
 				}
 				else
 				{
-					if (unityClass.EditorRootNode.ContainsField(fieldName))
+					if (unityClass.EditorRootNode!.ContainsField(fieldName))
 					{
 						matching += unityClass.DescendantCount;
 					}
@@ -180,7 +180,7 @@ namespace AssemblyDumper.Passes
 
 		private static bool IsSubclassOf(this UnityClass potentialSubClass, UnityClass potentialSuperClass)
 		{
-			var baseTypeName = potentialSubClass.Base;
+			string? baseTypeName = potentialSubClass.Base;
 			while (!string.IsNullOrEmpty(baseTypeName))
 			{
 				if (baseTypeName == potentialSuperClass.Name)

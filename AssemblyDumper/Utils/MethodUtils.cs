@@ -6,19 +6,19 @@ namespace AssemblyDumper.Utils
 	{
 		public static IMethodDefOrRef MakeConstructorOnGenericType(GenericInstanceTypeSignature instanceType, int paramCount)
 		{
-			var constructorDefinition = instanceType.GenericType.Resolve().Methods.Single(m => m.Name == ".ctor" && m.Parameters.Count == paramCount);
+			MethodDefinition constructorDefinition = instanceType.GenericType.Resolve()!.Methods.Single(m => m.Name == ".ctor" && m.Parameters.Count == paramCount);
 			return MakeMethodOnGenericType(instanceType, constructorDefinition);
 		}
 
 		public static IMethodDefOrRef MakeMethodOnGenericType(GenericInstanceTypeSignature instanceType, MethodDefinition definition)
 		{
-			var importedMethod = SharedState.Importer.ImportMethod(definition);
+			IMethodDefOrRef? importedMethod = SharedState.Importer.ImportMethod(definition);
 			return new MemberReference(instanceType.ToTypeDefOrRef(), importedMethod.Name, importedMethod.Signature);
 		}
 
 		public static IMethodDefOrRef MakeMethodOnGenericType(GenericInstanceTypeSignature instanceType, string methodName)
 		{
-			var methodDefinition = instanceType.GenericType.Resolve().Methods.Single(m => m.Name == methodName);
+			MethodDefinition methodDefinition = instanceType.GenericType.Resolve()!.Methods.Single(m => m.Name == methodName);
 			return MakeMethodOnGenericType(instanceType, methodDefinition);
 		}
 
