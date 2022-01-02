@@ -9,33 +9,51 @@ namespace AssemblyDumper
 	public static class CommonTypeGetter
 	{
 		public static AssemblyDefinition CommonAssembly { get; set; }
-		private static ModuleDefinition generatedModule;
 
 		//Reading
-		public static ITypeDefOrRef AssetReaderDefinition => SharedState.Importer.ImportCommonType<AssetReader>();
-		public static ITypeDefOrRef EndianReaderDefinition => SharedState.Importer.ImportCommonType<EndianReader>();
-		public static ITypeDefOrRef EndianReaderExtensionsDefinition => SharedState.Importer.ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.EndianReaderExtensions));
-		public static ITypeDefOrRef AssetReaderExtensionsDefinition => SharedState.Importer.ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.AssetReaderExtensions));
+		public static ITypeDefOrRef AssetReaderDefinition { get; private set; }
+		public static ITypeDefOrRef EndianReaderDefinition { get; private set; }
+		public static ITypeDefOrRef EndianReaderExtensionsDefinition { get; private set; }
+		public static ITypeDefOrRef AssetReaderExtensionsDefinition { get; private set; }
 
 		//Writing
-		public static ITypeDefOrRef AssetWriterDefinition => SharedState.Importer.ImportCommonType<AssetWriter>();
+		public static ITypeDefOrRef AssetWriterDefinition { get; private set; }
 
 		//Yaml Export
-		public static ITypeDefOrRef IExportContainerDefinition => SharedState.Importer.ImportCommonType<IExportContainer>();
-		public static ITypeDefOrRef YAMLNodeDefinition => SharedState.Importer.ImportCommonType<YAMLNode>();
-		public static ITypeDefOrRef YAMLMappingNodeDefinition => SharedState.Importer.ImportCommonType<YAMLMappingNode>();
-		public static ITypeDefOrRef YAMLSequenceNodeDefinition => SharedState.Importer.ImportCommonType<YAMLSequenceNode>();
-		public static ITypeDefOrRef YAMLScalarNodeDefinition => SharedState.Importer.ImportCommonType<YAMLScalarNode>();
-		public static IMethodDefOrRef YAMLMappingNodeConstructor => SharedState.Importer.ImportCommonConstructor<YAMLMappingNode>();
-		public static IMethodDefOrRef YAMLSequenceNodeConstructor => SharedState.Importer.ImportCommonConstructor<YAMLSequenceNode>(1);
+		public static ITypeDefOrRef IExportContainerDefinition { get; private set; }
+		public static ITypeDefOrRef YAMLNodeDefinition { get; private set; }
+		public static ITypeDefOrRef YAMLMappingNodeDefinition { get; private set; }
+		public static ITypeDefOrRef YAMLSequenceNodeDefinition { get; private set; }
+		public static ITypeDefOrRef YAMLScalarNodeDefinition { get; private set; }
+		public static IMethodDefOrRef YAMLMappingNodeConstructor { get; private set; }
+		public static IMethodDefOrRef YAMLSequenceNodeConstructor { get; private set; }
 
 		//Generics
-		public static ITypeDefOrRef AssetDictionaryType => SharedState.Importer.ImportCommonType("AssetRipper.Core.IO.AssetDictionary`2");
-		public static ITypeDefOrRef NullableKeyValuePair => SharedState.Importer.ImportCommonType("AssetRipper.Core.IO.NullableKeyValuePair`2");
+		public static ITypeDefOrRef AssetDictionaryType { get; private set; }
+		public static ITypeDefOrRef NullableKeyValuePair { get; private set; }
 
-		public static void Initialize(ModuleDefinition module)
+		public static void Initialize()
 		{
-			generatedModule = module;
+			AssetReaderDefinition = SharedState.Importer.ImportCommonType<AssetReader>();
+			EndianReaderDefinition = SharedState.Importer.ImportCommonType<EndianReader>();
+			EndianReaderExtensionsDefinition = SharedState.Importer.ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.EndianReaderExtensions));
+			AssetReaderExtensionsDefinition = SharedState.Importer.ImportCommonType(typeof(AssetRipper.Core.IO.Extensions.AssetReaderExtensions));
+
+			//Writing
+			AssetWriterDefinition = SharedState.Importer.ImportCommonType<AssetWriter>();
+
+			//Yaml Export
+			IExportContainerDefinition = SharedState.Importer.ImportCommonType<IExportContainer>();
+			YAMLNodeDefinition = SharedState.Importer.ImportCommonType<YAMLNode>();
+			YAMLMappingNodeDefinition = SharedState.Importer.ImportCommonType<YAMLMappingNode>();
+			YAMLSequenceNodeDefinition = SharedState.Importer.ImportCommonType<YAMLSequenceNode>();
+			YAMLScalarNodeDefinition = SharedState.Importer.ImportCommonType<YAMLScalarNode>();
+			YAMLMappingNodeConstructor = SharedState.Importer.ImportCommonConstructor<YAMLMappingNode>();
+			YAMLSequenceNodeConstructor = SharedState.Importer.ImportCommonConstructor<YAMLSequenceNode>(1);
+
+			//Generics
+			AssetDictionaryType = SharedState.Importer.ImportCommonType("AssetRipper.Core.IO.AssetDictionary`2");
+			NullableKeyValuePair = SharedState.Importer.ImportCommonType("AssetRipper.Core.IO.NullableKeyValuePair`2");
 		}
 
 		public static TypeDefinition LookupCommonType(string typeFullName) => CommonAssembly.ManifestModule.TopLevelTypes.SingleOrDefault(t => t.GetTypeFullName() == typeFullName);

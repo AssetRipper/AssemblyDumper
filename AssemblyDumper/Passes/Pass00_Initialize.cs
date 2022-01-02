@@ -54,7 +54,7 @@ namespace AssemblyDumper.Passes
 			SharedState.RootNamespace = AssemblyFileName;
 			SharedState.Importer = new ReferenceImporter(module);
 
-			CommonTypeGetter.Initialize(assembly.ManifestModule);
+			CommonTypeGetter.Initialize();
 			SystemTypeGetter.Initialize(assembly.ManifestModule);
 		}
 	}
