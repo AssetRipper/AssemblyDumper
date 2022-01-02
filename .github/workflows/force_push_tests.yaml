@@ -1,4 +1,4 @@
-name: Build
+name: Force Push Test
 
 on:
    push:
@@ -20,21 +20,17 @@ jobs:
      - name: Build
        run: dotnet build /p:Configuration=Release
        working-directory: ./AssemblyDumper/
-     - name: Checkout TypeTreeDumps Repository
-       uses: actions/checkout@v2
-       with:
-        repository: 'AssetRipper/TypeTreeDumps'
-        path: TypeTreeDumps
       
      - name: Run Generation
        shell: bash
        run: |
-        chmod +x ./generate_all.sh
-        ./generate_all.sh
+        chmod +x ./test.sh
+        ./test.sh
 
-     - name: Upload Assemblies
-       uses: actions/upload-artifact@v2
+     - name: Force Push Assemblies To Branch
+       uses: peaceiris/actions-gh-pages@v3
        with:
-         name: Assemblies
-         path: /home/runner/work/AssemblyDumper/AssemblyDumper/Output/*
-         if-no-files-found: error
+         github_token: ${{ secrets.GITHUB_TOKEN }}
+         publish_dir: /home/runner/work/AssemblyDumper/AssemblyDumper/Output/
+         publish_branch: v_development
+         force_orphan: true
