@@ -3,8 +3,6 @@ name: Build
 on:
    push:
     branches: [ master ]
-   pull_request:
-    branches: [ master ]
    workflow_dispatch:
   
 
@@ -34,9 +32,10 @@ jobs:
         chmod +x ./generate_all.sh
         ./generate_all.sh
 
-     - name: Upload Assemblies
-       uses: actions/upload-artifact@v2
+     - name: Push Assemblies To Branch
+       uses: ad-m/github-push-action@master
        with:
-         name: Assemblies
-         path: /home/runner/work/AssemblyDumper/AssemblyDumper/Output/*
-         if-no-files-found: error
+         github_token: ${{ secrets.GITHUB_TOKEN }}
+         branch: v_development
+         directory: /home/runner/work/AssemblyDumper/AssemblyDumper/Output/
+         force: true
