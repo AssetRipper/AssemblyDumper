@@ -518,15 +518,27 @@ namespace AssemblyDumper.Passes
 			return TryGetScalarNodeConstructor(parameterType) ?? throw new InvalidOperationException($"Could not find a scalar node constructor for {parameterType.FullName}");
 		}
 
+		private static readonly Dictionary<TypeSignature, IMethodDefOrRef> scalarNodeConstructorCache = new Dictionary<TypeSignature, IMethodDefOrRef>();
+
 		private static IMethodDefOrRef TryGetScalarNodeConstructor(TypeSignature parameterType)
 		{
-			TypeDefinition scalarType = CommonTypeGetter.LookupCommonType<AssetRipper.Core.YAML.YAMLScalarNode>()
+			if(scalarNodeConstructorCache.TryGetValue(parameterType, out IMethodDefOrRef constructor))
+			{
+				return constructor;
+			}
+			else
+			{
+				TypeDefinition scalarType = CommonTypeGetter.LookupCommonType<AssetRipper.Core.YAML.YAMLScalarNode>()
 				?? throw new Exception("Could not find the yaml scalar node type");
-			MethodDefinition result = scalarType.Methods.SingleOrDefault(m => 
-				m.IsConstructor && 
-				m.Parameters.Count == 1 && 
-				m.Parameters[0].ParameterType.FullName == parameterType.FullName);
-			return result == null ? null : SharedState.Importer.ImportMethod(result);
+				MethodDefinition constructorDefinition = scalarType.Methods.SingleOrDefault(m =>
+					m.IsConstructor &&
+					m.Parameters.Count == 1 &&
+					m.Parameters[0].ParameterType.FullName == parameterType.FullName);
+				constructor = constructorDefinition == null ? null : SharedState.Importer.ImportMethod(constructorDefinition);
+				scalarNodeConstructorCache.Add(parameterType, constructor);
+				return constructor;
+			}
+			
 		}
 
 		private static void MaybeEmitFlowMappingStyle(this CilInstructionCollection processor, UnityNode rootNode, CilLocalVariable yamlMappingNode)
