@@ -64,7 +64,6 @@ namespace AssemblyDumper
 
 				Pass90_MakeAssetFactory.DoPass();
 				Pass91_MakeImporterFactory.DoPass();
-				Pass92_MakeSceneObjectFactory.DoPass();
 				Pass95_UnityVersionHandler.DoPass();
 
 				Pass98_ApplyAssemblyAttributes.DoPass();

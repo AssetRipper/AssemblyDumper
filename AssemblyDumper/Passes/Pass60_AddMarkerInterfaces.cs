@@ -12,6 +12,7 @@
 			TryImplementInterface<AssetRipper.Core.Classes.ILevelGameManager>("LevelGameManager");
 			TryImplementInterface<AssetRipper.Core.Classes.ILightmapParameters>("LightmapParameters");
 			TryImplementInterface<AssetRipper.Core.Classes.IOcclusionPortal>("OcclusionPortal");
+			TryImplementInterface<AssetRipper.Core.Classes.Renderer.IRenderer>("Renderer");
 			TryImplementInterface<AssetRipper.Core.Classes.Meta.Importers.Asset.IAssetImporter>("AssetImporter");
 			TryImplementInterface<AssetRipper.Core.Classes.Meta.Importers.IDefaultImporter>("DefaultImporter");
 		}

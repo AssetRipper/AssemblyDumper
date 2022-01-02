@@ -52,6 +52,18 @@ namespace AssemblyDumper.Passes
 					{
 						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.ITransform>();
 					}
+					else if (name == "PPtr_Renderer_")
+					{
+						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.Renderer.IRenderer>();
+					}
+					else if (name == "PPtr_OcclusionPortal_")
+					{
+						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.IOcclusionPortal>();
+					}
+					else if (name == "PPtr_OcclusionCullingData_")
+					{
+						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.OcclusionCullingData.IOcclusionCullingData>();
+					}
 					else if (name == "PPtr_PrefabInstance_")
 					{
 						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.PrefabInstance.IPrefabInstance>();

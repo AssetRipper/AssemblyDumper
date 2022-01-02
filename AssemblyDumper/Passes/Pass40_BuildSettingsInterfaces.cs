@@ -117,66 +117,12 @@ namespace AssemblyDumper.Passes
 
 			//InitializeScenesArray method
 
-			SzArrayTypeSignature fieldType = field.Signature.FieldType as SzArrayTypeSignature;
-			TypeSignature elementType = fieldType.BaseType;
-			MethodDefinition constructor = elementType.Resolve().GetDefaultConstructor();
-
 			MethodDefinition initializeScenesMethod = type.AddMethod(nameof(IEditorBuildSettings.InitializeScenesArray), InterfaceUtils.InterfaceMethodImplementation, SystemTypeGetter.Void);
 			initializeScenesMethod.AddParameter("length", SystemTypeGetter.Int32);
 			initializeScenesMethod.CilMethodBody.InitializeLocals = true;
 			CilInstructionCollection processor = initializeScenesMethod.CilMethodBody.Instructions;
 
-			//Create empty array and local for it
-			processor.Add(CilOpCodes.Ldarg_1); //Load length argument
-			processor.Add(CilOpCodes.Newarr, elementType.ToTypeDefOrRef()); //Create new array of kvp with given count
-			var arrayLocal = new CilLocalVariable(fieldType); //Create local
-			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
-			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
-
-			//Make local and store length in it
-			var countLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
-			processor.Owner.LocalVariables.Add(countLocal); //Add to method
-			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array local
-			processor.Add(CilOpCodes.Ldlen); //Get length
-			processor.Add(CilOpCodes.Stloc, countLocal); //Store it
-
-			//Make an i
-			var iLocal = new CilLocalVariable(SystemTypeGetter.Int32); //Create local
-			processor.Owner.LocalVariables.Add(iLocal); //Add to method
-			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
-
-			//Create a label for a dummy instruction to jump back to
-			CilInstructionLabel jumpTargetLabel = new CilInstructionLabel();
-			CilInstructionLabel loopConditionStartLabel = new CilInstructionLabel();
-
-			//Create an empty, unconditional branch which will jump down to the loop condition.
-			//This converts the do..while loop into a for loop.
-			var unconditionalBranch = processor.Add(CilOpCodes.Br, loopConditionStartLabel);
-
-			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			jumpTargetLabel.Instruction = processor.Add(CilOpCodes.Nop); //Create a dummy instruction to jump back to
-
-			//Create element at index i of array
-			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array local
-			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Newobj, constructor); //Create instance
-			processor.Add(CilOpCodes.Stelem, elementType.ToTypeDefOrRef()); //Store in array
-
-			//Increment i
-			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Add(CilOpCodes.Add); //Add 
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
-
-			//Jump to start of loop if i < count
-			loopConditionStartLabel.Instruction = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
-			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
-
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Store array in local
-			processor.Add(CilOpCodes.Stfld, field);
+			processor.AddInitializeArrayField(field);
 			processor.Add(CilOpCodes.Ret);
 		}
 	}

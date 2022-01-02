@@ -24,5 +24,10 @@
 			field = type.Fields.SingleOrDefault(field => field.Name == fieldName);
 			return field != null;
 		}
+
+		public static FieldDefinition TryGetFieldByName(this TypeDefinition type, string fieldName)
+		{
+			return type.Fields.SingleOrDefault(field => field.Name == fieldName);
+		}
 	}
 }
