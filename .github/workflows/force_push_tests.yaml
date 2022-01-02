@@ -34,3 +34,4 @@ jobs:
          publish_dir: /home/runner/work/AssemblyDumper/AssemblyDumper/Output/
          publish_branch: v_development
          force_orphan: true
+         enable_jekyll: true
