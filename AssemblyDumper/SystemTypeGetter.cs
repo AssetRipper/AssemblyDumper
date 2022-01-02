@@ -97,10 +97,16 @@ namespace AssemblyDumper
 			return importer.ImportMethod(type.GetDefaultConstructor());
 		}
 
+		private static readonly Dictionary<string, TypeDefinition> typeLookupCache = new Dictionary<string, TypeDefinition>();
 		public static TypeDefinition LookupSystemType(string typeFullName)
 		{
-			return RuntimeAssembly.ManifestModule.TopLevelTypes.SingleOrDefault(t => t.GetTypeFullName() == typeFullName)
+			if(!typeLookupCache.TryGetValue(typeFullName, out TypeDefinition type))
+			{
+				type = RuntimeAssembly.ManifestModule.TopLevelTypes.SingleOrDefault(t => t.GetTypeFullName() == typeFullName)
 				?? CollectionsAssembly.ManifestModule.TopLevelTypes.SingleOrDefault(t => t.GetTypeFullName() == typeFullName);
+				typeLookupCache.Add(typeFullName, type);
+			}
+			return type;
 		}
 		public static TypeDefinition LookupSystemType(Type type) => LookupSystemType(type.FullName);
 		public static TypeDefinition LookupSystemType<T>() => LookupSystemType(typeof(T));
@@ -113,9 +119,19 @@ namespace AssemblyDumper
 		public static MethodDefinition LookupSystemMethod(Type type, Func<MethodDefinition, bool> filter) => LookupSystemMethod(type.FullName, filter);
 		public static MethodDefinition LookupSystemMethod<T>(Func<MethodDefinition, bool> filter) => LookupSystemMethod(typeof(T), filter);
 
-		public static ITypeDefOrRef ImportSystemType(this ReferenceImporter importer, string typeFullName) => importer.ImportType(LookupSystemType(typeFullName));
-		public static ITypeDefOrRef ImportSystemType(this ReferenceImporter importer, System.Type type) => importer.ImportType(LookupSystemType(type));
-		public static ITypeDefOrRef ImportSystemType<T>(this ReferenceImporter importer) => importer.ImportType(LookupSystemType<T>());
+
+		private static readonly Dictionary<string, ITypeDefOrRef> importedTypeCache = new Dictionary<string, ITypeDefOrRef>();
+		public static ITypeDefOrRef ImportSystemType(this ReferenceImporter importer, string typeFullName)
+		{
+			if(!importedTypeCache.TryGetValue(typeFullName, out ITypeDefOrRef type))
+			{
+				type = importer.ImportType(LookupSystemType(typeFullName));
+				importedTypeCache.Add(typeFullName, type);
+			}
+			return type;
+		}
+		public static ITypeDefOrRef ImportSystemType(this ReferenceImporter importer, System.Type type) => importer.ImportSystemType(type.FullName);
+		public static ITypeDefOrRef ImportSystemType<T>(this ReferenceImporter importer) => importer.ImportSystemType(typeof(T));
 
 		public static IMethodDefOrRef ImportSystemMethod(this ReferenceImporter importer, string typeFullName, Func<MethodDefinition, bool> filter)
 		{

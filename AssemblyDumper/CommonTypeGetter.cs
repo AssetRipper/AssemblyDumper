@@ -56,7 +56,17 @@ namespace AssemblyDumper
 			NullableKeyValuePair = SharedState.Importer.ImportCommonType("AssetRipper.Core.IO.NullableKeyValuePair`2");
 		}
 
-		public static TypeDefinition LookupCommonType(string typeFullName) => CommonAssembly.ManifestModule.TopLevelTypes.SingleOrDefault(t => t.GetTypeFullName() == typeFullName);
+
+		private static readonly Dictionary<string, TypeDefinition> typeLookupCache = new Dictionary<string, TypeDefinition>();
+		public static TypeDefinition LookupCommonType(string typeFullName)
+		{
+			if(!typeLookupCache.TryGetValue(typeFullName, out TypeDefinition type))
+			{
+				type = CommonAssembly.ManifestModule.TopLevelTypes.SingleOrDefault(t => t.GetTypeFullName() == typeFullName);
+				typeLookupCache.Add(typeFullName, type);
+			}
+			return type;
+		}
 		public static TypeDefinition LookupCommonType(Type type) => LookupCommonType(type.FullName);
 		public static TypeDefinition LookupCommonType<T>() => LookupCommonType(typeof(T));
 
@@ -64,7 +74,17 @@ namespace AssemblyDumper
 		public static MethodDefinition LookupCommonMethod(Type type, Func<MethodDefinition, bool> filter) => LookupCommonMethod(type.FullName, filter);
 		public static MethodDefinition LookupCommonMethod<T>(Func<MethodDefinition, bool> filter) => LookupCommonMethod(typeof(T), filter);
 
-		public static ITypeDefOrRef ImportCommonType(this ReferenceImporter importer, string typeFullName) => importer.ImportType(LookupCommonType(typeFullName));
+
+		private static readonly Dictionary<string, ITypeDefOrRef> importedTypeCache = new Dictionary<string, ITypeDefOrRef>();
+		public static ITypeDefOrRef ImportCommonType(this ReferenceImporter importer, string typeFullName)
+		{
+			if(!importedTypeCache.TryGetValue(typeFullName, out var type))
+			{
+				type = importer.ImportType(LookupCommonType(typeFullName));
+				importedTypeCache.Add(typeFullName, type);
+			}
+			return type;
+		}
 		public static ITypeDefOrRef ImportCommonType(this ReferenceImporter importer, System.Type type) => importer.ImportType(LookupCommonType(type));
 		public static ITypeDefOrRef ImportCommonType<T>(this ReferenceImporter importer) => importer.ImportType(LookupCommonType<T>());
 
