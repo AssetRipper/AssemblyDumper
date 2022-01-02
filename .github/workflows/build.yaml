@@ -32,9 +32,11 @@ jobs:
         chmod +x ./generate_all.sh
         ./generate_all.sh
 
-     - name: Upload Assemblies
-       uses: actions/upload-artifact@v2
+     - name: Force Push Assemblies To Branch
+       uses: peaceiris/actions-gh-pages@v3
        with:
-         name: Assemblies
-         path: /home/runner/work/AssemblyDumper/AssemblyDumper/Output/*
-         if-no-files-found: error
+         github_token: ${{ secrets.GITHUB_TOKEN }}
+         publish_dir: /home/runner/work/AssemblyDumper/AssemblyDumper/Output/
+         publish_branch: v_development
+         force_orphan: true
+         enable_jekyll: true
