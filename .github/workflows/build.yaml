@@ -30,6 +30,7 @@ jobs:
        shell: bash
        run: |
         chmod +x ./generate_all.sh
+        chmod +x ./get_names.sh
         ./generate_all.sh
 
      - name: Force Push Assemblies To Branch
