@@ -317,7 +317,13 @@ jobs:
        with:
         name: Assemblies_2022
         path: ./Output/
-     - name: Force Push Assemblies To Branch
+     - name: Make Version List
+       shell: bash
+       run: |
+        cd ./Output/
+        ls > version_list.txt
+        cd ..
+     - name: Force Push Files To Branch
        uses: peaceiris/actions-gh-pages@v3
        with:
          github_token: ${{ secrets.GITHUB_TOKEN }}
