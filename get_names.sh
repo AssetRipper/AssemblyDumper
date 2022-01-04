@@ -5,12 +5,12 @@ path_from_JsonFolder="../.."
 
 if [ $# != 0 ] && [ $# != 1 ]
 then
-    echo "incorrect number of arguments: $# instead of 0 or 1"
+    # Incorrect number of arguments
     exit 2
 fi
 if [ $# = 1 ] && [ ${#1} = 0 ]
 then
-    echo "Argument has no length"
+    # Argument 1 has zero length
     exit 3
 fi
 
