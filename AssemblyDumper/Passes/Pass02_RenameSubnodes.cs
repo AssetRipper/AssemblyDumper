@@ -17,6 +17,8 @@ namespace AssemblyDumper.Passes
 		private const string VFXFieldName = "VFXField";
 		private const string VFXPropertySheetSerializedBaseName = "VFXPropertySheetSerializedBase";
 		private const string TilemapRefCountedDataName = "TilemapRefCountedData";
+		private const string Blend1dConstantName = "Blend1dDataConstant";
+		private const string Blend2dConstantName = "Blend2dDataConstant";
 
 		public static void DoPass()
 		{
@@ -177,6 +179,10 @@ namespace AssemblyDumper.Passes
 			else if (node.IsTilemapRefCountedData(out string? tilemapRefCountedDataElement))
 			{
 				node.TypeName = $"{TilemapRefCountedDataName}_{tilemapRefCountedDataElement}";
+			}
+			else if (node.IsBlend1dAs2d())
+			{
+				node.TypeName = Blend1dConstantName;
 			}
 		}
 
@@ -374,6 +380,21 @@ namespace AssemblyDumper.Passes
 			}
 
 			elementType = null;
+			return false;
+		}
+
+		/// <summary>
+		/// Some Unity 4 versions have this issue where Blend1d and Blend2d were initially both called Blend2d
+		/// </summary>
+		/// <param name="node"></param>
+		/// <returns></returns>
+		private static bool IsBlend1dAs2d(this UnityNode node)
+		{
+			List<UnityNode>? subnodes = node.SubNodes;
+			if (node.TypeName == Blend2dConstantName && subnodes != null && subnodes.Count == 1 && subnodes[0].Name == "m_ChildThresholdArray")
+			{
+				return true;
+			}
 			return false;
 		}
 	}
