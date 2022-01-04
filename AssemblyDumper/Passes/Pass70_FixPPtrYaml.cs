@@ -22,7 +22,7 @@ namespace AssemblyDumper.Passes
 
 		private static void FixYaml(TypeDefinition pptrType, TypeDefinition parameterType)
 		{
-			Func<MethodDefinition, bool> filter = m => m.Name == "ExportYAML";
+			Func<MethodDefinition, bool> filter = m => m.Name == "ExportYAML" && m.Parameters.Count == 3;
 			IMethodDefOrRef exportGeneric = SharedState.Importer.ImportCommonMethod("AssetRipper.Core.Classes.Misc.PPtr", filter);
 			MethodSpecification commonExportReference = MethodUtils.MakeGenericInstanceMethod(exportGeneric, parameterType.ToTypeSignature());
 			
