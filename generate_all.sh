@@ -9,17 +9,15 @@ path_to_AssemblyDumper="./AssemblyDumper/bin/Release/net6/AssemblyDumper"
 path_to_RuntimeLibrary="./AssemblyDumper/Libraries/System.Runtime.dll"
 path_to_CollectionsLibrary="./AssemblyDumper/Libraries/System.Collections.dll"
 
-mkdir "./Output"
+mkdir $path_to_OutputFolder
 
 generate() {
-	j=$1
-	echo Generating from $j...
-	./AssemblyDumper/bin/Release/net6/AssemblyDumper --output ./Output --runtime ./AssemblyDumper/Libraries/System.Runtime.dll --collections ./AssemblyDumper/Libraries/System.Collections.dll ./TypeTreeDumps/InfoJson/$j
+    j=$1
+    echo Generating from $j...
+    $path_to_AssemblyDumper --output $path_to_OutputFolder --runtime $path_to_RuntimeLibrary --collections $path_to_CollectionsLibrary $path_to_JsonFolder/$j
 }
 
-cd ./TypeTreeDumps/InfoJson
-vers=($(ls *.json | sort -t. -k1,1n -k2,2n -k3,3n))
-cd ../..
+vers=($(./get_names.sh))
 echo Generating assemblies for ${#vers[@]} Unity versions
 for ((i=0; i<${#vers[@]}; i++)); 
 do
