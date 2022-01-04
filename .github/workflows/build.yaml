@@ -321,7 +321,8 @@ jobs:
        shell: bash
        run: |
         cd ./Output/
-        ls > version_list.txt
+        ls > ../version_list.txt
+        mv ../version_list.txt version_list.txt
         cd ..
      - name: Force Push Files To Branch
        uses: peaceiris/actions-gh-pages@v3
