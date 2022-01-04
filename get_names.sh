@@ -20,7 +20,7 @@ cd $path_from_JsonFolder
 
 for ((i=0; i<${#vers[@]}; i++)); 
 do
-    if [ $# != 0 ]
+    if [ $# = 0 ]
     then
         echo ${vers[i]}
     elif [ ${1:0:2} != "20" ]
