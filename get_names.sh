@@ -8,7 +8,7 @@ then
     echo "incorrect number of arguments: $# instead of 0 or 1"
     exit 2
 fi
-if [ ${#1} = 0 ]
+if [ $# = 1 ] && [ ${#1} = 0 ]
 then
     echo "Argument has no length"
     exit 3
