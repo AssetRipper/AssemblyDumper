@@ -26,12 +26,15 @@ jobs:
         repository: 'AssetRipper/TypeTreeDumps'
         path: TypeTreeDumps
       
-     - name: Run Generation
+     - name: Make scripts executable
        shell: bash
        run: |
         chmod +x ./generate_all.sh
         chmod +x ./get_names.sh
-        ./generate_all.sh
+      
+     - name: Run Generation
+       shell: bash
+       run: ./generate_all.sh
 
      - name: Force Push Assemblies To Branch
        uses: peaceiris/actions-gh-pages@v3
