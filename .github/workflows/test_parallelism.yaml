@@ -33,6 +33,10 @@ jobs:
      needs: build
      runs-on: ubuntu-latest
      steps:
+     - name: Setup .NET
+       uses: actions/setup-dotnet@v1
+       with:
+         dotnet-version: 6.0.x
      - name: Checkout Repository
        uses: actions/checkout@v2
      - name: Download AssemblyDumper
