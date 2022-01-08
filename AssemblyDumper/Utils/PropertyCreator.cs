@@ -36,6 +36,24 @@ namespace AssemblyDumper.Utils
 			return property;
 		}
 
+		public static PropertyDefinition ImplementHasFieldProperty(this TypeDefinition type, string propertyName, MethodAttributes methodAttributes, params string[] fieldNames)
+		{
+			PropertyDefinition property = type.AddGetterProperty(propertyName, methodAttributes, SystemTypeGetter.Boolean);
+			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
+			foreach(string fieldName in fieldNames)
+			{
+				if(type.TryGetFieldByName(fieldName, out var _))
+				{
+					processor.Add(CilOpCodes.Ldc_I4_1);
+					processor.Add(CilOpCodes.Ret);
+					return property;
+				}
+			}
+			processor.Add(CilOpCodes.Ldc_I4_0);
+			processor.Add(CilOpCodes.Ret);
+			return property;
+		}
+
 		private static PropertyDefinition AddEmptyProperty(this TypeDefinition type, string propertyName, MethodAttributes methodAttributes, TypeSignature returnTypeSignature, PropertyAttributes propertyAttributes = PropertyAttributes.None)
 		{
 			bool isStatic = (methodAttributes & MethodAttributes.Static) != 0;

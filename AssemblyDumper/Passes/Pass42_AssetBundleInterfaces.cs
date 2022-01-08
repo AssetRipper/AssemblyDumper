@@ -34,6 +34,7 @@ namespace AssemblyDumper.Passes
 		{
 			TypeDefinition type = SharedState.TypeDictionary["AssetBundle"];
 			type.AddInterfaceImplementation<IAssetBundle>();
+			type.ImplementHasFieldProperty(nameof(IAssetBundle.HasAssetBundleName), InterfaceUtils.InterfacePropertyImplementation, "m_AssetBundleName");
 			type.ImplementAssetBundleNameProperty();
 			type.ImplementGetAssetsMethod();
 		}
