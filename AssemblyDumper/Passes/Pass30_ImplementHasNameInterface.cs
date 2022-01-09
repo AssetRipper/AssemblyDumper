@@ -20,17 +20,12 @@ namespace AssemblyDumper.Passes
 			ITypeDefOrRef hasName = SharedState.Importer.ImportCommonType<IHasName>();
 			foreach(TypeDefinition type in SharedState.TypeDictionary.Values)
 			{
-				if (type.HasNameField())
+				if (type.TryGetFieldByName(FieldName, out FieldDefinition? field))
 				{
 					type.Interfaces.Add(new InterfaceImplementation(hasName));
-					type.ImplementFullProperty("Name", InterfacePropertyImplementationAttributes, SystemTypeGetter.String, type.GetFieldByName(FieldName));
+					type.ImplementFullProperty("Name", InterfacePropertyImplementationAttributes, SystemTypeGetter.String, field);
 				}
 			}
-		}
-
-		private static bool HasNameField(this TypeDefinition type)
-		{
-			return type.Fields.Any(field => field.Name == FieldName);
 		}
 	}
 }

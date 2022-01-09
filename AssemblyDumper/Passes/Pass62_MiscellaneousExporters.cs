@@ -30,7 +30,7 @@ namespace AssemblyDumper.Passes
 		private static void ImplementMovieTexture(this TypeDefinition type)
 		{
 			type.AddInterfaceImplementation<IMovieTexture>();
-			type.ImplementFullProperty(nameof(IMovieTexture.MovieData), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.UInt8.MakeSzArrayType(), type.TryGetFieldByName("m_MovieData"));
+			type.ImplementFullProperty(nameof(IMovieTexture.MovieData), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.UInt8.MakeSzArrayType(), type.TryGetFieldByName("m_MovieData", true));
 		}
 	}
 }

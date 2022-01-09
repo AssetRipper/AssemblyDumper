@@ -33,6 +33,7 @@ namespace AssemblyDumper.Passes
 				type.AddScriptPtrProperty();
 				type.FixReadMethods();
 				type.FixExportMethods();
+				type.FixFetchDependencies();
 			}
 			else
 			{
@@ -99,6 +100,22 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldarg_1);//container
 			processor.Add(CilOpCodes.Call, exportStructureMethod);
 			processor.Add(CilOpCodes.Ldloc_0);//mapping node
+			processor.Add(CilOpCodes.Ret);
+		}
+
+		private static void FixFetchDependencies(this TypeDefinition type)
+		{
+			MethodDefinition method = type.Methods.Single(m => m.Name == "FetchDependencies");
+			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
+			processor.Pop();//Remove the return
+			IMethodDefOrRef fetchStructureMethod = SharedState.Importer.ImportCommonMethod(typeof(MonoBehaviourExtensions), 
+				m => m.Name == nameof(MonoBehaviourExtensions.MaybeFetchDependenciesForStructure));
+
+			processor.Add(CilOpCodes.Ldarg_0);//this
+			processor.Add(CilOpCodes.Ldarg_1);//context
+			processor.Add(CilOpCodes.Call, fetchStructureMethod);
+			processor.Add(CilOpCodes.Call, Pass54_FillDependencyMethods.unityObjectBasePPtrListAddRange);
+			processor.Add(CilOpCodes.Ldloc_0);
 			processor.Add(CilOpCodes.Ret);
 		}
 	}

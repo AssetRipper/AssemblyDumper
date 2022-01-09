@@ -11,7 +11,7 @@ namespace AssemblyDumper.Passes
 		private static GenericInstanceTypeSignature unityObjectBasePPtrRef;
 		private static GenericInstanceTypeSignature unityObjectBasePPtrListType;
 		private static IMethodDefOrRef unityObjectBasePPtrListConstructor;
-		private static IMethodDefOrRef unityObjectBasePPtrListAddRange;
+		public static IMethodDefOrRef unityObjectBasePPtrListAddRange; // needed for monobehaviour pass
 		private static IMethodDefOrRef emptyArray;
 		private static MethodSpecification emptyArrayMethod;
 		private static ITypeDefOrRef dependencyContextRef;
