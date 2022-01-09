@@ -57,6 +57,7 @@ namespace AssemblyDumper
 
 				Pass60_AddMarkerInterfaces.DoPass();
 				Pass61_NativeImporterInterface.DoPass();
+				Pass62_MiscellaneousExporters.DoPass();
 
 				Pass70_FixPPtrYaml.DoPass();
 				Pass71_MonoBehaviourImplementation.DoPass();
