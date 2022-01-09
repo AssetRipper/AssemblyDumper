@@ -12,6 +12,7 @@ namespace AssemblyDumper.Passes
 
 			SharedState.TypeDictionary["TextAsset"].ImplementTextAsset();
 			SharedState.TypeDictionary["Font"].ImplementFontAsset();
+			SharedState.TypeDictionary["MovieTexture"].ImplementMovieTexture();
 		}
 
 		private static void ImplementTextAsset(this TypeDefinition type)
@@ -24,6 +25,12 @@ namespace AssemblyDumper.Passes
 		{
 			type.AddInterfaceImplementation<IFont>();
 			type.ImplementFullProperty(nameof(IFont.FontData), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.UInt8.MakeSzArrayType(), type.GetFieldByName("m_FontData"));
+		}
+
+		private static void ImplementMovieTexture(this TypeDefinition type)
+		{
+			type.AddInterfaceImplementation<IMovieTexture>();
+			type.ImplementFullProperty(nameof(IMovieTexture.MovieData), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.UInt8.MakeSzArrayType(), type.TryGetFieldByName("m_MovieData"));
 		}
 	}
 }
