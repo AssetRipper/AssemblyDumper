@@ -42,7 +42,7 @@ namespace AssemblyValidator
 				try
 				{
 					VirtualSerializedFile virtualSerializedFile = new VirtualSerializedFile(default);
-					handler.AssetFactory.CreateAsset(new AssetInfo(default, default, ClassIDType.GameObject));
+					handler.AssetFactory.CreateAsset(new AssetInfo(virtualSerializedFile, default, ClassIDType.GameObject));
 				}
 				catch(Exception ex)
 				{
