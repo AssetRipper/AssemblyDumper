@@ -41,7 +41,7 @@ namespace AssemblyValidator
 			{
 				try
 				{
-					VirtualSerializedFile virtualSerializedFile = new VirtualSerializedFile(default);
+					VirtualSerializedFile virtualSerializedFile = new VirtualSerializedFile(new AssetRipper.Core.Layout.LayoutInfo(default, default, default));
 					handler.AssetFactory.CreateAsset(new AssetInfo(virtualSerializedFile, default, ClassIDType.GameObject));
 				}
 				catch(Exception ex)
