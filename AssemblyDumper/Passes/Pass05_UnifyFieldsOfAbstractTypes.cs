@@ -4,7 +4,7 @@ namespace AssemblyDumper.Passes
 {
 	public static class Pass05_UnifyFieldsOfAbstractTypes
 	{
-		private const float MinMatchingProportion = 0.7f;
+		private const float MinMatchingProportion = 0.8f;
 		private const string ObjectHideFlagsName = "m_ObjectHideFlags";
 		public static void DoPass()
 		{

@@ -280,63 +280,7 @@ jobs:
          path: /home/runner/work/AssemblyDumper/AssemblyDumper/Output/*
          if-no-files-found: error
 
-    upload:
-     needs: [ generate_old, generate_2017, generate_2018, generate_2019, generate_2020, generate_2021, generate_2022 ]
-     runs-on: ubuntu-latest
-     steps:
-     - name: Download Old Assemblies
-       uses: actions/download-artifact@v2
-       with:
-        name: Assemblies_Old
-        path: ./Output/
-     - name: Download 2017 Assemblies
-       uses: actions/download-artifact@v2
-       with:
-        name: Assemblies_2017
-        path: ./Output/
-     - name: Download 2018 Assemblies
-       uses: actions/download-artifact@v2
-       with:
-        name: Assemblies_2018
-        path: ./Output/
-     - name: Download 2019 Assemblies
-       uses: actions/download-artifact@v2
-       with:
-        name: Assemblies_2019
-        path: ./Output/
-     - name: Download 2020 Assemblies
-       uses: actions/download-artifact@v2
-       with:
-        name: Assemblies_2020
-        path: ./Output/
-     - name: Download 2021 Assemblies
-       uses: actions/download-artifact@v2
-       with:
-        name: Assemblies_2021
-        path: ./Output/
-     - name: Download 2022 Assemblies
-       uses: actions/download-artifact@v2
-       with:
-        name: Assemblies_2022
-        path: ./Output/
-     - name: Make Version List
-       shell: bash
-       run: |
-        cd ./Output/
-        ls > ../version_list.txt
-        mv ../version_list.txt version_list.txt
-        cd ..
-     - name: Force Push Files To Branch
-       if: github.event_name == 'push'
-       uses: peaceiris/actions-gh-pages@v3
-       with:
-         github_token: ${{ secrets.GITHUB_TOKEN }}
-         publish_dir: /home/runner/work/AssemblyDumper/AssemblyDumper/Output/
-         publish_branch: v_development
-         force_orphan: true
-         enable_jekyll: true
-
-    validate:
+    validate_and_upload:
      needs: [ generate_old, generate_2017, generate_2018, generate_2019, generate_2020, generate_2021, generate_2022 ]
      runs-on: ubuntu-latest
      steps:
@@ -389,3 +333,19 @@ jobs:
        run: |
         chmod +x ./AssemblyValidator/bin/Release/net6/AssemblyValidator
         ./AssemblyValidator/bin/Release/net6/AssemblyValidator ./Output
+     - name: Make Version List
+       shell: bash
+       run: |
+        cd ./Output/
+        ls > ../version_list.txt
+        mv ../version_list.txt version_list.txt
+        cd ..
+     - name: Force Push Files To Branch
+       if: github.event_name == 'push'
+       uses: peaceiris/actions-gh-pages@v3
+       with:
+         github_token: ${{ secrets.GITHUB_TOKEN }}
+         publish_dir: /home/runner/work/AssemblyDumper/AssemblyDumper/Output/
+         publish_branch: v_development
+         force_orphan: true
+         enable_jekyll: true
