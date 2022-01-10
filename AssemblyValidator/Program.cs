@@ -24,7 +24,7 @@ namespace AssemblyValidator
 
 		internal class Options
 		{
-			[Option('i', "input", HelpText = "Directory with the assemblies for validation")]
+			[Value(0, Required = true, HelpText = "Directory with the assemblies for validation")]
 			public DirectoryInfo? InputDirectory { get; set; }
 		}
 
@@ -49,7 +49,7 @@ namespace AssemblyValidator
 			try
 			{
 				if (options.InputDirectory == null)
-					options.InputDirectory = new DirectoryInfo(Environment.CurrentDirectory);
+					return false;
 
 				return options.InputDirectory.Exists;
 			}

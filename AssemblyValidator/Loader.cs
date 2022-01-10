@@ -15,9 +15,7 @@ namespace AssemblyValidator
 			Console.WriteLine("Loading version handlers...");
 			if (!Directory.Exists(handlerDirectory))
 			{
-				Directory.CreateDirectory(handlerDirectory);
-				Console.WriteLine("Finished loading version handlers.");
-				return;
+				throw new DirectoryNotFoundException(handlerDirectory);
 			}
 
 			List<Type> handlerTypes = new();
