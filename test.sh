@@ -14,7 +14,7 @@ mkdir "./Output"
 generate() {
 	j=$1
 	echo Generating from $j...
-	./AssemblyDumper/bin/Release/net6/AssemblyDumper --output ./Output --runtime ./AssemblyDumper/Libraries/System.Runtime.dll --collections ./AssemblyDumper/Libraries/System.Collections.dll ./TestFiles/$j
+	$path_to_AssemblyDumper --output $path_to_OutputFolder --runtime $path_to_RuntimeLibrary --collections $path_to_CollectionsLibrary ./TestFiles/$j
 }
 
 cd ./TestFiles
