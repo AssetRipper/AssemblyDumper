@@ -6,8 +6,8 @@ set -e
 path_to_OutputFolder="./Output"
 path_to_JsonFolder="./TestFiles"
 path_to_AssemblyDumper="./AssemblyDumper/bin/Release/net6/AssemblyDumper"
-path_to_RuntimeLibrary="./AssemblyDumper/Libraries/System.Runtime.dll"
-path_to_CollectionsLibrary="./AssemblyDumper/Libraries/System.Collections.dll"
+path_to_RuntimeLibrary="./Libraries/System.Runtime.dll"
+path_to_CollectionsLibrary="./Libraries/System.Collections.dll"
 
 mkdir "./Output"
 

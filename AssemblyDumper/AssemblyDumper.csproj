@@ -11,15 +11,12 @@
 		<DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 	<ItemGroup>
-	  <Reference Include="Libraries\AssetRipperCommon.dll" />
+	  <Reference Include="..\Libraries\AssetRipperCommon.dll" />
+	  <Resource Include="..\Libraries\AssetRipperCommon.dll" />
 	</ItemGroup>
 	
 	<ItemGroup>
 		<PackageReference Include="AsmResolver.DotNet" Version="4.8.0" />
 		<PackageReference Include="CommandLineParser" Version="2.8.0" />
-	</ItemGroup>
-	
-	<ItemGroup>
-	  <Resource Include="Libraries\AssetRipperCommon.dll" />
 	</ItemGroup>
 </Project>
