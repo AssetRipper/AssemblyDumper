@@ -1,0 +1,61 @@
+﻿using AssetRipper.Core;
+using AssetRipper.Core.Attributes;
+using AssetRipper.Core.Parser.Asset;
+using AssetRipper.Core.Parser.Files;
+using AssetRipper.Core.Parser.Files.SerializedFiles;
+using AssetRipper.Core.VersionHandling;
+using System.Reflection;
+
+namespace AssemblyValidator
+{
+	internal static class Loader
+	{
+		internal static void LoadHandlers(string handlerDirectory)
+		{
+			Console.WriteLine("Loading version handlers...");
+			if (!Directory.Exists(handlerDirectory))
+			{
+				Directory.CreateDirectory(handlerDirectory);
+				Console.WriteLine("Finished loading version handlers.");
+				return;
+			}
+
+			List<Type> handlerTypes = new();
+			foreach (string filePath in Directory.GetFiles(handlerDirectory, "*.dll"))
+			{
+				Console.WriteLine($"Found assembly at {filePath}");
+				Assembly assembly = Assembly.LoadFile(filePath);
+				foreach (RegisterVersionHandlerAttribute handlerAttr in assembly.GetCustomAttributes<RegisterVersionHandlerAttribute>())
+				{
+					handlerTypes.Add(handlerAttr.HandlerType);
+				}
+			}
+			Dictionary<UnityVersion, UnityHandlerBase> handlers = new();
+			foreach (Type type in handlerTypes)
+			{
+				UnityHandlerBase versionHandler = (UnityHandlerBase)Activator.CreateInstance(type)!;
+				handlers.Add(versionHandler.UnityVersion, versionHandler);
+				Console.WriteLine($"Found version handler: {versionHandler.UnityVersion}");
+			}
+			Console.WriteLine("Finished loading version handlers.");
+			List<Exception> exceptions = new();
+			foreach((UnityVersion version, UnityHandlerBase handler) in handlers)
+			{
+				try
+				{
+					VirtualSerializedFile virtualSerializedFile = new VirtualSerializedFile(default);
+					handler.AssetFactory.CreateAsset(new AssetInfo(default, default, ClassIDType.GameObject));
+				}
+				catch(Exception ex)
+				{
+					Console.WriteLine($"Exception throw while processing {version}\n{ex}");
+					exceptions.Add(ex);
+				}
+			}
+			if(exceptions.Count > 0)
+			{
+				throw new AggregateException(exceptions);
+			}
+		}
+	}
+}
