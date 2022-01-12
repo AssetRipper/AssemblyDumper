@@ -2,11 +2,6 @@
 using AssetRipper.Core.Classes.Shader;
 using AssetRipper.Core.Classes.Shader.SerializedShader;
 using AssetRipper.Core.Classes.Shader.SerializedShader.Enum;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AssemblyDumper.Passes
 {

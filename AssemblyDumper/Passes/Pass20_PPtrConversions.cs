@@ -78,6 +78,10 @@ namespace AssemblyDumper.Passes
 					{
 						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.PrefabInstance.IPrefabInstance>();
 					}
+					else if (name == "PPtr_TerrainData_")
+					{
+						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.TerrainData.ITerrainData>();
+					}
 				}
 			}
 		}

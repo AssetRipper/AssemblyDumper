@@ -43,6 +43,7 @@ namespace AssemblyDumper
 				Pass35_TransformInterface.DoPass();
 				Pass36_PrefabInstanceInterface.DoPass();
 
+				Pass39_TerrainInterfaces.DoPass();
 				Pass40_BuildSettingsInterfaces.DoPass();
 				Pass41_ManagerInterfaces.DoPass();
 				Pass42_AssetBundleInterfaces.DoPass();
