@@ -42,7 +42,10 @@ namespace AssemblyValidator
 				try
 				{
 					VirtualSerializedFile virtualSerializedFile = new VirtualSerializedFile(new AssetRipper.Core.Layout.LayoutInfo(default, default, default));
-					handler.AssetFactory.CreateAsset(new AssetInfo(virtualSerializedFile, default, ClassIDType.GameObject));
+					foreach(int id in handler.GetAllValidIdNumbers())
+					{
+						handler.AssetFactory.CreateAsset(new AssetInfo(virtualSerializedFile, default, (ClassIDType)id));
+					}
 				}
 				catch(Exception ex)
 				{
