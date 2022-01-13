@@ -5,7 +5,6 @@
 		public static void DoPass()
 		{
 			Console.WriteLine("Pass 60: Add Marker Interfaces");
-			TryImplementInterface<AssetRipper.Core.Classes.IEditorExtension>("EditorExtension");
 			TryImplementInterface<AssetRipper.Core.Classes.INamedObject>("NamedObject");
 			TryImplementInterface<AssetRipper.Core.Classes.IGameManager>("GameManager");
 			TryImplementInterface<AssetRipper.Core.Classes.IGlobalGameManager>("GlobalGameManager");

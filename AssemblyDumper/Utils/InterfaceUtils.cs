@@ -16,5 +16,15 @@
 		{
 			type.Interfaces.Add(new InterfaceImplementation(SharedState.Importer.ImportCommonType<T>()));
 		}
+
+		public static TypeSignature GetPropertyTypeSignature<T>(string propertyName)
+		{
+			return SharedState.Importer.ImportTypeSignature(
+				CommonTypeGetter.LookupCommonType<T>()!.
+				Properties.
+				Single(p => p.Name == propertyName).
+				Signature!.
+				ReturnType);
+		}
 	}
 }

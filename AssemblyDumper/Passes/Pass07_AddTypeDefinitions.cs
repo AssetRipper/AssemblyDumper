@@ -45,7 +45,7 @@ namespace AssemblyDumper.Passes
 			else if (@class.DescendantCount == 1) 
 				typeAttributes |= TypeAttributes.Sealed;
 
-			TypeDefinition typeDef = new TypeDefinition(SharedState.Classesnamespace, name, typeAttributes);
+			TypeDefinition typeDef = new TypeDefinition(SharedState.ClassesNamespace, name, typeAttributes);
 
 			if(@class.GetOriginalTypeName(out string originalTypeName))
 			{

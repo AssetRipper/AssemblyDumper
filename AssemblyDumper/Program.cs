@@ -33,7 +33,7 @@ namespace AssemblyDumper
 				Pass23_OffsetPtrImplicitConversions.DoPass();
 				Pass24_Hash128ImplicitConversion.DoPass();
 
-				Pass25_ObjectHideFlags.DoPass();
+				Pass25_ObjectAndEditorExtension.DoPass();
 
 				Pass30_ImplementHasNameInterface.DoPass();
 				Pass31_ComponentInterface.DoPass();

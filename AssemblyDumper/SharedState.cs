@@ -24,7 +24,7 @@ namespace AssemblyDumper
 		//Namespaces
 		public static string RootNamespace { get; set; } = "AssemblyDumperOutput";
 		public static string AttributesNamespace => RootNamespace + ".Attributes";
-		public static string Classesnamespace => RootNamespace + ".Classes";
+		public static string ClassesNamespace => RootNamespace + ".Classes";
 		public static string EnumsNamespace => RootNamespace + ".Enums";
 		public static string ExamplesNamespace => RootNamespace + ".Examples";
 		public static string InterfacesNamespace => RootNamespace + ".Interfaces";
