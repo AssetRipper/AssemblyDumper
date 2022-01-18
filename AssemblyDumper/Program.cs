@@ -16,6 +16,7 @@ namespace AssemblyDumper
 				Pass00_Initialize.DoPass(options.JsonPath!.FullName, options.SystemRuntimeAssembly!.FullName, options.SystemCollectionsAssembly!.FullName);
 				Pass01_CreateBasicTypes.DoPass();
 				Pass02_RenameSubnodes.DoPass();
+				Pass03_ClassSpecificChanges.DoPass();
 				Pass04_ExtractDependentNodeTrees.DoPass();
 				Pass05_UnifyFieldsOfAbstractTypes.DoPass();
 				//After this point, class dictionary does not change

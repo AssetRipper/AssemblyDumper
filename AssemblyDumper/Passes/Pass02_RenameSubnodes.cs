@@ -65,10 +65,11 @@ namespace AssemblyDumper.Passes
 			}
 
 			node.OriginalName = node.Name;
+			node.OriginalTypeName = node.TypeName;
+
 			node.Name = GetValidName(node.Name!);
 			if (!PrimitiveTypes.primitives.Contains(node.TypeName)) //don't rename special type names like long long, map, or Array
 			{
-				node.OriginalTypeName = node.TypeName;
 				node.TypeName = GetValidTypeName(node.TypeName!);
 			}
 			if (node.SubNodes != null)

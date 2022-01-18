@@ -70,11 +70,11 @@ namespace AssemblyDumper.Passes
 			List<(UnityNode?, UnityNode?)> fieldList = GenerateFieldDictionary(releaseNode, editorNode);
 			foreach((UnityNode? releaseField,UnityNode? editorField) in fieldList)
 			{
-				string originalTypeName = releaseField?.OriginalTypeName! ?? editorField!.OriginalTypeName!;
-				if (PrimitiveTypes.primitiveNames.Contains(originalTypeName))
+				string typeName = releaseField?.TypeName! ?? editorField!.TypeName!;
+				if (PrimitiveTypes.primitiveNames.Contains(typeName))
 					continue;
 
-				string typeName = releaseField?.TypeName! ?? editorField!.TypeName!;
+				string originalTypeName = releaseField?.OriginalTypeName! ?? editorField!.OriginalTypeName!;
 
 				AddDependentTypes(releaseField, editorField);
 
