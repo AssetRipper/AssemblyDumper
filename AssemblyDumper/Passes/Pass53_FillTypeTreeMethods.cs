@@ -13,6 +13,8 @@ namespace AssemblyDumper.Passes
 		private static IMethodDefOrRef typeTreeNodeListConstructor;
 		private static IMethodDefOrRef listAddMethod;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+		private static bool generateEmptyMethods = false;
+
 		public static void DoPass()
 		{
 			System.Console.WriteLine("Pass 53: Fill Type Tree Methods");
@@ -41,7 +43,7 @@ namespace AssemblyDumper.Passes
 				CilInstructionCollection releaseModeProcessor = releaseModeBody.Instructions;
 				
 				//Console.WriteLine($"Generating the editor read method for {name}");
-				if (klass.EditorRootNode == null)
+				if (klass.EditorRootNode == null || generateEmptyMethods)
 				{
 					editorModeProcessor.AddNotSupportedException();
 				}
@@ -51,7 +53,7 @@ namespace AssemblyDumper.Passes
 				}
 
 				//Console.WriteLine($"Generating the release read method for {name}");
-				if (klass.ReleaseRootNode == null)
+				if (klass.ReleaseRootNode == null || generateEmptyMethods)
 				{
 					releaseModeProcessor.AddNotSupportedException();
 				}
