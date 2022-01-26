@@ -1,7 +1,7 @@
 ﻿using AssemblyDumper.Utils;
 using AssetRipper.Core.Classes.Terrain;
 using AssetRipper.Core.Classes.TerrainData;
-using AssetRipper.Core.Math;
+using AssetRipper.Core.Math.Vectors;
 
 namespace AssemblyDumper.Passes
 {

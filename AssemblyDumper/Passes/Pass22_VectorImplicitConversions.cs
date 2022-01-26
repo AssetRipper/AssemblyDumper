@@ -1,5 +1,5 @@
 ﻿using AssemblyDumper.Utils;
-using AssetRipper.Core.Math;
+using AssetRipper.Core.Math.Vectors;
 
 namespace AssemblyDumper.Passes
 {
