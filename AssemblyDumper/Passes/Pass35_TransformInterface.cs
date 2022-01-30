@@ -159,28 +159,28 @@ namespace AssemblyDumper.Passes
 
 			CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
 
-			IFieldDescriptor? commonX = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "X"));
+			IMethodDefOrRef? commonX = SharedState.Importer.ImportMethod(commonVector3.Resolve()!.Properties.Single(m => m.Name == "X").GetMethod!);
 			FieldDefinition? specificX = fieldTypeDefinition.Fields.Single(m => m.Name == "x");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
-			setProcessor.Add(CilOpCodes.Ldfld, commonX);
+			setProcessor.Add(CilOpCodes.Call, commonX);
 			setProcessor.Add(CilOpCodes.Stfld, specificX);
 
-			IFieldDescriptor? commonY = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "Y"));
+			IMethodDefOrRef? commonY = SharedState.Importer.ImportMethod(commonVector3.Resolve()!.Properties.Single(m => m.Name == "Y").GetMethod!);
 			FieldDefinition? specificY = fieldTypeDefinition.Fields.Single(m => m.Name == "y");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
-			setProcessor.Add(CilOpCodes.Ldfld, commonY);
+			setProcessor.Add(CilOpCodes.Call, commonY);
 			setProcessor.Add(CilOpCodes.Stfld, specificY);
 
-			IFieldDescriptor? commonZ = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "Z"));
+			IMethodDefOrRef? commonZ = SharedState.Importer.ImportMethod(commonVector3.Resolve()!.Properties.Single(m => m.Name == "Z").GetMethod!);
 			FieldDefinition? specificZ = fieldTypeDefinition.Fields.Single(m => m.Name == "z");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
-			setProcessor.Add(CilOpCodes.Ldfld, commonZ);
+			setProcessor.Add(CilOpCodes.Call, commonZ);
 			setProcessor.Add(CilOpCodes.Stfld, specificZ);
 
 			setProcessor.Add(CilOpCodes.Ret);
@@ -204,36 +204,36 @@ namespace AssemblyDumper.Passes
 
 			CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
 
-			IFieldDescriptor? commonX = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "X"));
+			IMethodDefOrRef? commonX = SharedState.Importer.ImportMethod(commonVector3.Resolve()!.Properties.Single(m => m.Name == "X").GetMethod!);
 			FieldDefinition? specificX = fieldTypeDefinition.Fields.Single(m => m.Name == "x");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
-			setProcessor.Add(CilOpCodes.Ldfld, commonX);
+			setProcessor.Add(CilOpCodes.Call, commonX);
 			setProcessor.Add(CilOpCodes.Stfld, specificX);
 
-			IFieldDescriptor? commonY = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "Y"));
+			IMethodDefOrRef? commonY = SharedState.Importer.ImportMethod(commonVector3.Resolve()!.Properties.Single(m => m.Name == "Y").GetMethod!);
 			FieldDefinition? specificY = fieldTypeDefinition.Fields.Single(m => m.Name == "y");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
-			setProcessor.Add(CilOpCodes.Ldfld, commonY);
+			setProcessor.Add(CilOpCodes.Call, commonY);
 			setProcessor.Add(CilOpCodes.Stfld, specificY);
 
-			IFieldDescriptor? commonZ = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "Z"));
+			IMethodDefOrRef? commonZ = SharedState.Importer.ImportMethod(commonVector3.Resolve()!.Properties.Single(m => m.Name == "Z").GetMethod!);
 			FieldDefinition? specificZ = fieldTypeDefinition.Fields.Single(m => m.Name == "z");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
-			setProcessor.Add(CilOpCodes.Ldfld, commonZ);
+			setProcessor.Add(CilOpCodes.Call, commonZ);
 			setProcessor.Add(CilOpCodes.Stfld, specificZ);
 
-			IFieldDescriptor? commonW = SharedState.Importer.ImportField(commonVector3.Resolve()!.Fields.Single(m => m.Name == "W"));
+			IMethodDefOrRef? commonW = SharedState.Importer.ImportMethod(commonVector3.Resolve()!.Properties.Single(m => m.Name == "W").GetMethod!);
 			FieldDefinition? specificW = fieldTypeDefinition.Fields.Single(m => m.Name == "w");
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
-			setProcessor.Add(CilOpCodes.Ldfld, commonW);
+			setProcessor.Add(CilOpCodes.Call, commonW);
 			setProcessor.Add(CilOpCodes.Stfld, specificW);
 
 			setProcessor.Add(CilOpCodes.Ret);

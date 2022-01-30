@@ -49,7 +49,6 @@ namespace AssemblyDumper.Passes
 				setProcessor.Add(CilOpCodes.Ldarg_0);
 				setProcessor.Add(CilOpCodes.Ldfld, field);
 				setProcessor.Add(CilOpCodes.Ldarg_1);
-				setProcessor.Add(CilOpCodes.Box, returnType.ToTypeDefOrRef());
 				setProcessor.Add(CilOpCodes.Call, pptrSetMethod);
 				setProcessor.Add(CilOpCodes.Ret);
 			}

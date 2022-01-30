@@ -64,7 +64,6 @@ namespace AssemblyDumper.Passes
 				setProcessor.Add(CilOpCodes.Ldarg_0);
 				setProcessor.Add(CilOpCodes.Ldfld, field);
 				setProcessor.Add(CilOpCodes.Ldarg_1);
-				setProcessor.Add(CilOpCodes.Box, gameObjectPPtrType.ToTypeDefOrRef());
 				setProcessor.Add(CilOpCodes.Call, pptrSetMethod);
 				setProcessor.Add(CilOpCodes.Ret);
 
@@ -117,7 +116,6 @@ namespace AssemblyDumper.Passes
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldfld, field);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
-			setProcessor.Add(CilOpCodes.Box, prefabInstancePPtrType.ToTypeDefOrRef());
 			setProcessor.Add(CilOpCodes.Call, pptrSetMethod);
 			setProcessor.Add(CilOpCodes.Ret);
 		}
