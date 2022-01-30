@@ -45,7 +45,7 @@ namespace AssemblyDumper.Passes
 			else if (@class.DescendantCount == 1) 
 				typeAttributes |= TypeAttributes.Sealed;
 
-			TypeDefinition typeDef = new TypeDefinition(SharedState.ClassesNamespace, name, typeAttributes);
+			TypeDefinition typeDef = new TypeDefinition(GetNamespace(name), name, typeAttributes);
 
 			if(@class.GetOriginalTypeName(out string originalTypeName))
 			{
@@ -60,6 +60,26 @@ namespace AssemblyDumper.Passes
 			_this.ManifestModule!.TopLevelTypes.Add(typeDef);
 
 			return typeDef;
+		}
+
+		private static string GetNamespace(string className)
+		{
+			if(className.StartsWith("PPtr_", StringComparison.Ordinal))
+			{
+				return SharedState.ClassesNamespace + ".PPtrs";
+			}
+			else if (className.StartsWith("OffsetPtr_", StringComparison.Ordinal))
+			{
+				return SharedState.ClassesNamespace + ".OffsetPtrs";
+			}
+			else if (className.StartsWith("TestObject", StringComparison.Ordinal))
+			{
+				return SharedState.ClassesNamespace + ".TestObjects";
+			}
+			else
+			{
+				return SharedState.ClassesNamespace;
+			}
 		}
 	}
 }
