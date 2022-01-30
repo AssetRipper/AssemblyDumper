@@ -28,6 +28,8 @@ namespace AssemblyDumper
 				Pass11_AddConstructors.DoPass();
 				Pass12_FillConstructors.DoPass();
 
+				Pass15_AddArrayInitializationMethods.DoPass();
+
 				Pass20_PPtrConversions.DoPass();
 				Pass21_GuidImplicitConversion.DoPass();
 				Pass22_VectorImplicitConversions.DoPass();
