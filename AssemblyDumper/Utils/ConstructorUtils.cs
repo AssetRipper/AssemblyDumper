@@ -63,11 +63,11 @@ namespace AssemblyDumper.Utils
 		}
 
 		/// <summary>
-		/// Get the constructors for a type
+		/// Get all the constructors for a type
 		/// </summary>
 		/// <param name="type">The definition for the type</param>
 		/// <returns>All the instance constructors</returns>
-		public static IEnumerable<MethodDefinition> GetConstructors(this TypeDefinition type)
+		public static IEnumerable<MethodDefinition> GetAllConstructors(this TypeDefinition type)
 		{
 			return type.Methods.Where(m => m.IsConstructor && !m.IsStatic);
 		}
