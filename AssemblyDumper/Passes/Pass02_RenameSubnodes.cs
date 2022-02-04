@@ -212,36 +212,15 @@ namespace AssemblyDumper.Passes
 			}
 			else
 			{
-				throw new NotSupportedException($"String subnode has typename: {subnode.TypeName}");
+				Console.WriteLine($"String subnode has typename: {subnode.TypeName}");
+				//throw new NotSupportedException($"String subnode has typename: {subnode.TypeName}");
 			}
-		}
-
-		private static bool IsStringNormal(this UnityNode node)
-		{
-			List<UnityNode>? subnodes = node.SubNodes;
-			if (node.TypeName == "string" && subnodes != null && subnodes.Count == 1 && subnodes[0].TypeName == "Array")
-			{
-				return true;
-			}
-
-			return false;
-		}
-
-		private static bool IsStringStrange(this UnityNode node)
-		{
-			List<UnityNode>? subnodes = node.SubNodes;
-			if (node.TypeName == OffsetPtrName && subnodes != null && subnodes.Count == 1 && subnodes[0].Name == "data")
-			{
-				return true;
-			}
-
-			return false;
 		}
 
 		private static bool IsOffsetPtr(this UnityNode node, [NotNullWhen(true)] out string? elementType)
 		{
-			List<UnityNode>? subnodes = node.SubNodes;
-			if (node.TypeName == OffsetPtrName && subnodes != null && subnodes.Count == 1 && subnodes[0].Name == "data")
+			List<UnityNode> subnodes = node.SubNodes;
+			if (node.TypeName == OffsetPtrName && subnodes.Count == 1 && subnodes[0].Name == "data")
 			{
 				elementType = subnodes[0].TypeName!;
 				return true;
@@ -253,8 +232,8 @@ namespace AssemblyDumper.Passes
 
 		private static bool IsKeyframe(this UnityNode node, [NotNullWhen(true)] out string? elementType)
 		{
-			List<UnityNode>? subnodes = node.SubNodes;
-			if (node.TypeName == KeyframeName && subnodes != null && subnodes.Any(n => n.Name == "value"))
+			List<UnityNode> subnodes = node.SubNodes;
+			if (node.TypeName == KeyframeName && subnodes.Any(n => n.Name == "value"))
 			{
 				elementType = subnodes.Single(n => n.Name == "value").TypeName!;
 				return true;
@@ -271,11 +250,7 @@ namespace AssemblyDumper.Passes
 			if(node.TypeName != AnimationCurveName)
 				return false;
 
-			List<UnityNode>? subnodes = node.SubNodes;
-			if(subnodes == null)
-				return false;
-			
-			UnityNode? curveNode = subnodes.SingleOrDefault(subnode => subnode.Name == "m_Curve");
+			UnityNode? curveNode = node.SubNodes.SingleOrDefault(subnode => subnode.Name == "m_Curve");
 			if (curveNode == null || curveNode.TypeName != "vector")
 				return false;
 			UnityNode keyframeNode = curveNode.SubNodes![0].SubNodes![1];
@@ -294,10 +269,8 @@ namespace AssemblyDumper.Passes
 			if (node.TypeName != ColorRGBAName)
 				return false;
 
-			List<UnityNode>? subnodes = node.SubNodes;
-			if (subnodes == null)
-				return false;
-
+			List<UnityNode> subnodes = node.SubNodes;
+			
 			if (subnodes.Count == 4 && subnodes.All(n => n.TypeName == "float"))
 			{
 				newName = $"{ColorRGBAName}f";
@@ -320,9 +293,7 @@ namespace AssemblyDumper.Passes
 			if (node.TypeName != PackedBitVectorName)
 				return false;
 
-			List<UnityNode>? subnodes = node.SubNodes;
-			if (subnodes == null)
-				return false;
+			List<UnityNode> subnodes = node.SubNodes;
 
 			//The packed bit vectors are constant throughout all the unity versions and identifiable by their number of fields
 			if (subnodes.Count == 5)
@@ -346,8 +317,8 @@ namespace AssemblyDumper.Passes
 
 		private static bool IsEditorScene(this UnityNode node)
 		{
-			List<UnityNode>? subnodes = node.SubNodes;
-			if (node.TypeName == "Scene" && subnodes != null && subnodes.Any(n => n.Name == "enabled") && subnodes.Any(n => n.Name == "path"))
+			List<UnityNode> subnodes = node.SubNodes;
+			if (node.TypeName == "Scene" && subnodes.Any(n => n.Name == "enabled") && subnodes.Any(n => n.Name == "path"))
 			{
 				return true;
 			}
@@ -356,8 +327,8 @@ namespace AssemblyDumper.Passes
 
 		private static bool IsVFXEntryExposed(this UnityNode node, [NotNullWhen(true)] out string? elementType)
 		{
-			List<UnityNode>? subnodes = node.SubNodes;
-			if (node.TypeName == VFXEntryExposedName && subnodes != null && subnodes.Any(n => n.Name == "m_Value"))
+			List<UnityNode> subnodes = node.SubNodes;
+			if (node.TypeName == VFXEntryExposedName && subnodes.Any(n => n.Name == "m_Value"))
 			{
 				elementType = subnodes.Single(n => n.Name == "m_Value").TypeName!.ReplaceBadCharacters();
 				return true;
@@ -369,8 +340,8 @@ namespace AssemblyDumper.Passes
 
 		private static bool IsVFXEntryExpressionValue(this UnityNode node, [NotNullWhen(true)] out string? elementType)
 		{
-			List<UnityNode>? subnodes = node.SubNodes;
-			if (node.TypeName == VFXEntryExpressionValueName && subnodes != null && subnodes.Any(n => n.Name == "m_Value"))
+			List<UnityNode> subnodes = node.SubNodes;
+			if (node.TypeName == VFXEntryExpressionValueName && subnodes.Any(n => n.Name == "m_Value"))
 			{
 				elementType = subnodes.Single(n => n.Name == "m_Value").TypeName!.ReplaceBadCharacters();
 				return true;
@@ -387,9 +358,7 @@ namespace AssemblyDumper.Passes
 			if (node.TypeName != VFXFieldName)
 				return false;
 
-			List<UnityNode>? subnodes = node.SubNodes;
-			if (subnodes == null)
-				return false;
+			List<UnityNode> subnodes = node.SubNodes;
 
 			UnityNode? arrayNode = subnodes.SingleOrDefault(subnode => subnode.Name == "m_Array");
 			if (arrayNode == null || arrayNode.TypeName != "vector")
@@ -403,8 +372,8 @@ namespace AssemblyDumper.Passes
 		private static bool IsVFXPropertySheetSerializedBase(this UnityNode node, [NotNullWhen(true)] out string? elementType)
 		{
 			elementType = null;
-			List<UnityNode>? subnodes = node.SubNodes;
-			if (node.TypeName == VFXPropertySheetSerializedBaseName && subnodes != null && subnodes.Any(n => n.Name == "m_Float"))
+			List<UnityNode> subnodes = node.SubNodes;
+			if (node.TypeName == VFXPropertySheetSerializedBaseName && subnodes.Any(n => n.Name == "m_Float"))
 			{
 				string floatFieldType = subnodes.Single(n => n.Name == "m_Float").TypeName!;
 				if (floatFieldType.StartsWith($"{VFXFieldName}_{VFXEntryExposedName}"))
@@ -424,8 +393,8 @@ namespace AssemblyDumper.Passes
 
 		private static bool IsTilemapRefCountedData(this UnityNode node, [NotNullWhen(true)] out string? elementType)
 		{
-			List<UnityNode> subnodes = node.SubNodes!;
-			if (node.TypeName == TilemapRefCountedDataName && subnodes != null && subnodes.Any(n => n.Name == "m_Data"))
+			List<UnityNode> subnodes = node.SubNodes;
+			if (node.TypeName == TilemapRefCountedDataName && subnodes.Any(n => n.Name == "m_Data"))
 			{
 				elementType = subnodes.Single(n => n.Name == "m_Data").TypeName!.ReplaceBadCharacters();
 				return true;
@@ -442,8 +411,8 @@ namespace AssemblyDumper.Passes
 		/// <returns></returns>
 		private static bool IsBlend1dAs2d(this UnityNode node)
 		{
-			List<UnityNode>? subnodes = node.SubNodes;
-			if (node.TypeName == Blend2dConstantName && subnodes != null && subnodes.Count == 1 && subnodes[0].Name == "m_ChildThresholdArray")
+			List<UnityNode> subnodes = node.SubNodes;
+			if (node.TypeName == Blend2dConstantName && subnodes.Count == 1 && subnodes[0].Name == "m_ChildThresholdArray")
 			{
 				return true;
 			}

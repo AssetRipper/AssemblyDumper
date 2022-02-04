@@ -102,15 +102,10 @@ namespace AssemblyDumper.Utils
 					SignatureComparer comparer = new SignatureComparer();
 					if (!comparer.Equals(arrayType, field.Signature!.FieldType))
 					{
-						Console.WriteLine($"Casted {field.Signature!.FieldType.Name} {field.DeclaringType!.Name}.{field.Name} to {arrayType.Name}");
 						CilLocalVariable local = new CilLocalVariable(arrayType);
 						getter.CilMethodBody.LocalVariables.Add(local);
 						processor.Add(CilOpCodes.Stloc, local);
 						processor.Add(CilOpCodes.Ldloc, local);
-					}
-					else
-					{
-						Console.WriteLine($"Did not cast {field.Signature!.FieldType.Name} {field.DeclaringType!.Name}.{field.Name} to {arrayType.Name}");
 					}
 				}
 			}
