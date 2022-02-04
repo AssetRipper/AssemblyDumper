@@ -12,7 +12,8 @@ namespace AssemblyDumper.Passes
 			MethodAttributes.HideBySig |
 			MethodAttributes.SpecialName |
 			MethodAttributes.ReuseSlot |
-			MethodAttributes.Virtual;
+			MethodAttributes.Virtual |
+			MethodAttributes.Final;
 		const string FieldName = "m_ObjectHideFlags";
 
 		public static void DoPass()
