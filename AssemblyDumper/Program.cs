@@ -67,6 +67,7 @@ namespace AssemblyDumper
 				Pass70_FixPPtrYaml.DoPass();
 				Pass71_MonoBehaviourImplementation.DoPass();
 				Pass72_FixGuidAndHashYaml.DoPass();
+				Pass73_FixUtf8String.DoPass();
 
 				Pass90_MakeAssetFactory.DoPass();
 				Pass91_MakeImporterFactory.DoPass();

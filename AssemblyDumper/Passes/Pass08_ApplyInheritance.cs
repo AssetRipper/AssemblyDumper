@@ -1,4 +1,5 @@
 ﻿using AssetRipper.Core;
+using AssetRipper.Core.Classes;
 
 namespace AssemblyDumper.Passes
 {
@@ -10,6 +11,7 @@ namespace AssemblyDumper.Passes
 
 			ITypeDefOrRef unityObjectBaseDefinition = SharedState.Importer.ImportCommonType<UnityObjectBase>();
 			ITypeDefOrRef unityAssetBaseDefinition = SharedState.Importer.ImportCommonType<UnityAssetBase>();
+			ITypeDefOrRef utf8StringBaseDefinition = SharedState.Importer.ImportCommonType<Utf8StringBase>();
 
 			foreach (KeyValuePair<string, Unity.UnityClass> pair in SharedState.ClassDictionary)
 			{
@@ -18,9 +20,17 @@ namespace AssemblyDumper.Passes
 				if (string.IsNullOrEmpty(pair.Value.Base))
 				{
 					if (pair.Key == "Object")
+					{
 						SharedState.TypeDictionary[pair.Key].BaseType = unityObjectBaseDefinition;
+					}
+					else if (pair.Key == Pass02_RenameSubnodes.Utf8StringName)
+					{
+						SharedState.TypeDictionary[pair.Key].BaseType = utf8StringBaseDefinition;
+					}
 					else
+					{
 						SharedState.TypeDictionary[pair.Key].BaseType = unityAssetBaseDefinition;
+					}
 				}
 				else
 				{

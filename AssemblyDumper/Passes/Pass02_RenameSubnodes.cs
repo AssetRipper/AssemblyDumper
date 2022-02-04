@@ -7,6 +7,7 @@ namespace AssemblyDumper.Passes
 	public static class Pass02_RenameSubnodes
 	{
 		private static readonly Regex badCharactersRegex = new Regex(@"[<>\[\]\s&\(\):]", RegexOptions.Compiled);
+		public const string Utf8StringName = "Utf8String";
 		private const string OffsetPtrName = "OffsetPtr";
 		private const string KeyframeName = "Keyframe";
 		private const string AnimationCurveName = "AnimationCurve";
@@ -137,7 +138,11 @@ namespace AssemblyDumper.Passes
 
 		private static void DoSecondaryRenaming(this UnityNode node)
 		{
-			if (node.IsOffsetPtr(out string? offsetPtrElement))
+			if (node.TypeName == "string")
+			{
+				ChangeStringToUtf8String(node);
+			}
+			else if (node.IsOffsetPtr(out string? offsetPtrElement))
 			{
 				node.TypeName = $"{OffsetPtrName}_{offsetPtrElement}";
 			}
@@ -185,6 +190,52 @@ namespace AssemblyDumper.Passes
 			{
 				node.TypeName = Blend1dConstantName;
 			}
+		}
+
+		private static void ChangeStringToUtf8String(UnityNode node)
+		{
+			node.TypeName = Utf8StringName;
+			List<UnityNode> subnodes = node.SubNodes!;
+			if(subnodes.Count != 1)
+			{
+				throw new Exception($"String has {subnodes.Count} subnodes");
+			}
+			UnityNode subnode = subnodes[0];
+			if(subnode.TypeName == "Array")
+			{
+				subnode.Name = "data";
+			}
+			else if (subnode.TypeName == Utf8StringName)
+			{
+				Console.WriteLine("Warning: modifying type tree for string");
+				subnodes[0] = subnode.SubNodes![0];
+			}
+			else
+			{
+				throw new NotSupportedException($"String subnode has typename: {subnode.TypeName}");
+			}
+		}
+
+		private static bool IsStringNormal(this UnityNode node)
+		{
+			List<UnityNode>? subnodes = node.SubNodes;
+			if (node.TypeName == "string" && subnodes != null && subnodes.Count == 1 && subnodes[0].TypeName == "Array")
+			{
+				return true;
+			}
+
+			return false;
+		}
+
+		private static bool IsStringStrange(this UnityNode node)
+		{
+			List<UnityNode>? subnodes = node.SubNodes;
+			if (node.TypeName == OffsetPtrName && subnodes != null && subnodes.Count == 1 && subnodes[0].Name == "data")
+			{
+				return true;
+			}
+
+			return false;
 		}
 
 		private static bool IsOffsetPtr(this UnityNode node, [NotNullWhen(true)] out string? elementType)

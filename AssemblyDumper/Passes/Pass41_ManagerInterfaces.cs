@@ -1,4 +1,5 @@
 ﻿using AssemblyDumper.Utils;
+using AssetRipper.Core.Classes;
 using AssetRipper.Core.Classes.ResourceManager;
 using AssetRipper.Core.Classes.TagManager;
 using AssetRipper.Core.Interfaces;
@@ -19,7 +20,11 @@ namespace AssemblyDumper.Passes
 		{
 			TypeDefinition type = SharedState.TypeDictionary["TagManager"];
 			type.AddInterfaceImplementation<ITagManager>();
-			type.ImplementFullProperty(nameof(ITagManager.Tags), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String.MakeSzArrayType(), type.GetFieldByName("tags"));
+			type.ImplementGetterProperty(
+				nameof(ITagManager.Tags), 
+				InterfaceUtils.InterfacePropertyImplementation, 
+				SharedState.Importer.ImportCommonType<Utf8StringBase>().MakeSzArrayType(), 
+				type.GetFieldByName("tags"));
 		}
 
 		private static void ImplementResourceManager()

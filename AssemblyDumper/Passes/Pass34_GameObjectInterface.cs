@@ -28,7 +28,7 @@ namespace AssemblyDumper.Passes
 				type.Interfaces.Add(new InterfaceImplementation(gameObjectInterface));
 
 				type.ImplementFullProperty("Tag", InterfacePropertyImplementationAttributes, SystemTypeGetter.UInt16, type.GetFieldByName("m_Tag"));
-				type.ImplementFullProperty("TagString", InterfacePropertyImplementationAttributes, SystemTypeGetter.String, type.GetFieldByName("m_TagString"));
+				type.ImplementStringProperty("TagString", InterfacePropertyImplementationAttributes, type.GetFieldByName("m_TagString"));
 				type.ImplementFullProperty("IsActive", InterfacePropertyImplementationAttributes, SystemTypeGetter.Boolean, type.GetFieldByName("m_IsActive"));
 				type.ImplementFullProperty("Layer", InterfacePropertyImplementationAttributes, SystemTypeGetter.UInt32, type.GetFieldByName("m_Layer"));
 

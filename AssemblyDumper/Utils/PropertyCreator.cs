@@ -1,4 +1,5 @@
 ﻿using AsmResolver.DotNet.Signatures;
+using AssetRipper.Core.Classes;
 
 namespace AssemblyDumper.Utils
 {
@@ -87,7 +88,7 @@ namespace AssemblyDumper.Utils
 			return setter;
 		}
 
-		private static MethodDefinition FillGetter(this PropertyDefinition property, FieldDefinition? field, TypeSignature? returnType = null)
+		private static MethodDefinition FillGetter(this PropertyDefinition property, FieldDefinition? field, TypeSignature returnType)
 		{
 			MethodDefinition getter = property.GetMethod!;
 
@@ -96,14 +97,26 @@ namespace AssemblyDumper.Utils
 			{
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Ldfld, field);
-			}
-			else if (returnType != null)
-			{
-				processor.AddDefaultValue(returnType);
+				if(returnType is SzArrayTypeSignature arrayType)
+				{
+					SignatureComparer comparer = new SignatureComparer();
+					if (!comparer.Equals(arrayType, field.Signature!.FieldType))
+					{
+						Console.WriteLine($"Casted {field.Signature!.FieldType.Name} {field.DeclaringType!.Name}.{field.Name} to {arrayType.Name}");
+						CilLocalVariable local = new CilLocalVariable(arrayType);
+						getter.CilMethodBody.LocalVariables.Add(local);
+						processor.Add(CilOpCodes.Stloc, local);
+						processor.Add(CilOpCodes.Ldloc, local);
+					}
+					else
+					{
+						Console.WriteLine($"Did not cast {field.Signature!.FieldType.Name} {field.DeclaringType!.Name}.{field.Name} to {arrayType.Name}");
+					}
+				}
 			}
 			else
 			{
-				throw new System.Exception($"{nameof(field)} and {nameof(returnType)} cannot both be null");
+				processor.AddDefaultValue(returnType);
 			}
 			processor.Add(CilOpCodes.Ret);
 			processor.OptimizeMacros();
@@ -124,6 +137,33 @@ namespace AssemblyDumper.Utils
 			processor.Add(CilOpCodes.Ret);
 			processor.OptimizeMacros();
 			return setter;
+		}
+
+		public static PropertyDefinition ImplementStringProperty(this TypeDefinition type, string propertyName, MethodAttributes methodAttributes, FieldDefinition? field, PropertyAttributes propertyAttributes = PropertyAttributes.None)
+		{
+			if(field == null)
+			{
+				return type.ImplementFullProperty(propertyName, methodAttributes, SystemTypeGetter.String, field, propertyAttributes);
+			}
+
+			PropertyDefinition property = type.AddFullProperty(propertyName, methodAttributes, SystemTypeGetter.String, propertyAttributes);
+
+			IMethodDefOrRef getRef = SharedState.Importer.ImportCommonMethod<Utf8StringBase>(m => m.Name == $"get_{nameof(Utf8StringBase.String)}");
+			CilInstructionCollection getProcessor = property.GetMethod!.CilMethodBody!.Instructions;
+			getProcessor.Add(CilOpCodes.Ldarg_0);
+			getProcessor.Add(CilOpCodes.Ldfld, field);
+			getProcessor.Add(CilOpCodes.Call, getRef);
+			getProcessor.Add(CilOpCodes.Ret);
+
+			IMethodDefOrRef setRef = SharedState.Importer.ImportCommonMethod<Utf8StringBase>(m => m.Name == $"set_{nameof(Utf8StringBase.String)}");
+			CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
+			setProcessor.Add(CilOpCodes.Ldarg_0);
+			setProcessor.Add(CilOpCodes.Ldfld, field);
+			setProcessor.Add(CilOpCodes.Ldarg_1);
+			setProcessor.Add(CilOpCodes.Call, setRef);
+			setProcessor.Add(CilOpCodes.Ret);
+
+			return property;
 		}
 	}
 }

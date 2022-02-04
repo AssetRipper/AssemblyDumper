@@ -1,4 +1,5 @@
 ﻿using AssemblyDumper.Utils;
+using AssetRipper.Core.Classes;
 using AssetRipper.Core.Interfaces;
 
 namespace AssemblyDumper.Passes
@@ -20,12 +21,17 @@ namespace AssemblyDumper.Passes
 			ITypeDefOrRef hasName = SharedState.Importer.ImportCommonType<IHasName>();
 			foreach(TypeDefinition type in SharedState.TypeDictionary.Values)
 			{
-				if (type.TryGetFieldByName(FieldName, out FieldDefinition? field))
+				if (type.TryGetFieldByName(FieldName, out FieldDefinition? field) && IsCompatible(field))
 				{
 					type.Interfaces.Add(new InterfaceImplementation(hasName));
-					type.ImplementFullProperty("Name", InterfacePropertyImplementationAttributes, SystemTypeGetter.String, field);
+					type.ImplementStringProperty("Name", InterfacePropertyImplementationAttributes, field);
 				}
 			}
+		}
+
+		private static bool IsCompatible(FieldDefinition field)
+		{
+			return field.Signature?.FieldType.Name == Pass02_RenameSubnodes.Utf8StringName;
 		}
 	}
 }

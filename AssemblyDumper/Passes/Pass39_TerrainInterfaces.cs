@@ -30,13 +30,13 @@ namespace AssemblyDumper.Passes
 
 			if(type.TryGetFieldByName("m_Resolution", out FieldDefinition? resolutionField))
 			{
-				type.ImplementGetterProperty(nameof(IHeightmap.Width), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.Int32, resolutionField);
-				type.ImplementGetterProperty(nameof(IHeightmap.Height), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.Int32, resolutionField);
+				type.ImplementFullProperty(nameof(IHeightmap.Width), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.Int32, resolutionField);
+				type.ImplementFullProperty(nameof(IHeightmap.Height), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.Int32, resolutionField);
 			}
 			else
 			{
-				type.ImplementGetterProperty(nameof(IHeightmap.Width), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.Int32, type.GetFieldByName("m_Width"));
-				type.ImplementGetterProperty(nameof(IHeightmap.Height), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.Int32, type.GetFieldByName("m_Height"));
+				type.ImplementFullProperty(nameof(IHeightmap.Width), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.Int32, type.GetFieldByName("m_Width"));
+				type.ImplementFullProperty(nameof(IHeightmap.Height), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.Int32, type.GetFieldByName("m_Height"));
 			}
 			type.ImplementFullProperty(nameof(IHeightmap.Heights), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.Int16.MakeSzArrayType(), type.GetFieldByName("m_Heights"));
 

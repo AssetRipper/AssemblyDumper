@@ -19,10 +19,10 @@ namespace AssemblyDumper.Passes
 			if (SharedState.TypeDictionary.TryGetValue("MonoScript", out TypeDefinition? type))
 			{
 				type.Interfaces.Add(new InterfaceImplementation(componentInterface));
-				type.ImplementGetterProperty("ClassName", InterfacePropertyImplementationAttributes, SystemTypeGetter.String, type.GetFieldByName("m_ClassName"));
-				type.ImplementGetterProperty("Namespace", InterfacePropertyImplementationAttributes, SystemTypeGetter.String, type.GetFieldByName("m_Namespace"));
-				type.ImplementGetterProperty("AssemblyName", InterfacePropertyImplementationAttributes, SystemTypeGetter.String, type.GetFieldByName("m_AssemblyName"));
-				type.ImplementGetterProperty("ExecutionOrder", InterfacePropertyImplementationAttributes, SystemTypeGetter.Int32, type.GetFieldByName("m_ExecutionOrder"));
+				type.ImplementStringProperty("ClassName", InterfacePropertyImplementationAttributes, type.GetFieldByName("m_ClassName"));
+				type.ImplementStringProperty("Namespace", InterfacePropertyImplementationAttributes, type.GetFieldByName("m_Namespace"));
+				type.ImplementStringProperty("AssemblyName", InterfacePropertyImplementationAttributes, type.GetFieldByName("m_AssemblyName"));
+				type.ImplementFullProperty("ExecutionOrder", InterfacePropertyImplementationAttributes, SystemTypeGetter.Int32, type.GetFieldByName("m_ExecutionOrder"));
 				type.ImplementHashProperty();
 			}
 			else

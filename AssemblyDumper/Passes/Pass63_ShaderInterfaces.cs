@@ -35,21 +35,27 @@ namespace AssemblyDumper.Passes
 		private static void ImplementSerializedTextureProperty(this TypeDefinition type)
 		{
 			type.AddInterfaceImplementation<ISerializedTextureProperty>();
-			type.ImplementFullProperty(nameof(ISerializedTextureProperty.DefaultName), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String, type.TryGetFieldByName("m_DefaultName"));
+			type.ImplementStringProperty(nameof(ISerializedTextureProperty.DefaultName), InterfaceUtils.InterfacePropertyImplementation, type.TryGetFieldByName("m_DefaultName"));
 			type.ImplementFullProperty(nameof(ISerializedTextureProperty.TexDim), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.Int32, type.TryGetFieldByName("m_TexDim"));
 		}
 
 		private static void ImplementSerializedProperty(this TypeDefinition type)
 		{
 			type.AddInterfaceImplementation<ISerializedProperty>();
-			type.ImplementFullProperty(nameof(ISerializedProperty.Description), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String, type.TryGetFieldByName("m_Description"));
-			type.ImplementFullProperty(nameof(ISerializedProperty.Attributes), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String.MakeSzArrayType(), type.TryGetFieldByName("m_Attributes"));
+			type.ImplementStringProperty(nameof(ISerializedProperty.Description), InterfaceUtils.InterfacePropertyImplementation, type.TryGetFieldByName("m_Description"));
+			
+			type.ImplementGetterProperty(
+				nameof(ISerializedProperty.Attributes), 
+				InterfaceUtils.InterfacePropertyImplementation, 
+				SharedState.Importer.ImportCommonType<AssetRipper.Core.Classes.Utf8StringBase>().MakeSzArrayType(), 
+				type.TryGetFieldByName("m_Attributes"));
 
 			type.ImplementFullProperty(
 				nameof(ISerializedProperty.Type), 
 				InterfaceUtils.InterfacePropertyImplementation, 
 				SharedState.Importer.ImportCommonType<SerializedPropertyType>().ToTypeSignature(), 
 				type.TryGetFieldByName("m_Type"));
+
 			type.ImplementFullProperty(
 				nameof(ISerializedProperty.Flags),
 				InterfaceUtils.InterfacePropertyImplementation,
@@ -80,8 +86,8 @@ namespace AssemblyDumper.Passes
 		private static void ImplementSerializedShader(this TypeDefinition type)
 		{
 			type.AddInterfaceImplementation<ISerializedShader>();
-			type.ImplementFullProperty(nameof(ISerializedShader.CustomEditorName), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String, type.TryGetFieldByName("m_CustomEditorName"));
-			type.ImplementFullProperty(nameof(ISerializedShader.FallbackName), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String, type.TryGetFieldByName("m_FallbackName"));
+			type.ImplementStringProperty(nameof(ISerializedShader.CustomEditorName), InterfaceUtils.InterfacePropertyImplementation, type.TryGetFieldByName("m_CustomEditorName"));
+			type.ImplementStringProperty(nameof(ISerializedShader.FallbackName), InterfaceUtils.InterfacePropertyImplementation, type.TryGetFieldByName("m_FallbackName"));
 			type.ImplementGetterProperty(
 				nameof(ISerializedShader.PropInfo),
 				InterfaceUtils.InterfacePropertyImplementation,

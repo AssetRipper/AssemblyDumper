@@ -41,14 +41,10 @@ namespace AssemblyDumper.Passes
 
 		private static void ImplementAssetBundleNameProperty(this TypeDefinition type)
 		{
-			if(type.TryGetFieldByName("m_AssetBundleName", out FieldDefinition? field))
-			{
-				type.ImplementFullProperty(nameof(IAssetBundle.AssetBundleName), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String, field);
-			}
-			else
-			{
-				type.ImplementFullProperty(nameof(IAssetBundle.AssetBundleName), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String, null);
-			}
+			type.ImplementStringProperty(
+				nameof(IAssetBundle.AssetBundleName), 
+				InterfaceUtils.InterfacePropertyImplementation, 
+				type.TryGetFieldByName("m_AssetBundleName"));
 		}
 
 		private static void ImplementGetAssetsMethod(this TypeDefinition type)

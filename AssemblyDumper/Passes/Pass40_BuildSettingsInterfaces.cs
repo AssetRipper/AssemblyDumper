@@ -20,14 +20,14 @@ namespace AssemblyDumper.Passes
 		{
 			TypeDefinition type = SharedState.TypeDictionary["BuildSettings"];
 			type.AddInterfaceImplementation<IBuildSettings>();
-			type.ImplementFullProperty(nameof(IBuildSettings.Version), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String, type.GetFieldByName("m_Version"));
-			if(type.TryGetFieldByName("scenes", out FieldDefinition? field))
+			type.ImplementStringProperty(nameof(IBuildSettings.Version), InterfaceUtils.InterfacePropertyImplementation, type.GetFieldByName("m_Version"));
+			if(type.TryGetFieldByName("scenes", out FieldDefinition? field) || type.TryGetFieldByName("levels", out field))
 			{
-				type.ImplementFullProperty(nameof(IBuildSettings.Scenes), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String.MakeSzArrayType(), field);
-			}
-			else if (type.TryGetFieldByName("levels", out field))
-			{
-				type.ImplementFullProperty(nameof(IBuildSettings.Scenes), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String.MakeSzArrayType(), field);
+				type.ImplementGetterProperty(
+					nameof(IBuildSettings.Scenes), 
+					InterfaceUtils.InterfacePropertyImplementation, 
+					SharedState.Importer.ImportCommonType<Utf8StringBase>().MakeSzArrayType(), 
+					field);
 			}
 			else
 			{
@@ -39,23 +39,23 @@ namespace AssemblyDumper.Passes
 		{
 			TypeDefinition type = SharedState.TypeDictionary["EditorSettings"];
 			type.AddInterfaceImplementation<IEditorSettings>();
-			type.ImplementInterfacePropertyForgiving("ExternalVersionControlSupport", SystemTypeGetter.String);
+			type.ImplementInterfaceStringPropertyForgiving("ExternalVersionControlSupport");
 			type.ImplementInterfacePropertyForgiving("SerializationMode", SystemTypeGetter.Int32);
 			type.ImplementInterfacePropertyForgiving("SpritePackerPaddingPower", SystemTypeGetter.Int32);
 			type.ImplementInterfacePropertyForgiving("EtcTextureCompressorBehavior", SystemTypeGetter.Int32);
 			type.ImplementInterfacePropertyForgiving("EtcTextureFastCompressor", SystemTypeGetter.Int32);
 			type.ImplementInterfacePropertyForgiving("EtcTextureNormalCompressor", SystemTypeGetter.Int32);
 			type.ImplementInterfacePropertyForgiving("EtcTextureBestCompressor", SystemTypeGetter.Int32);
-			type.ImplementInterfacePropertyForgiving("ProjectGenerationIncludedExtensions", SystemTypeGetter.String);
-			type.ImplementInterfacePropertyForgiving("ProjectGenerationRootNamespace", SystemTypeGetter.String);
-			type.ImplementInterfacePropertyForgiving("UserGeneratedProjectSuffix", SystemTypeGetter.String);
+			type.ImplementInterfaceStringPropertyForgiving("ProjectGenerationIncludedExtensions");
+			type.ImplementInterfaceStringPropertyForgiving("ProjectGenerationRootNamespace");
+			type.ImplementInterfaceStringPropertyForgiving("UserGeneratedProjectSuffix");
 			type.ImplementInterfacePropertyForgiving("EnableTextureStreamingInEditMode", SystemTypeGetter.Boolean);
 			type.ImplementInterfacePropertyForgiving("EnableTextureStreamingInPlayMode", SystemTypeGetter.Boolean);
 			type.ImplementInterfacePropertyForgiving("AsyncShaderCompilation", SystemTypeGetter.Boolean);
 			type.ImplementInterfacePropertyForgiving("AssetPipelineMode", SystemTypeGetter.Int32);
 			type.ImplementInterfacePropertyForgiving("CacheServerMode", SystemTypeGetter.Int32);
-			type.ImplementInterfacePropertyForgiving("CacheServerEndpoint", SystemTypeGetter.String);
-			type.ImplementInterfacePropertyForgiving("CacheServerNamespacePrefix", SystemTypeGetter.String);
+			type.ImplementInterfaceStringPropertyForgiving("CacheServerEndpoint");
+			type.ImplementInterfaceStringPropertyForgiving("CacheServerNamespacePrefix");
 			type.ImplementInterfacePropertyForgiving("CacheServerEnableDownload", SystemTypeGetter.Boolean);
 			type.ImplementInterfacePropertyForgiving("CacheServerEnableUpload", SystemTypeGetter.Boolean);
 		}
@@ -63,14 +63,13 @@ namespace AssemblyDumper.Passes
 		private static void ImplementInterfacePropertyForgiving(this TypeDefinition type, string propertyName, TypeSignature returnType, string? fieldName = null)
 		{
 			fieldName ??= $"m_{propertyName}";
-			if (type.TryGetFieldByName(fieldName, out FieldDefinition? field))
-			{
-				type.ImplementFullProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, returnType, field);
-			}
-			else
-			{
-				type.ImplementFullProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, returnType, null);
-			}
+			type.ImplementFullProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, returnType, type.TryGetFieldByName(fieldName));
+		}
+
+		private static void ImplementInterfaceStringPropertyForgiving(this TypeDefinition type, string propertyName, string? fieldName = null)
+		{
+			fieldName ??= $"m_{propertyName}";
+			type.ImplementStringProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, type.TryGetFieldByName(fieldName));
 		}
 
 		private static void ImplementEditorSceneInterface()
@@ -78,7 +77,7 @@ namespace AssemblyDumper.Passes
 			TypeDefinition type = SharedState.TypeDictionary["EditorScene"];
 			type.AddInterfaceImplementation<IEditorScene>();
 			type.ImplementFullProperty(nameof(IEditorScene.Enabled), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.Boolean, type.GetFieldByName("enabled"));
-			type.ImplementFullProperty(nameof(IEditorScene.Path), InterfaceUtils.InterfacePropertyImplementation, SystemTypeGetter.String, type.GetFieldByName("path"));
+			type.ImplementStringProperty(nameof(IEditorScene.Path), InterfaceUtils.InterfacePropertyImplementation, type.GetFieldByName("path"));
 
 			ITypeDefOrRef unityGuid = SharedState.Importer.ImportCommonType<AssetRipper.Core.Classes.Misc.UnityGUID>();
 			if(type.TryGetFieldByName("guid", out FieldDefinition? guidField))
