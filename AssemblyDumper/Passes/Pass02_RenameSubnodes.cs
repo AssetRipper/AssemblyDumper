@@ -207,11 +207,13 @@ namespace AssemblyDumper.Passes
 			}
 			else if (subnode.TypeName == Utf8StringName)
 			{
+				//ExposedReferenceTable on late 2019 and after
 				Console.WriteLine("Warning: modifying type tree for string");
 				subnodes[0] = subnode.SubNodes![0];
 			}
 			else
 			{
+				//ExposedReferenceTable on 2017 - early 2019
 				Console.WriteLine($"String subnode has typename: {subnode.TypeName}");
 				//throw new NotSupportedException($"String subnode has typename: {subnode.TypeName}");
 			}

@@ -92,7 +92,7 @@ namespace AssemblyDumper.Passes
 				}
 				else
 				{
-					IMethodDefOrRef nullableGetValue = SharedState.Importer.ImportMethod(elementType.Resolve()!.Methods.Single(m => m.Name == "get_Value"));
+					IMethodDefOrRef nullableGetValue = MethodUtils.MakeMethodOnGenericType((GenericInstanceTypeSignature)elementType, "get_Value");
 					processor.Add(CilOpCodes.Call, nullableGetValue);
 				}
 				
