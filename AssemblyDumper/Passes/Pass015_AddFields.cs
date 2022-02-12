@@ -31,7 +31,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 15: Add Fields");
+			Console.WriteLine("Pass 015: Add Fields");
 
 			InitializeImports();
 

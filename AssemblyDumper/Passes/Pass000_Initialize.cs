@@ -16,7 +16,7 @@ namespace AssemblyDumper.Passes
 		/// </summary>
 		public static void DoPass(string jsonPath, string systemRuntimeFilePath, string systemCollectionsFilePath)
 		{
-			Console.WriteLine("Pass 0: Initialize");
+			Console.WriteLine("Pass 000: Initialize");
 
 			using FileStream stream = File.OpenRead(jsonPath);
 			UnityInfo info = JsonSerializer.Deserialize<UnityInfo>(stream)!;

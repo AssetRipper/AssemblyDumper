@@ -6,7 +6,7 @@ namespace AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 3: Class Specific Changes");
+			Console.WriteLine("Pass 003: Class Specific Changes");
 			
 			foreach(UnityClass textClass in GetAllTextAssetClasses())
 			{

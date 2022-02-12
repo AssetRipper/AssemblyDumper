@@ -11,7 +11,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			System.Console.WriteLine("Pass 99: Creating empty methods on generated types");
+			System.Console.WriteLine("Pass 099: Creating empty methods on generated types");
 
 			ITypeDefOrRef commonPPtrTypeRef = SharedState.Importer.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
 			ITypeDefOrRef unityObjectBaseInterfaceRef = SharedState.Importer.ImportCommonType<IUnityObjectBase>();

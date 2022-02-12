@@ -16,7 +16,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 10: Add Type Definitions");
+			Console.WriteLine("Pass 010: Add Type Definitions");
 
 			EditorOnlyAttributeConstructor = SharedState.Importer.ImportCommonConstructor<EditorOnlyAttribute>();
 			ReleaseOnlyAttributeConstructor = SharedState.Importer.ImportCommonConstructor<ReleaseOnlyAttribute>();

@@ -10,7 +10,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 30: Add Array Initialization Methods");
+			Console.WriteLine("Pass 030: Add Array Initialization Methods");
 			IMethodDefOrRef arrayUtilsMethod = SharedState.Importer.ImportCommonMethod(
 				typeof(ArrayUtils),
 				m => m.Name == nameof(ArrayUtils.CreateAndInitializeArray));

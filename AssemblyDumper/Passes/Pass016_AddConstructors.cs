@@ -20,7 +20,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			System.Console.WriteLine("Pass 16: Add Constructors");
+			System.Console.WriteLine("Pass 016: Add Constructors");
 			AssetInfoRef = SharedState.Importer.ImportCommonType<AssetInfo>();
 			LayoutInfoRef = SharedState.Importer.ImportCommonType<LayoutInfo>();
 			foreach (KeyValuePair<string, UnityClass> pair in SharedState.ClassDictionary)

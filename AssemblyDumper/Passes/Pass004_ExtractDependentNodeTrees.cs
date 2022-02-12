@@ -11,7 +11,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 4: Extract Dependent Node Trees");
+			Console.WriteLine("Pass 004: Extract Dependent Node Trees");
 			AddExistingClassDictionaryToGeneratedTypes();
 			AddDependentTypes();
 			CreateNewClasses();

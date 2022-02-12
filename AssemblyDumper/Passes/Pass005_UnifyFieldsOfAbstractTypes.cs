@@ -8,7 +8,7 @@ namespace AssemblyDumper.Passes
 		private const string ObjectHideFlagsName = "m_ObjectHideFlags";
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 5: Merging fields of abstract types");
+			Console.WriteLine("Pass 005: Merging fields of abstract types");
 
 			//We need to get all abstract classes, and we need to do them in order of lowest abstraction to highest.
 			//In other words, the most derived classes should be done first, so their values can be used for their own base classes

@@ -20,7 +20,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			System.Console.WriteLine("Pass 80: PPtr Interface and Conversions");
+			System.Console.WriteLine("Pass 080: PPtr Interface and Conversions");
 
 			commonPPtrType = SharedState.Importer.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
 

@@ -23,7 +23,7 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 2: Rename Class Subnodes");
+			Console.WriteLine("Pass 002: Rename Class Subnodes");
 			foreach (UnityClass unityClass in SharedState.ClassDictionary.Values)
 			{
 				unityClass.CorrectInheritedTypeNames();
