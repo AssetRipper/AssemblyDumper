@@ -13,68 +13,69 @@ namespace AssemblyDumper
 			try
 			{
 #endif
-				Pass00_Initialize.DoPass(options.JsonPath!.FullName, options.SystemRuntimeAssembly!.FullName, options.SystemCollectionsAssembly!.FullName);
-				Pass01_CreateBasicTypes.DoPass();
-				Pass02_RenameSubnodes.DoPass();
-				Pass03_ClassSpecificChanges.DoPass();
-				Pass04_ExtractDependentNodeTrees.DoPass();
-				Pass05_UnifyFieldsOfAbstractTypes.DoPass();
+				Pass000_Initialize.DoPass(options.JsonPath!.FullName, options.SystemRuntimeAssembly!.FullName, options.SystemCollectionsAssembly!.FullName);
+				Pass001_CreateBasicTypes.DoPass();
+				Pass002_RenameSubnodes.DoPass();
+				Pass003_ClassSpecificChanges.DoPass();
+				Pass004_ExtractDependentNodeTrees.DoPass();
+				Pass005_UnifyFieldsOfAbstractTypes.DoPass();
 				//After this point, class dictionary does not change
 
-				Pass07_AddTypeDefinitions.DoPass();
-				Pass08_ApplyInheritance.DoPass();
-				Pass10_AddFields.DoPass();
+				Pass010_AddTypeDefinitions.DoPass();
+				Pass011_ApplyInheritance.DoPass();
+				Pass015_AddFields.DoPass();
 
-				Pass11_AddConstructors.DoPass();
-				Pass12_FillConstructors.DoPass();
+				Pass016_AddConstructors.DoPass();
+				Pass017_FillConstructors.DoPass();
 
-				Pass15_AddArrayInitializationMethods.DoPass();
+				Pass030_AddArrayInitializationMethods.DoPass();
 
-				Pass20_PPtrConversions.DoPass();
-				Pass21_GuidImplicitConversion.DoPass();
-				Pass22_VectorImplicitConversions.DoPass();
-				Pass23_OffsetPtrImplicitConversions.DoPass();
-				Pass24_Hash128ImplicitConversion.DoPass();
+				Pass080_PPtrConversions.DoPass();
 
-				Pass25_ObjectAndEditorExtension.DoPass();
+				Pass099_CreateEmptyMethods.DoPass();
+				Pass100_FillReadMethods.DoPass();
+				Pass101_FillWriteMethods.DoPass();
+				Pass102_FillYamlMethods.DoPass();
+				Pass103_FillDependencyMethods.DoPass();
 
-				Pass30_ImplementHasNameInterface.DoPass();
-				Pass31_ComponentInterface.DoPass();
-				Pass32_MonoScriptInterface.DoPass();
-				Pass33_BehaviourInterface.DoPass();
-				Pass34_GameObjectInterface.DoPass();
-				Pass35_TransformInterface.DoPass();
-				Pass36_PrefabInstanceInterface.DoPass();
+				Pass201_GuidImplicitConversion.DoPass();
+				Pass202_VectorImplicitConversions.DoPass();
+				Pass203_OffsetPtrImplicitConversions.DoPass();
+				Pass204_Hash128ImplicitConversion.DoPass();
 
-				Pass39_TerrainInterfaces.DoPass();
-				Pass40_BuildSettingsInterfaces.DoPass();
-				Pass41_ManagerInterfaces.DoPass();
-				Pass42_AssetBundleInterfaces.DoPass();
-				Pass43_SceneInterfaces.DoPass();
+				Pass205_ObjectAndEditorExtension.DoPass();
 
-				Pass49_CreateEmptyMethods.DoPass();
-				Pass50_FillReadMethods.DoPass();
-				Pass51_FillWriteMethods.DoPass();
-				Pass52_FillYamlMethods.DoPass();
-				Pass53_FillTypeTreeMethods.DoPass();
-				Pass54_FillDependencyMethods.DoPass();
+				Pass300_ImplementHasNameInterface.DoPass();
+				Pass301_ComponentInterface.DoPass();
+				Pass302_MonoScriptInterface.DoPass();
+				Pass303_BehaviourInterface.DoPass();
+				Pass304_GameObjectInterface.DoPass();
+				Pass305_TransformInterface.DoPass();
+				Pass306_PrefabInstanceInterface.DoPass();
 
-				Pass60_AddMarkerInterfaces.DoPass();
-				Pass61_NativeImporterInterface.DoPass();
-				Pass62_MiscellaneousExporters.DoPass();
-				Pass63_ShaderInterfaces.DoPass();
+				Pass309_TerrainInterfaces.DoPass();
+				Pass340_BuildSettingsInterfaces.DoPass();
+				Pass341_ManagerInterfaces.DoPass();
+				Pass342_AssetBundleInterfaces.DoPass();
+				Pass343_SceneInterfaces.DoPass();
 
-				Pass70_FixPPtrYaml.DoPass();
-				Pass71_MonoBehaviourImplementation.DoPass();
-				Pass72_FixGuidAndHashYaml.DoPass();
-				Pass73_FixUtf8String.DoPass();
+				Pass360_AddMarkerInterfaces.DoPass();
+				Pass361_NativeImporterInterface.DoPass();
+				Pass362_MiscellaneousExporters.DoPass();
+				Pass363_ShaderInterfaces.DoPass();
 
-				Pass90_MakeAssetFactory.DoPass();
-				Pass91_MakeImporterFactory.DoPass();
-				Pass95_UnityVersionHandler.DoPass();
+				Pass500_FixPPtrYaml.DoPass();
+				Pass501_MonoBehaviourImplementation.DoPass();
+				Pass502_FixGuidAndHashYaml.DoPass();
+				Pass503_FixUtf8String.DoPass();
 
-				Pass98_ApplyAssemblyAttributes.DoPass();
-				Pass99_SaveAssembly.DoPass(options.OutputDirectory!);
+				Pass900_FillTypeTreeMethods.DoPass();
+				Pass940_MakeAssetFactory.DoPass();
+				Pass942_MakeImporterFactory.DoPass();
+				Pass950_UnityVersionHandler.DoPass();
+
+				Pass998_ApplyAssemblyAttributes.DoPass();
+				Pass999_SaveAssembly.DoPass(options.OutputDirectory!);
 				Console.WriteLine("Done!");
 #if DEBUG
 			}
