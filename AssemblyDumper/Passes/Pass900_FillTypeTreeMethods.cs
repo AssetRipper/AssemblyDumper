@@ -125,7 +125,7 @@ namespace AssemblyDumper.Passes
 
 			processor.Add(CilOpCodes.Ldc_I4, node.Version);
 			processor.Add(CilOpCodes.Ldc_I4, (int)node.TypeFlags);
-			processor.Add(CilOpCodes.Ldc_I4, node.MetaFlag);
+			processor.Add(CilOpCodes.Ldc_I4, unchecked((int)node.MetaFlag));
 			processor.Add(CilOpCodes.Newobj, typeTreeNodeConstructor);
 
 			processor.Add(CilOpCodes.Call, listAddMethod);

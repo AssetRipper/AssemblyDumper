@@ -234,12 +234,12 @@ namespace AssemblyDumper.Passes
 			return arrayType.MakeAndImportArrayType();
 		}
 
-		private static void AddReleaseFlagAttribute(this FieldDefinition _this, int flags)
+		private static void AddReleaseFlagAttribute(this FieldDefinition _this, uint flags)
 		{
 			_this.AddCustomAttribute(ReleaseMetaFlagsAttributeConstructor, TransferMetaFlagsDefinition.ToTypeSignature(), flags);
 		}
 
-		private static void AddEditorFlagAttribute(this FieldDefinition _this, int flags)
+		private static void AddEditorFlagAttribute(this FieldDefinition _this, uint flags)
 		{
 			_this.AddCustomAttribute(EditorMetaFlagsAttributeConstructor, TransferMetaFlagsDefinition.ToTypeSignature(), flags);
 		}

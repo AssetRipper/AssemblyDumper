@@ -32,7 +32,7 @@ namespace AssemblyDumper.Unity
 		public int Index { get; set; }
 		public short Version { get; set; }
 		public byte TypeFlags { get; set; }
-		public int MetaFlag { get; set; }
+		public uint MetaFlag { get; set; }
 		public List<UnityNode> SubNodes { get => subNodes; set => subNodes = value ?? new(); }
 
 		private string originalTypeName = "";
