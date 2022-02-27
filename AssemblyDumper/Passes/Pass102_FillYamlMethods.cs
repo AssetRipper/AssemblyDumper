@@ -227,7 +227,8 @@ namespace AssemblyDumper.Passes
 			UnityNode firstSubNode = pairNode.SubNodes[0];
 			UnityNode secondSubNode = pairNode.SubNodes[1];
 			GenericInstanceTypeSignature pairType = GenericTypeResolver.ResolvePairType(firstSubNode, secondSubNode);
-			bool firstIsScalar = SystemTypeGetter.GetCppPrimitiveTypeSignature(firstSubNode.TypeName) != null;
+			bool firstIsScalar = SystemTypeGetter.GetCppPrimitiveTypeSignature(firstSubNode.TypeName) != null
+				|| firstSubNode.TypeName == Pass002_RenameSubnodes.Utf8StringName;
 
 			MethodDefinition getKeyDefinition = CommonTypeGetter.LookupCommonMethod("AssetRipper.Core.IO.NullableKeyValuePair`2", m => m.Name == "get_Key");
 			IMethodDefOrRef getKeyReference = MethodUtils.MakeMethodOnGenericType(pairType, getKeyDefinition);
