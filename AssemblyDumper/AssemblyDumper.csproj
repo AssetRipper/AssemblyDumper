@@ -1,22 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<RootNamespace>AssemblyDumper</RootNamespace>
-		<TargetFramework>net6</TargetFramework>
-		<LangVersion>latest</LangVersion>
-		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<DebugType>embedded</DebugType>
-		<DebugSymbols>true</DebugSymbols>
+		<RootNamespace>AssetRipper.AssemblyDumper</RootNamespace>
 	</PropertyGroup>
+
 	<ItemGroup>
-	  <Reference Include="..\Libraries\AssetRipperCommon.dll" />
-	  <Resource Include="..\Libraries\AssetRipperCommon.dll" />
+		<PackageReference Include="AsmResolver.DotNet" Version="4.11.2" />
 	</ItemGroup>
-	
+
 	<ItemGroup>
-		<PackageReference Include="AsmResolver.DotNet" Version="4.8.0" />
-		<PackageReference Include="CommandLineParser" Version="2.8.0" />
+		<ProjectReference Include="..\AssemblyCreationTools\AssemblyCreationTools.csproj" />
+		<ProjectReference Include="..\..\AssetRipper\AssetRipper.Fundamentals\AssetRipper.Fundamentals.csproj" />
+		<ProjectReference Include="..\..\Tpk\Tpk\Tpk.csproj" />
 	</ItemGroup>
+
 </Project>

@@ -1,6 +1,6 @@
-﻿using AssemblyDumper.Utils;
+﻿using AssetRipper.AssemblyCreationTools.Methods;
 
-namespace AssemblyDumper.Passes
+namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass203_OffsetPtrImplicitConversions
 	{
@@ -8,13 +8,14 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			System.Console.WriteLine("Pass 203: OffsetPtr Implicit Conversions");
-
-			foreach ((string name, TypeDefinition type) in SharedState.TypeDictionary)
+			foreach((string name, SubclassGroup group) in SharedState.Instance.SubclassGroups)
 			{
 				if (name.StartsWith("OffsetPtr"))
 				{
-					type.AddImplicitConversion();
+					foreach(TypeDefinition type in group.Types)
+					{
+						type.AddImplicitConversion();
+					}
 				}
 			}
 		}
@@ -24,7 +25,7 @@ namespace AssemblyDumper.Passes
 			FieldDefinition field = type.GetField();
 			
 			MethodDefinition implicitMethod = type.AddMethod("op_Implicit", ConversionAttributes, field.Signature!.FieldType);
-			implicitMethod.AddParameter("value", type);
+			implicitMethod.AddParameter(type.ToTypeSignature(), "value");
 
 			CilInstructionCollection processor = implicitMethod.CilMethodBody!.Instructions;
 
@@ -35,7 +36,7 @@ namespace AssemblyDumper.Passes
 
 		private static FieldDefinition GetField(this TypeDefinition type)
 		{
-			return type.Fields.Single(field => field.Name == "data");
+			return type.Fields.Single(field => field.Name == "m_Data");
 		}
 	}
 }

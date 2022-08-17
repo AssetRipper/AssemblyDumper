@@ -1,9 +1,8 @@
-﻿using AssemblyDumper.Unity;
-using AssemblyDumper.Utils;
+﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.Core.Layout;
 using AssetRipper.Core.Parser.Asset;
 
-namespace AssemblyDumper.Passes
+namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass016_AddConstructors
 	{
@@ -12,42 +11,45 @@ namespace AssemblyDumper.Passes
 			MethodAttributes.HideBySig | 
 			MethodAttributes.SpecialName | 
 			MethodAttributes.RuntimeSpecialName;
-		private readonly static List<string> processed = new List<string>();
+		private readonly static HashSet<GeneratedClassInstance> processed = new HashSet<GeneratedClassInstance>();
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static ITypeDefOrRef AssetInfoRef;
-		private static ITypeDefOrRef LayoutInfoRef;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 		public static void DoPass()
 		{
-			System.Console.WriteLine("Pass 016: Add Constructors");
-			AssetInfoRef = SharedState.Importer.ImportCommonType<AssetInfo>();
-			LayoutInfoRef = SharedState.Importer.ImportCommonType<LayoutInfo>();
-			foreach (KeyValuePair<string, UnityClass> pair in SharedState.ClassDictionary)
+			AssetInfoRef = SharedState.Instance.Importer.ImportType<AssetInfo>();
+			IEnumerable<ClassGroupBase> groups = SharedState.Instance.ClassGroups.Values.Select(g => (ClassGroupBase)g)
+				.Union(SharedState.Instance.SubclassGroups.Values.Select(g => (ClassGroupBase)g));
+			foreach (ClassGroupBase group in groups)
 			{
-				if (processed.Contains(pair.Key))
-					continue;
+				foreach(GeneratedClassInstance instance in group.Instances)
+				{
+					if (processed.Contains(instance))
+					{
+						continue;
+					}
 
-				AddConstructor(pair.Value);
+					AddConstructor(instance);
+				}
 			}
+			processed.Clear();
 		}
 
-		private static void AddConstructor(UnityClass typeInfo)
+		private static void AddConstructor(GeneratedClassInstance instance)
 		{
-			if (PrimitiveTypes.primitives.Contains(typeInfo.Name))
-				return;
+			if (instance.Base is not null && !processed.Contains(instance.Base))
+			{
+				AddConstructor(instance.Base);
+			}
 
-			if (!string.IsNullOrEmpty(typeInfo.Base) && !processed.Contains(typeInfo.Base))
-				AddConstructor(SharedState.ClassDictionary[typeInfo.Base]);
-
-			TypeDefinition type = SharedState.TypeDictionary[typeInfo.Name];
-			ConstructorUtils.AddDefaultConstructor(type);
-			type.AddLayoutInfoConstructor();
-			if(typeInfo.TypeID >= 0)
+			TypeDefinition type = instance.Type;
+			type.AddDefaultConstructor(SharedState.Instance.Importer);
+			if(instance.ID >= 0)
 			{
 				type.AddAssetInfoConstructor();
 			}
-			processed.Add(typeInfo.Name);
+			processed.Add(instance);
 		}
 
 		private static MethodDefinition AddAssetInfoConstructor(this TypeDefinition typeDefinition)
@@ -55,19 +57,14 @@ namespace AssemblyDumper.Passes
 			return AddSingleParameterConstructor(typeDefinition, AssetInfoRef, "info");
 		}
 
-		private static MethodDefinition AddLayoutInfoConstructor(this TypeDefinition typeDefinition)
-		{
-			return AddSingleParameterConstructor(typeDefinition, LayoutInfoRef, "info");
-		}
-
 		private static MethodDefinition AddSingleParameterConstructor(this TypeDefinition typeDefinition, ITypeDefOrRef parameterType, string parameterName)
 		{
 			MethodDefinition? constructor = typeDefinition.AddMethod(
 				".ctor",
 				PublicInstanceConstructorAttributes,
-				SystemTypeGetter.Void
+				SharedState.Instance.Importer.Void
 			);
-			constructor.AddParameter(parameterName, parameterType);
+			constructor.AddParameter(parameterType.ToTypeSignature(), parameterName);
 			return constructor;
 		}
 	}

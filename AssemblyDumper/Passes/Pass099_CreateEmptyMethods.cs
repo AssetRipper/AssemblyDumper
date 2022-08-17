@@ -1,9 +1,12 @@
-﻿using AssemblyDumper.Utils;
+﻿using AssetRipper.AssemblyCreationTools.Methods;
+using AssetRipper.Core;
 using AssetRipper.Core.Interfaces;
+using AssetRipper.Core.IO.Asset;
 using AssetRipper.Core.Parser.Asset;
-using AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TypeTree;
+using AssetRipper.Core.Project;
+using AssetRipper.Yaml;
 
-namespace AssemblyDumper.Passes
+namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass099_CreateEmptyMethods
 	{
@@ -11,37 +14,39 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			System.Console.WriteLine("Pass 099: Creating empty methods on generated types");
-
-			ITypeDefOrRef commonPPtrTypeRef = SharedState.Importer.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
-			ITypeDefOrRef unityObjectBaseInterfaceRef = SharedState.Importer.ImportCommonType<IUnityObjectBase>();
-			GenericInstanceTypeSignature unityObjectBasePPtrRef = commonPPtrTypeRef.MakeGenericInstanceType(unityObjectBaseInterfaceRef.ToTypeSignature());
-			ITypeDefOrRef ienumerableTypeRef = SharedState.Importer.ImportSystemType("System.Collections.Generic.IEnumerable`1");
+			TypeSignature commonPPtrTypeRef = SharedState.Instance.Importer.ImportTypeSignature(typeof(AssetRipper.Core.Classes.Misc.PPtr<>));
+			TypeSignature unityObjectBaseInterfaceRef = SharedState.Instance.Importer.ImportTypeSignature<IUnityObjectBase>();
+			GenericInstanceTypeSignature unityObjectBasePPtrRef = commonPPtrTypeRef.MakeGenericInstanceType(unityObjectBaseInterfaceRef);
+			TypeSignature ienumerableTypeRef = SharedState.Instance.Importer.ImportTypeSignature(typeof(IEnumerable<>));
 			GenericInstanceTypeSignature enumerablePPtrsRef = ienumerableTypeRef.MakeGenericInstanceType(unityObjectBasePPtrRef);
-			ITypeDefOrRef dependencyContextRef = SharedState.Importer.ImportCommonType<DependencyContext>();
+			TypeSignature dependencyContextRef = SharedState.Instance.Importer.ImportTypeSignature<DependencyContext>();
+			TypeSignature assetReaderRef = SharedState.Instance.Importer.ImportTypeSignature<AssetReader>();
+			TypeSignature assetWriterRef = SharedState.Instance.Importer.ImportTypeSignature<AssetWriter>();
+			TypeSignature exportContainerInterfaceRef = SharedState.Instance.Importer.ImportTypeSignature<IExportContainer>();
+			TypeSignature yamlNodeRef = SharedState.Instance.Importer.ImportTypeSignature<YamlNode>();
 
-			foreach (TypeDefinition type in SharedState.TypeDictionary.Values)
+			foreach (TypeDefinition type in SharedState.Instance.AllNonInterfaceTypes)
 			{
-				MethodDefinition? releaseReadDef = type.AddMethod("ReadRelease", OverrideMethodAttributes, SystemTypeGetter.Void);
-				releaseReadDef.AddParameter("reader", CommonTypeGetter.AssetReaderDefinition);
+				MethodDefinition? releaseReadDef = type.AddMethod(nameof(UnityAssetBase.ReadRelease), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
+				releaseReadDef.AddParameter(assetReaderRef, "reader");
 
-				MethodDefinition? editorReadDef = type.AddMethod("ReadEditor", OverrideMethodAttributes, SystemTypeGetter.Void);
-				editorReadDef.AddParameter("reader", CommonTypeGetter.AssetReaderDefinition);
+				MethodDefinition? editorReadDef = type.AddMethod(nameof(UnityAssetBase.ReadEditor), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
+				editorReadDef.AddParameter(assetReaderRef, "reader");
 
-				MethodDefinition? releaseWriteDef = type.AddMethod("WriteRelease", OverrideMethodAttributes, SystemTypeGetter.Void);
-				releaseWriteDef.AddParameter("writer", CommonTypeGetter.AssetWriterDefinition);
+				MethodDefinition? releaseWriteDef = type.AddMethod(nameof(UnityAssetBase.WriteRelease), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
+				releaseWriteDef.AddParameter(assetWriterRef, "writer");
 
-				MethodDefinition? editorWriteDef = type.AddMethod("WriteEditor", OverrideMethodAttributes, SystemTypeGetter.Void);
-				editorWriteDef.AddParameter("writer", CommonTypeGetter.AssetWriterDefinition);
+				MethodDefinition? editorWriteDef = type.AddMethod(nameof(UnityAssetBase.WriteEditor), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
+				editorWriteDef.AddParameter(assetWriterRef, "writer");
 
-				MethodDefinition? releaseYamlDef = type.AddMethod("ExportYAMLRelease", OverrideMethodAttributes, CommonTypeGetter.YAMLNodeDefinition);
-				releaseYamlDef.AddParameter("container", CommonTypeGetter.IExportContainerDefinition);
+				MethodDefinition? releaseYamlDef = type.AddMethod(nameof(UnityAssetBase.ExportYamlRelease), OverrideMethodAttributes, yamlNodeRef);
+				releaseYamlDef.AddParameter(exportContainerInterfaceRef, "container");
 
-				MethodDefinition? editorYamlDef = type.AddMethod("ExportYAMLEditor", OverrideMethodAttributes, CommonTypeGetter.YAMLNodeDefinition);
-				editorYamlDef.AddParameter("container", CommonTypeGetter.IExportContainerDefinition);
+				MethodDefinition? editorYamlDef = type.AddMethod(nameof(UnityAssetBase.ExportYamlEditor), OverrideMethodAttributes, yamlNodeRef);
+				editorYamlDef.AddParameter(exportContainerInterfaceRef, "container");
 
-				MethodDefinition? fetchDependenciesDef = type.AddMethod("FetchDependencies", OverrideMethodAttributes, enumerablePPtrsRef);
-				fetchDependenciesDef.AddParameter("context", dependencyContextRef);
+				MethodDefinition? fetchDependenciesDef = type.AddMethod(nameof(UnityAssetBase.FetchDependencies), OverrideMethodAttributes, enumerablePPtrsRef);
+				fetchDependenciesDef.AddParameter(dependencyContextRef, "context");
 			}
 		}
 	}

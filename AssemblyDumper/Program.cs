@@ -1,142 +1,281 @@
-﻿using AssemblyDumper.Passes;
-using CommandLine;
-using System.IO;
+﻿using AssetRipper.AssemblyDumper.Passes;
 
-namespace AssemblyDumper
+namespace AssetRipper.AssemblyDumper
 {
 	public static class Program
 	{
-		private static void Run(Options options)
-		{
-			Console.WriteLine("Making a new dll");
-#if DEBUG
-			try
-			{
-#endif
-				Pass000_Initialize.DoPass(options.JsonPath!.FullName, options.SystemRuntimeAssembly!.FullName, options.SystemCollectionsAssembly!.FullName);
-				Pass001_CreateBasicTypes.DoPass();
-				Pass002_RenameSubnodes.DoPass();
-				Pass003_ClassSpecificChanges.DoPass();
-				Pass004_ExtractDependentNodeTrees.DoPass();
-				Pass005_UnifyFieldsOfAbstractTypes.DoPass();
-				//After this point, class dictionary does not change
-
-				Pass010_AddTypeDefinitions.DoPass();
-				Pass011_ApplyInheritance.DoPass();
-				Pass015_AddFields.DoPass();
-
-				Pass016_AddConstructors.DoPass();
-				Pass017_FillConstructors.DoPass();
-
-				Pass030_AddArrayInitializationMethods.DoPass();
-
-				Pass080_PPtrConversions.DoPass();
-
-				Pass099_CreateEmptyMethods.DoPass();
-				Pass100_FillReadMethods.DoPass();
-				Pass101_FillWriteMethods.DoPass();
-				Pass102_FillYamlMethods.DoPass();
-				Pass103_FillDependencyMethods.DoPass();
-
-				Pass201_GuidImplicitConversion.DoPass();
-				Pass202_VectorImplicitConversions.DoPass();
-				Pass203_OffsetPtrImplicitConversions.DoPass();
-				Pass204_Hash128ImplicitConversion.DoPass();
-
-				Pass205_ObjectAndEditorExtension.DoPass();
-
-				Pass300_ImplementHasNameInterface.DoPass();
-				Pass301_ComponentInterface.DoPass();
-				Pass302_MonoScriptInterface.DoPass();
-				Pass303_BehaviourInterface.DoPass();
-				Pass304_GameObjectInterface.DoPass();
-				Pass305_TransformInterface.DoPass();
-				Pass306_PrefabInstanceInterface.DoPass();
-
-				Pass309_TerrainInterfaces.DoPass();
-				Pass340_BuildSettingsInterfaces.DoPass();
-				Pass341_ManagerInterfaces.DoPass();
-				Pass342_AssetBundleInterfaces.DoPass();
-				Pass343_SceneInterfaces.DoPass();
-
-				Pass360_AddMarkerInterfaces.DoPass();
-				Pass361_NativeImporterInterface.DoPass();
-				Pass362_MiscellaneousExporters.DoPass();
-				Pass363_ShaderInterfaces.DoPass();
-
-				Pass500_FixPPtrYaml.DoPass();
-				Pass501_MonoBehaviourImplementation.DoPass();
-				Pass502_FixGuidAndHashYaml.DoPass();
-				Pass503_FixUtf8String.DoPass();
-
-				Pass900_FillTypeTreeMethods.DoPass();
-				Pass940_MakeAssetFactory.DoPass();
-				Pass942_MakeImporterFactory.DoPass();
-				Pass950_UnityVersionHandler.DoPass();
-
-				Pass998_ApplyAssemblyAttributes.DoPass();
-				Pass999_SaveAssembly.DoPass(options.OutputDirectory!);
-				Console.WriteLine("Done!");
-#if DEBUG
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine(ex.ToString());
-			}
-#endif
-		}
-
-		internal class Options
-		{
-			[Value(0, Required = true, HelpText = "Information Json to parse")]
-			public FileInfo? JsonPath { get; set; }
-
-			[Option('o', "output", HelpText = "Directory to export to. Will not be cleared if already exists.")]
-			public DirectoryInfo? OutputDirectory { get; set; }
-
-			[Option("runtime", HelpText = "System.Runtime.dll from Net 6")]
-			public FileInfo? SystemRuntimeAssembly { get; set; }
-
-			[Option("collections", HelpText = "System.Collections.dll from Net 6")]
-			public FileInfo? SystemCollectionsAssembly { get; set; }
-		}
-
 		public static void Main(string[] args)
 		{
-			CommandLine.Parser.Default.ParseArguments<Options>(args)
-				.WithParsed(options =>
-				{
-					if (ValidateOptions(options))
-					{
-						Run(options);
-					}
-					else
-					{
-						Environment.ExitCode = 1;
-					}
-				});
+			//AnalyzeReferenceAssembly();
+			RunGeneration();
 		}
 
-		private static bool ValidateOptions(Options options)
+		private static void AnalyzeReferenceAssembly()
 		{
-			try
-			{
-				if (options.JsonPath == null || !options.JsonPath.Exists)
-					return false;
-				if (options.SystemRuntimeAssembly == null)
-					options.SystemRuntimeAssembly = new FileInfo(@"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\6.0.0\ref\net6.0\System.Runtime.dll");
-				if (options.SystemCollectionsAssembly == null)
-					options.SystemCollectionsAssembly = new FileInfo(@"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\6.0.0\ref\net6.0\System.Collections.dll");
-				if (options.OutputDirectory == null)
-					options.OutputDirectory = new DirectoryInfo(Environment.CurrentDirectory);
+			var types = ModuleDefinition.FromFile(@"E:\repos\AssemblyCreationTools\ReferenceLibrary\bin\Debug\net6.0\ReferenceLibrary.dll")
+				.TopLevelTypes;
+		}
 
-				return options.SystemRuntimeAssembly.Exists && options.SystemCollectionsAssembly.Exists;
-			}
-			catch (Exception ex)
+		private static void RunGeneration()
+		{
+			using (TimingCookie _ = new TimingCookie("Initialization"))
 			{
-				System.Console.WriteLine($"Failed to initialize the paths.");
-				System.Console.WriteLine(ex.ToString());
-				return false;
+				TpkProcessor.IntitializeSharedState("uncompressed.tpk");
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 002: Rename Subnodes"))
+			{
+				Pass002_RenameSubnodes.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 003: Fix TextureImporter Nodes"))
+			{
+				Pass003_FixTextureImporterNodes.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 004: Fill Name to Type Id Dictionary"))
+			{
+				Pass004_FillNameToTypeIdDictionary.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 005: Split Abstract Classes"))
+			{
+				Pass005_SplitAbstractClasses.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 007: Extract Subclasses"))
+			{
+				Pass007_ExtractSubclasses.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 008: Create Groups"))
+			{
+				Pass008_CreateGroups.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 009: Initialize Interfaces"))
+			{
+				Pass009_InitializeInterfacesAndFactories.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 011: Apply Inheritance"))
+			{
+				Pass011_ApplyInheritance.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 012: Apply Correct Type Attributes"))
+			{
+				Pass012_ApplyCorrectTypeAttributes.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 013: Unify Fields of Abstract Types"))
+			{
+				Pass013_UnifyFieldsOfAbstractTypes.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 015: Add Fields"))
+			{
+				Pass015_AddFields.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 016: Add Constructors"))
+			{
+				Pass016_AddConstructors.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 017: Fill Constructors"))
+			{
+				Pass017_FillConstructors.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 052: Interface Properties and Methods"))
+			{
+				Pass052_InterfacePropertiesAndMethods.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 053: Interface Inheritance"))
+			{
+				Pass053_InterfaceInheritance.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 055: Marker Interfaces"))
+			{
+				Pass055_AddMarkerInterfaces.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 080: PPtr Conversions"))
+			{
+				Pass080_PPtrConversions.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 099: Create Empty Methods"))
+			{
+				Pass099_CreateEmptyMethods.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 100: Filling Read Methods"))
+			{
+				Pass100_FillReadMethods.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 101: Filling Write Methods"))
+			{
+				Pass101_FillWriteMethods.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 102: Filling Yaml Methods"))
+			{
+				Pass102_FillYamlMethods.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 103: Filling Dependency Methods"))
+			{
+				Pass103_FillDependencyMethods.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 110: Class Name and ID Overrides"))
+			{
+				Pass110_ClassNameAndIdOverrides.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 201: GUID Explicit Conversion"))
+			{
+				Pass201_GuidConversionOperators.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 202: Vector Explicit Conversions"))
+			{
+				Pass202_VectorExplicitConversions.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 203: OffsetPtr Implicit Conversions"))
+			{
+				Pass203_OffsetPtrImplicitConversions.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 204: Hash128 Explicit Conversion"))
+			{
+				Pass204_Hash128ExplicitConversion.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 205: Color Explicit Conversions"))
+			{
+				Pass205_ColorExplicitConversions.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 206: BoneWeights4 Explicit Conversions"))
+			{
+				Pass206_BoneWeights4ExplicitConversions.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 300: Has Name Interface"))
+			{
+				Pass300_HasNameInterface.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 301: Has Hide Flags Interface"))
+			{
+				Pass301_HasHideFlagsInterface.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 302: Has Enabled Interface"))
+			{
+				Pass302_HasEnabledInterface.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 400: IEquatable Interface"))
+			{
+				Pass400_AddEqualityMethods.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 401: Equality Operators"))
+			{
+				Pass401_EqualityOperators.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 402: GetHashCode Methods"))
+			{
+				Pass402_GetHashCodeMethods.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 410: SetValues Methods"))
+			{
+				Pass410_SetValuesMethods.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 500: Fixing PPtr Yaml"))
+			{
+				Pass500_FixPPtrYaml.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 501: Fixing MonoBehaviour"))
+			{
+				Pass501_MonoBehaviourImplementation.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 502: Fixing Guid and Hash Yaml Export"))
+			{
+				Pass502_FixGuidAndHashYaml.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 503: Fixing Utf8String"))
+			{
+				Pass503_FixUtf8String.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 504: Fixing Shader Name"))
+			{
+				Pass504_FixShaderName.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 505: Fixing Old AudioClips"))
+			{
+				Pass505_FixOldAudioClip.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 520: Custom Field Initializers"))
+			{
+				Pass520_CustomFieldInitializers.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 555: Create Common String"))
+			{
+				Pass555_CreateCommonString.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 556: Create ClassIDType Enum"))
+			{
+				Pass556_CreateClassIDTypeEnum.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 557: Create Source Version HashSet"))
+			{
+				Pass557_CreateVersionHashSet.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 558: Create Type to ClassIDType Dictionary"))
+			{
+				Pass558_TypeCache.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 900: Fill Type Tree Methods"))
+			{
+				Pass900_FillTypeTreeMethods.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 940: Make Asset Factory"))
+			{
+				Pass940_MakeAssetFactory.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 998: Write Assembly"))
+			{
+				Pass998_SaveAssembly.DoPass();
+			}
+
+			using (TimingCookie _ = new TimingCookie("Pass 999: Generate Documentation"))
+			{
+				Pass999_Documentation.DoPass();
 			}
 		}
 	}

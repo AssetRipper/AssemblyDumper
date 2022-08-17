@@ -1,23 +1,23 @@
-﻿using AssetRipper.Core.Classes.Misc;
+﻿using AssetRipper.Core;
+using AssetRipper.Core.Classes.Misc;
 
-namespace AssemblyDumper.Passes
+namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass502_FixGuidAndHashYaml
 	{
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 502: Fix Guid and Hash Yaml Export");
-			if(SharedState.TypeDictionary.TryGetValue("GUID", out TypeDefinition? guidType))
+			foreach (TypeDefinition guidType in SharedState.Instance.SubclassGroups["GUID"].Types)
 			{
-				MethodDefinition releaseMethod = guidType.Methods.Single(m => m.Name == "ExportYAMLRelease");
-				MethodDefinition editorMethod = guidType.Methods.Single(m => m.Name == "ExportYAMLEditor");
+				MethodDefinition releaseMethod = guidType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlRelease));
+				MethodDefinition editorMethod = guidType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlEditor));
 				releaseMethod.FixGuidYaml<UnityGUID>();
 				editorMethod.FixGuidYaml<UnityGUID>();
 			}
-			if (SharedState.TypeDictionary.TryGetValue("Hash128", out TypeDefinition? hashType))
+			foreach (TypeDefinition hashType in SharedState.Instance.SubclassGroups["Hash128"].Types)
 			{
-				MethodDefinition releaseMethod = hashType.Methods.Single(m => m.Name == "ExportYAMLRelease");
-				MethodDefinition editorMethod = hashType.Methods.Single(m => m.Name == "ExportYAMLEditor");
+				MethodDefinition releaseMethod = hashType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlRelease));
+				MethodDefinition editorMethod = hashType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlEditor));
 				releaseMethod.FixHashYaml<Hash128>();
 				editorMethod.FixHashYaml<Hash128>();
 			}
@@ -26,8 +26,8 @@ namespace AssemblyDumper.Passes
 		private static void FixGuidYaml<T>(this MethodDefinition method)
 		{
 			MethodDefinition conversionMethod = method.DeclaringType!.Methods.Single(m => m.Name == "op_Implicit");
-			ITypeDefOrRef commonRef = SharedState.Importer.ImportCommonType<T>();
-			IMethodDefOrRef exportMethod = SharedState.Importer.ImportCommonMethod<T>(m => m.Name == "ExportYAML");
+			ITypeDefOrRef commonRef = SharedState.Instance.Importer.ImportType<T>();
+			IMethodDefOrRef exportMethod = SharedState.Instance.Importer.ImportMethod<T>(m => m.Name == nameof(UnityAssetBase.ExportYaml));
 			method.CilMethodBody!.InitializeLocals = true;
 			method.CilMethodBody.LocalVariables.Clear();
 			CilLocalVariable local = new CilLocalVariable(commonRef.ToTypeSignature());
@@ -46,9 +46,9 @@ namespace AssemblyDumper.Passes
 
 		private static void FixHashYaml<T>(this MethodDefinition method)
 		{
-			MethodDefinition conversionMethod = method.DeclaringType!.Methods.Single(m => m.Name == "op_Implicit");
-			ITypeDefOrRef commonRef = SharedState.Importer.ImportCommonType<T>();
-			IMethodDefOrRef exportMethod = SharedState.Importer.ImportCommonMethod<T>(m => m.Name == "ExportYAML");
+			MethodDefinition conversionMethod = method.DeclaringType!.Methods.Single(m => m.Name == "op_Explicit");
+			ITypeDefOrRef commonRef = SharedState.Instance.Importer.ImportType<T>();
+			IMethodDefOrRef exportMethod = SharedState.Instance.Importer.ImportMethod<T>(m => m.Name == nameof(UnityAssetBase.ExportYaml));
 			method.CilMethodBody!.LocalVariables.Clear();
 			CilLocalVariable local = new CilLocalVariable(commonRef.ToTypeSignature());
 			method.CilMethodBody.LocalVariables.Add(local);

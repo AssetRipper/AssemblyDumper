@@ -1,29 +1,35 @@
-﻿using AssemblyDumper.Unity;
+﻿using AssetRipper.Core.IO;
 
-namespace AssemblyDumper
+namespace AssetRipper.AssemblyDumper
 {
-	public static class GenericTypeResolver
+	internal static class GenericTypeResolver
 	{
-		public static GenericInstanceTypeSignature ResolveDictionaryType(UnityNode node)
+		public static GenericInstanceTypeSignature ResolveDictionaryType(UniversalNode node, UnityVersion version)
 		{
-			UnityNode pairNode = node.SubNodes![0] //Array
+			UniversalNode pairNode = node.SubNodes![0] //Array
 				.SubNodes![1]; //Pair
 
-			GenericInstanceTypeSignature genericKvp = ResolvePairType(pairNode);
+			GenericInstanceTypeSignature genericKvp = ResolvePairType(pairNode, version);
 			
-			return CommonTypeGetter.AssetDictionaryType!.MakeGenericInstanceType(genericKvp.TypeArguments[0], genericKvp.TypeArguments[1]);
+			return SharedState.Instance.Importer.ImportType(typeof(AssetDictionary<,>)).MakeGenericInstanceType(genericKvp.TypeArguments[0], genericKvp.TypeArguments[1]);
 		}
 
-		public static SzArrayTypeSignature ResolveVectorType(UnityNode vectorNode)
+		public static TypeSignature ResolveVectorType(UniversalNode vectorNode, UnityVersion version)
 		{
-			return ResolveArrayType(vectorNode.SubNodes![0]);
+			return ResolveArrayType(vectorNode.SubNodes![0], version);
 		}
 
-		public static SzArrayTypeSignature ResolveArrayType(UnityNode arrayNode)
+		public static TypeSignature ResolveArrayType(UniversalNode arrayNode, UnityVersion version)
 		{
-			UnityNode contentNode = arrayNode.SubNodes![1];
-			TypeSignature elementType = ResolveNode(contentNode);
-			return elementType.MakeAndImportArrayType();
+			UniversalNode contentNode = arrayNode.SubNodes![1];
+			TypeSignature elementType = ResolveNode(contentNode, version);
+			
+			if(elementType is SzArrayTypeSignature or CorLibTypeSignature)
+			{
+				return elementType.MakeSzArrayType();
+			}
+
+			return SharedState.Instance.Importer.ImportType(typeof(AssetList<>)).MakeGenericInstanceType(elementType);
 		}
 
 		public static SzArrayTypeSignature MakeAndImportArrayType(this ITypeDefOrRef type)
@@ -33,46 +39,42 @@ namespace AssemblyDumper
 
 		public static SzArrayTypeSignature MakeAndImportArrayType(this TypeSignature typeSignature)
 		{
-			return new SzArrayTypeSignature(SharedState.Importer.ImportTypeSignature(typeSignature));
+			return new SzArrayTypeSignature(SharedState.Instance.Importer.UnderlyingImporter.ImportTypeSignature(typeSignature));
 		}
 
-		public static GenericInstanceTypeSignature ResolvePairType(UnityNode pairNode)
+		public static GenericInstanceTypeSignature ResolvePairType(UniversalNode pairNode, UnityVersion version)
 		{
-			return ResolvePairType(pairNode.SubNodes![0], pairNode.SubNodes[1]);
+			return ResolvePairType(pairNode.SubNodes![0], pairNode.SubNodes[1], version);
 		}
-		public static GenericInstanceTypeSignature ResolvePairType(UnityNode first, UnityNode second)
+		public static GenericInstanceTypeSignature ResolvePairType(UniversalNode first, UniversalNode second, UnityVersion version)
 		{
-			TypeSignature firstType = ResolveNode(first);
-			TypeSignature secondType = ResolveNode(second);
+			TypeSignature firstType = ResolveNode(first, version);
+			TypeSignature secondType = ResolveNode(second, version);
+
+			if (firstType is SzArrayTypeSignature || secondType is SzArrayTypeSignature)
+			{
+				throw new Exception("Arrays not supported in pairs/dictionaries");
+			}
 
 			//Construct a KeyValuePair
-			ITypeDefOrRef kvpType = CommonTypeGetter.NullableKeyValuePair!;
+			ITypeDefOrRef kvpType = SharedState.Instance.Importer.ImportType(typeof(NullableKeyValuePair<,>));
 			GenericInstanceTypeSignature genericKvp = kvpType.MakeGenericInstanceType(firstType, secondType);
 			return genericKvp;
 		}
 
-		public static TypeSignature ResolveNode(UnityNode node)
+		public static TypeSignature ResolveNode(UniversalNode node, UnityVersion version)
 		{
 			string typeName = node.TypeName!;
-			switch (typeName)
+			return typeName switch
 			{
-				case "pair":
-					return ResolvePairType(node);
-				case "map":
-					return ResolveDictionaryType(node);
-				case "vector" or "set" or "staticvector":
-					return ResolveVectorType(node);
-				case "TypelessData":
-					return SystemTypeGetter.UInt8!.MakeSzArrayType();
-				case "Array":
-					return ResolveArrayType(node);
-				default:
-					return SystemTypeGetter.GetCppPrimitiveTypeSignature(typeName) ??
-						SharedState.Importer.ImportType(
-							SystemTypeGetter.LookupSystemType(typeName) ??
-							SharedState.TypeDictionary[typeName]
-						).ToTypeSignature();
-			}
+				"pair" => ResolvePairType(node, version),
+				"map" => ResolveDictionaryType(node, version),
+				"vector" or "set" or "staticvector" => ResolveVectorType(node, version),
+				"TypelessData" => SharedState.Instance.Importer.UInt8.MakeSzArrayType(),
+				"Array" => ResolveArrayType(node, version),
+				_ => SharedState.Instance.Importer.GetCppPrimitiveTypeSignature(typeName)
+						?? SharedState.Instance.SubclassGroups[typeName].GetTypeForVersion(version).ToTypeSignature(),
+			};
 		}
 	}
 }

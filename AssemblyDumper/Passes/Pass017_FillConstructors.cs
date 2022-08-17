@@ -1,7 +1,7 @@
-﻿using AssemblyDumper.Utils;
-using System.Diagnostics.CodeAnalysis;
+﻿using AssetRipper.AssemblyCreationTools.Methods;
+using AssetRipper.Core.Parser.Asset;
 
-namespace AssemblyDumper.Passes
+namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass017_FillConstructors
 	{
@@ -10,27 +10,26 @@ namespace AssemblyDumper.Passes
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		public static void DoPass()
 		{
-			Console.WriteLine("Pass 017: Fill Constructors");
-			emptyArray = SharedState.Importer.ImportSystemMethod<Array>(method => method.Name == "Empty");
-			foreach(TypeDefinition type in SharedState.TypeDictionary.Values)
+			emptyArray = SharedState.Instance.Importer.ImportMethod<Array>(method => method.Name == nameof(Array.Empty));
+			IMethodDefOrRef makeDummyAssetInfo = SharedState.Instance.Importer.ImportMethod<AssetInfo>(method => 
+				method.Name == nameof(AssetInfo.MakeDummyAssetInfo)
+				&& method.Parameters.Count == 1);
+			foreach ((int id, ClassGroup classGroup) in SharedState.Instance.ClassGroups)
 			{
-				type.FillDefaultConstructor();
-				type.FillLayoutInfoConstructor();
-				if(type.TryGetAssetInfoConstructor(out MethodDefinition? assetInfoConstructor))
+				foreach(TypeDefinition type in classGroup.Types)
 				{
-					type.FillAssetInfoConstructor(assetInfoConstructor);
+					MethodDefinition assetInfoConstructor = type.GetAssetInfoConstructor();
+					type.FillClassDefaultConstructor(id, assetInfoConstructor, makeDummyAssetInfo);
+					type.FillClassAssetInfoConstructor(assetInfoConstructor);
 				}
 			}
-		}
-
-		private static MethodDefinition GetDefaultConstructor(this TypeDefinition type)
-		{
-			if (type is null)
+			foreach (SubclassGroup subclassGroup in SharedState.Instance.SubclassGroups.Values)
 			{
-				throw new ArgumentNullException(nameof(type));
+				foreach (TypeDefinition type in subclassGroup.Types)
+				{
+					type.FillSubclassDefaultConstructor();
+				}
 			}
-
-			return type.Methods.Where(x => x.IsConstructor && x.Parameters.Count == 0 && !x.IsStatic).Single();
 		}
 
 		private static TypeDefinition GetResolvedBaseType(this TypeDefinition type)
@@ -41,98 +40,75 @@ namespace AssemblyDumper.Passes
 			}
 			if (type.BaseType == null)
 			{
-				throw new ArgumentException(nameof(type));
+				throw new ArgumentException(null, nameof(type));
 			}
 
 			if(type.BaseType is TypeDefinition baseTypeDefinition)
 			{
 				return baseTypeDefinition;
 			}
-			TypeDefinition? resolvedBaseType = type.BaseType.Resolve();
-			if(resolvedBaseType == null)
-			{
-				throw new Exception($"Could not resolve base type {type.BaseType} of derived type {type} from module {type.Module} in assembly {type.Module!.Assembly}");
-			}
-			return resolvedBaseType;
+			TypeDefinition? resolvedBaseType = SharedState.Instance.Importer.LookupType(type.BaseType.FullName);
+			return resolvedBaseType ?? throw new Exception($"Could not resolve base type {type.BaseType} of derived type {type} from module {type.Module} in assembly {type.Module!.Assembly}");
 		}
 
 		private static IMethodDefOrRef GetDefaultConstructor(this GenericInstanceTypeSignature type)
 		{
-			return MethodUtils.MakeConstructorOnGenericType(type, 0);
+			return MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, type, 0);
 		}
 
-		private static MethodDefinition GetLayoutInfoConstructor(this TypeDefinition type)
+		private static MethodDefinition GetAssetInfoConstructor(this TypeDefinition type)
 		{
-			return type.Methods.Where(x => x.IsConstructor && x.Parameters.Count == 1 && x.Parameters[0].ParameterType.Name == "LayoutInfo").Single();
+			return type.Methods.First(x => x.IsConstructor && x.Parameters.Count == 1 && x.Parameters[0].ParameterType.Name == nameof(AssetInfo));
 		}
 
-		private static bool TryGetAssetInfoConstructor(this TypeDefinition type, [NotNullWhen(true)] out MethodDefinition? constructor)
+		private static void FillSubclassDefaultConstructor(this TypeDefinition type)
 		{
-			constructor = type.Methods.FirstOrDefault(x => x.IsConstructor && x.Parameters.Count == 1 && x.Parameters[0].ParameterType.Name == "AssetInfo");
-			return constructor != null;
-		}
-
-		private static void FillDefaultConstructor(this TypeDefinition type)
-		{
-			MethodDefinition constructor = GetDefaultConstructor(type);
+			MethodDefinition constructor = type.GetDefaultConstructor();
 			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
 			processor.Clear();
-			IMethodDefOrRef baseConstructor = SharedState.Importer.ImportMethod(type.GetResolvedBaseType().GetDefaultConstructor());
+			IMethodDefOrRef baseConstructor = SharedState.Instance.Importer.UnderlyingImporter.ImportMethod(type.GetResolvedBaseType().GetDefaultConstructor());
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Call, baseConstructor);
-			foreach(FieldDefinition field in type.Fields)
-			{
-				if(field.IsStatic || field.Signature!.FieldType.IsValueType)
-					continue;
-				
-				if(field.Signature.FieldType is GenericInstanceTypeSignature generic)
-				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Newobj, GetDefaultConstructor(generic));
-					processor.Add(CilOpCodes.Stfld, field);
-				}
-				else if (field.Signature.FieldType is SzArrayTypeSignature array)
-				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					MethodSpecification? method = MethodUtils.MakeGenericInstanceMethod(emptyArray, array.BaseType);
-					processor.Add(CilOpCodes.Call, method);
-					processor.Add(CilOpCodes.Stfld, field);
-				}
-				else if(field.Signature.FieldType.ToTypeDefOrRef() is TypeDefinition typeDef)
-				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Newobj, GetDefaultConstructor(typeDef));
-					processor.Add(CilOpCodes.Stfld, field);
-				}
-				else if(field.Signature.FieldType.FullName == "System.String")
-				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Ldstr, "");
-					processor.Add(CilOpCodes.Stfld, field);
-				}
-				else
-				{
-					Console.WriteLine($"Warning: skipping {type.Name}.{field.Name} of type {field.Signature.FieldType.Name} while filling default constructors.");
-				}
-			}
+			processor.AddFieldAssignments(type);
 			processor.Add(CilOpCodes.Ret);
 			processor.OptimizeMacros();
 		}
 
-		private static void FillLayoutInfoConstructor(this TypeDefinition type)
+		private static void FillClassDefaultConstructor(this TypeDefinition type, int id, MethodDefinition assetInfoConstructor, IMethodDefOrRef makeDummyAssetInfo)
 		{
-			MethodDefinition constructor = GetLayoutInfoConstructor(type);
-			Parameter parameter = constructor.Parameters[0];
+			MethodDefinition constructor = type.GetDefaultConstructor();
 			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
 			processor.Clear();
-			IMethodDefOrRef baseConstructor = SharedState.Importer.ImportMethod(type.GetResolvedBaseType().GetLayoutInfoConstructor());
 			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldarg, parameter);
+			processor.Add(CilOpCodes.Ldc_I4, id);
+			processor.Add(CilOpCodes.Call, makeDummyAssetInfo);
+			processor.Add(CilOpCodes.Call, assetInfoConstructor);
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
+		}
+
+		private static void FillClassAssetInfoConstructor(this TypeDefinition type, MethodDefinition constructor)
+		{
+			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
+			processor.Clear();
+			MethodDefinition baseConstructorDefinition = type.GetResolvedBaseType().GetAssetInfoConstructor();
+			IMethodDefOrRef baseConstructor = SharedState.Instance.Importer.UnderlyingImporter.ImportMethod(baseConstructorDefinition);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldarg_1);
 			processor.Add(CilOpCodes.Call, baseConstructor);
+			processor.AddFieldAssignments(type);
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
+		}
+		
+		private static void AddFieldAssignments(this CilInstructionCollection processor, TypeDefinition type)
+		{
 			foreach (FieldDefinition field in type.Fields)
 			{
 				if (field.IsStatic || field.Signature!.FieldType.IsValueType)
+				{
 					continue;
+				}
 
 				if (field.Signature.FieldType is GenericInstanceTypeSignature generic)
 				{
@@ -143,90 +119,21 @@ namespace AssemblyDumper.Passes
 				else if (field.Signature.FieldType is SzArrayTypeSignature array)
 				{
 					processor.Add(CilOpCodes.Ldarg_0);
-					MethodSpecification? method = MethodUtils.MakeGenericInstanceMethod(emptyArray, array.BaseType);
+					MethodSpecification method = emptyArray.MakeGenericInstanceMethod(array.BaseType);
 					processor.Add(CilOpCodes.Call, method);
 					processor.Add(CilOpCodes.Stfld, field);
 				}
 				else if (field.Signature.FieldType.ToTypeDefOrRef() is TypeDefinition typeDef)
 				{
 					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Ldarg, parameter);
-					processor.Add(CilOpCodes.Newobj, GetLayoutInfoConstructor(typeDef));
-					processor.Add(CilOpCodes.Stfld, field);
-				}
-				else if (field.Signature.FieldType.FullName == "System.String")
-				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Ldstr, "");
+					processor.Add(CilOpCodes.Newobj, typeDef.GetDefaultConstructor());
 					processor.Add(CilOpCodes.Stfld, field);
 				}
 				else
 				{
-					Console.WriteLine($"Warning: skipping {type.Name}.{field.Name} of type {field.Signature.FieldType.Name} while filling layout info constructors.");
+					Console.WriteLine($"Warning: skipping {type.Name}.{field.Name} of type {field.Signature.FieldType.Name} while adding field assignments.");
 				}
 			}
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
-		}
-
-		private static void FillAssetInfoConstructor(this TypeDefinition type, MethodDefinition constructor)
-		{
-			Parameter parameter = constructor.Parameters[0];
-			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
-			processor.Clear();
-			if(!type.GetResolvedBaseType().TryGetAssetInfoConstructor(out MethodDefinition? baseConstructorDefinition))
-			{
-				throw new Exception($"Base type for {type} did not have an asset info constructor");
-			}
-			IMethodDefOrRef baseConstructor = SharedState.Importer.ImportMethod(baseConstructorDefinition);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldarg, parameter);
-			processor.Add(CilOpCodes.Call, baseConstructor);
-			foreach (FieldDefinition field in type.Fields)
-			{
-				if (field.IsStatic || field.Signature!.FieldType.IsValueType)
-					continue;
-
-				if (field.Signature.FieldType is GenericInstanceTypeSignature generic)
-				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Newobj, GetDefaultConstructor(generic));
-					processor.Add(CilOpCodes.Stfld, field);
-				}
-				else if (field.Signature.FieldType is SzArrayTypeSignature array)
-				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					MethodSpecification? method = MethodUtils.MakeGenericInstanceMethod(emptyArray, array.BaseType);
-					processor.Add(CilOpCodes.Call, method);
-					processor.Add(CilOpCodes.Stfld, field);
-				}
-				else if (field.Signature.FieldType.ToTypeDefOrRef() is TypeDefinition typeDef)
-				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					if (typeDef.TryGetAssetInfoConstructor(out MethodDefinition? fieldAssetInfoConstructor))
-					{
-						processor.Add(CilOpCodes.Ldarg, parameter);
-						processor.Add(CilOpCodes.Newobj, fieldAssetInfoConstructor);
-					}
-					else
-					{
-						processor.Add(CilOpCodes.Newobj, GetDefaultConstructor(typeDef));
-					}
-					processor.Add(CilOpCodes.Stfld, field);
-				}
-				else if (field.Signature.FieldType.FullName == "System.String")
-				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Ldstr, "");
-					processor.Add(CilOpCodes.Stfld, field);
-				}
-				else
-				{
-					Console.WriteLine($"Warning: skipping {type.Name}.{field.Name} of type {field.Signature.FieldType.Name} while filling asset info constructors.");
-				}
-			}
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
 		}
 	}
 }

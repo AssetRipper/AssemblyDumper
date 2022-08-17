@@ -1,9 +1,8 @@
-﻿using AssemblyDumper.Unity;
-using AssemblyDumper.Utils;
+﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.Core;
 using AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TypeTree;
 
-namespace AssemblyDumper.Passes
+namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass900_FillTypeTreeMethods
 	{
@@ -16,70 +15,76 @@ namespace AssemblyDumper.Passes
 		private static IMethodDefOrRef typeTreeNodeListConstructor;
 		private static IMethodDefOrRef listAddMethod;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-		private static bool generateEmptyMethods = false;
+		private static bool generateEmptyMethods = true;
 
 		public static void DoPass()
 		{
-			System.Console.WriteLine("Pass 900: Fill Type Tree Methods");
+			typeTreeNode = SharedState.Instance.Importer.ImportType<TypeTreeNode>();
+			typeTreeNodeConstructor = SharedState.Instance.Importer.ImportConstructor<TypeTreeNode>(8);
+			typeTreeNodeList = SharedState.Instance.Importer.ImportType(typeof(List<>)).MakeGenericInstanceType(typeTreeNode.ToTypeSignature());
+			typeTreeNodeListConstructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, typeTreeNodeList, 0);
+			listAddMethod = MethodUtils.MakeMethodOnGenericType(
+				SharedState.Instance.Importer, 
+				typeTreeNodeList, 
+				SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == "Add"));
 
-			typeTreeNode = SharedState.Importer.ImportCommonType<TypeTreeNode>();
-			typeTreeNodeConstructor = SharedState.Importer.ImportCommonConstructor<TypeTreeNode>(8);
-			typeTreeNodeList = SystemTypeGetter.List.MakeGenericInstanceType(typeTreeNode.ToTypeSignature());
-			typeTreeNodeListConstructor = MethodUtils.MakeConstructorOnGenericType(typeTreeNodeList, 0);
-			listAddMethod = MethodUtils.MakeMethodOnGenericType(typeTreeNodeList, typeTreeNodeList.Resolve()!.Methods.First(m => m.Name == "Add"));
-
-			foreach ((string name, UnityClass klass) in SharedState.ClassDictionary)
+			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
-				if (!SharedState.TypeDictionary.ContainsKey(name))
-					//Skip primitive types
+				if (group.ID == 129) //PlayerSettings
+				{
 					continue;
-
-				TypeDefinition type = SharedState.TypeDictionary[name];
-
-				MethodDefinition editorModeMethod = type.AddMethod(nameof(UnityAssetBase.MakeEditorTypeTreeNodes), OverrideMethodAttributes, typeTreeNodeList);
-				editorModeMethod.AddParameter("depth", SystemTypeGetter.Int32);
-				editorModeMethod.AddParameter("startingIndex", SystemTypeGetter.Int32);
-
-				MethodDefinition releaseModeMethod = type.AddMethod(nameof(UnityAssetBase.MakeReleaseTypeTreeNodes), OverrideMethodAttributes, typeTreeNodeList);
-				releaseModeMethod.AddParameter("depth", SystemTypeGetter.Int32);
-				releaseModeMethod.AddParameter("startingIndex", SystemTypeGetter.Int32);
-
-				CilMethodBody editorModeBody = editorModeMethod.CilMethodBody!;
-				CilMethodBody releaseModeBody = releaseModeMethod.CilMethodBody!;
-
-				CilInstructionCollection editorModeProcessor = editorModeBody.Instructions;
-				CilInstructionCollection releaseModeProcessor = releaseModeBody.Instructions;
-				
-				//Console.WriteLine($"Generating the editor read method for {name}");
-				if (klass.EditorRootNode == null || generateEmptyMethods)
-				{
-					editorModeProcessor.AddNotSupportedException();
-				}
-				else
-				{
-					editorModeProcessor.AddTypeTreeCreation(klass.EditorRootNode);
 				}
 
-				//Console.WriteLine($"Generating the release read method for {name}");
-				if (klass.ReleaseRootNode == null || generateEmptyMethods)
+				foreach (GeneratedClassInstance instance in group.Instances)
 				{
-					releaseModeProcessor.AddNotSupportedException();
-				}
-				else
-				{
-					releaseModeProcessor.AddTypeTreeCreation(klass.ReleaseRootNode);
-				}
+					TypeDefinition type = instance.Type;
+					UniversalClass klass = instance.Class;
 
-				editorModeProcessor.OptimizeMacros();
-				releaseModeProcessor.OptimizeMacros();
+					MethodDefinition editorModeMethod = type.AddMethod(nameof(UnityAssetBase.MakeEditorTypeTreeNodes), OverrideMethodAttributes, typeTreeNodeList);
+					editorModeMethod.AddParameter(SharedState.Instance.Importer.Int32, "depth");
+					editorModeMethod.AddParameter(SharedState.Instance.Importer.Int32, "startingIndex");
+
+					MethodDefinition releaseModeMethod = type.AddMethod(nameof(UnityAssetBase.MakeReleaseTypeTreeNodes), OverrideMethodAttributes, typeTreeNodeList);
+					releaseModeMethod.AddParameter(SharedState.Instance.Importer.Int32, "depth");
+					releaseModeMethod.AddParameter(SharedState.Instance.Importer.Int32, "startingIndex");
+
+					CilMethodBody editorModeBody = editorModeMethod.CilMethodBody!;
+					CilMethodBody releaseModeBody = releaseModeMethod.CilMethodBody!;
+
+					CilInstructionCollection editorModeProcessor = editorModeBody.Instructions;
+					CilInstructionCollection releaseModeProcessor = releaseModeBody.Instructions;
+
+					//Console.WriteLine($"Generating the editor read method for {name}");
+					if (klass.EditorRootNode == null || generateEmptyMethods)
+					{
+						editorModeProcessor.AddNotSupportedException();
+					}
+					else
+					{
+						editorModeProcessor.AddTypeTreeCreation(klass.EditorRootNode);
+					}
+
+					//Console.WriteLine($"Generating the release read method for {name}");
+					if (klass.ReleaseRootNode == null || generateEmptyMethods)
+					{
+						releaseModeProcessor.AddNotSupportedException();
+					}
+					else
+					{
+						releaseModeProcessor.AddTypeTreeCreation(klass.ReleaseRootNode);
+					}
+
+					editorModeProcessor.OptimizeMacros();
+					releaseModeProcessor.OptimizeMacros();
+				}
 			}
 		}
 
-		private static void AddTypeTreeCreation(this CilInstructionCollection processor, UnityNode rootNode)
+		private static void AddTypeTreeCreation(this CilInstructionCollection processor, UniversalNode rootNode)
 		{
 			processor.Add(CilOpCodes.Newobj, typeTreeNodeListConstructor);
 
-			processor.AddTreeNodesRecursively(rootNode, 0);
+			processor.AddTreeNodesRecursively(rootNode, 0, 0);
 
 			processor.Add(CilOpCodes.Ret);
 		}
@@ -92,18 +97,18 @@ namespace AssemblyDumper.Passes
 		/// <param name="node">The Unity node being emitted as a type tree node</param>
 		/// <param name="currentIndex">The index of the emitted tree node relative to the root node</param>
 		/// <returns>The relative index of the next tree node to be emitted</returns>
-		private static int AddTreeNodesRecursively(this CilInstructionCollection processor, UnityNode node, int currentIndex)
+		private static int AddTreeNodesRecursively(this CilInstructionCollection processor, UniversalNode node, int currentIndex, int currentLevel)
 		{
-			processor.AddSingleTreeNode(node, currentIndex);
+			processor.AddSingleTreeNode(node, currentIndex, currentLevel);
 			currentIndex++;
-			foreach (UnityNode? subNode in node.SubNodes)
+			foreach (UniversalNode subNode in node.SubNodes)
 			{
-				currentIndex = processor.AddTreeNodesRecursively(subNode, currentIndex);
+				currentIndex = processor.AddTreeNodesRecursively(subNode, currentIndex, currentLevel + 1);
 			}
 			return currentIndex;
 		}
 
-		private static void AddSingleTreeNode(this CilInstructionCollection processor, UnityNode node, int currentIndex)
+		private static void AddSingleTreeNode(this CilInstructionCollection processor, UniversalNode node, int currentIndex, int currentLevel)
 		{
 			//For the add method at the end
 			processor.Add(CilOpCodes.Dup);
@@ -113,10 +118,10 @@ namespace AssemblyDumper.Passes
 
 			//Level
 			processor.Add(CilOpCodes.Ldarg_1);//depth
-			processor.Add(CilOpCodes.Ldc_I4, (int)node.Level);//Because of recalculation in Pass 4, the root node is always zero
+			processor.Add(CilOpCodes.Ldc_I4, currentLevel);//Root node is level zero
 			processor.Add(CilOpCodes.Add);
 
-			processor.Add(CilOpCodes.Ldc_I4, node.ByteSize);
+			processor.Add(CilOpCodes.Ldc_I4, -1);//Byte size not included
 
 			//Index
 			processor.Add(CilOpCodes.Ldarg_2);//starting index
@@ -124,7 +129,7 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Add);
 
 			processor.Add(CilOpCodes.Ldc_I4, node.Version);
-			processor.Add(CilOpCodes.Ldc_I4, (int)node.TypeFlags);
+			processor.Add(CilOpCodes.Ldc_I4, 0);//Type flags not included
 			processor.Add(CilOpCodes.Ldc_I4, unchecked((int)node.MetaFlag));
 			processor.Add(CilOpCodes.Newobj, typeTreeNodeConstructor);
 

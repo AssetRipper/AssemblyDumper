@@ -1,8 +1,11 @@
-﻿using AssemblyDumper.Utils;
-using AssetRipper.Core.Interfaces;
+﻿using AssetRipper.Core.Interfaces;
 using AssetRipper.Core.Classes.Misc;
+using AssetRipper.AssemblyCreationTools.Fields;
+using AssetRipper.AssemblyCreationTools.Methods;
+using AssetRipper.AssemblyCreationTools.Types;
+using System.Xml.Linq;
 
-namespace AssemblyDumper.Passes
+namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass080_PPtrConversions
 	{
@@ -20,90 +23,69 @@ namespace AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			System.Console.WriteLine("Pass 080: PPtr Interface and Conversions");
+			commonPPtrType = SharedState.Instance.Importer.ImportType(typeof(PPtr<>));
 
-			commonPPtrType = SharedState.Importer.ImportCommonType("AssetRipper.Core.Classes.Misc.PPtr`1");
-
-			foreach (string name in SharedState.ClassDictionary.Keys)
+			foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
 			{
-				if (name.StartsWith("PPtr_"))
-				{
-					TypeDefinition pptrType = SharedState.TypeDictionary[name];
-
-					pptrType.ImplementPPtrInterface();
-
-					string parameterTypeName = name.Substring(5, name.LastIndexOf('_') - 5);
-					TypeDefinition parameterType = SharedState.TypeDictionary[parameterTypeName];
-					GenericInstanceTypeSignature implicitConversionResultType = commonPPtrType.MakeGenericInstanceType(parameterType.ToTypeSignature());
-
-					pptrType.AddImplicitConversion(implicitConversionResultType);
-					pptrType.AddExplicitConversion<IUnityObjectBase>();
-					if (name == "PPtr_GameObject_")
+				if (group.Name.StartsWith("PPtr_"))
+{
+					TypeDefinition parameterType = GetParameterTypeDefinition(group.Name);
+					var pptrInterface = SharedState.Instance.Importer.ImportType(typeof(IPPtr<>)).MakeGenericInstanceType(parameterType.ToTypeSignature());
+					group.Interface.AddInterfaceImplementation(pptrInterface.ToTypeDefOrRef());
+					foreach (GeneratedClassInstance instance in group.Instances)
 					{
-						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.GameObject.IGameObject>();
-					}
-					else if (name == "PPtr_Component_")
-					{
-						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.IComponent>();
-					}
-					else if (name == "PPtr_MonoScript_")
-					{
-						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.IMonoScript>();
-					}
-					else if (name == "PPtr_Transform_")
-					{
-						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.ITransform>();
-					}
-					else if (name == "PPtr_Renderer_")
-					{
-						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.Renderer.IRenderer>();
-					}
-					else if (name == "PPtr_OcclusionPortal_")
-					{
-						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.IOcclusionPortal>();
-					}
-					else if (name == "PPtr_OcclusionCullingData_")
-					{
-						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.OcclusionCullingData.IOcclusionCullingData>();
-					}
-					else if (name == "PPtr_PrefabInstance_")
-					{
-						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.PrefabInstance.IPrefabInstance>();
-					}
-					else if (name == "PPtr_DataTemplate_")
-					{
-						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.PrefabInstance.IPrefabInstance>();
-					}
-					else if (name == "PPtr_Prefab_")// && !SharedState.TypeDictionary.ContainsKey("PPtr_PrefabInstance_"))
-					{
-						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.PrefabInstance.IPrefabInstance>();
-					}
-					else if (name == "PPtr_TerrainData_")
-					{
-						pptrType.AddExplicitConversion<AssetRipper.Core.Classes.TerrainData.ITerrainData>();
+						DoPassOnTypeDefinition(instance.Type, parameterType);
 					}
 				}
 			}
 		}
 
+		private static void DoPassOnTypeDefinition(TypeDefinition pptrType, TypeDefinition parameterType)
+		{
+			pptrType.ImplementPPtrInterface();
+
+			GenericInstanceTypeSignature implicitConversionResultType = commonPPtrType.MakeGenericInstanceType(parameterType.ToTypeSignature());
+
+			pptrType.AddImplicitConversion(implicitConversionResultType);
+			pptrType.AddExplicitConversion<IUnityObjectBase>();
+		}
+
+		public static TypeDefinition GetParameterTypeDefinition(string name)
+		{
+			string parameterTypeName = name.Substring(5, name.LastIndexOf('_') - 5);
+			return SharedState.Instance.NameToTypeID.TryGetValue(parameterTypeName, out HashSet<int>? idList) && idList.Count == 1
+				? SharedState.Instance.ClassGroups[idList.First()].GetSingularTypeOrInterface()
+				: SharedState.Instance.MarkerInterfaces[parameterTypeName];
+		}
+
 		private static void ImplementPPtrInterface(this TypeDefinition pptrType)
 		{
-			pptrType.Interfaces.Add(new InterfaceImplementation(SharedState.Importer.ImportCommonType<IPPtr>()));
-			pptrType.ImplementFullProperty(nameof(IPPtr.FileIndex), InterfacePropertyImplementationAttributes, SystemTypeGetter.Int32, pptrType.GetFieldByName("m_FileID"));
+			pptrType.ImplementFullProperty(nameof(IPPtr.FileIndex), InterfacePropertyImplementationAttributes, SharedState.Instance.Importer.Int32, pptrType.GetFieldByName("m_FileID"));
+			
 			FieldDefinition pathidField = pptrType.GetFieldByName("m_PathID");
-			PropertyDefinition property = pptrType.AddFullProperty(nameof(IPPtr.PathID), InterfacePropertyImplementationAttributes, SystemTypeGetter.Int64);
+			PropertyDefinition property = pptrType.AddFullProperty(nameof(IPPtr.PathIndex), InterfacePropertyImplementationAttributes, SharedState.Instance.Importer.Int64);
 			CilInstructionCollection getProcessor = property.GetMethod!.CilMethodBody!.Instructions;
 			getProcessor.Add(CilOpCodes.Ldarg_0);
 			getProcessor.Add(CilOpCodes.Ldfld, pathidField);
+			if (pathidField.IsInt32Type())
+			{
+				getProcessor.Add(CilOpCodes.Conv_I8);
+			}
+
 			getProcessor.Add(CilOpCodes.Ret);
 			CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
-			if(pathidField.Signature!.FieldType.Name == "Int32")
+			if(pathidField.IsInt32Type())
+			{
 				setProcessor.Add(CilOpCodes.Conv_Ovf_I4);
+			}
+
 			setProcessor.Add(CilOpCodes.Stfld, pathidField);
 			setProcessor.Add(CilOpCodes.Ret);
 		}
+
+		private static bool IsInt32Type(this FieldDefinition field) => field.Signature!.FieldType.Name == "Int32";
 
 		private static MethodDefinition AddImplicitConversion(this TypeDefinition pptrType, GenericInstanceTypeSignature resultTypeSignature)
 		{
@@ -117,21 +99,21 @@ namespace AssemblyDumper.Passes
 
 		private static MethodDefinition AddExplicitConversion<T>(this TypeDefinition pptrType)
 		{
-			ITypeDefOrRef importedInterface = SharedState.Importer.ImportCommonType<T>();
+			ITypeDefOrRef importedInterface = SharedState.Instance.Importer.ImportType<T>();
 			GenericInstanceTypeSignature resultPPtrSignature = commonPPtrType.MakeGenericInstanceType(importedInterface.ToTypeSignature());
 			return pptrType.AddExplicitConversion(resultPPtrSignature);
 		}
 
 		private static MethodDefinition AddConversion(this TypeDefinition pptrType, GenericInstanceTypeSignature resultTypeSignature, bool isExplicit)
 		{
-			IMethodDefOrRef constructor = MethodUtils.MakeConstructorOnGenericType(resultTypeSignature, 2);
+			IMethodDefOrRef constructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, resultTypeSignature, 2);
 
 			FieldDefinition fileID = pptrType.Fields.Single(field => field.Name == "m_FileID");
 			FieldDefinition pathID = pptrType.Fields.Single(f => f.Name == "m_PathID");
 
 			string methodName = isExplicit ? "op_Explicit" : "op_Implicit";
 			MethodDefinition method = pptrType.AddMethod(methodName, ConversionAttributes, resultTypeSignature);
-			method.AddParameter("value", pptrType);
+			method.AddParameter(pptrType.ToTypeSignature(), "value");
 
 			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
 
@@ -139,6 +121,11 @@ namespace AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldfld, fileID);
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldfld, pathID);
+			if (pathID.IsInt32Type())
+			{
+				processor.Add(CilOpCodes.Conv_I8);
+			}
+
 			processor.Add(CilOpCodes.Newobj, constructor);
 			processor.Add(CilOpCodes.Ret);
 
