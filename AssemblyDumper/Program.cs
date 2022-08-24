@@ -4,276 +4,218 @@ namespace AssetRipper.AssemblyDumper
 {
 	public static class Program
 	{
-		public static void Main(string[] args)
+		public static void Main()
 		{
-			//AnalyzeReferenceAssembly();
 			RunGeneration();
-		}
-
-		private static void AnalyzeReferenceAssembly()
-		{
-			var types = ModuleDefinition.FromFile(@"E:\repos\AssemblyCreationTools\ReferenceLibrary\bin\Debug\net6.0\ReferenceLibrary.dll")
-				.TopLevelTypes;
 		}
 
 		private static void RunGeneration()
 		{
-			using (TimingCookie _ = new TimingCookie("Initialization"))
+			using (new TimingCookie("Initialization"))
 			{
 				TpkProcessor.IntitializeSharedState("uncompressed.tpk");
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 002: Rename Subnodes"))
+			using (new TimingCookie("Pass 002: Rename Subnodes"))
 			{
 				Pass002_RenameSubnodes.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 003: Fix TextureImporter Nodes"))
+			using (new TimingCookie("Pass 003: Fix TextureImporter Nodes"))
 			{
 				Pass003_FixTextureImporterNodes.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 004: Fill Name to Type Id Dictionary"))
+			using (new TimingCookie("Pass 004: Fill Name to Type Id Dictionary"))
 			{
 				Pass004_FillNameToTypeIdDictionary.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 005: Split Abstract Classes"))
+			using (new TimingCookie("Pass 005: Split Abstract Classes"))
 			{
 				Pass005_SplitAbstractClasses.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 007: Extract Subclasses"))
+			using (new TimingCookie("Pass 007: Extract Subclasses"))
 			{
 				Pass007_ExtractSubclasses.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 008: Create Groups"))
+			using (new TimingCookie("Pass 008: Create Groups"))
 			{
 				Pass008_CreateGroups.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 009: Initialize Interfaces"))
+			using (new TimingCookie("Pass 009: Initialize Interfaces"))
 			{
 				Pass009_InitializeInterfacesAndFactories.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 011: Apply Inheritance"))
+			using (new TimingCookie("Pass 011: Apply Inheritance"))
 			{
 				Pass011_ApplyInheritance.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 012: Apply Correct Type Attributes"))
+			using (new TimingCookie("Pass 012: Apply Correct Type Attributes"))
 			{
 				Pass012_ApplyCorrectTypeAttributes.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 013: Unify Fields of Abstract Types"))
+			using (new TimingCookie("Pass 013: Unify Fields of Abstract Types"))
 			{
 				Pass013_UnifyFieldsOfAbstractTypes.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 015: Add Fields"))
+			using (new TimingCookie("Pass 015: Add Fields"))
 			{
 				Pass015_AddFields.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 016: Add Constructors"))
+			using (new TimingCookie("Pass 016: Add Constructors"))
 			{
 				Pass016_AddConstructors.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 017: Fill Constructors"))
+			using (new TimingCookie("Pass 017: Fill Constructors"))
 			{
 				Pass017_FillConstructors.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 052: Interface Properties and Methods"))
+			using (new TimingCookie("Pass 052: Interface Properties and Methods"))
 			{
 				Pass052_InterfacePropertiesAndMethods.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 053: Interface Inheritance"))
+			using (new TimingCookie("Pass 053: Interface Inheritance"))
 			{
 				Pass053_InterfaceInheritance.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 055: Marker Interfaces"))
+			using (new TimingCookie("Pass 055: Marker Interfaces"))
 			{
 				Pass055_AddMarkerInterfaces.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 080: PPtr Conversions"))
+			using (new TimingCookie("Pass 080: PPtr Conversions"))
 			{
 				Pass080_PPtrConversions.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 099: Create Empty Methods"))
+			using (new TimingCookie("Pass 099: Create Empty Methods"))
 			{
 				Pass099_CreateEmptyMethods.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 100: Filling Read Methods"))
+			using (new TimingCookie("Pass 100: Filling Read Methods"))
 			{
 				Pass100_FillReadMethods.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 101: Filling Write Methods"))
+			using (new TimingCookie("Pass 101: Filling Write Methods"))
 			{
 				Pass101_FillWriteMethods.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 102: Filling Yaml Methods"))
+			using (new TimingCookie("Pass 102: Filling Yaml Methods"))
 			{
 				Pass102_FillYamlMethods.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 103: Filling Dependency Methods"))
+			using (new TimingCookie("Pass 103: Filling Dependency Methods"))
 			{
 				Pass103_FillDependencyMethods.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 110: Class Name and ID Overrides"))
+			using (new TimingCookie("Pass 110: Class Name and ID Overrides"))
 			{
 				Pass110_ClassNameAndIdOverrides.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 201: GUID Explicit Conversion"))
+			using (new TimingCookie("Pass 201: GUID Explicit Conversion"))
 			{
 				Pass201_GuidConversionOperators.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 202: Vector Explicit Conversions"))
+			using (new TimingCookie("Pass 202: Vector Explicit Conversions"))
 			{
 				Pass202_VectorExplicitConversions.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 203: OffsetPtr Implicit Conversions"))
+			using (new TimingCookie("Pass 203: OffsetPtr Implicit Conversions"))
 			{
 				Pass203_OffsetPtrImplicitConversions.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 204: Hash128 Explicit Conversion"))
+			using (new TimingCookie("Pass 204: Hash128 Explicit Conversion"))
 			{
 				Pass204_Hash128ExplicitConversion.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 205: Color Explicit Conversions"))
+			using (new TimingCookie("Pass 205: Color Explicit Conversions"))
 			{
 				Pass205_ColorExplicitConversions.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 206: BoneWeights4 Explicit Conversions"))
+			using (new TimingCookie("Pass 206: BoneWeights4 Explicit Conversions"))
 			{
 				Pass206_BoneWeights4ExplicitConversions.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 300: Has Name Interface"))
+			using (new TimingCookie("Pass 300: Has Name Interface"))
 			{
 				Pass300_HasNameInterface.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 301: Has Hide Flags Interface"))
+			using (new TimingCookie("Pass 301: Has Hide Flags Interface"))
 			{
 				Pass301_HasHideFlagsInterface.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 302: Has Enabled Interface"))
+			using (new TimingCookie("Pass 302: Has Enabled Interface"))
 			{
 				Pass302_HasEnabledInterface.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 400: IEquatable Interface"))
+			using (new TimingCookie("Pass 400: IEquatable Interface"))
 			{
 				Pass400_AddEqualityMethods.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 401: Equality Operators"))
+			using (new TimingCookie("Pass 401: Equality Operators"))
 			{
 				Pass401_EqualityOperators.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 402: GetHashCode Methods"))
+			using (new TimingCookie("Pass 402: GetHashCode Methods"))
 			{
 				Pass402_GetHashCodeMethods.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 410: SetValues Methods"))
+			using (new TimingCookie("Pass 410: SetValues Methods"))
 			{
 				Pass410_SetValuesMethods.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 500: Fixing PPtr Yaml"))
+			using (new TimingCookie("Pass 500: Fixing PPtr Yaml"))
 			{
 				Pass500_FixPPtrYaml.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 501: Fixing MonoBehaviour"))
+			using (new TimingCookie("Pass 501: Fixing MonoBehaviour"))
 			{
 				Pass501_MonoBehaviourImplementation.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 502: Fixing Guid and Hash Yaml Export"))
+			using (new TimingCookie("Pass 502: Fixing Guid and Hash Yaml Export"))
 			{
 				Pass502_FixGuidAndHashYaml.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 503: Fixing Utf8String"))
+			using (new TimingCookie("Pass 503: Fixing Utf8String"))
 			{
 				Pass503_FixUtf8String.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 504: Fixing Shader Name"))
+			using (new TimingCookie("Pass 504: Fixing Shader Name"))
 			{
 				Pass504_FixShaderName.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 505: Fixing Old AudioClips"))
+			using (new TimingCookie("Pass 505: Fixing Old AudioClips"))
 			{
 				Pass505_FixOldAudioClip.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 520: Custom Field Initializers"))
+			using (new TimingCookie("Pass 520: Custom Field Initializers"))
 			{
 				Pass520_CustomFieldInitializers.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 555: Create Common String"))
+			using (new TimingCookie("Pass 555: Create Common String"))
 			{
 				Pass555_CreateCommonString.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 556: Create ClassIDType Enum"))
+			using (new TimingCookie("Pass 556: Create ClassIDType Enum"))
 			{
 				Pass556_CreateClassIDTypeEnum.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 557: Create Source Version HashSet"))
+			using (new TimingCookie("Pass 557: Create Source Version HashSet"))
 			{
 				Pass557_CreateVersionHashSet.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 558: Create Type to ClassIDType Dictionary"))
+			using (new TimingCookie("Pass 558: Create Type to ClassIDType Dictionary"))
 			{
 				Pass558_TypeCache.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 900: Fill Type Tree Methods"))
+			using (new TimingCookie("Pass 900: Fill Type Tree Methods"))
 			{
 				Pass900_FillTypeTreeMethods.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 940: Make Asset Factory"))
+			using (new TimingCookie("Pass 940: Make Asset Factory"))
 			{
 				Pass940_MakeAssetFactory.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 998: Write Assembly"))
+			using (new TimingCookie("Pass 998: Write Assembly"))
 			{
 				Pass998_SaveAssembly.DoPass();
 			}
-
-			using (TimingCookie _ = new TimingCookie("Pass 999: Generate Documentation"))
+			using (new TimingCookie("Pass 999: Generate Documentation"))
 			{
 				Pass999_Documentation.DoPass();
 			}
