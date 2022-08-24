@@ -3,11 +3,10 @@ using AssetRipper.Core.Classes.Misc;
 using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
-using System.Xml.Linq;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
-	public static class Pass080_PPtrConversions
+	internal static class Pass080_PPtrConversions
 	{
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static ITypeDefOrRef commonPPtrType;
@@ -28,16 +27,29 @@ namespace AssetRipper.AssemblyDumper.Passes
 			foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
 			{
 				if (group.Name.StartsWith("PPtr_"))
-{
-					TypeDefinition parameterType = GetParameterTypeDefinition(group.Name);
-					var pptrInterface = SharedState.Instance.Importer.ImportType(typeof(IPPtr<>)).MakeGenericInstanceType(parameterType.ToTypeSignature());
-					group.Interface.AddInterfaceImplementation(pptrInterface.ToTypeDefOrRef());
+				{
+					ITypeDefOrRef pptrTypeImported = SharedState.Instance.Importer.ImportType(typeof(IPPtr<>));
+
+					bool usingMarkerInterface = !GetInterfaceParameterTypeDefinition(group, out TypeDefinition parameterType);
+					group.Interface.AddPPtrInterfaceImplementation(parameterType, pptrTypeImported);
+
 					foreach (GeneratedClassInstance instance in group.Instances)
 					{
 						DoPassOnTypeDefinition(instance.Type, parameterType);
+						if (usingMarkerInterface)
+						{
+							TypeDefinition instanceParameterType = GetInstanceParameterTypeDefinition(instance);
+							instance.Type.AddPPtrInterfaceImplementation(instanceParameterType, pptrTypeImported);
+						}
 					}
 				}
 			}
+		}
+
+		private static void AddPPtrInterfaceImplementation(this TypeDefinition type, TypeDefinition parameterType, ITypeDefOrRef pptrTypeImported)
+		{
+			GenericInstanceTypeSignature pptrInterface = pptrTypeImported.MakeGenericInstanceType(parameterType.ToTypeSignature());
+			type.AddInterfaceImplementation(pptrInterface.ToTypeDefOrRef());
 		}
 
 		private static void DoPassOnTypeDefinition(TypeDefinition pptrType, TypeDefinition parameterType)
@@ -48,14 +60,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			pptrType.AddImplicitConversion(implicitConversionResultType);
 			pptrType.AddExplicitConversion<IUnityObjectBase>();
-		}
-
-		public static TypeDefinition GetParameterTypeDefinition(string name)
-		{
-			string parameterTypeName = name.Substring(5, name.LastIndexOf('_') - 5);
-			return SharedState.Instance.NameToTypeID.TryGetValue(parameterTypeName, out HashSet<int>? idList) && idList.Count == 1
-				? SharedState.Instance.ClassGroups[idList.First()].GetSingularTypeOrInterface()
-				: SharedState.Instance.MarkerInterfaces[parameterTypeName];
 		}
 
 		private static void ImplementPPtrInterface(this TypeDefinition pptrType)
@@ -130,6 +134,57 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ret);
 
 			return method;
+		}
+
+		internal static bool GetInterfaceParameterTypeDefinition(SubclassGroup pptrGroup, out TypeDefinition type)
+		{
+			string parameterTypeName = pptrGroup.Name.Substring(5, pptrGroup.Name.LastIndexOf('_') - 5);
+			if (SharedState.Instance.NameToTypeID.TryGetValue(parameterTypeName, out HashSet<int>? idList) && idList.Count == 1)
+			{
+				type = SharedState.Instance.ClassGroups[idList.First()].GetSingularTypeOrInterface();
+				return true;
+			}
+			else
+			{
+				type = SharedState.Instance.MarkerInterfaces[parameterTypeName];
+				return false;
+			}
+		}
+
+		internal static TypeDefinition GetInstanceParameterTypeDefinition(GeneratedClassInstance pptrInstance)
+		{
+			string parameterTypeName = pptrInstance.Name.Substring(5, pptrInstance.Name.LastIndexOf('_') - 5);
+			if (SharedState.Instance.NameToTypeID.TryGetValue(parameterTypeName, out HashSet<int>? list))
+			{
+				GeneratedClassInstance? result = null;
+
+				foreach (int id in list)
+				{
+					ClassGroup group = SharedState.Instance.ClassGroups[id];
+					foreach (GeneratedClassInstance instance in group.Instances)
+					{
+						if (instance.VersionRange.Contains(pptrInstance.VersionRange.Start) && parameterTypeName == instance.Name)
+						{
+							if (result is null)
+							{
+								result = instance;
+							}
+							else
+							{
+								return SharedState.Instance.MarkerInterfaces[parameterTypeName];
+							}
+						}
+					}
+				}
+
+				return result is null 
+					? throw new Exception($"Could not find type {parameterTypeName} on version {pptrInstance.VersionRange.Start}") 
+					: result.Type;
+			}
+			else
+			{
+				throw new Exception($"Could not find {parameterTypeName} in the name dictionary");
+			}
 		}
 	}
 }

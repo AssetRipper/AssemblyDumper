@@ -14,7 +14,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					foreach (GeneratedClassInstance instance in group.Instances)
 					{
-						TypeDefinition parameterType = Pass080_PPtrConversions.GetParameterTypeDefinition(group.Name);
+						TypeDefinition parameterType = Pass080_PPtrConversions.GetInstanceParameterTypeDefinition(instance);
 						FixYaml(instance.Type, parameterType);
 					}
 				}
