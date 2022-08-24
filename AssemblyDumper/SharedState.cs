@@ -26,8 +26,8 @@ namespace AssetRipper.AssemblyDumper
 		public UnityVersion MaxVersion { get; }
 		public UnityVersion[] SourceVersions { get; }
 		public UniversalCommonString CommonString { get; }
-		public Dictionary<int, VersionedList<UniversalClass?>> ClassInformation { get; }
-		public Dictionary<string, VersionedList<UniversalClass?>> SubclassInformation { get; }
+		public Dictionary<int, VersionedList<UniversalClass>> ClassInformation { get; }
+		public Dictionary<string, VersionedList<UniversalClass>> SubclassInformation { get; }
 		public Dictionary<int, ClassGroup> ClassGroups { get; } = new();
 		public Dictionary<string, SubclassGroup> SubclassGroups { get; } = new();
 		public Dictionary<TypeDefinition, ClassGroupBase> TypesToGroups { get; } = new();
@@ -45,7 +45,7 @@ namespace AssetRipper.AssemblyDumper
 
 		private SharedState(
 			UnityVersion[] sourceVersions,
-			Dictionary<int, VersionedList<UniversalClass?>> classes,
+			Dictionary<int, VersionedList<UniversalClass>> classes,
 			UniversalCommonString commonString) 
 			: base(AssemblyName, new Version(0,0,0,0), KnownCorLibs.SystemRuntime_v6_0_0_0)
 		{
@@ -73,7 +73,7 @@ namespace AssetRipper.AssemblyDumper
 
 		public static void Initialize(
 			UnityVersion[] sourceVersions,
-			Dictionary<int, VersionedList<UniversalClass?>> classes,
+			Dictionary<int, VersionedList<UniversalClass>> classes,
 			UniversalCommonString commonString)
 		{
 			_instance = new SharedState(sourceVersions, classes, commonString);

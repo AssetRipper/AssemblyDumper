@@ -6,7 +6,7 @@
 		{
 			Dictionary<string, HashSet<int>> dictionary = SharedState.Instance.NameToTypeID;
 
-			foreach ((int id, VersionedList<UniversalClass?> list) in SharedState.Instance.ClassInformation)
+			foreach ((int id, VersionedList<UniversalClass> list) in SharedState.Instance.ClassInformation)
 			{
 				foreach (UniversalClass? universalClass in list.Values)
 				{

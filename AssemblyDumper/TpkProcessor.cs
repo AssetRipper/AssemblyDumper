@@ -9,7 +9,7 @@ namespace AssetRipper.AssemblyDumper
 		public static void IntitializeSharedState(string tpkPath)
 		{
 			TpkTypeTreeBlob blob = ReadTpkFile(tpkPath);
-			Dictionary<int, VersionedList<UniversalClass?>> classes = new();
+			Dictionary<int, VersionedList<UniversalClass>> classes = new();
 			foreach (TpkClassInformation classInfo in blob.ClassInformation)
 			{
 				int id = classInfo.ID;
@@ -19,7 +19,7 @@ namespace AssetRipper.AssemblyDumper
 					continue;
 				}
 
-				VersionedList<UniversalClass?> classList = new();
+				VersionedList<UniversalClass> classList = new();
 				classes.Add(id, classList);
 				foreach (var pair in classInfo.Classes)
 				{

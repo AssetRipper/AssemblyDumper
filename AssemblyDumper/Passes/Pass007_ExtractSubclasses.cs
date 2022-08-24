@@ -6,7 +6,7 @@
 
 		public static void DoPass()
 		{
-			foreach(VersionedList<UniversalClass?> classList in SharedState.Instance.ClassInformation.Values)
+			foreach(VersionedList<UniversalClass> classList in SharedState.Instance.ClassInformation.Values)
 			{
 				List<ClassData> classDataList = MakeClassData(classList);
 				foreach(ClassData classData in classDataList)
@@ -24,7 +24,7 @@
 
 		private static void CheckCompatibility()
 		{
-			foreach (VersionedList<UniversalClass?> list in SharedState.Instance.SubclassInformation.Values)
+			foreach (VersionedList<UniversalClass> list in SharedState.Instance.SubclassInformation.Values)
 			{
 				foreach(UniversalClass? @class in list.Values)
 				{
@@ -36,7 +36,7 @@
 			}
 		}
 
-		private static List<ClassData> MakeClassData(VersionedList<UniversalClass?> list)
+		private static List<ClassData> MakeClassData(VersionedList<UniversalClass> list)
 		{
 			List<ClassData> result = new List<ClassData>(list.Count);
 			for (int i = 0; i < list.Count - 1; i++)

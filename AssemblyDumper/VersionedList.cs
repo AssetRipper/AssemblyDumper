@@ -2,11 +2,11 @@
 
 namespace AssetRipper.AssemblyDumper
 {
-	internal sealed class VersionedList<T> : IList<KeyValuePair<UnityVersion, T>> where T : IDeepCloneable<T>
+	internal sealed class VersionedList<T> : IList<KeyValuePair<UnityVersion, T?>> where T : IDeepCloneable<T>?
 	{
-		private readonly List<KeyValuePair<UnityVersion, T>> _list = new();
+		private readonly List<KeyValuePair<UnityVersion, T?>> _list = new();
 
-		public KeyValuePair<UnityVersion, T> this[int index]
+		public KeyValuePair<UnityVersion, T?> this[int index]
 		{
 			get => _list[index];
 			set
@@ -31,7 +31,7 @@ namespace AssetRipper.AssemblyDumper
 
 		private UnityVersion MostRecentVersion => Count == 0 ? default : this[Count - 1].Key;
 
-		public void Add(KeyValuePair<UnityVersion, T> pair)
+		public void Add(KeyValuePair<UnityVersion, T?> pair)
 		{
 			if(pair.Key <= MostRecentVersion)
 			{
@@ -43,13 +43,13 @@ namespace AssetRipper.AssemblyDumper
 			}
 		}
 
-		public void Add(UnityVersion version, T item) => Add(new KeyValuePair<UnityVersion, T>(version, item));
+		public void Add(UnityVersion version, T? item) => Add(new KeyValuePair<UnityVersion, T?>(version, item));
 
 		public void Clear() => _list.Clear();
 
-		public bool Contains(KeyValuePair<UnityVersion, T> item) => _list.Contains(item);
+		public bool Contains(KeyValuePair<UnityVersion, T?> item) => _list.Contains(item);
 
-		public void CopyTo(KeyValuePair<UnityVersion, T>[] array, int arrayIndex) => _list.CopyTo(array, arrayIndex);
+		public void CopyTo(KeyValuePair<UnityVersion, T?>[] array, int arrayIndex) => _list.CopyTo(array, arrayIndex);
 
 		public T? GetItemForVersion(UnityVersion version)
 		{
@@ -89,11 +89,11 @@ namespace AssetRipper.AssemblyDumper
 			throw new Exception($"Item not found: {item}");
 		}
 
-		public int IndexOf(KeyValuePair<UnityVersion, T> item) => _list.IndexOf(item);
+		public int IndexOf(KeyValuePair<UnityVersion, T?> item) => _list.IndexOf(item);
 
-		public void Insert(int index, KeyValuePair<UnityVersion, T> item) => throw new NotSupportedException();
+		public void Insert(int index, KeyValuePair<UnityVersion, T?> item) => throw new NotSupportedException();
 
-		public bool Remove(KeyValuePair<UnityVersion, T> item) => throw new NotSupportedException();
+		public bool Remove(KeyValuePair<UnityVersion, T?> item) => throw new NotSupportedException();
 
 		public void RemoveAt(int index) => throw new NotSupportedException();
 
@@ -122,7 +122,7 @@ namespace AssetRipper.AssemblyDumper
 
 			for (int i = 0; i < Count - 1; i++)
 			{
-				KeyValuePair<UnityVersion, T> currentPair = this[i];
+				KeyValuePair<UnityVersion, T?> currentPair = this[i];
 				if (currentPair.Key <= divisionPoint && divisionPoint < this[i + 1].Key)
 				{
 					if (currentPair.Key == divisionPoint)
@@ -132,7 +132,7 @@ namespace AssetRipper.AssemblyDumper
 					else
 					{
 						insertionIndex = i + 1;
-						clone = currentPair.Value.DeepClone();
+						clone = currentPair.Value is null ? default : currentPair.Value.DeepClone();
 						break;
 					}
 				}
@@ -141,18 +141,19 @@ namespace AssetRipper.AssemblyDumper
 			if (insertionIndex < 0)
 			{
 				insertionIndex = Count;
-				clone = this[Count - 1].Value.DeepClone();
+				KeyValuePair<UnityVersion, T?> lastPair = this[Count - 1];
+				clone = lastPair.Value is null ? default : lastPair.Value.DeepClone();
 			}
 
-			_list.Insert(insertionIndex, new KeyValuePair<UnityVersion, T>(divisionPoint, clone!));
+			_list.Insert(insertionIndex, new KeyValuePair<UnityVersion, T?>(divisionPoint, clone!));
 		}
 
-		public IEnumerator<KeyValuePair<UnityVersion, T>> GetEnumerator() => _list.GetEnumerator();
+		public IEnumerator<KeyValuePair<UnityVersion, T?>> GetEnumerator() => _list.GetEnumerator();
 
 		IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_list).GetEnumerator();
 
 		public IEnumerable<UnityVersion> Keys => _list.Select(x => x.Key);
 
-		public IEnumerable<T> Values => _list.Select(x => x.Value);
+		public IEnumerable<T?> Values => _list.Select(x => x.Value);
 	}
 }

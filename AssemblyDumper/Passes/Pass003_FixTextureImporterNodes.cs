@@ -21,7 +21,7 @@
 
 		public static void DoPass()
 		{
-			VersionedList<UniversalClass?> classes = SharedState.Instance.ClassInformation[TextureImporterTypeId];
+			VersionedList<UniversalClass> classes = SharedState.Instance.ClassInformation[TextureImporterTypeId];
 			foreach (UniversalClass? universalClass in classes.Values)
 			{
 				if (universalClass is not null)

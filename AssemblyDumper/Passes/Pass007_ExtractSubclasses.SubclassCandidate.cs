@@ -94,7 +94,7 @@
 			{
 				//Single class, don't change the name
 				SubclassCandidate candidate = consolidatedCandidates[0];
-				VersionedList<UniversalClass?> classList = new VersionedList<UniversalClass?>();
+				VersionedList<UniversalClass> classList = new();
 				SharedState.Instance.SubclassInformation.Add(candidate.Name, classList);
 				UniversalClass newClass = new UniversalClass(candidate.ReleaseNode?.ShallowCloneAsRootNode(), candidate.EditorNode?.ShallowCloneAsRootNode());
 				classList.Add(candidate.VersionRange.Start, newClass);
@@ -111,7 +111,7 @@
 				{
 					SubclassCandidate candidate = consolidatedCandidates[i];
 					string typeName = $"{candidate.Name}_{i}";
-					VersionedList<UniversalClass?> classList = new VersionedList<UniversalClass?>();
+					VersionedList<UniversalClass> classList = new();
 					SharedState.Instance.SubclassInformation.Add(typeName, classList);
 					foreach(UniversalNode node in candidate.NodesToBeAltered)
 					{
@@ -132,7 +132,7 @@
 			else
 			{
 				//Use _3_4_0f5 naming
-				VersionedList<UniversalClass?> classList = new VersionedList<UniversalClass?>();
+				VersionedList<UniversalClass> classList = new();
 				SharedState.Instance.SubclassInformation.Add(consolidatedCandidates[0].Name, classList);
 				SubclassCandidate[] candidates = consolidatedCandidates.OrderBy(c => c.VersionRange.Start).ToArray();
 				for(int i = 0; i < candidates.Length; i++)

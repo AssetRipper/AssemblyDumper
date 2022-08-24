@@ -27,7 +27,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			foreach(VersionedList<UniversalClass?> classList in SharedState.Instance.ClassInformation.Values)
+			foreach(VersionedList<UniversalClass> classList in SharedState.Instance.ClassInformation.Values)
 			{
 				foreach (UniversalClass? unityClass in classList.Values)
 				{

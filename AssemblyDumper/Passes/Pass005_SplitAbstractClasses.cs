@@ -31,7 +31,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				foreach (int abstractId in abstractIds.ToList())
 				{
-					VersionedList<UniversalClass?> abstractClassList = SharedState.Instance.ClassInformation[abstractId];
+					VersionedList<UniversalClass> abstractClassList = SharedState.Instance.ClassInformation[abstractId];
 					if (abstractClassList.AnyDerivedAbstractAndUnprocessed())
 					{
 						continue;
@@ -141,7 +141,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			};
 		}
 
-		private static void UpdateWithSectionData(this VersionedList<UniversalClass?> versionedList, List<Section> sectionList)
+		private static void UpdateWithSectionData(this VersionedList<UniversalClass> versionedList, List<Section> sectionList)
 		{
 			if (sectionList[0].Class.TypeID == 183)
 			{
@@ -380,7 +380,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return SharedState.Instance.ClassInformation[universalClass.TypeID].GetRangeForItem(universalClass);
 		}
 
-		private static RangeClassList MakeRangeClassList(this VersionedList<UniversalClass?> abstractClassList)
+		private static RangeClassList MakeRangeClassList(this VersionedList<UniversalClass> abstractClassList)
 		{
 			RangeClassList result = new();
 			for (int i = 0; i < abstractClassList.Count; i++)
@@ -394,7 +394,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return result;
 		}
 
-		private static bool AnyDerivedAbstractAndUnprocessed(this VersionedList<UniversalClass?> abstractClassList)
+		private static bool AnyDerivedAbstractAndUnprocessed(this VersionedList<UniversalClass> abstractClassList)
 		{
 			return abstractClassList
 				.Select(pair => pair.Value)
@@ -413,7 +413,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void AssignInheritance()
 		{
-			foreach ((_, VersionedList<UniversalClass?> list) in SharedState.Instance.ClassInformation)
+			foreach ((_, VersionedList<UniversalClass> list) in SharedState.Instance.ClassInformation)
 			{
 				foreach ((UnityVersion startVersion, UniversalClass? universalClass) in list)
 				{
@@ -435,7 +435,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				.Single()!;
 		}
 
-		private static UniversalClass? TryFindMatch(this VersionedList<UniversalClass?> list, string name, UnityVersion version)
+		private static UniversalClass? TryFindMatch(this VersionedList<UniversalClass> list, string name, UnityVersion version)
 		{
 			UniversalClass? result = list.GetItemForVersion(version);
 			return result is not null && result.Name == name ? result : null;

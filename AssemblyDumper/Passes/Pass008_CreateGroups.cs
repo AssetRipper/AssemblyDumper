@@ -6,19 +6,19 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			foreach ((int id, VersionedList<UniversalClass?> list) in SharedState.Instance.ClassInformation)
+			foreach ((int id, VersionedList<UniversalClass> list) in SharedState.Instance.ClassInformation)
 			{
 				ClassGroup group = CreateClasses(list, id);
 				SharedState.Instance.ClassGroups.Add(id, group);
 			}
-			foreach ((string name, VersionedList<UniversalClass?> list) in SharedState.Instance.SubclassInformation)
+			foreach ((string name, VersionedList<UniversalClass> list) in SharedState.Instance.SubclassInformation)
 			{
 				SubclassGroup group = CreateSubclasses(list, name);
 				SharedState.Instance.SubclassGroups.Add(name, group);
 			}
 		}
 
-		private static ClassGroup CreateClasses(VersionedList<UniversalClass?> loadedClasses, int id)
+		private static ClassGroup CreateClasses(VersionedList<UniversalClass> loadedClasses, int id)
 		{
 			TypeDefinition @interface = InterfaceCreator.CreateEmptyInterface(SharedState.Instance.Module, null, null);
 			ClassGroup group = new ClassGroup(id, @interface);
@@ -26,7 +26,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return group;
 		}
 
-		private static SubclassGroup CreateSubclasses(VersionedList<UniversalClass?> loadedClasses, string name)
+		private static SubclassGroup CreateSubclasses(VersionedList<UniversalClass> loadedClasses, string name)
 		{
 			TypeDefinition @interface = InterfaceCreator.CreateEmptyInterface(SharedState.Instance.Module, null, null);
 			SubclassGroup group = new SubclassGroup(name, @interface);
@@ -34,7 +34,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return group;
 		}
 
-		private static void CreateTypeDefinitionsAndInitializeGroup(VersionedList<UniversalClass?> loadedClasses, ClassGroupBase group)
+		private static void CreateTypeDefinitionsAndInitializeGroup(VersionedList<UniversalClass> loadedClasses, ClassGroupBase group)
 		{
 			int nonNullCount = loadedClasses.Values.Count(c => c != null);
 			if (nonNullCount == 0)
