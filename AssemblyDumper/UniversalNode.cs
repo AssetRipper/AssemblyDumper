@@ -3,7 +3,7 @@ using AssetRipper.Tpk.TypeTrees;
 
 namespace AssetRipper.AssemblyDumper
 {
-	internal sealed class UniversalNode : IEquatable<UniversalNode?>
+	internal sealed class UniversalNode : IEquatable<UniversalNode?>, IDeepCloneable<UniversalNode>
 	{
 		/// <summary>
 		/// The current type name

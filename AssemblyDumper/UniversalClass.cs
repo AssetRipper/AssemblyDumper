@@ -3,7 +3,7 @@ using AssetRipper.Tpk.TypeTrees;
 
 namespace AssetRipper.AssemblyDumper
 {
-	internal sealed class UniversalClass
+	internal sealed class UniversalClass : IDeepCloneable<UniversalClass>
 	{
 		private string name = "";
 
