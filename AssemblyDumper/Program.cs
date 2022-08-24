@@ -35,6 +35,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass007_ExtractSubclasses.DoPass();
 			}
+			using (new TimingCookie("Pass 008: Divide Ambiguous PPtr"))
+			{
+				Pass008_DivideAmbiguousPPtr.DoPass();
+			}
 			using (new TimingCookie("Pass 009: Create Groups"))
 			{
 				Pass009_CreateGroups.DoPass();

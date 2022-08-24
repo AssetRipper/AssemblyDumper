@@ -1,11 +1,7 @@
-﻿using NUnit.Framework;
-using AsmResolver;
-using AsmResolver.DotNet;
-using AsmResolver.DotNet.Signatures;
+﻿using AsmResolver.DotNet;
 using AsmResolver.DotNet.Signatures.Types;
 using System.Collections.Generic;
 using System;
-using System.Text.RegularExpressions;
 using System.Text;
 
 namespace AssetRipper.AssemblyDumper.Tests

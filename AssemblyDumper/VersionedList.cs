@@ -142,6 +142,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				insertionIndex = Count;
 				KeyValuePair<UnityVersion, T?> lastPair = this[Count - 1];
+				if (lastPair.Key == divisionPoint)
+				{
+					return;
+				}
 				clone = lastPair.Value is null ? default : lastPair.Value.DeepClone();
 			}
 

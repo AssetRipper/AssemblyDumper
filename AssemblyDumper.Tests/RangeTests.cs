@@ -1,5 +1,3 @@
-using NUnit.Framework;
-
 namespace AssetRipper.AssemblyDumper.Tests
 {
 	public class RangeTests
