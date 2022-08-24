@@ -2,7 +2,7 @@
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
-	internal static class Pass008_CreateGroups
+	internal static class Pass009_CreateGroups
 	{
 		public static void DoPass()
 		{

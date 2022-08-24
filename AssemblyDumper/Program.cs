@@ -35,13 +35,13 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass007_ExtractSubclasses.DoPass();
 			}
-			using (new TimingCookie("Pass 008: Create Groups"))
+			using (new TimingCookie("Pass 009: Create Groups"))
 			{
-				Pass008_CreateGroups.DoPass();
+				Pass009_CreateGroups.DoPass();
 			}
-			using (new TimingCookie("Pass 009: Initialize Interfaces"))
+			using (new TimingCookie("Pass 010: Initialize Interfaces"))
 			{
-				Pass009_InitializeInterfacesAndFactories.DoPass();
+				Pass010_InitializeInterfacesAndFactories.DoPass();
 			}
 			using (new TimingCookie("Pass 011: Apply Inheritance"))
 			{
