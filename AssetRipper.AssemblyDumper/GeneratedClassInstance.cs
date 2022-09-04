@@ -1,4 +1,6 @@
-﻿namespace AssetRipper.AssemblyDumper
+﻿using AssetRipper.AssemblyDumper.Utils;
+
+namespace AssetRipper.AssemblyDumper
 {
 	internal sealed class GeneratedClassInstance
 	{

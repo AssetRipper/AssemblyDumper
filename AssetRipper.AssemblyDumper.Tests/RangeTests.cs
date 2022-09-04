@@ -1,3 +1,5 @@
+using AssetRipper.AssemblyDumper.Utils;
+
 namespace AssetRipper.AssemblyDumper.Tests
 {
 	public class RangeTests

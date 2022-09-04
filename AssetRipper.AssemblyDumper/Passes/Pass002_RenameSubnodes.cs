@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using AssetRipper.AssemblyDumper.Utils;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

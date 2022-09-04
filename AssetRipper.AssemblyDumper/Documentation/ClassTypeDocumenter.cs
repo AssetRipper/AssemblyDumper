@@ -1,4 +1,6 @@
-﻿namespace AssetRipper.AssemblyDumper.Documentation
+﻿using AssetRipper.AssemblyDumper.Utils;
+
+namespace AssetRipper.AssemblyDumper.Documentation
 {
 	internal static class ClassTypeDocumenter
 	{

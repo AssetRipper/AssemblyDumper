@@ -5,7 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using RangeClassList = System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<AssetRipper.AssemblyDumper.Range<AssetRipper.VersionUtilities.UnityVersion>, AssetRipper.AssemblyDumper.UniversalClass>>;
+using AssetRipper.AssemblyDumper.Utils;
+using RangeClassList = System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<AssetRipper.AssemblyDumper.Utils.Range<AssetRipper.VersionUtilities.UnityVersion>, AssetRipper.AssemblyDumper.UniversalClass>>;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

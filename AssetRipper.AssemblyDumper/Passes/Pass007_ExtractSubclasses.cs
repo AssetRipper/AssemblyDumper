@@ -1,4 +1,6 @@
-﻿namespace AssetRipper.AssemblyDumper.Passes
+﻿using AssetRipper.AssemblyDumper.Utils;
+
+namespace AssetRipper.AssemblyDumper.Passes
 {
 	internal static partial class Pass007_ExtractSubclasses
 	{

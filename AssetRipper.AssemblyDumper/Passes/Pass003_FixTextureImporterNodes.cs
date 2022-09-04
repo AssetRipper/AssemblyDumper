@@ -1,4 +1,6 @@
-﻿namespace AssetRipper.AssemblyDumper.Passes
+﻿using AssetRipper.AssemblyDumper.Utils;
+
+namespace AssetRipper.AssemblyDumper.Passes
 {
 	/// <summary>
 	/// This pass deliberately modifies the type tree for TextureImporter to reflect its yaml output

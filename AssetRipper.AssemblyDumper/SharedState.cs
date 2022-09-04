@@ -1,6 +1,7 @@
 ﻿using AssetRipper.AssemblyCreationTools;
 using AssetRipper.AssemblyCreationTools.Attributes;
 using AssetRipper.AssemblyCreationTools.Methods;
+using AssetRipper.AssemblyDumper.Utils;
 
 namespace AssetRipper.AssemblyDumper
 {

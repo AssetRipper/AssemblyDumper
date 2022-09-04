@@ -11,4 +11,5 @@ global using System.Collections.Generic;
 global using System.Diagnostics.CodeAnalysis;
 global using System.Linq;
 
-global using UnityVersionRange = AssetRipper.AssemblyDumper.Range<AssetRipper.VersionUtilities.UnityVersion>;
+global using UnityVersionRange = AssetRipper.AssemblyDumper.Utils.Range<AssetRipper.VersionUtilities.UnityVersion>;
+

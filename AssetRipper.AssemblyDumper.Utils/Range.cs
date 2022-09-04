@@ -1,6 +1,6 @@
-﻿namespace AssetRipper.AssemblyDumper
+﻿namespace AssetRipper.AssemblyDumper.Utils
 {
-	internal readonly struct Range<T> : IEquatable<Range<T>> where T : struct, IEquatable<T>, IComparable<T>
+	public readonly struct Range<T> : IEquatable<Range<T>> where T : struct, IEquatable<T>, IComparable<T>
 	{
 		/// <summary>
 		/// Represent the inclusive start of the Range.
@@ -14,7 +14,7 @@
 
 		public Range(T start, T end)
 		{
-			if(start.CompareTo(end) >= 0)
+			if (start.CompareTo(end) >= 0)
 			{
 				throw new ArgumentException($"{nameof(start)} {start} must be less than {nameof(end)} {end}");
 			}

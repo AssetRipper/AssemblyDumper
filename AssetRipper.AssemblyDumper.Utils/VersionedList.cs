@@ -1,8 +1,9 @@
-﻿using System.Collections;
+﻿using AssetRipper.VersionUtilities;
+using System.Collections;
 
-namespace AssetRipper.AssemblyDumper
+namespace AssetRipper.AssemblyDumper.Utils
 {
-	internal sealed class VersionedList<T> : IList<KeyValuePair<UnityVersion, T?>> where T : IDeepCloneable<T>?
+	public sealed class VersionedList<T> : IList<KeyValuePair<UnityVersion, T?>> where T : IDeepCloneable<T>?
 	{
 		private readonly List<KeyValuePair<UnityVersion, T?>> _list = new();
 
@@ -33,7 +34,7 @@ namespace AssetRipper.AssemblyDumper
 
 		public void Add(KeyValuePair<UnityVersion, T?> pair)
 		{
-			if(pair.Key <= MostRecentVersion)
+			if (pair.Key <= MostRecentVersion)
 			{
 				throw new Exception($"Version {pair.Key} was not greater than the most recent version {MostRecentVersion}");
 			}
@@ -69,14 +70,14 @@ namespace AssetRipper.AssemblyDumper
 			return this[Count - 1].Value;
 		}
 
-		public UnityVersionRange GetRange(int index)
+		public Range<UnityVersion> GetRange(int index)
 		{
 			return index == Count - 1
-				? new UnityVersionRange(this[index].Key, UnityVersion.MaxVersion)
-				: new UnityVersionRange(this[index].Key, this[index + 1].Key);
+				? new Range<UnityVersion>(this[index].Key, UnityVersion.MaxVersion)
+				: new Range<UnityVersion>(this[index].Key, this[index + 1].Key);
 		}
 
-		public UnityVersionRange GetRangeForItem(T item)
+		public Range<UnityVersion> GetRangeForItem(T item)
 		{
 			for (int i = 0; i < Count; i++)
 			{
@@ -99,7 +100,7 @@ namespace AssetRipper.AssemblyDumper
 
 		public void Pop()
 		{
-			if(Count > 0)
+			if (Count > 0)
 			{
 				_list.RemoveAt(Count - 1);
 			}

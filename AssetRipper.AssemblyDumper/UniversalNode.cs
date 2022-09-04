@@ -1,4 +1,5 @@
-﻿using AssetRipper.Tpk.Shared;
+﻿using AssetRipper.AssemblyDumper.Utils;
+using AssetRipper.Tpk.Shared;
 using AssetRipper.Tpk.TypeTrees;
 
 namespace AssetRipper.AssemblyDumper

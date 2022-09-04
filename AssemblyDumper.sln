@@ -39,6 +39,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.DocExtraction",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.DocExtraction.ConsoleApp", "AssetRipper.DocExtraction.ConsoleApp\AssetRipper.DocExtraction.ConsoleApp.csproj", "{B19AA42C-51E1-4845-9A07-13B60B3BB07B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetRipper.AssemblyDumper.Utils", "AssetRipper.AssemblyDumper.Utils\AssetRipper.AssemblyDumper.Utils.csproj", "{3A871555-4360-4D89-996A-1674F6F3D9CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -93,6 +95,10 @@ Global
 		{B19AA42C-51E1-4845-9A07-13B60B3BB07B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B19AA42C-51E1-4845-9A07-13B60B3BB07B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B19AA42C-51E1-4845-9A07-13B60B3BB07B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A871555-4360-4D89-996A-1674F6F3D9CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A871555-4360-4D89-996A-1674F6F3D9CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A871555-4360-4D89-996A-1674F6F3D9CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A871555-4360-4D89-996A-1674F6F3D9CD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

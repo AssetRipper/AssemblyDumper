@@ -1,4 +1,5 @@
-﻿using AssetRipper.Tpk;
+﻿using AssetRipper.AssemblyDumper.Utils;
+using AssetRipper.Tpk;
 using AssetRipper.Tpk.TypeTrees;
 using System.IO;
 

@@ -1,4 +1,6 @@
-﻿namespace AssetRipper.AssemblyDumper.Passes
+﻿using AssetRipper.AssemblyDumper.Utils;
+
+namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass004_FillNameToTypeIdDictionary
 	{
