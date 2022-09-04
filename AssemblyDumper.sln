@@ -35,6 +35,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.IO.Endian", "..
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.Yaml", "..\AssetRipper\AssetRipper.Yaml\AssetRipper.Yaml.csproj", "{38B2E3CF-780F-47FA-8C88-4BAD6DB55108}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.DocExtraction", "AssetRipper.DocExtraction\AssetRipper.DocExtraction.csproj", "{1C2DF3A7-94FC-4040-A8E3-33E97DBE0369}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.DocExtraction.ConsoleApp", "AssetRipper.DocExtraction.ConsoleApp\AssetRipper.DocExtraction.ConsoleApp.csproj", "{B19AA42C-51E1-4845-9A07-13B60B3BB07B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +85,14 @@ Global
 		{38B2E3CF-780F-47FA-8C88-4BAD6DB55108}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{38B2E3CF-780F-47FA-8C88-4BAD6DB55108}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{38B2E3CF-780F-47FA-8C88-4BAD6DB55108}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C2DF3A7-94FC-4040-A8E3-33E97DBE0369}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C2DF3A7-94FC-4040-A8E3-33E97DBE0369}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C2DF3A7-94FC-4040-A8E3-33E97DBE0369}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C2DF3A7-94FC-4040-A8E3-33E97DBE0369}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B19AA42C-51E1-4845-9A07-13B60B3BB07B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B19AA42C-51E1-4845-9A07-13B60B3BB07B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B19AA42C-51E1-4845-9A07-13B60B3BB07B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B19AA42C-51E1-4845-9A07-13B60B3BB07B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<LangVersion>Latest</LangVersion>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="AsmResolver.DotNet" Version="4.11.1" />
+		<PackageReference Include="AssetRipper.VersionUtilities" Version="1.2.1" />
+	</ItemGroup>
+
+</Project>
