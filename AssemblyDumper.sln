@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32328.378
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyDumper", "AssemblyDumper\AssemblyDumper.csproj", "{DE0C3A7A-8B50-4A25-8270-A2A1C188F45C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.AssemblyDumper", "AssetRipper.AssemblyDumper\AssetRipper.AssemblyDumper.csproj", "{DE0C3A7A-8B50-4A25-8270-A2A1C188F45C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AssetRipper", "AssetRipper", "{01351761-6949-4784-B493-478F9886273B}"
 EndProject
@@ -27,7 +27,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyDumper.Tests", "AssemblyDumper.Tests\AssemblyDumper.Tests.csproj", "{5F5A18B7-6EAD-42BC-A786-9E32E9C1FC70}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.AssemblyDumper.Tests", "AssetRipper.AssemblyDumper.Tests\AssetRipper.AssemblyDumper.Tests.csproj", "{5F5A18B7-6EAD-42BC-A786-9E32E9C1FC70}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.Fundamentals", "..\AssetRipper\AssetRipper.Fundamentals\AssetRipper.Fundamentals.csproj", "{1D446D94-ACFF-480B-9CC6-8A575D061937}"
 EndProject
