@@ -3,9 +3,35 @@ using System.Collections;
 
 namespace AssetRipper.AssemblyDumper.Utils
 {
-	public sealed class VersionedList<T> : IList<KeyValuePair<UnityVersion, T?>> where T : IDeepCloneable<T>?
+	public sealed class VersionedList<T> : IList<KeyValuePair<UnityVersion, T?>>
 	{
 		private readonly List<KeyValuePair<UnityVersion, T?>> _list = new();
+		private readonly Func<T?, T?> cloneFactory;
+
+		public VersionedList()
+		{
+			if (typeof(T).IsAssignableTo(typeof(IDeepCloneable<T>)))
+			{
+				cloneFactory = (original) =>
+				{
+					//boxing could happen here
+					return original is null ? default : ((IDeepCloneable<T>)original).DeepClone();
+				};
+			}
+			else if (typeof(T).IsAssignableTo(typeof(ValueType)))
+			{
+				cloneFactory = (original) => original;
+			}
+			else
+			{
+				cloneFactory = (_) => throw new NotSupportedException();
+			}
+		}
+
+		public VersionedList(Func<T?, T?> cloneFactory)
+		{
+			this.cloneFactory = cloneFactory;
+		}
 
 		public KeyValuePair<UnityVersion, T?> this[int index]
 		{
@@ -133,7 +159,7 @@ namespace AssetRipper.AssemblyDumper.Utils
 					else
 					{
 						insertionIndex = i + 1;
-						clone = currentPair.Value is null ? default : currentPair.Value.DeepClone();
+						clone = currentPair.Value is null ? default : cloneFactory(currentPair.Value);
 						break;
 					}
 				}
@@ -147,10 +173,10 @@ namespace AssetRipper.AssemblyDumper.Utils
 				{
 					return;
 				}
-				clone = lastPair.Value is null ? default : lastPair.Value.DeepClone();
+				clone = lastPair.Value is null ? default : cloneFactory(lastPair.Value);
 			}
 
-			_list.Insert(insertionIndex, new KeyValuePair<UnityVersion, T?>(divisionPoint, clone!));
+			_list.Insert(insertionIndex, new KeyValuePair<UnityVersion, T?>(divisionPoint, clone));
 		}
 
 		public IEnumerator<KeyValuePair<UnityVersion, T?>> GetEnumerator() => _list.GetEnumerator();

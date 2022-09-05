@@ -87,8 +87,8 @@ namespace AssetRipper.AssemblyDumper
 			AddReferenceModuleContainingType(typeof(IO.Endian.EndianReader));
 			AddReferenceModuleContainingType(typeof(UnityVersion));
 			//AddReferenceModuleContainingType(typeof(object));
-			Importer.AddReferenceModule(ModuleDefinition.FromFile(@"E:\repos\AssemblyDumperRewrite\Libraries\System.Collections.dll"));
-			Importer.AddReferenceModule(ModuleDefinition.FromFile(@"E:\repos\AssemblyDumperRewrite\Libraries\System.Runtime.dll"));
+			Importer.AddReferenceModule(ModuleDefinition.FromFile(@"E:\repos\AssemblyDumper\Libraries\System.Collections.dll"));
+			Importer.AddReferenceModule(ModuleDefinition.FromFile(@"E:\repos\AssemblyDumper\Libraries\System.Runtime.dll"));
 			AddReferenceModuleContainingType(typeof(Program));
 		}
 

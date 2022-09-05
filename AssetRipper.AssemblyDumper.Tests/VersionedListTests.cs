@@ -8,7 +8,7 @@ namespace AssetRipper.AssemblyDumper.Tests
 		[Test]
 		public void DivisionTest()
 		{
-			VersionedList<Int> integers = new()
+			VersionedList<int> integers = new()
 			{
 				{ new UnityVersion(3), 3 },
 				{ new UnityVersion(4), 4 },
@@ -34,13 +34,6 @@ namespace AssetRipper.AssemblyDumper.Tests
 			Assert.That(integers[2].Key, Is.EqualTo(new UnityVersion(5)));
 			Assert.That(integers[3].Key, Is.EqualTo(new UnityVersion(6)));
 			Assert.That(integers[4].Key, Is.EqualTo(new UnityVersion(2017)));
-		}
-
-		private readonly record struct Int(int Value) : IDeepCloneable<Int>
-		{
-			public Int DeepClone() => this;
-			public static implicit operator Int(int value) => new Int(value);
-			public static implicit operator int(Int value) => value.Value;
 		}
 	}
 }
