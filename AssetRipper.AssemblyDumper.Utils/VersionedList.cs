@@ -1,8 +1,10 @@
 ﻿using AssetRipper.VersionUtilities;
 using System.Collections;
+using System.Text.Json.Serialization;
 
 namespace AssetRipper.AssemblyDumper.Utils
 {
+	[JsonConverter(typeof(VersionedListConverterFactory))]
 	public sealed class VersionedList<T> : IList<KeyValuePair<UnityVersion, T?>>
 	{
 		private readonly List<KeyValuePair<UnityVersion, T?>> _list = new();
@@ -18,7 +20,7 @@ namespace AssetRipper.AssemblyDumper.Utils
 					return original is null ? default : ((IDeepCloneable<T>)original).DeepClone();
 				};
 			}
-			else if (typeof(T).IsAssignableTo(typeof(ValueType)))
+			else if (typeof(T).IsAssignableTo(typeof(ValueType)) || typeof(T) == typeof(string))
 			{
 				cloneFactory = (original) => original;
 			}
@@ -94,6 +96,11 @@ namespace AssetRipper.AssemblyDumper.Utils
 			}
 
 			return this[Count - 1].Value;
+		}
+
+		public T? GetLastValue()
+		{
+			return Count != 0 ? _list[Count - 1].Value : throw new InvalidOperationException();
 		}
 
 		public Range<UnityVersion> GetRange(int index)
