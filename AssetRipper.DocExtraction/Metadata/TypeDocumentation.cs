@@ -7,9 +7,9 @@ public abstract record class TypeDocumentation<TMember> : DocumentationBase wher
 {
 	public string? Namespace { get; set; }
 	[JsonIgnore]
-	public string FullName => string.IsNullOrEmpty(Namespace) ? Name : $"{Namespace}.{Name}";
+	public FullName FullName => new FullName(Namespace, Name);
 	public Dictionary<string, TMember> Members { get; set; } = new();
-	public override string ToString() => FullName;
+	public override string ToString() => FullName.ToString();
 	public override int GetHashCode()
 	{
 		return HashCode.Combine(base.GetHashCode(), Namespace, Members.GetHashCodeByContent());

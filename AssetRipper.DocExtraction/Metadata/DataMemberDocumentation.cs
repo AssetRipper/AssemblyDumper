@@ -16,5 +16,5 @@ public sealed record class DataMemberDocumentation : DocumentationBase
 	/// The full name for the return type of the property
 	/// </summary>
 	[JsonIgnore]
-	public string TypeFullName => string.IsNullOrEmpty(TypeNamespace) ? TypeName : $"{TypeNamespace}.{TypeName}";
+	public FullName TypeFullName => new FullName(TypeNamespace, TypeName);
 }
