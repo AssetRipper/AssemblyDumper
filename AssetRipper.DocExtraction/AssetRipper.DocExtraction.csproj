@@ -11,4 +11,8 @@
 		<PackageReference Include="AssetRipper.VersionUtilities" Version="1.2.1" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<ProjectReference Include="..\AssetRipper.AssemblyDumper.Utils\AssetRipper.AssemblyDumper.Utils.csproj" />
+	</ItemGroup>
+
 </Project>
