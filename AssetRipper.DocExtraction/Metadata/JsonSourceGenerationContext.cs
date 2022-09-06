@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace AssetRipper.DocExtraction;
+namespace AssetRipper.DocExtraction.MetaData;
 
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(DocumentationFile))]

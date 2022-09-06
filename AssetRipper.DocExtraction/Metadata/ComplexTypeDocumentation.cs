@@ -1,6 +1,6 @@
 ﻿using AssetRipper.DocExtraction.Extensions;
 
-namespace AssetRipper.DocExtraction;
+namespace AssetRipper.DocExtraction.MetaData;
 
 public abstract record class ComplexTypeDocumentation : TypeDocumentation
 {

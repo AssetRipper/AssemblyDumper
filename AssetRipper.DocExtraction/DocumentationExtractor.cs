@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using AssetRipper.DocExtraction.MetaData;
+using System.Linq;
 
 namespace AssetRipper.DocExtraction;
 

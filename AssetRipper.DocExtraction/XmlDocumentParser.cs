@@ -5,7 +5,6 @@ namespace AssetRipper.DocExtraction;
 
 public static class XmlDocumentParser
 {
-
 	public static void ExtractDocumentationFromXml(
 		string path,
 		Dictionary<string, string> typeSummaries,

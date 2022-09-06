@@ -1,6 +1,6 @@
 ﻿using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 
-namespace AssetRipper.DocExtraction;
+namespace AssetRipper.DocExtraction.MetaData;
 
 public sealed record class EnumDocumentation : TypeDocumentation
 {

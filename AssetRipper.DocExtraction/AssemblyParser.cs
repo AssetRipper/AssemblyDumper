@@ -1,6 +1,7 @@
 ﻿using AsmResolver.DotNet;
 using AsmResolver.DotNet.Signatures.Types;
 using AssetRipper.DocExtraction.Extensions;
+using AssetRipper.DocExtraction.MetaData;
 
 namespace AssetRipper.DocExtraction;
 

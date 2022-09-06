@@ -1,4 +1,4 @@
-﻿namespace AssetRipper.DocExtraction;
+﻿namespace AssetRipper.DocExtraction.MetaData;
 
 public sealed record class ClassDocumentation : ComplexTypeDocumentation
 {

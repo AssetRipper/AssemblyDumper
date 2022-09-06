@@ -10,7 +10,7 @@ internal static class DictionaryExtensions
 
 	public static bool EqualByContent<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, Dictionary<TKey, TValue> other) where TKey : notnull
 	{
-		if(dictionary.GetType() != other.GetType() || dictionary.Count != other.Count)
+		if (dictionary.GetType() != other.GetType() || dictionary.Count != other.Count)
 		{
 			return false;
 		}

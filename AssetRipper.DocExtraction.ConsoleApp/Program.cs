@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using AssetRipper.DocExtraction.MetaData;
+using System.Diagnostics;
 using System.IO;
 
 namespace AssetRipper.DocExtraction.ConsoleApp;

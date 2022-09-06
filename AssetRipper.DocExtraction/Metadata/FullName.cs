@@ -1,4 +1,4 @@
-﻿namespace AssetRipper.DocExtraction;
+﻿namespace AssetRipper.DocExtraction.MetaData;
 
 public readonly record struct FullName(string? Namespace, string Name)
 {
