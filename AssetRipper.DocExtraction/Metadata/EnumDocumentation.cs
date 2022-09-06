@@ -2,9 +2,8 @@
 
 namespace AssetRipper.DocExtraction.MetaData;
 
-public sealed record class EnumDocumentation : TypeDocumentation
+public sealed record class EnumDocumentation : TypeDocumentation<EnumMemberDocumentation>
 {
 	public ElementType ElementType { get; set; }
 	public bool IsFlagsEnum { get; set; }
-	public Dictionary<string, EnumMemberDocumentation> Members { get; set; } = new();
 }

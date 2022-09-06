@@ -82,7 +82,7 @@ public static class AssemblyParser
 					ObsoleteMessage = field.GetObsoleteMessage(),
 					NativeName = field.GetNativeName(),
 				};
-				classDocumentation.DataMembers.Add(fieldName, fieldDocumentation);
+				classDocumentation.Members.Add(fieldName, fieldDocumentation);
 			}
 		}
 
@@ -100,7 +100,7 @@ public static class AssemblyParser
 					ObsoleteMessage = property.GetObsoleteMessage(),
 					NativeName = property.GetNativeName() ?? property.GetNativeProperty(),
 				};
-				classDocumentation.DataMembers.Add(propertyName, propertyDocumentation);
+				classDocumentation.Members.Add(propertyName, propertyDocumentation);
 			}
 		}
 
@@ -176,7 +176,7 @@ public static class AssemblyParser
 					ObsoleteMessage = field.GetObsoleteMessage(),
 					NativeName = field.GetNativeName(),
 				};
-				structDocumentation.DataMembers.Add(fieldName, fieldDocumentation);
+				structDocumentation.Members.Add(fieldName, fieldDocumentation);
 			}
 		}
 
@@ -194,7 +194,7 @@ public static class AssemblyParser
 					ObsoleteMessage = property.GetObsoleteMessage(),
 					NativeName = property.GetNativeName() ?? property.GetNativeProperty(),
 				};
-				structDocumentation.DataMembers.Add(propertyName, propertyDocumentation);
+				structDocumentation.Members.Add(propertyName, propertyDocumentation);
 			}
 		}
 
