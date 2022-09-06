@@ -7,8 +7,8 @@ public sealed class DocumentationFile
 {
 	public string UnityVersion { get; set; } = "";
 	public List<ClassDocumentation> Classes { get; set; } = new();
-	public List<EnumDocumentation> Enums { get; set; } = new();
 	public List<StructDocumentation> Structs { get; set; } = new();
+	public List<EnumDocumentation> Enums { get; set; } = new();
 
 	public string ToJson()
 	{

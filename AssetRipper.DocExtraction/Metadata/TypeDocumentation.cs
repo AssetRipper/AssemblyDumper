@@ -5,10 +5,10 @@ namespace AssetRipper.DocExtraction.MetaData;
 
 public abstract record class TypeDocumentation<TMember> : DocumentationBase where TMember : DocumentationBase, new()
 {
+	public Dictionary<string, TMember> Members { get; set; } = new();
 	public string? Namespace { get; set; }
 	[JsonIgnore]
 	public FullName FullName => new FullName(Namespace, Name);
-	public Dictionary<string, TMember> Members { get; set; } = new();
 	public override string ToString() => FullName.ToString();
 	public override int GetHashCode()
 	{

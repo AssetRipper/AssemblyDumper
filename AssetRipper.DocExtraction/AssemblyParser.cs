@@ -61,8 +61,8 @@ public static class AssemblyParser
 		{
 			Name = type.Name ?? throw new NullReferenceException("Name cannot be null"),
 			Namespace = type.Namespace,
-			BaseName = type.BaseType?.Name,
-			BaseNamespace = type.BaseType?.Namespace,
+			BaseName = type.BaseType?.Name is null ? "Object" : type.BaseType.Name,
+			BaseNamespace = type.BaseType?.Name is null ? "System" : type.BaseType.Namespace,
 			DocumentationString = typeSummaries.TryGetValue(typeFullName),
 			ObsoleteMessage = type.GetObsoleteMessage(),
 			NativeName = type.GetNativeClass(),

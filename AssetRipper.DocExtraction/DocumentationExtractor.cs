@@ -5,7 +5,6 @@ namespace AssetRipper.DocExtraction;
 
 public static class DocumentationExtractor
 {
-
 	public static DocumentationFile ExtractDocumentation(string unityVersion, string engineXmlPath, string editorXmlPath, string engineDllPath, string editorDllPath)
 	{
 		Dictionary<string, string> typeSummaries = new();

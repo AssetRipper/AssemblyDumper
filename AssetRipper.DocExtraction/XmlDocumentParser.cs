@@ -52,6 +52,6 @@ public static class XmlDocumentParser
 	private static string GetSummary(XmlNode memberNode)
 	{
 		XmlNode summaryNode = memberNode.ChildNodes[0]!;
-		return summaryNode.Name == "summary" ? summaryNode.InnerText : throw new Exception("Child was not summary");
+		return summaryNode.Name == "summary" ? summaryNode.InnerText.Trim() : throw new Exception("Child was not summary");
 	}
 }
