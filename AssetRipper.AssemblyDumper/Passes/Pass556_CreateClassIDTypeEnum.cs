@@ -9,10 +9,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Dictionary<string, int> nameDictionary = CreateDictionary();
+			Dictionary<string, long> nameDictionary = CreateDictionary();
 			ClassIdTypeDefintion = EnumCreator.CreateFromDictionary(SharedState.Instance, SharedState.RootNamespace, "ClassIDType", nameDictionary);
 			
-			List<KeyValuePair<string, int>> alphabeticalList = nameDictionary.ToList();
+			List<KeyValuePair<string, long>> alphabeticalList = nameDictionary.ToList();
 			alphabeticalList.Sort((a,b) => a.Key.CompareTo(b.Key));
 			TypeDefinition alphabeticalEnum = EnumCreator.CreateFromDictionary(SharedState.Instance, SharedState.RootNamespace, "ClassIDTypeAlphabetical", alphabeticalList);
 
@@ -20,7 +20,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				if (field.IsStatic)
 				{
-					int id = nameDictionary[field.Name!];
+					int id = (int)nameDictionary[field.Name!];
 					FieldGroupDictionary.Add(field, SharedState.Instance.ClassGroups[id]);
 				}
 			}
@@ -28,17 +28,17 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				if (field.IsStatic)
 				{
-					int id = nameDictionary[field.Name!];
+					int id = (int)nameDictionary[field.Name!];
 					FieldGroupDictionary.Add(field, SharedState.Instance.ClassGroups[id]);
 				}
 			}
 		}
 
-		private static Dictionary<string, int> CreateDictionary()
+		private static Dictionary<string, long> CreateDictionary()
 		{
 			Dictionary<int, string> rawDictionary = SharedState.Instance.ClassGroups.OrderBy(pair => pair.Key).ToDictionary(pair => pair.Key, pair => pair.Value.Name);
 			HashSet<string> duplicateNames = GetDuplicates(rawDictionary.Values);
-			Dictionary<string, int> result = new Dictionary<string, int>(rawDictionary.Count);
+			Dictionary<string, long> result = new Dictionary<string, long>(rawDictionary.Count);
 			foreach((int id, string rawName) in rawDictionary)
 			{
 				if (duplicateNames.Contains(rawName))

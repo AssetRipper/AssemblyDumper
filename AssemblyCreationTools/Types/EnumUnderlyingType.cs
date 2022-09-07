@@ -79,5 +79,21 @@
 				_ => throw new ArgumentOutOfRangeException(nameof(type), $"{type.Name} is not a valid type name for an underlying enum type"),
 			};
 		}
+
+		public static EnumUnderlyingType ToEnumUnderlyingType(this ElementType type)
+		{
+			return type switch
+			{
+				ElementType.I1 => EnumUnderlyingType.Int8,
+				ElementType.U1 => EnumUnderlyingType.UInt8,
+				ElementType.I2 => EnumUnderlyingType.Int16,
+				ElementType.U2 => EnumUnderlyingType.UInt16,
+				ElementType.I4 => EnumUnderlyingType.Int32,
+				ElementType.U4 => EnumUnderlyingType.UInt32,
+				ElementType.I8 => EnumUnderlyingType.Int64,
+				ElementType.U8 => EnumUnderlyingType.UInt64,
+				_ => throw new ArgumentOutOfRangeException(nameof(type), $"{type} is not a valid type name for an underlying enum type"),
+			};
+		}
 	}
 }
