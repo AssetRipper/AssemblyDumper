@@ -1,5 +1,5 @@
-﻿using System.Text.RegularExpressions;
-using AssetRipper.AssemblyDumper.Utils;
+﻿using AssetRipper.AssemblyDumper.Utils;
+using System.Text.RegularExpressions;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -28,11 +28,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			foreach(VersionedList<UniversalClass> classList in SharedState.Instance.ClassInformation.Values)
+			foreach (VersionedList<UniversalClass> classList in SharedState.Instance.ClassInformation.Values)
 			{
 				foreach (UniversalClass? unityClass in classList.Values)
 				{
-					if(unityClass is not null)
+					if (unityClass is not null)
 					{
 						unityClass.CorrectInheritedTypeNames();
 						unityClass.EditorRootNode?.FixNamesRecursively();
@@ -77,7 +77,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				return;
 			}
 
-			node.Name = GetValidName(node.Name!);
+			node.Name = GetValidFieldName(node.Name!);
 			if (!PrimitiveTypes.primitivesAndGenerics.Contains(node.TypeName)) //don't rename special type names like long long, map, or Array
 			{
 				node.TypeName = GetValidTypeName(node.TypeName!);
@@ -96,7 +96,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		/// </summary>
 		/// <param name="originalName"></param>
 		/// <returns>A new string with the valid content</returns>
-		private static string GetValidName(string originalName)
+		public static string GetValidFieldName(string originalName)
 		{
 			if (string.IsNullOrWhiteSpace(originalName))
 			{
@@ -246,7 +246,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				bakedCoefficientsNode.TypeName = "SphericalHarmonicsL2";
 				foreach (UniversalNode child in bakedCoefficientsNode.SubNodes)
 				{
-					if(child.Name.Length == "m_Sh_0_".Length)
+					if (child.Name.Length == "m_Sh_0_".Length)
 					{
 						child.Name = $"m_Sh_{child.Name.Substring(4)}";
 					}
@@ -270,8 +270,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			else if (node.TypeName == "BuildTargetSettings")
 			{
-				node.TypeName = node.SubNodes.Any(n => n.Name == "m_MaxTextureSize") 
-					? "TextureImporterPlatformSettings" 
+				node.TypeName = node.SubNodes.Any(n => n.Name == "m_MaxTextureSize")
+					? "TextureImporterPlatformSettings"
 					: "BuildTargetSettings_Material";
 			}
 			else if (node.TypeName == "Google")
@@ -313,8 +313,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			else if (node.TypeName == "PlatformSettingsData")
 			{
-				node.TypeName = node.SubNodes.Any(n => n.Name == "m_Enabled") 
-					? "PlatformSettingsData_Plugin" 
+				node.TypeName = node.SubNodes.Any(n => n.Name == "m_Enabled")
+					? "PlatformSettingsData_Plugin"
 					: "PlatformSettingsData_Editor";
 			}
 			else if (node.TypeName == "AlbedoSwatchInfo")
@@ -338,7 +338,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			else if (node.TypeName == "BuildTargetSettings")
 			{
 				node.TypeName = node.SubNodes.Any(n => n.Name == "m_MaxTextureSize") //only for TextureImporter before 5.5
-					? "TextureImporterPlatformSettings" 
+					? "TextureImporterPlatformSettings"
 					: "MaterialBuildTargetSettings";
 			}
 			else if (node.TypeName == "TextureImporter")
@@ -438,7 +438,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			else if (node.TypeName == "Mesh")
 			{
-				if(node.TryGetSubNodeByTypeAndName("vector", "m_Shapes", out UniversalNode? meshBlendShapesListNode))
+				if (node.TryGetSubNodeByTypeAndName("vector", "m_Shapes", out UniversalNode? meshBlendShapesListNode))
 				{
 					meshBlendShapesListNode.Name = "m_ShapesList";
 				}
@@ -630,7 +630,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static bool TryRenameSubNode(this UniversalNode node, string currentName, string newName)
 		{
-			if(node.TryGetSubNodeByName(currentName, out UniversalNode? subNode))
+			if (node.TryGetSubNodeByName(currentName, out UniversalNode? subNode))
 			{
 				subNode.Name = newName;
 				return true;
@@ -647,12 +647,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			node.TypeName = Utf8StringName;
 			List<UniversalNode> subnodes = node.SubNodes!;
-			if(subnodes.Count != 1)
+			if (subnodes.Count != 1)
 			{
 				throw new Exception($"String has {subnodes.Count} subnodes");
 			}
 			UniversalNode subnode = subnodes[0];
-			if(subnode.TypeName == "Array")
+			if (subnode.TypeName == "Array")
 			{
 				subnode.Name = "m_Data";
 			}

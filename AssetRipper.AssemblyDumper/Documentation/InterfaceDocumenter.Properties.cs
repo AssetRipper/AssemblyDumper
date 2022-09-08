@@ -1,8 +1,8 @@
-﻿using System.Text;
+﻿using AssetRipper.DocExtraction.Extensions;
 
 namespace AssetRipper.AssemblyDumper.Documentation
 {
-	internal static class InterfacePropertyDocumenter
+	internal static partial class InterfaceDocumenter
 	{
 		[Flags]
 		private enum FieldPresense : byte
@@ -14,7 +14,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			AlwaysEditorOnly = 8,
 		}
 
-		public static void AddInterfacePropertyDocumentation(ClassGroupBase group)
+		private static void AddInterfacePropertyDocumentation(ClassGroupBase group)
 		{
 			Dictionary<PropertyDefinition, FieldPresense> interfacePropertyData = GetReleaseAndEditorOnlyData(group);
 
@@ -137,21 +137,16 @@ namespace AssetRipper.AssemblyDumper.Documentation
 
 		private static bool IsFieldEditorOnly(this GeneratedClassInstance instance, string? fieldName)
 		{
-			return fieldName is not null 
-				&& instance.GetReleaseFieldByName(fieldName) is null 
+			return fieldName is not null
+				&& instance.GetReleaseFieldByName(fieldName) is null
 				&& instance.GetEditorFieldByName(fieldName) is not null;
 		}
 
 		private static bool IsFieldReleaseOnly(this GeneratedClassInstance instance, string? fieldName)
 		{
-			return fieldName is not null 
-				&& instance.GetEditorFieldByName(fieldName) is null 
+			return fieldName is not null
+				&& instance.GetEditorFieldByName(fieldName) is null
 				&& instance.GetReleaseFieldByName(fieldName) is not null;
-		}
-
-		private static bool IsValueType(this PropertyDefinition property)
-		{
-			return property.Signature?.ReturnType.IsValueType ?? throw new NullReferenceException("Property signature");
 		}
 
 		private static string GetVersionString(ClassGroupBase group, PropertyDefinition interfaceProperty)

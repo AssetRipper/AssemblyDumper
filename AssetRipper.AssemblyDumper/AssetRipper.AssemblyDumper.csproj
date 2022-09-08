@@ -16,6 +16,7 @@
 		<ProjectReference Include="..\..\AssetRipper\AssetRipper.Fundamentals\AssetRipper.Fundamentals.csproj" />
 		<ProjectReference Include="..\..\Tpk\Tpk\Tpk.csproj" />
 		<ProjectReference Include="..\AssetRipper.AssemblyDumper.Utils\AssetRipper.AssemblyDumper.Utils.csproj" />
+		<ProjectReference Include="..\AssetRipper.DocExtraction\AssetRipper.DocExtraction.csproj" />
 	</ItemGroup>
 
 </Project>

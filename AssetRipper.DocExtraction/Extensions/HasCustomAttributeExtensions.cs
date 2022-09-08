@@ -1,5 +1,4 @@
 ﻿using AsmResolver.DotNet;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace AssetRipper.DocExtraction.Extensions;

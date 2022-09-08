@@ -1,8 +1,8 @@
 ﻿namespace AssetRipper.AssemblyDumper.Documentation
 {
-	internal static class InterfaceTypeDocumenter
+	internal static partial class InterfaceDocumenter
 	{
-		public static void AddInterfaceTypeDocumentation(ClassGroupBase group)
+		private static void AddInterfaceTypeDocumentation(ClassGroupBase group)
 		{
 			if (group is ClassGroup classGroup)
 			{
@@ -36,8 +36,8 @@
 		private static string GetSerializedVersionString(ClassGroupBase group)
 		{
 			group.GetSerializedVersions(out int minimum, out int maximum);
-			return minimum == maximum 
-				? $"Serialized Version: {minimum}" 
+			return minimum == maximum
+				? $"Serialized Version: {minimum}"
 				: $"Serialized Versions: {minimum} to {maximum}";
 		}
 	}

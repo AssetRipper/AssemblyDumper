@@ -1,4 +1,5 @@
 ﻿using AssetRipper.AssemblyDumper.Documentation;
+using AssetRipper.DocExtraction.DataStructures;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -8,17 +9,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
-				InterfaceTypeDocumenter.AddInterfaceTypeDocumentation(group);
-				InterfacePropertyDocumenter.AddInterfacePropertyDocumentation(group);
+				InterfaceDocumenter.AddInterfaceDocumentation(group);
 
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
-					ClassTypeDocumenter.AddClassTypeDocumentation(instance);
-					ClassPropertyDocumenter.AddClassPropertyDocumentation(instance);
+					ClassDocumenter.AddClassDocumentation(instance);
 				}
 			}
 
 			IdEnumDocumenter.AddIdEnumDocumentation();
+
+			foreach ((TypeDefinition type, EnumHistory history) in Pass350_AddEnums.enumDictionary)
+			{
+				EnumTypeDocumenter.AddEnumTypeDocumentation(type, history);
+			}
 
 			DocumentationHandler.MakeDocumentationFile();
 		}

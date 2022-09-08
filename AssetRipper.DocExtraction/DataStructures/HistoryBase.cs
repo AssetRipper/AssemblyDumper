@@ -76,4 +76,9 @@ public abstract class HistoryBase
 			versionedList.Add(version, element);
 		}
 	}
+
+	public bool ExistsOnVersion(UnityVersion version)
+	{
+		return Exists.GetItemForVersion(version);
+	}
 }

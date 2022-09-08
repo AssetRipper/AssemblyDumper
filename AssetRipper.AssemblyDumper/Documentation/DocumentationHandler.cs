@@ -20,7 +20,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 
 			XmlElement membersElement = docElement.AddChildElement(document, "members");
 
-			foreach((TypeDefinition type, List<string> lines) in typeDefinitionDocumentation)
+			foreach ((TypeDefinition type, List<string> lines) in typeDefinitionDocumentation)
 			{
 				membersElement.AddTypeMember(document, type).AddSummary(document, GetSummary(lines));
 			}
@@ -86,7 +86,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 
 		private static string GetSummary(List<string> lines)
 		{
-			if(lines.Count == 0)
+			if (lines.Count == 0)
 			{
 				return "";
 			}
@@ -94,7 +94,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			StringBuilder sb = new();
 			sb.AppendLineAndThreeTabs();
 			sb.Append(lines[0]);
-			for(int i = 1; i < lines.Count; i++)
+			for (int i = 1; i < lines.Count; i++)
 			{
 				sb.AppendBreakTag();
 				sb.AppendLineAndThreeTabs();

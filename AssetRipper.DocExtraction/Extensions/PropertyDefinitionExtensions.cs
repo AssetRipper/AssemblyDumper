@@ -18,4 +18,9 @@ public static class PropertyDefinitionExtensions
 	{
 		return (property.GetMethod?.IsStatic ?? false) || (property.SetMethod?.IsStatic ?? false);
 	}
+
+	public static bool IsValueType(this PropertyDefinition property)
+	{
+		return property.Signature?.ReturnType.IsValueType ?? throw new NullReferenceException("Property signature");
+	}
 }

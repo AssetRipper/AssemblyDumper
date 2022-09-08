@@ -31,7 +31,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 		//For example, the fully qualified name of the String constructor is "System.String.#ctor".
 		internal static string GetStringReference(FieldDefinition field)
 		{
-			return $"F:{field.DeclaringType?.FullName}.{((string?)field.Name)?.Replace('.','#')}";
+			return $"F:{field.DeclaringType?.FullName}.{((string?)field.Name)?.Replace('.', '#')}";
 		}
 
 		internal static string GetStringReference(EventDefinition @event)

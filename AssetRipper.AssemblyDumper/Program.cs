@@ -147,6 +147,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass302_HasEnabledInterface.DoPass();
 			}
+			using (new TimingCookie("Pass 350: Add Enum Types"))
+			{
+				Pass350_AddEnums.DoPass();
+			}
 			using (new TimingCookie("Pass 400: IEquatable Interface"))
 			{
 				Pass400_AddEqualityMethods.DoPass();

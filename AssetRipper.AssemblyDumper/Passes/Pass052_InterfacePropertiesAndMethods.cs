@@ -34,7 +34,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			Dictionary<string, (string, TypeSignature, bool)> propertyDictionary = group.GetPropertyDictionary();
 			HashSet<string> differingFieldNames = group.GetDifferingFieldNames();
-			
+
 			group.Interface.AddNullableContextAttribute(NullableAnnotation.NotNull);
 			group.Interface.AddNullableAttribute(NullableAnnotation.Oblivious);
 			foreach (TypeDefinition instanceType in group.Types)
@@ -77,13 +77,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 					if (hasConflictingTypes || missingOnSomeVersions)
 					{
 						TypeSignature? fieldType = field?.Signature?.FieldType;
-						bool presentAndMatchesType = fieldType is not null && 
+						bool presentAndMatchesType = fieldType is not null &&
 							(!hasConflictingTypes || signatureComparer.Equals(fieldType, propertyTypeSignature));
 						type.AddIsTypeMethodImplementation(propertyName, presentAndMatchesType);
 						PropertyDefinition property = presentAndMatchesType
 							? type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, field)
 							: type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, null);
-						instance.PropertiesToFields.Add(property, presentAndMatchesType ? fieldName : null);
+						instance.AddPropertyFieldPair(property, presentAndMatchesType ? fieldName : null);
 						instance.InterfacePropertiesToInstanceProperties.Add(propertyDeclaration, property);
 						if (!isValueType)
 						{
@@ -113,7 +113,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					else
 					{
 						PropertyDefinition property = type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, field);
-						instance.PropertiesToFields.Add(property, field?.Name);
+						instance.AddPropertyFieldPair(property, field?.Name);
 						instance.InterfacePropertiesToInstanceProperties.Add(propertyDeclaration, property);
 					}
 				}

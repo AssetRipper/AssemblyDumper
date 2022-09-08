@@ -10,6 +10,7 @@ namespace AssetRipper.AssemblyDumper
 		public const string AssemblyName = "AssetRipper.SourceGenerated";
 		public const string RootNamespace = AssemblyName;
 		public const string ClassesNamespace = RootNamespace + ".Classes";
+		public const string EnumsNamespace = RootNamespace + ".Enums";
 		public const string ExceptionsNamespace = RootNamespace + ".Exceptions";
 		public const string InterfacesNamespace = RootNamespace + ".Interfaces";
 		public const string HelpersNamespace = RootNamespace + ".Helpers";
@@ -47,8 +48,8 @@ namespace AssetRipper.AssemblyDumper
 		private SharedState(
 			UnityVersion[] sourceVersions,
 			Dictionary<int, VersionedList<UniversalClass>> classes,
-			UniversalCommonString commonString) 
-			: base(AssemblyName, new Version(0,0,0,0), KnownCorLibs.SystemRuntime_v6_0_0_0)
+			UniversalCommonString commonString)
+			: base(AssemblyName, new Version(0, 0, 0, 0), KnownCorLibs.SystemRuntime_v6_0_0_0)
 		{
 			SourceVersions = sourceVersions;
 			CommonString = commonString;
@@ -60,7 +61,7 @@ namespace AssetRipper.AssemblyDumper
 			MaxVersion = sourceVersions[sourceVersions.Length - 1];
 
 			AddReferenceModules();
-			
+
 			CompilerInjectedAttributeCreator.CreateEmbeddedAttribute(Importer, out MethodDefinition embeddedAttributeConstructor);
 			EmbeddedAttributeConstructor = embeddedAttributeConstructor;
 			NullableContextAttributeConstructor = CompilerInjectedAttributeCreator.CreateNullableContextAttribute(Importer, embeddedAttributeConstructor)
