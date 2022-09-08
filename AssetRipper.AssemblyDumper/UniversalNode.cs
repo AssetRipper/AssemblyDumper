@@ -66,7 +66,7 @@ namespace AssetRipper.AssemblyDumper
 		public static UniversalNode FromTpkUnityNode(TpkUnityNode tpkNode, TpkStringBuffer stringBuffer, TpkUnityNodeBuffer nodeBuffer)
 		{
 			UniversalNode result = new UniversalNode();
-			result.TypeName = stringBuffer[tpkNode.TypeName];
+			result.TypeName = GetFixedTypeName(stringBuffer[tpkNode.TypeName]);
 			result.OriginalTypeName = result.TypeName;
 			result.Name = stringBuffer[tpkNode.Name];
 			result.OriginalName = result.Name;
@@ -76,6 +76,28 @@ namespace AssetRipper.AssemblyDumper
 				.Select(nodeIndex => FromTpkUnityNode(nodeBuffer[nodeIndex], stringBuffer, nodeBuffer))
 				.ToList();
 			return result;
+		}
+
+		/// <summary>
+		/// Only store one name for each primitive integer size.
+		/// </summary>
+		/// <remarks>
+		/// Although this deduplicates, it also prevents these loaded type trees from being used in making new serialized files.
+		/// </remarks>
+		/// <param name="originalName"></param>
+		/// <returns></returns>
+		private static string GetFixedTypeName(string originalName)
+		{
+			return originalName switch
+			{
+				"short" => "SInt16",
+				"int" => "SInt32",
+				"long long" => "SInt64",
+				"unsigned short" => "UInt16",
+				"unsigned int" => "UInt32",
+				"unsigned long long" => "UInt64",
+				_ => originalName,
+			};
 		}
 
 		/// <summary>
