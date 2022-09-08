@@ -51,7 +51,10 @@
 		private static MethodDefinition AddGetMethod(this PropertyDefinition property, string propertyName, MethodAttributes methodAttributes, TypeSignature returnType)
 		{
 			if (property.GetMethod != null)
+			{
 				throw new ArgumentException("Property already has a get method", nameof(property));
+			}
+
 			MethodDefinition getter = property.DeclaringType!.AddMethod($"get_{propertyName}", methodAttributes, returnType);
 			property.Semantics.Add(new MethodSemantics(getter, MethodSemanticsAttributes.Getter));
 			return getter;
@@ -60,7 +63,10 @@
 		private static MethodDefinition AddSetMethod(this PropertyDefinition property, string propertyName, MethodAttributes methodAttributes, TypeSignature returnType)
 		{
 			if (property.SetMethod != null)
+			{
 				throw new ArgumentException("Property already has a set method", nameof(property));
+			}
+
 			TypeDefinition declaringType = property.DeclaringType!;
 			MethodDefinition setter = declaringType.AddMethod($"set_{propertyName}", methodAttributes, declaringType.Module!.CorLibTypeFactory.Void);
 			setter.AddParameter(returnType, "value");

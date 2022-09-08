@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ReferenceLibrary.BitFieldExperiments
+﻿namespace ReferenceLibrary.BitFieldExperiments
 {
 	public static class BitFieldHelper64
 	{
@@ -25,7 +19,7 @@ namespace ReferenceLibrary.BitFieldExperiments
 
 		public static ulong GetBitSelection(ulong bitFieldValue, int start, int size)
 		{
-			return bitFieldValue >> start << 64 - size >> 64 - size;
+			return bitFieldValue >> start << (64 - size) >> (64 - size);
 		}
 
 		public static bool GetSingleBit(ulong bitFieldValue, int start)
@@ -37,7 +31,7 @@ namespace ReferenceLibrary.BitFieldExperiments
 		{
 			ulong bitMask = GetBitMask(start, size);
 			bitFieldOldValue &= ~bitMask;
-			return bitFieldOldValue | assignedValue << start & bitMask;
+			return bitFieldOldValue | ((assignedValue << start) & bitMask);
 		}
 
 		public static ulong SetSingleBit(ulong bitFieldOldValue, bool assignedValue, int start)
@@ -65,7 +59,7 @@ namespace ReferenceLibrary.BitFieldExperiments
 
 		public static uint GetBitSelection(uint bitFieldValue, int start, int size)
 		{
-			return bitFieldValue >> start << 32 - size >> 32 - size;
+			return bitFieldValue >> start << (32 - size) >> (32 - size);
 		}
 
 		public static bool GetSingleBit(uint bitFieldValue, int start)
@@ -77,7 +71,7 @@ namespace ReferenceLibrary.BitFieldExperiments
 		{
 			uint bitMask = GetBitMask(start, size);
 			bitFieldOldValue &= ~bitMask;
-			return bitFieldOldValue | assignedValue << start & bitMask;
+			return bitFieldOldValue | ((assignedValue << start) & bitMask);
 		}
 
 		public static uint SetSingleBit(uint bitFieldOldValue, bool assignedValue, int start)

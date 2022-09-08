@@ -12,7 +12,7 @@ namespace AssetRipper.AssemblyDumper
 		internal static byte[] ReadOldByteArray(this UnityObjectBase audioClip, AssetReader reader, int m_Stream)
 		{
 			return m_Stream == 2 //AudioClipLoadType.Streaming
-				? ReadStreamedByteArray(audioClip, reader) 
+				? ReadStreamedByteArray(audioClip, reader)
 				: ReadAlignedByteArray(reader);
 		}
 

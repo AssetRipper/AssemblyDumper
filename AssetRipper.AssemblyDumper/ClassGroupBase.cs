@@ -32,7 +32,7 @@
 			{
 				throw new Exception("No classes available");
 			}
-			foreach(GeneratedClassInstance instance in Instances)
+			foreach (GeneratedClassInstance instance in Instances)
 			{
 				if (instance.VersionRange.Contains(version))
 				{
@@ -54,7 +54,7 @@
 		}
 
 		public override string ToString() => Name;
-		
+
 		public void GetSerializedVersions(out int minimum, out int maximum)
 		{
 			minimum = 1;

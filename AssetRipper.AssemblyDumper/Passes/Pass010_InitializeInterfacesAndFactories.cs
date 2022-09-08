@@ -25,7 +25,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			group.Interface.Name = $"I{group.Name}";
 			group.Interface.AddInterfaceImplementation(baseInterfaceReference);
 			SharedState.Instance.TypesToGroups.Add(group.Interface, group);
-			foreach(GeneratedClassInstance instance in group.Instances)
+			foreach (GeneratedClassInstance instance in group.Instances)
 			{
 				instance.Type.AddInterfaceImplementation(group.Interface);
 			}

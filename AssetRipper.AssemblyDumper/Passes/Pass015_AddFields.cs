@@ -6,7 +6,7 @@
 		{
 			foreach (ClassGroup group in SharedState.Instance.ClassGroups.Values)
 			{
-				foreach(GeneratedClassInstance instance in group.Instances)
+				foreach (GeneratedClassInstance instance in group.Instances)
 				{
 					ProcessNodeInformation(instance.Class, instance.Type, instance.VersionRange.Start);
 				}
@@ -29,7 +29,7 @@
 
 			GetFieldNodeSets(unityClass, out List<UniversalNode> releaseOnly, out List<UniversalNode> editorOnly, out List<(UniversalNode, UniversalNode)> releaseAndEditor);
 
-			foreach(UniversalNode releaseOnlyField in releaseOnly)
+			foreach (UniversalNode releaseOnlyField in releaseOnly)
 			{
 				TypeSignature releaseOnlyFieldType = GenericTypeResolver.ResolveNode(releaseOnlyField, version);
 				type.AddFieldForNode(releaseOnlyField, releaseOnlyFieldType);

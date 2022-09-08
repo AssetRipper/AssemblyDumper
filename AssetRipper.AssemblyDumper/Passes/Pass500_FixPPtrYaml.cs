@@ -26,7 +26,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			Func<MethodDefinition, bool> filter = m => m.Name == nameof(PPtr.ExportYaml) && m.Parameters.Count == 2;
 			IMethodDefOrRef exportGeneric = SharedState.Instance.Importer.ImportMethod(typeof(PPtr), filter);
 			MethodSpecification commonExportReference = MethodUtils.MakeGenericInstanceMethod(SharedState.Instance.Importer, exportGeneric, parameterType.ToTypeSignature());
-			
+
 			MethodDefinition releaseYamlMethod = pptrType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlRelease));
 			MethodDefinition editorYamlMethod = pptrType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlEditor));
 

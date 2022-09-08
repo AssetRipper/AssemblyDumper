@@ -14,8 +14,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 				.MakeGenericInstanceType(SharedState.Instance.Importer.ImportTypeSignature<UnityVersion>());
 			IMethodDefOrRef hashsetConstructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, unityVersionHashSet, 0);
 			IMethodDefOrRef addMethod = MethodUtils.MakeMethodOnGenericType(
-				SharedState.Instance.Importer, 
-				unityVersionHashSet, 
+				SharedState.Instance.Importer,
+				unityVersionHashSet,
 				SharedState.Instance.Importer.LookupMethod(typeof(HashSet<>), m => m.Name == nameof(HashSet<int>.Add)));
 
 			IMethodDefOrRef unityVersionConstructor = SharedState.Instance.Importer.ImportConstructor<UnityVersion>(5);

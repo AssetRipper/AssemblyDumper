@@ -31,14 +31,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void ModifyGroups()
 		{
-			foreach((ClassGroupBase group, string fieldName, ElementType elementType, IConvertible value) in definitions)
+			foreach ((ClassGroupBase group, string fieldName, ElementType elementType, IConvertible value) in definitions)
 			{
-				foreach(TypeDefinition type in group.Types)
+				foreach (TypeDefinition type in group.Types)
 				{
-					if(type.TryGetFieldByName(fieldName, out FieldDefinition? field, false))
+					if (type.TryGetFieldByName(fieldName, out FieldDefinition? field, false))
 					{
 						CorLibTypeSignature? fieldType = field.Signature?.FieldType as CorLibTypeSignature;
-						if(fieldType is not null && fieldType.ElementType == elementType)
+						if (fieldType is not null && fieldType.ElementType == elementType)
 						{
 							type.AppendInitializerToConstructors(field, elementType, value);
 						}
@@ -49,7 +49,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void AppendInitializerToConstructors(this TypeDefinition type, FieldDefinition field, ElementType elementType, IConvertible value)
 		{
-			foreach(MethodDefinition constructor in type.GetInstanceConstructors())
+			foreach (MethodDefinition constructor in type.GetInstanceConstructors())
 			{
 				constructor.GetProcessor().AppendInitializer(field, elementType, value);
 			}

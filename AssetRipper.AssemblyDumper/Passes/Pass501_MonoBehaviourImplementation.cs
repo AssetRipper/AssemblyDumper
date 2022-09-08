@@ -3,7 +3,6 @@ using AssetRipper.AssemblyCreationTools;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Core;
-using AssetRipper.Core.Classes;
 using AssetRipper.Core.Interfaces;
 using AssetRipper.Core.IO.Asset;
 
@@ -119,7 +118,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			cloner.Include(SharedState.Instance.Importer.LookupType(typeof(MonoScriptHelper))!, true);
 			cloner.Include(SharedState.Instance.Importer.LookupType(typeof(MonoBehaviourHelper))!, true);
 			MemberCloneResult result = cloner.Clone();
-			foreach(TypeDefinition type in result.ClonedTopLevelTypes)
+			foreach (TypeDefinition type in result.ClonedTopLevelTypes)
 			{
 				type.Namespace = SharedState.HelpersNamespace;
 				SharedState.Instance.Module.TopLevelTypes.Add(type);
@@ -129,8 +128,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 		}
 
 		private static MethodDefinition MakeReadStructureMethod(
-			this TypeDefinition monoBehaviourHelperType, 
-			TypeDefinition monoBehaviourInterface, 
+			this TypeDefinition monoBehaviourHelperType,
+			TypeDefinition monoBehaviourInterface,
 			TypeDefinition monoScriptInterface)
 		{
 			MethodDefinition method = monoBehaviourHelperType.AddMethod("MaybeReadStructure", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static, SharedState.Instance.Importer.Void);

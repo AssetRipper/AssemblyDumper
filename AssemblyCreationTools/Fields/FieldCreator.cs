@@ -3,10 +3,10 @@
 	public static class FieldCreator
 	{
 		public static FieldDefinition AddField(
-			this TypeDefinition type, 
-			TypeSignature fieldType, 
-			string fieldName, 
-			bool isStatic = false, 
+			this TypeDefinition type,
+			TypeSignature fieldType,
+			string fieldName,
+			bool isStatic = false,
 			FieldVisibility visibility = FieldVisibility.Public)
 		{
 			FieldAttributes attributes = visibility.ToAttributes() | (isStatic ? FieldAttributes.Static : default);
@@ -16,9 +16,9 @@
 		}
 
 		public static FieldDefinition AddConstantField(
-			this TypeDefinition type, 
-			TypeSignature fieldType, 
-			string fieldName, 
+			this TypeDefinition type,
+			TypeSignature fieldType,
+			string fieldName,
 			Constant constant,
 			FieldVisibility visibility = FieldVisibility.Public)
 		{

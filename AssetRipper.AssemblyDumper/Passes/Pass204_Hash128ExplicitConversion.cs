@@ -31,7 +31,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Owner.LocalVariables.Add(array);
 			processor.Add(CilOpCodes.Stloc, array);
 
-			for(int i = 0; i < 16; i++)
+			for (int i = 0; i < 16; i++)
 			{
 				FieldDefinition field = type.GetFieldByName($"m_Bytes_{i}_");
 				processor.Add(CilOpCodes.Ldloc, array);

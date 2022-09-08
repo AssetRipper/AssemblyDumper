@@ -43,7 +43,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				instanceType.AddNullableAttribute(NullableAnnotation.Oblivious);
 			}
 
-			foreach ((string propertyName,(string fieldName, TypeSignature propertyTypeSignature, bool hasConflictingTypes)) in propertyDictionary)
+			foreach ((string propertyName, (string fieldName, TypeSignature propertyTypeSignature, bool hasConflictingTypes)) in propertyDictionary)
 			{
 				bool missingOnSomeVersions = differingFieldNames.Contains(fieldName);
 				bool isValueType = propertyTypeSignature.IsValueType;
@@ -70,7 +70,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						}
 					}
 				}
-				foreach(GeneratedClassInstance instance in group.Instances)
+				foreach (GeneratedClassInstance instance in group.Instances)
 				{
 					TypeDefinition type = instance.Type;
 					FieldDefinition? field = type.TryGetFieldByName(fieldName, true);
@@ -136,12 +136,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 		/// <summary>
 		/// Field name : List of field types
 		/// </summary>
-		private static Dictionary<string,List<TypeSignature>> GetFieldTypeListDictionary(this ClassGroupBase group)
+		private static Dictionary<string, List<TypeSignature>> GetFieldTypeListDictionary(this ClassGroupBase group)
 		{
 			Dictionary<string, List<TypeSignature>> result = new();
-			foreach(GeneratedClassInstance instance in group.Instances)
+			foreach (GeneratedClassInstance instance in group.Instances)
 			{
-				foreach(string fieldName in instance.Class.GetFieldNames())
+				foreach (string fieldName in instance.Class.GetFieldNames())
 				{
 					TypeSignature fieldType = instance.Type.GetFieldByName(fieldName, true).Signature!.FieldType;
 					List<TypeSignature> typeList = result.GetOrAdd(fieldName);
@@ -154,7 +154,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return result;
 		}
 
-		private static Dictionary<string,T> SortStringDictionary<T>(this Dictionary<string,T> dictionary)
+		private static Dictionary<string, T> SortStringDictionary<T>(this Dictionary<string, T> dictionary)
 		{
 			var keyList = dictionary.Keys.ToList();
 			keyList.Sort();
@@ -169,14 +169,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 			Dictionary<string, List<TypeSignature>> fieldTypeDictionary = group.GetFieldTypeListDictionary().SortStringDictionary();
 			Dictionary<string, (string, TypeSignature, bool)> propertyDictionary = new();
 
-			foreach((string fieldName, List<TypeSignature> fieldTypeList) in fieldTypeDictionary)
+			foreach ((string fieldName, List<TypeSignature> fieldTypeList) in fieldTypeDictionary)
 			{
 				string propertyName = GeneratedInterfaceUtils.GetPropertyNameFromFieldName(fieldName, group.ID);
 				if (fieldTypeList.Count == 1)
 				{
 					propertyDictionary.Add(propertyName, (fieldName, fieldTypeList[0], false));
 				}
-				else if(TryGetCommonInheritor(fieldTypeList, out TypeSignature? baseInterface))
+				else if (TryGetCommonInheritor(fieldTypeList, out TypeSignature? baseInterface))
 				{
 					propertyDictionary.Add(propertyName, (fieldName, baseInterface, false));
 				}
@@ -186,7 +186,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				else
 				{
-					foreach(TypeSignature fieldType in fieldTypeList)
+					foreach (TypeSignature fieldType in fieldTypeList)
 					{
 						string fieldTypeName = GetName(fieldType);
 						propertyDictionary.Add($"{propertyName}_{fieldTypeName}", (fieldName, fieldType, true));
@@ -200,12 +200,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static bool TryGetCommonGenericInstance(List<TypeSignature> fieldTypeList, [NotNullWhen(true)] out TypeSignature? accessTypeSignature)
 		{
 			accessTypeSignature = null;
-			if(fieldTypeList.TryCast(out List<GenericInstanceTypeSignature>? genericInstanceFields))
+			if (fieldTypeList.TryCast(out List<GenericInstanceTypeSignature>? genericInstanceFields))
 			{
-				if(genericInstanceFields.All(genericInstance => genericInstance.GenericType.Name == "AssetList`1"))
+				if (genericInstanceFields.All(genericInstance => genericInstance.GenericType.Name == "AssetList`1"))
 				{
 					List<TypeSignature> typeArguments = genericInstanceFields.Select(genericInstance => genericInstance.TypeArguments.Single()).ToList();
-					if(TryGetCommonInheritor(typeArguments, out TypeSignature? commonInterface))
+					if (TryGetCommonInheritor(typeArguments, out TypeSignature? commonInterface))
 					{
 						accessTypeSignature = SharedState.Instance.Importer.ImportTypeSignature(typeof(AccessListBase<>)).MakeGenericInstanceType(commonInterface);
 					}
@@ -214,7 +214,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					List<TypeSignature> keyTypeArguments = genericInstanceFields.Select(genericInstance => genericInstance.TypeArguments[0]).ToList();
 					List<TypeSignature> valueTypeArguments = genericInstanceFields.Select(genericInstance => genericInstance.TypeArguments[1]).ToList();
-					if(keyTypeArguments.TryGetEqualityOrCommonInheritor(out TypeSignature? commonKeyType) 
+					if (keyTypeArguments.TryGetEqualityOrCommonInheritor(out TypeSignature? commonKeyType)
 						&& valueTypeArguments.TryGetEqualityOrCommonInheritor(out TypeSignature? commonValueType))
 					{
 						accessTypeSignature = SharedState.Instance.Importer.ImportTypeSignature(typeof(AccessDictionaryBase<,>))
@@ -233,7 +233,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static bool TryGetEquality(this List<TypeSignature> types, [NotNullWhen(true)] out TypeSignature? commonType)
 		{
 			TypeSignature first = types.First();
-			if(types.All(type => signatureComparer.Equals(type, first)))
+			if (types.All(type => signatureComparer.Equals(type, first)))
 			{
 				commonType = first;
 				return true;
@@ -247,7 +247,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static bool TryGetCommonInheritor(this List<TypeSignature> types, [NotNullWhen(true)] out TypeSignature? baseInterface)
 		{
-			if(types.Count == 0)
+			if (types.Count == 0)
 			{
 				throw new ArgumentException(nameof(types));
 			}
@@ -255,7 +255,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			if (TryGetTypeDefinitionsForTypeSignatures(types, out List<TypeDefinition>? typeDefinitions))
 			{
 				ClassGroupBase group = SharedState.Instance.TypesToGroups[typeDefinitions[0]];
-				if(!typeDefinitions.Any(def => !group.ContainsTypeDefinition(def)))
+				if (!typeDefinitions.Any(def => !group.ContainsTypeDefinition(def)))
 				{
 					baseInterface = group.GetSingularTypeOrInterface().ToTypeSignature();
 					return true;
@@ -285,9 +285,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static bool TryGetTypeDefinitionsForTypeSignatures(List<TypeSignature> typeSignatures, [NotNullWhen(true)] out List<TypeDefinition>? typeDefinitions)
 		{
 			typeDefinitions = new List<TypeDefinition>(typeSignatures.Count);
-			foreach(TypeSignature typeSignature in typeSignatures)
+			foreach (TypeSignature typeSignature in typeSignatures)
 			{
-				if(TryGetTypeDefinitionForTypeSignature(typeSignature, out TypeDefinition? typeDefinition))
+				if (TryGetTypeDefinitionForTypeSignature(typeSignature, out TypeDefinition? typeDefinition))
 				{
 					typeDefinitions.Add(typeDefinition);
 				}
@@ -302,7 +302,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static PropertyDefinition AddInterfacePropertyDeclaration(this TypeDefinition @interface, string propertyName, TypeSignature propertyType)
 		{
-			if(ShouldUseFullProperty(propertyType))
+			if (ShouldUseFullProperty(propertyType))
 			{
 				return @interface.AddFullProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType);
 			}
@@ -462,12 +462,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 		}
 
-		private static bool TryCast<T,TCast>(this List<T> originalList, [NotNullWhen(true)] out List<TCast>? castedList)
+		private static bool TryCast<T, TCast>(this List<T> originalList, [NotNullWhen(true)] out List<TCast>? castedList)
 		{
 			castedList = new List<TCast>(originalList.Count);
-			foreach(T element in originalList)
+			foreach (T element in originalList)
 			{
-				if(element is TCast castedElement)
+				if (element is TCast castedElement)
 				{
 					castedList.Add(castedElement);
 				}
@@ -514,13 +514,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void AddNullableIndicatorBytes(TypeSignature type, List<byte> byteList)
 		{
 			byteList.Add(type.IsValueType ? (byte)0 : (byte)1);
-			if(type is SzArrayTypeSignature arrayType)
+			if (type is SzArrayTypeSignature arrayType)
 			{
 				AddNullableIndicatorBytes(arrayType.BaseType, byteList);
 			}
 			else if (type is GenericInstanceTypeSignature genericInstanceTypeSignature)
 			{
-				foreach(TypeSignature typeArgument in genericInstanceTypeSignature.TypeArguments)
+				foreach (TypeSignature typeArgument in genericInstanceTypeSignature.TypeArguments)
 				{
 					AddNullableIndicatorBytes(typeArgument, byteList);
 				}

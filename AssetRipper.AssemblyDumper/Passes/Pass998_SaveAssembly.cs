@@ -18,19 +18,19 @@ namespace AssetRipper.AssemblyDumper.Passes
 			//Console.WriteLine($"Saving assembly to {filePath}");
 			try
 			{
-				if(File.Exists(filePath))
+				if (File.Exists(filePath))
 				{
 					File.Delete(filePath);
 				}
 
 				assembly.Write(filePath, builder);
 			}
-			catch(AggregateException aggregateException)
+			catch (AggregateException aggregateException)
 			{
 				Console.WriteLine("AggregateException thrown");
 				aggregateException = aggregateException.Flatten();
-				
-				foreach(Exception? error in aggregateException.InnerExceptions)
+
+				foreach (Exception? error in aggregateException.InnerExceptions)
 				{
 					Console.WriteLine();
 					Console.WriteLine(error.ToString());

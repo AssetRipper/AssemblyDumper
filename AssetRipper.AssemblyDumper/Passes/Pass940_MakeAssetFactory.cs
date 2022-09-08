@@ -1,7 +1,6 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Core.Interfaces;
-using AssetRipper.Core.Layout;
 using AssetRipper.Core.Parser.Asset;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -29,7 +28,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				"Abstract class could not be created");
 			abstractClassExceptionConstructor = abstractClassException.GetDefaultConstructor();
 
-			unityVersionIsLessMethod = SharedState.Instance.Importer.ImportMethod<UnityVersion>(m => 
+			unityVersionIsLessMethod = SharedState.Instance.Importer.ImportMethod<UnityVersion>(m =>
 				m.Name == nameof(UnityVersion.IsLess) && m.Parameters.Count == 5);
 			makeDummyAssetInfo = SharedState.Instance.Importer.ImportMethod<AssetInfo>(method =>
 				method.Name == nameof(AssetInfo.MakeDummyAssetInfo)
@@ -98,7 +97,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			CilInstructionLabel[] nopInstructions = Enumerable.Range(0, count).Select(i => new CilInstructionLabel()).ToArray();
 			CilInstructionLabel defaultNop = new CilInstructionLabel();
-			for(int i = 0; i < count; i++)
+			for (int i = 0; i < count; i++)
 			{
 				processor.Add(CilOpCodes.Ldloc, switchCondition);
 				processor.Add(CilOpCodes.Ldc_I4, constructors[i].Item1);
@@ -108,13 +107,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 			for (int i = 0; i < count; i++)
 			{
 				nopInstructions[i].Instruction = processor.Add(CilOpCodes.Nop);
-				if(constructors[i].Item2 is null)
+				if (constructors[i].Item2 is null)
 				{
 					processor.AddThrowAbstractClassException();
 				}
 				else
 				{
-					if(constructors[i].Item3)//uses version
+					if (constructors[i].Item3)//uses version
 					{
 						processor.Add(CilOpCodes.Ldarg_0);
 					}
@@ -133,7 +132,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ret);
 			processor.OptimizeMacros();
 		}
-		
+
 		private static void AddAllClassCreationMethods(
 			Dictionary<UnityVersion, UnityVersion> versionRedirects,
 			out List<(int, MethodDefinition?, bool)> defaultMethods,
@@ -145,7 +144,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				group.AddMethodsForGroup(
 					versionRedirects,
-					out MethodDefinition? defaultMethod, 
+					out MethodDefinition? defaultMethod,
 					out MethodDefinition? assetInfoMethod,
 					out bool usesVersion);
 				defaultMethods.Add((group.ID, defaultMethod, usesVersion));
@@ -165,7 +164,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			out bool usesVersion)
 		{
 			assetInfoMethod = null;
-			
+
 			if (group.IsAbstractGroup())
 			{
 				usesVersion = false;
@@ -251,7 +250,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void AddThrowExceptionOrReturnNewObject(this CilInstructionCollection processor, TypeDefinition objectType, bool hasInfo, bool hasVersion)
 		{
-			if(objectType.IsAbstract)
+			if (objectType.IsAbstract)
 			{
 				processor.AddThrowAbstractClassException();
 			}
@@ -273,7 +272,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			if (hasInfo)
 			{
 				constructor = objectType.GetAssetInfoConstructor();
-				if(hasVersion)
+				if (hasVersion)
 				{
 					processor.Add(CilOpCodes.Ldarg_1);//version is always the first argument
 				}
@@ -308,7 +307,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			int count = group.Instances.Count;
 
 			CilInstructionLabel[] nopInstructions = Enumerable.Range(0, count - 1).Select(i => new CilInstructionLabel()).ToArray();
-			
+
 			for (int i = 0; i < count - 1; i++)
 			{
 				UnityVersion endVersion = group.Instances[i + 1].VersionRange.Start;
@@ -336,7 +335,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			ushort major = default;
 			ushort minor = default;
 			ushort build = default;
-			foreach(UnityVersion version in SharedState.Instance.SourceVersions)
+			foreach (UnityVersion version in SharedState.Instance.SourceVersions)
 			{
 				if (version.Major != major || version.Minor != minor || version.Build != build)
 				{

@@ -8,11 +8,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			foreach((string name, SubclassGroup group) in SharedState.Instance.SubclassGroups)
+			foreach ((string name, SubclassGroup group) in SharedState.Instance.SubclassGroups)
 			{
 				if (name.StartsWith("OffsetPtr"))
 				{
-					foreach(TypeDefinition type in group.Types)
+					foreach (TypeDefinition type in group.Types)
 					{
 						type.AddImplicitConversion();
 					}
@@ -23,7 +23,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void AddImplicitConversion(this TypeDefinition type)
 		{
 			FieldDefinition field = type.GetField();
-			
+
 			MethodDefinition implicitMethod = type.AddMethod("op_Implicit", ConversionAttributes, field.Signature!.FieldType);
 			implicitMethod.AddParameter(type.ToTypeSignature(), "value");
 

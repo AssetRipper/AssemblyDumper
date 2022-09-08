@@ -17,7 +17,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			TypeSignature utf8StringSignature = SharedState.Instance.SubclassGroups[Utf8StringName].Instances.Single().Type.ToTypeSignature();
 			TypeDefinition hasNameInterface = MakeHasNameInterface(utf8StringSignature);
-			foreach(ClassGroupBase group in SharedState.Instance.AllGroups)
+			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
 				DoPassOnGroup(group, hasNameInterface, utf8StringSignature);
 			}
@@ -33,18 +33,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void DoPassOnGroup(ClassGroupBase group, TypeDefinition hasNameInterface, TypeSignature utf8StringSignature)
 		{
-			if(group.Types.All(t => t.TryGetNameField(true, out var _)))
+			if (group.Types.All(t => t.TryGetNameField(true, out var _)))
 			{
 				TypeDefinition groupInterface = group.Interface;
 				groupInterface.AddInterfaceImplementation(hasNameInterface);
-				if(groupInterface.Properties.Any(p => p.Name == Utf8PropertyName))
+				if (groupInterface.Properties.Any(p => p.Name == Utf8PropertyName))
 				{
 					throw new Exception("Interface already has a name property");
 				}
 
 				foreach (TypeDefinition type in group.Types)
 				{
-					if(type.TryGetNameField(false, out FieldDefinition? field))
+					if (type.TryGetNameField(false, out FieldDefinition? field))
 					{
 						type.ImplementNameProperties(field, utf8StringSignature);
 					}

@@ -7,7 +7,9 @@ namespace AssetRipper.AssemblyCreationTools.Fields
 		public static List<FieldDefinition> GetAllFieldsInTypeAndBase(this TypeDefinition? type)
 		{
 			if (type == null)
+			{
 				return new();
+			}
 
 			List<FieldDefinition>? ret = type.Fields.ToList();
 

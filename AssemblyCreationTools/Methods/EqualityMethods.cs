@@ -3,9 +3,9 @@
 	public static class EqualityMethods
 	{
 		public static void AddDefaultEqualityOperators(
-			this TypeDefinition type, 
-			CachedReferenceImporter importer, 
-			out MethodDefinition equalityMethod, 
+			this TypeDefinition type,
+			CachedReferenceImporter importer,
+			out MethodDefinition equalityMethod,
 			out MethodDefinition inequalityMethod)
 		{
 			equalityMethod = type.AddDefaultEqualityOperator(importer);

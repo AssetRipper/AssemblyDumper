@@ -35,7 +35,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			unityObjectBasePPtrListConstructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, unityObjectBasePPtrListType, 0);
 			MethodDefinition addRangeMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == "AddRange");
 			unityObjectBasePPtrListAddRange = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, unityObjectBasePPtrListType, addRangeMethodDefinition);
-			
+
 			emptyArray = SharedState.Instance.Importer.ImportMethod<Array>(method => method.Name == "Empty");
 			emptyArrayMethod = MethodUtils.MakeGenericInstanceMethod(SharedState.Instance.Importer, emptyArray, unityObjectBasePPtrRef);
 
@@ -151,7 +151,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static bool AddFetchDependenciesFromArrayField(this CilInstructionCollection processor, FieldDefinition field, CilLocalVariable listVariable)
 		{
 			TypeSignature fieldType = field.Signature!.FieldType;
-			if(fieldType is not SzArrayTypeSignature arrayType)
+			if (fieldType is not SzArrayTypeSignature arrayType)
 			{
 				throw new ArgumentException(nameof(field));
 			}
@@ -228,7 +228,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static bool AddFetchDependenciesFromField(this CilInstructionCollection processor, FieldDefinition field, CilLocalVariable listVariable)
 		{
 			TypeSignature fieldType = field.Signature!.FieldType;
-			
+
 			if (fieldType is SzArrayTypeSignature arrayType)
 			{
 				if (arrayType.BaseType is SzArrayTypeSignature)
@@ -278,7 +278,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			int count = 0;
 
-			if(type.BaseType is TypeDefinition baseType)
+			if (type.BaseType is TypeDefinition baseType)
 			{
 				baseType.MaybeProcessType();
 
@@ -294,10 +294,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 			}
 
-			foreach(FieldDefinition field in type.Fields)
+			foreach (FieldDefinition field in type.Fields)
 			{
 				bool increaseCount = processor.AddFetchDependenciesFromField(field, list);
-				if(increaseCount)
+				if (increaseCount)
 				{
 					count++;
 				}
@@ -318,7 +318,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				processor.Pop();//call add range
 				processor.Add(CilOpCodes.Ret);
 			}
-			else if(count == 0)
+			else if (count == 0)
 			{
 				processor.ReplaceWithReturnEmptyArray();
 				nonDependentTypes.Add(type);

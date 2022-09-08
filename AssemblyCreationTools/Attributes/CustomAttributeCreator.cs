@@ -34,7 +34,7 @@
 		public static CustomAttribute AddCustomAttribute(this IHasCustomAttribute _this, IMethodDefOrRef constructor, params (TypeSignature, object)[] parameters)
 		{
 			CustomAttribute attribute = _this.AddCustomAttribute(constructor);
-			for(int i = 0; i < parameters.Length; i++)
+			for (int i = 0; i < parameters.Length; i++)
 			{
 				attribute.AddFixedArgument(parameters[i].Item1, parameters[i].Item2);
 			}

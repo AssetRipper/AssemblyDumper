@@ -1,10 +1,5 @@
 ﻿//#define SPLIT_ABSTRACT
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using AssetRipper.AssemblyDumper.Utils;
 using RangeClassList = System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<AssetRipper.AssemblyDumper.Utils.Range<AssetRipper.VersionUtilities.UnityVersion>, AssetRipper.AssemblyDumper.UniversalClass>>;
 
@@ -68,12 +63,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			foreach (Section section in sectionList)
 			{
 				UniversalClass? baseClass = section.Class.BaseClass;
-				if(baseClass is not null && baseClass.DerivedClasses.Contains(section.Class))
+				if (baseClass is not null && baseClass.DerivedClasses.Contains(section.Class))
 				{
 					baseClass.DerivedClasses.Remove(section.Class);
 				}
 				section.Class = section.Class.DeepClone();
-				if(baseClass is not null)
+				if (baseClass is not null)
 				{
 					baseClass.DerivedClasses.Add(section.Class);
 				}
@@ -94,7 +89,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				foreach (UniversalClass derivedClass in section.DerivedClasses)
 				{
-					if(derivedClass.BaseClass is null)
+					if (derivedClass.BaseClass is null)
 					{
 						derivedClass.BaseClass = section.Class;
 						section.Class.DerivedClasses.Add(derivedClass);
@@ -108,7 +103,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			foreach (Section section in sectionList)
 			{
 				section.Class.InitializeRootNodes();
-				foreach ((_,(UniversalNode? releaseNode, UniversalNode? editorNode)) in section.ApprovedFields)
+				foreach ((_, (UniversalNode? releaseNode, UniversalNode? editorNode)) in section.ApprovedFields)
 				{
 					if (releaseNode is not null)
 					{
@@ -197,7 +192,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			for (int i = 1; i < sectionList.Count; i++)
 			{
 				Section nextSection = sectionList[i];
-				if(CanBeMerged(currentSection, nextSection))
+				if (CanBeMerged(currentSection, nextSection))
 				{
 					currentSection.Range = currentSection.Range.MakeUnion(nextSection.Range);
 					currentSection.DerivedClasses.AddRange(nextSection.DerivedClasses);
@@ -457,9 +452,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 				return false;
 			}
 
-			foreach ((string fieldName,(UniversalNode? releaseNode1, UniversalNode? editorNode1)) in section1.ApprovedFields)
+			foreach ((string fieldName, (UniversalNode? releaseNode1, UniversalNode? editorNode1)) in section1.ApprovedFields)
 			{
-				if(section2.ApprovedFields.TryGetValue(fieldName, out (UniversalNode?, UniversalNode?) pair2))
+				if (section2.ApprovedFields.TryGetValue(fieldName, out (UniversalNode?, UniversalNode?) pair2))
 				{
 					if (!UniversalNodeComparer.Equals(releaseNode1, pair2.Item1, false))
 					{
@@ -511,7 +506,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				HashSet<UniversalClass> newDerivedClasses = new(DerivedClasses.Count);
 				newDerivedClasses.AddRange(DerivedClasses);
 				Section newSection = new Section(Class, Range, newDerivedClasses);
-				foreach ((string fieldName, (UniversalNode?, UniversalNode?)pair)in ApprovedFields)
+				foreach ((string fieldName, (UniversalNode?, UniversalNode?) pair) in ApprovedFields)
 				{
 					newSection.ApprovedFields.Add(fieldName, pair);
 				}

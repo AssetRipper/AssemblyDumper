@@ -1,5 +1,5 @@
-﻿using System.Text;
-using AssetRipper.AssemblyDumper.Utils;
+﻿using AssetRipper.AssemblyDumper.Utils;
+using System.Text;
 
 namespace AssetRipper.AssemblyDumper.Documentation
 {

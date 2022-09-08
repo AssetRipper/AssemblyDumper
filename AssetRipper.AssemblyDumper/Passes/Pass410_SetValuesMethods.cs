@@ -9,9 +9,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			foreach(SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
+			foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
 			{
-				if(group.InterfaceProperties.All(prop => prop.Signature?.ReturnType is SzArrayTypeSignature or CorLibTypeSignature) && group.InterfaceProperties.Count > 0)
+				if (group.InterfaceProperties.All(prop => prop.Signature?.ReturnType is SzArrayTypeSignature or CorLibTypeSignature) && group.InterfaceProperties.Count > 0)
 				{
 					group.ImplementSetValuesMethod();
 					group.ImplementCopyValuesMethod();
@@ -55,7 +55,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				CilInstructionCollection processor = method.GetProcessor();
 				IEnumerable<PropertyDefinition> properties = group.IsVector4()
 					? new Vector4PropertyEnumerable_Instance(instance)
-					: group.IsColorRGBAf() 
+					: group.IsColorRGBAf()
 						? new ColorPropertyEnumerable_Instance(instance)
 						: instance.InterfacePropertiesToInstanceProperties.Values;
 				foreach (PropertyDefinition property in properties)
@@ -72,8 +72,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static IEnumerable<PropertyDefinition> GetInterfacePropertiesInOrder(this SubclassGroup group)
 		{
-			return group.IsVector4() 
-				? new Vector4PropertyEnumerable_Group(group) 
+			return group.IsVector4()
+				? new Vector4PropertyEnumerable_Group(group)
 				: group.IsColorRGBAf()
 					? new ColorPropertyEnumerable_Group(group)
 					: group.InterfaceProperties;

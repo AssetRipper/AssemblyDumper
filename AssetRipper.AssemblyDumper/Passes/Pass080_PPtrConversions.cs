@@ -1,8 +1,8 @@
-﻿using AssetRipper.Core.Interfaces;
-using AssetRipper.Core.Classes.Misc;
-using AssetRipper.AssemblyCreationTools.Fields;
+﻿using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
+using AssetRipper.Core.Classes.Misc;
+using AssetRipper.Core.Interfaces;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -65,7 +65,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void ImplementPPtrInterface(this TypeDefinition pptrType)
 		{
 			pptrType.ImplementFullProperty(nameof(IPPtr.FileIndex), InterfacePropertyImplementationAttributes, SharedState.Instance.Importer.Int32, pptrType.GetFieldByName("m_FileID"));
-			
+
 			FieldDefinition pathidField = pptrType.GetFieldByName("m_PathID");
 			PropertyDefinition property = pptrType.AddFullProperty(nameof(IPPtr.PathIndex), InterfacePropertyImplementationAttributes, SharedState.Instance.Importer.Int64);
 			CilInstructionCollection getProcessor = property.GetMethod!.CilMethodBody!.Instructions;
@@ -80,7 +80,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
 			setProcessor.Add(CilOpCodes.Ldarg_0);
 			setProcessor.Add(CilOpCodes.Ldarg_1);
-			if(pathidField.IsInt32Type())
+			if (pathidField.IsInt32Type())
 			{
 				setProcessor.Add(CilOpCodes.Conv_Ovf_I4);
 			}
@@ -177,8 +177,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 					}
 				}
 
-				return result is null 
-					? throw new Exception($"Could not find type {parameterTypeName} on version {pptrInstance.VersionRange.Start}") 
+				return result is null
+					? throw new Exception($"Could not find type {parameterTypeName} on version {pptrInstance.VersionRange.Start}")
 					: result.Type;
 			}
 			else

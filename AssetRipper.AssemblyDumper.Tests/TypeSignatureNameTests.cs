@@ -1,7 +1,7 @@
 ﻿using AsmResolver.DotNet;
 using AsmResolver.DotNet.Signatures.Types;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace AssetRipper.AssemblyDumper.Tests
@@ -10,7 +10,7 @@ namespace AssetRipper.AssemblyDumper.Tests
 	{
 		private static readonly ModuleDefinition module = new ModuleDefinition("test", KnownCorLibs.SystemPrivateCoreLib_v5_0_0_0);
 		private static readonly ReferenceImporter importer = new ReferenceImporter(module);
-		
+
 		[Test]
 		public static void AsmByteArrayName()
 		{
@@ -87,7 +87,7 @@ namespace AssetRipper.AssemblyDumper.Tests
 				string baseTypeName = GetName(genericInstanceType.GenericType.ToTypeSignature());
 				StringBuilder sb = new StringBuilder();
 				sb.Append(baseTypeName);
-				foreach(TypeSignature typeArgument in genericInstanceType.TypeArguments)
+				foreach (TypeSignature typeArgument in genericInstanceType.TypeArguments)
 				{
 					sb.Append('_');
 					sb.Append(GetName(typeArgument));

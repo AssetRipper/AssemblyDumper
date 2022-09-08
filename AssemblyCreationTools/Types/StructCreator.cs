@@ -2,10 +2,10 @@
 {
 	public static class StructCreator
 	{
-		public const TypeAttributes SequentialStructAttributes = 
-			TypeAttributes.Public | 
-			TypeAttributes.SequentialLayout | 
-			TypeAttributes.Sealed | 
+		public const TypeAttributes SequentialStructAttributes =
+			TypeAttributes.Public |
+			TypeAttributes.SequentialLayout |
+			TypeAttributes.Sealed |
 			TypeAttributes.BeforeFieldInit;
 		public const TypeAttributes ExplicitStructAttributes =
 			TypeAttributes.Public |

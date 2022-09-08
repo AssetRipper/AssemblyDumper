@@ -6,7 +6,7 @@
 		private static readonly bool shouldSkip = true;
 		public static void DoPass()
 		{
-			if(shouldSkip)
+			if (shouldSkip)
 			{
 				return;
 			}
@@ -48,7 +48,7 @@
 					UniversalNode subNode = GetFirstNode(derived, false, editorFieldName);
 
 					float matchProportion = GetWeightedMatching(derived, false, editorFieldName, subNode);
-					
+
 					Console.WriteLine($"\t{matchProportion} {editorFieldName} editor");
 					if (matchProportion < MinMatchingProportion)
 					{
@@ -112,7 +112,7 @@
 			uint total = 0;
 			uint matching = 0;
 
-			foreach(UniversalClass universalClass in classes)
+			foreach (UniversalClass universalClass in classes)
 			{
 				int duplicateCount = classes.Count(c => c.Name == universalClass.Name);
 				float weight = (float)universalClass.DescendantCount / duplicateCount;
@@ -147,8 +147,8 @@
 			}
 
 			float result = matching / total;
-			return !float.IsNaN(result) 
-				? result 
+			return !float.IsNaN(result)
+				? result
 				: throw new InvalidOperationException("Proportion cannot be nan");
 		}
 
@@ -228,10 +228,10 @@
 		/// </returns>
 		private static int CompareByInheritance(UniversalClass left, UniversalClass right)
 		{
-			return left.IsSubclassOf(right) 
-				? -1 
-				: right.IsSubclassOf(left) 
-					? 1 
+			return left.IsSubclassOf(right)
+				? -1
+				: right.IsSubclassOf(left)
+					? 1
 					: 0;
 		}
 

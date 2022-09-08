@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using AssetRipper.AssemblyDumper.Utils;
+﻿using AssetRipper.AssemblyDumper.Utils;
+using System.Diagnostics;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

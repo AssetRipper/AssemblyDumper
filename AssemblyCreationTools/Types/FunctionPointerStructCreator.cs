@@ -121,10 +121,10 @@ namespace AssetRipper.AssemblyCreationTools.Types
 		}
 
 		private static MethodDefinition AddInvokeMethod(
-			this TypeDefinition type, 
-			CachedReferenceImporter importer, 
-			MethodDefinition explicitConversion, 
-			TypeSignature managedDelegateSignature, 
+			this TypeDefinition type,
+			CachedReferenceImporter importer,
+			MethodDefinition explicitConversion,
+			TypeSignature managedDelegateSignature,
 			TypeSignature returnType,
 			Dictionary<string, TypeSignature> parameterDictionary)
 		{
@@ -132,7 +132,7 @@ namespace AssetRipper.AssemblyCreationTools.Types
 
 			Parameter[] parameters = new Parameter[parameterDictionary.Count];
 			int i = 0;
-			foreach(var parameterDescription in parameterDictionary)
+			foreach (var parameterDescription in parameterDictionary)
 			{
 				parameters[i] = conversion.AddParameter(parameterDescription.Value, parameterDescription.Key);
 				i++;
@@ -142,7 +142,7 @@ namespace AssetRipper.AssemblyCreationTools.Types
 			//conversion.CilMethodBody!.LocalVariables.Add(local);
 
 			IMethodDefOrRef invokeMethod;
-			if(managedDelegateSignature is GenericInstanceTypeSignature genericDelegateSignature)
+			if (managedDelegateSignature is GenericInstanceTypeSignature genericDelegateSignature)
 			{
 				invokeMethod = MethodUtils.MakeMethodOnGenericType(importer, genericDelegateSignature, m => m.Name == "Invoke");
 			}
@@ -155,7 +155,7 @@ namespace AssetRipper.AssemblyCreationTools.Types
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldobj, type);
 			processor.Add(CilOpCodes.Call, explicitConversion);
-			for(int j = 0; j < parameters.Length; j++)
+			for (int j = 0; j < parameters.Length; j++)
 			{
 				processor.Add(CilOpCodes.Ldarg, parameters[j]);
 			}

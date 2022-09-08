@@ -8,15 +8,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			foreach(VersionedList<UniversalClass> classList in SharedState.Instance.ClassInformation.Values)
+			foreach (VersionedList<UniversalClass> classList in SharedState.Instance.ClassInformation.Values)
 			{
 				List<ClassData> classDataList = MakeClassData(classList);
-				foreach(ClassData classData in classDataList)
+				foreach (ClassData classData in classDataList)
 				{
 					AddDependentTypes(classData);
 				}
 			}
-			foreach(List<SubclassCandidate> candidateList in candidateListDictionary.Values)
+			foreach (List<SubclassCandidate> candidateList in candidateListDictionary.Values)
 			{
 				AddClassesToSharedStateSubclasses(candidateList);
 			}
@@ -28,7 +28,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			foreach (VersionedList<UniversalClass> list in SharedState.Instance.SubclassInformation.Values)
 			{
-				foreach(UniversalClass? @class in list.Values)
+				foreach (UniversalClass? @class in list.Values)
 				{
 					if (@class is not null && !AreCompatibleWithLogging(@class.ReleaseRootNode, @class.EditorRootNode))
 					{
@@ -43,12 +43,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			List<ClassData> result = new List<ClassData>(list.Count);
 			for (int i = 0; i < list.Count - 1; i++)
 			{
-				if(list[i].Value is not null)
+				if (list[i].Value is not null)
 				{
 					result.Add(new ClassData(list[i].Value!.Name, list[i].Value!, new UnityVersionRange(list[i].Key, list[i + 1].Key)));
 				}
 			}
-			if(list.Count > 0)
+			if (list.Count > 0)
 			{
 				var lastPair = list[list.Count - 1];
 				if (lastPair.Value is not null)
@@ -61,7 +61,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static List<SubclassCandidate> GetOrAddSubclassCandidateList(string name)
 		{
-			if(!candidateListDictionary.TryGetValue(name, out List<SubclassCandidate>? result))
+			if (!candidateListDictionary.TryGetValue(name, out List<SubclassCandidate>? result))
 			{
 				result = new();
 				candidateListDictionary.Add(name, result);

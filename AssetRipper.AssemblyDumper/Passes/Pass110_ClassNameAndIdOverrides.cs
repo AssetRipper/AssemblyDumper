@@ -17,7 +17,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			TypeSignature classIdTypeSignature = SharedState.Instance.Importer.ImportTypeSignature<ClassIDType>();
 			foreach ((int id, ClassGroup group) in SharedState.Instance.ClassGroups)
 			{
-				foreach(GeneratedClassInstance instance in group.Instances)
+				foreach (GeneratedClassInstance instance in group.Instances)
 				{
 					instance.Type.AddClassIdOverride(id, classIdTypeSignature);
 					instance.Type.AddClassNameOverride(instance.Name);

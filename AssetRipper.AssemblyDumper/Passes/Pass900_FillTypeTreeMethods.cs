@@ -24,8 +24,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			typeTreeNodeList = SharedState.Instance.Importer.ImportType(typeof(List<>)).MakeGenericInstanceType(typeTreeNode.ToTypeSignature());
 			typeTreeNodeListConstructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, typeTreeNodeList, 0);
 			listAddMethod = MethodUtils.MakeMethodOnGenericType(
-				SharedState.Instance.Importer, 
-				typeTreeNodeList, 
+				SharedState.Instance.Importer,
+				typeTreeNodeList,
 				SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == "Add"));
 
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)

@@ -7,7 +7,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			foreach(ClassGroup group in SharedState.Instance.ClassGroups.Values)
+			foreach (ClassGroup group in SharedState.Instance.ClassGroups.Values)
 			{
 				if (group.UniformlyNamed)
 				{
@@ -15,7 +15,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				else
 				{
-					foreach(GeneratedClassInstance instance in group.Instances)
+					foreach (GeneratedClassInstance instance in group.Instances)
 					{
 						instance.Type.AddInterfaceImplementation(GetOrAddMarkerInterface(instance.Name));
 					}
@@ -28,7 +28,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static TypeDefinition GetOrAddMarkerInterface(string className)
 		{
 			string interfaceName = GetInterfaceName(className);
-			if(!SharedState.Instance.MarkerInterfaces.TryGetValue(className, out TypeDefinition? result))
+			if (!SharedState.Instance.MarkerInterfaces.TryGetValue(className, out TypeDefinition? result))
 			{
 				result = InterfaceCreator.CreateEmptyInterface(SharedState.Instance.Module, SharedState.MarkerInterfacesNamespace, interfaceName);
 				result.AddInterfaceImplementation<IUnityObjectBase>(SharedState.Instance.Importer);

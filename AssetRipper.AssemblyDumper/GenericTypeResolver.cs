@@ -10,7 +10,7 @@ namespace AssetRipper.AssemblyDumper
 				.SubNodes![1]; //Pair
 
 			GenericInstanceTypeSignature genericKvp = ResolvePairType(pairNode, version);
-			
+
 			return SharedState.Instance.Importer.ImportType(typeof(AssetDictionary<,>)).MakeGenericInstanceType(genericKvp.TypeArguments[0], genericKvp.TypeArguments[1]);
 		}
 
@@ -23,8 +23,8 @@ namespace AssetRipper.AssemblyDumper
 		{
 			UniversalNode contentNode = arrayNode.SubNodes![1];
 			TypeSignature elementType = ResolveNode(contentNode, version);
-			
-			if(elementType is SzArrayTypeSignature or CorLibTypeSignature)
+
+			if (elementType is SzArrayTypeSignature or CorLibTypeSignature)
 			{
 				return elementType.MakeSzArrayType();
 			}

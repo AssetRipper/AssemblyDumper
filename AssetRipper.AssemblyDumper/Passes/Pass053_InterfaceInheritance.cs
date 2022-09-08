@@ -6,7 +6,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			foreach(ClassGroup group in SharedState.Instance.ClassGroups.Values)
+			foreach (ClassGroup group in SharedState.Instance.ClassGroups.Values)
 			{
 				DoPassOnGroup(group);
 			}
@@ -14,10 +14,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void DoPassOnGroup(this ClassGroup group)
 		{
-			if(TryGetBaseTypeDefinitions(group.Types,out List<TypeDefinition>? baseTypes))
+			if (TryGetBaseTypeDefinitions(group.Types, out List<TypeDefinition>? baseTypes))
 			{
 				List<ITypeDefOrRef> interfaces = baseTypes.First().GetAllInterfaces().ToList();
-				foreach(ITypeDefOrRef @interface in interfaces)
+				foreach (ITypeDefOrRef @interface in interfaces)
 				{
 					if (baseTypes.AllImplementThisInterface(@interface.FullName))
 					{
@@ -29,7 +29,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static bool TryGetBaseTypeDefinitions(this IEnumerable<TypeDefinition> types, [NotNullWhen(true)] out List<TypeDefinition>? baseTypes)
 		{
-			if(types.All(t => t.HasTypeDefinitionBaseType()))
+			if (types.All(t => t.HasTypeDefinitionBaseType()))
 			{
 				baseTypes = types.Select(t => t.GetBaseTypeDefinition()).ToList();
 				return true;

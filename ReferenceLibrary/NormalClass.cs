@@ -8,11 +8,11 @@
 
 		public void StringEqualityMethod(string test)
 		{
-			if(test == "true")
+			if (test == "true")
 			{
 				booleanVariable = true;
 			}
-			else if(test == "false")
+			else if (test == "false")
 			{
 				booleanVariable = false;
 			}

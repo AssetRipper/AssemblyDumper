@@ -21,7 +21,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition? staticConstructor = newTypeDef.AddEmptyConstructor(true);
 			CilInstructionCollection processor = staticConstructor.GetProcessor();
 			processor.Add(CilOpCodes.Newobj, dictionaryConstructor);
-			foreach((uint index, string str) in SharedState.Instance.CommonString.Strings)
+			foreach ((uint index, string str) in SharedState.Instance.CommonString.Strings)
 			{
 				processor.Add(CilOpCodes.Dup);
 				processor.Add(CilOpCodes.Ldc_I4, (int)index);

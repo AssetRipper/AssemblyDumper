@@ -11,7 +11,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			int id = SharedState.Instance.NameToTypeID["Shader"].Single();
 			ClassGroup group = SharedState.Instance.ClassGroups[id];
-			foreach(TypeDefinition type in group.Types)
+			foreach (TypeDefinition type in group.Types)
 			{
 				type.FixShaderTypeDefinition();
 			}
@@ -47,7 +47,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		}
 
 		private static void AddCopyString(
-			this MethodDefinition method, 
+			this MethodDefinition method,
 			IMethodDefOrRef copyContentMethod,
 			FieldDefinition nameField,
 			FieldDefinition parsedFormField,

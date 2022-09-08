@@ -31,7 +31,7 @@
 
 			return conversion;
 		}
-		
+
 		/// <summary>
 		/// Creates a parameterless extern method
 		/// </summary>
@@ -60,8 +60,8 @@
 		public static MethodDefinition CreateMethod(string methodName, MethodAttributes methodAttributes, TypeSignature returnType)
 		{
 			bool isStatic = (methodAttributes & MethodAttributes.Static) != 0;
-			MethodSignature methodSignature = isStatic 
-				? MethodSignature.CreateStatic(returnType) 
+			MethodSignature methodSignature = isStatic
+				? MethodSignature.CreateStatic(returnType)
 				: MethodSignature.CreateInstance(returnType);
 			MethodDefinition result = new MethodDefinition(methodName, methodAttributes, methodSignature);
 
@@ -89,7 +89,7 @@
 
 		public static ParameterDefinition GetOrAddReturnTypeParameterDefinition(this MethodDefinition method)
 		{
-			if(method.ParameterDefinitions.Count > 0 && method.ParameterDefinitions[0].Sequence == 0)
+			if (method.ParameterDefinitions.Count > 0 && method.ParameterDefinitions[0].Sequence == 0)
 			{
 				return method.ParameterDefinitions[0];
 			}

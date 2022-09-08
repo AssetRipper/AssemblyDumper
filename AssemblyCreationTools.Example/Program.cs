@@ -1,5 +1,4 @@
 ﻿using AssetRipper.AssemblyCreationTools.Types;
-using System;
 
 namespace AssetRipper.AssemblyCreationTools.Example
 {

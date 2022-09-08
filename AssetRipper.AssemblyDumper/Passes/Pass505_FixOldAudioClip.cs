@@ -11,7 +11,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			InjectHelper(out TypeDefinition helperType);
 			MethodDefinition helperMethod = helperType.Methods.Single(m => m.Name == nameof(AudioClipHelper.ReadOldByteArray));
-			
+
 			foreach (GeneratedClassInstance instance in SharedState.Instance.ClassGroups[83].Instances)
 			{
 				if (instance.TryGetStreamField(out FieldDefinition? streamField))
@@ -28,7 +28,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void FixMethod(MethodDefinition readMethod, MethodDefinition helperMethod, FieldDefinition dataField, FieldDefinition streamField)
 		{
 			CilInstructionCollection processor = readMethod.GetProcessor();
-			
+
 			//remove bad instructions
 			while (processor.Count > 0)
 			{
@@ -40,17 +40,17 @@ namespace AssetRipper.AssemblyDumper.Passes
 					break;
 				}
 			}
-			
+
 			processor.Add(CilOpCodes.Ldarg_0);//for the store field
-			
+
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldarg_1);
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldfld, streamField);
 			processor.Add(CilOpCodes.Call, helperMethod);
-			
+
 			processor.Add(CilOpCodes.Stfld, dataField);
-			
+
 			processor.Add(CilOpCodes.Ret);
 		}
 

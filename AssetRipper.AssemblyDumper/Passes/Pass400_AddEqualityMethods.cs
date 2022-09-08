@@ -38,9 +38,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldarg_1);
 			processor.Add(CilOpCodes.Brfalse, returnFalseLabel);
 
-			foreach(FieldDefinition field in type.Fields.Where(f => !f.IsStatic))
+			foreach (FieldDefinition field in type.Fields.Where(f => !f.IsStatic))
 			{
-				if(field.Signature!.FieldType is CorLibTypeSignature corLibTypeSignature && corLibTypeSignature.IsValueType)
+				if (field.Signature!.FieldType is CorLibTypeSignature corLibTypeSignature && corLibTypeSignature.IsValueType)
 				{
 					processor.Add(CilOpCodes.Ldarg_0);
 					processor.Add(CilOpCodes.Ldfld, field);

@@ -1,24 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace AssetRipper.AssemblyCreationTools.Types
+﻿namespace AssetRipper.AssemblyCreationTools.Types
 {
 	public static class StaticClassCreator
 	{
-		public const TypeAttributes StaticClassAttributes = 
-			TypeAttributes.AnsiClass | 
-			TypeAttributes.BeforeFieldInit | 
-			TypeAttributes.Public | 
-			TypeAttributes.Sealed | 
+		public const TypeAttributes StaticClassAttributes =
+			TypeAttributes.AnsiClass |
+			TypeAttributes.BeforeFieldInit |
+			TypeAttributes.Public |
+			TypeAttributes.Sealed |
 			TypeAttributes.Abstract;
-		private const MethodAttributes StaticConstructorAttributes = 
-			MethodAttributes.Private | 
-			MethodAttributes.HideBySig | 
-			MethodAttributes.RuntimeSpecialName | 
-			MethodAttributes.SpecialName | 
+		private const MethodAttributes StaticConstructorAttributes =
+			MethodAttributes.Private |
+			MethodAttributes.HideBySig |
+			MethodAttributes.RuntimeSpecialName |
+			MethodAttributes.SpecialName |
 			MethodAttributes.Static;
 
 		public static TypeDefinition CreateEmptyStaticClass(ModuleDefinition module, string? @namespace, string? name)

@@ -36,7 +36,7 @@ namespace AssetRipper.AssemblyDumper
 
 		public static IUnityObjectBase FindAsset(IUnityObjectBase monoBehaviour, IPPtr pptr)
 		{
-			return (new PPtr<IUnityObjectBase>(pptr.FileIndex, pptr.PathIndex)).FindAsset(monoBehaviour.SerializedFile);
+			return new PPtr<IUnityObjectBase>(pptr.FileIndex, pptr.PathIndex).FindAsset(monoBehaviour.SerializedFile);
 		}
 
 		public static bool IsAssemblyManagerSet(this IUnityObjectBase monoBehaviour)
@@ -45,10 +45,10 @@ namespace AssetRipper.AssemblyDumper
 		}
 
 		public static SerializableStructure ReadStructureInjected(
-			IUnityObjectBase monoScript, 
-			Utf8StringBase originalAssemblyName, 
-			Utf8StringBase @namespace, 
-			Utf8StringBase className, 
+			IUnityObjectBase monoScript,
+			Utf8StringBase originalAssemblyName,
+			Utf8StringBase @namespace,
+			Utf8StringBase className,
 			AssetReader reader,
 			Utf8StringBase monoScriptName,
 			Utf8StringBase monoBehaviourName)

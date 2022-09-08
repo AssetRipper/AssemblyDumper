@@ -70,7 +70,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void ImplementEnabledProperty(this TypeDefinition type, FieldDefinition field)
 		{
 			string? fieldTypeName = field.GetFieldTypeName();
-			if(fieldTypeName == "Boolean")
+			if (fieldTypeName == "Boolean")
 			{
 				type.ImplementFullProperty("Enabled", InterfaceUtils.InterfacePropertyImplementation, SharedState.Instance.Importer.Boolean, field);
 			}

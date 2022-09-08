@@ -4,7 +4,7 @@
 	{
 		public static void DoPass()
 		{
-			foreach(ClassGroup classGroup in SharedState.Instance.ClassGroups.Values)
+			foreach (ClassGroup classGroup in SharedState.Instance.ClassGroups.Values)
 			{
 				classGroup.FixTypeAttributes();
 			}
@@ -16,7 +16,7 @@
 
 		private static void FixTypeAttributes(this ClassGroupBase group)
 		{
-			foreach(GeneratedClassInstance instance in group.Instances)
+			foreach (GeneratedClassInstance instance in group.Instances)
 			{
 				instance.Type.Attributes = GetTypeAttributes(instance.Class);
 			}

@@ -10,7 +10,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
-				foreach(GeneratedClassInstance instance in group.Instances)
+				foreach (GeneratedClassInstance instance in group.Instances)
 				{
 					List<FieldDefinition> fields = FieldUtils.GetAllFieldsInTypeAndBase(instance.Type);
 					instance.Type.FillEditorWriteMethod(instance.Class, fields);
@@ -24,7 +24,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition editorModeReadMethod = type.Methods.First(m => m.Name == "WriteEditor");
 			CilMethodBody editorModeBody = editorModeReadMethod.CilMethodBody!;
 			CilInstructionCollection editorModeProcessor = editorModeBody.Instructions;
-			
+
 			if (throwNotSupported)
 			{
 				editorModeProcessor.AddNotSupportedException();

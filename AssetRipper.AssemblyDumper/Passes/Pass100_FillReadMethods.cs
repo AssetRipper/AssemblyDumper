@@ -28,7 +28,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			Initialize();
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
-				foreach(GeneratedClassInstance instance in group.Instances)
+				foreach (GeneratedClassInstance instance in group.Instances)
 				{
 					DoPassOnInstance(instance);
 				}
@@ -197,8 +197,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition? primitiveReadMethod = arrayDepth switch
 			{
 				0 => assetReaderDefinition?.Methods.SingleOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}") //String
-				     ?? endianReaderDefinition?.Methods.SingleOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}")
-				     ?? binaryReaderDefinition?.Methods.SingleOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}"), //Byte, SByte, and Boolean
+					 ?? endianReaderDefinition?.Methods.SingleOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}")
+					 ?? binaryReaderDefinition?.Methods.SingleOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}"), //Byte, SByte, and Boolean
 				1 => endianReaderDefinition?.Methods.SingleOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}Array" && m.Parameters.Count == 1),
 				2 => endianReaderExtensionsDefinition?.Methods.SingleOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}ArrayArray"),
 				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth), $"ReadPrimitiveType does not support array depth '{arrayDepth}'"),
@@ -500,7 +500,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			//Read element at index i of array
 			CilLocalVariable pairLocal = ReadPairToLocal(listTypeNode, processor, version); //Read the pair
 			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array local
-			//processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+														 //processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
 			processor.Add(CilOpCodes.Ldloc, pairLocal);
 			//processor.Add(CilOpCodes.Stelem, genericKvp.ToTypeDefOrRef()); //Store in array
 			//processor.Add(CilOpCodes.Call, GetAssetListSetItemMethod(genericKvp));
@@ -580,12 +580,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			//Read element at index i of array
 			CilLocalVariable pairArrayLocal = ReadPairArrayToLocal(processor, pairNode, version); //Read the array of pairs
-			
+
 			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array of arrays local
-			//processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+														 //processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
 			processor.Add(CilOpCodes.Ldloc, pairArrayLocal); //Load array of pairs
-			//processor.Add(CilOpCodes.Stelem, arrayType.ToTypeDefOrRef()); //Store in array
-			//processor.Add(CilOpCodes.Call, GetAssetListSetItemMethod(arrayType));
+															 //processor.Add(CilOpCodes.Stelem, arrayType.ToTypeDefOrRef()); //Store in array
+															 //processor.Add(CilOpCodes.Call, GetAssetListSetItemMethod(arrayType));
 			processor.Add(CilOpCodes.Call, GetAssetListAddMethod(arrayType));
 
 			//Increment i
@@ -662,10 +662,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			//Read element at index i of array
 			CilLocalVariable dictLocal = ReadDictionaryToLocal(dictNode, processor, version);
 			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array local
-			//processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+														 //processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
 			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load dict
-			//processor.Add(CilOpCodes.Stelem, dictType.ToTypeDefOrRef()); //Store in array
-			//processor.Add(CilOpCodes.Call, GetAssetListSetItemMethod(dictType));
+														//processor.Add(CilOpCodes.Stelem, dictType.ToTypeDefOrRef()); //Store in array
+														//processor.Add(CilOpCodes.Call, GetAssetListSetItemMethod(dictType));
 			processor.Add(CilOpCodes.Call, GetAssetListAddMethod(dictType));
 
 			//Increment i

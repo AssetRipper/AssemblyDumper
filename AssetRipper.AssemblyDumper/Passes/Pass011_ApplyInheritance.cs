@@ -78,9 +78,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void SetDescendantCount(this UniversalClass universalClass)
 		{
-			if(universalClass.DescendantCount <= 1 && universalClass.DerivedClasses.Count > 0)
+			if (universalClass.DescendantCount <= 1 && universalClass.DerivedClasses.Count > 0)
 			{
-				foreach(UniversalClass derivedClass in universalClass.DerivedClasses)
+				foreach (UniversalClass derivedClass in universalClass.DerivedClasses)
 				{
 					derivedClass.SetDescendantCount();
 					universalClass.DescendantCount += derivedClass.DescendantCount;

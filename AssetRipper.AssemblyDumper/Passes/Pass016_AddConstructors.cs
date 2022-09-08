@@ -1,15 +1,14 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.Core.Layout;
 using AssetRipper.Core.Parser.Asset;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass016_AddConstructors
 	{
-		private const MethodAttributes PublicInstanceConstructorAttributes = 
-			MethodAttributes.Public | 
-			MethodAttributes.HideBySig | 
-			MethodAttributes.SpecialName | 
+		private const MethodAttributes PublicInstanceConstructorAttributes =
+			MethodAttributes.Public |
+			MethodAttributes.HideBySig |
+			MethodAttributes.SpecialName |
 			MethodAttributes.RuntimeSpecialName;
 		private readonly static HashSet<GeneratedClassInstance> processed = new HashSet<GeneratedClassInstance>();
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -23,7 +22,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				.Union(SharedState.Instance.SubclassGroups.Values.Select(g => (ClassGroupBase)g));
 			foreach (ClassGroupBase group in groups)
 			{
-				foreach(GeneratedClassInstance instance in group.Instances)
+				foreach (GeneratedClassInstance instance in group.Instances)
 				{
 					if (processed.Contains(instance))
 					{
@@ -45,7 +44,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			TypeDefinition type = instance.Type;
 			type.AddDefaultConstructor(SharedState.Instance.Importer);
-			if(instance.ID >= 0)
+			if (instance.ID >= 0)
 			{
 				type.AddAssetInfoConstructor();
 			}

@@ -30,7 +30,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				processor.Add(CilOpCodes.Ldc_I4, id);
 				processor.Add(CilOpCodes.Call, addMethod);
 
-				foreach(TypeDefinition type in group.Types)
+				foreach (TypeDefinition type in group.Types)
 				{
 					processor.Add(CilOpCodes.Dup);
 					processor.Add(CilOpCodes.Ldtoken, type);

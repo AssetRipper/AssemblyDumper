@@ -24,7 +24,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void FixDataProperty(this TypeDefinition type)
 		{
-			if(type.Properties.Any(p => p.Name == nameof(Utf8StringBase.Data)))
+			if (type.Properties.Any(p => p.Name == nameof(Utf8StringBase.Data)))
 			{
 				type.Methods.Single(m => m.Name == $"get_{nameof(Utf8StringBase.Data)}").Attributes = PropertyOverrideAttributes;
 				type.Methods.Single(m => m.Name == $"set_{nameof(Utf8StringBase.Data)}").Attributes = PropertyOverrideAttributes;
@@ -46,7 +46,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Call, baseMethod);
 			processor.Add(CilOpCodes.Ret);
 		}
-		
+
 		private static void AddConversionFromString(this TypeDefinition type)
 		{
 			MethodDefinition method = type.AddEmptyConversion(SharedState.Instance.Importer.String, type.ToTypeSignature(), false);

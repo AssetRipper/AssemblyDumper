@@ -77,7 +77,7 @@
 		{
 			MethodDefinition defaultConstructor = typeDefinition.AddEmptyConstructor();
 			CilInstructionCollection processor = defaultConstructor.CilMethodBody!.Instructions;
-			
+
 			IMethodDefOrRef baseConstructor;
 			if (typeDefinition.BaseType is null)
 			{

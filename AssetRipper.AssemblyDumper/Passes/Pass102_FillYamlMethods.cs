@@ -59,9 +59,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Initialize();
-			foreach(ClassGroupBase group in SharedState.Instance.AllGroups)
+			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
-				foreach(GeneratedClassInstance instance in group.Instances)
+				foreach (GeneratedClassInstance instance in group.Instances)
 				{
 					Dictionary<string, FieldDefinition> fields = instance.Type.GetAllFieldsInTypeAndBase().ToDictionary(f => f.Name!.Value, f => f);
 					emittingRelease = false;
@@ -188,8 +188,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 					processor.AddLocalForLoadedPair(node, out localVariable, version);
 					return;
 				case "TypelessData": //byte array
-					//processor.AddLocalForLoadedByteArray(out localVariable);
-					//return;
+									 //processor.AddLocalForLoadedByteArray(out localVariable);
+									 //return;
 					throw new NotSupportedException("TypelessData");
 				case "Array":
 					processor.AddLocalForLoadedArray(node, version, out localVariable);
@@ -528,7 +528,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			ICilLabel jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create the dummy instruction to jump back to
 
 			//Export Yaml
-			MethodDefinition getItemDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>))!.Methods.Single(m => m.Name == nameof(AssetDictionary<int,int>.GetPair));
+			MethodDefinition getItemDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>))!.Methods.Single(m => m.Name == nameof(AssetDictionary<int, int>.GetPair));
 			IMethodDefOrRef getItemReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictType, getItemDefinition);
 			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load Dictionary
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
@@ -599,7 +599,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static IMethodDefOrRef? TryGetScalarNodeConstructor(TypeSignature parameterType)
 		{
-			if(scalarNodeConstructorCache.TryGetValue(parameterType, out IMethodDefOrRef? constructor))
+			if (scalarNodeConstructorCache.TryGetValue(parameterType, out IMethodDefOrRef? constructor))
 			{
 				return constructor;
 			}
@@ -615,7 +615,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				scalarNodeConstructorCache.Add(parameterType, constructor);
 				return constructor;
 			}
-			
+
 		}
 
 		private static void MaybeEmitFlowMappingStyle(this CilInstructionCollection processor, UniversalNode rootNode, CilLocalVariable yamlMappingNode)
@@ -631,7 +631,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void AddLoadElement(this CilInstructionCollection processor, ITypeDefOrRef elementType)
 		{
-			if(elementType is SzArrayTypeSignature)
+			if (elementType is SzArrayTypeSignature)
 			{
 				processor.Add(CilOpCodes.Ldelem_Ref);
 				return;

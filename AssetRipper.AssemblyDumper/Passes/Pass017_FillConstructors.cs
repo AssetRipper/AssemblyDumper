@@ -11,12 +11,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			emptyArray = SharedState.Instance.Importer.ImportMethod<Array>(method => method.Name == nameof(Array.Empty));
-			IMethodDefOrRef makeDummyAssetInfo = SharedState.Instance.Importer.ImportMethod<AssetInfo>(method => 
+			IMethodDefOrRef makeDummyAssetInfo = SharedState.Instance.Importer.ImportMethod<AssetInfo>(method =>
 				method.Name == nameof(AssetInfo.MakeDummyAssetInfo)
 				&& method.Parameters.Count == 1);
 			foreach ((int id, ClassGroup classGroup) in SharedState.Instance.ClassGroups)
 			{
-				foreach(TypeDefinition type in classGroup.Types)
+				foreach (TypeDefinition type in classGroup.Types)
 				{
 					MethodDefinition assetInfoConstructor = type.GetAssetInfoConstructor();
 					type.FillClassDefaultConstructor(id, assetInfoConstructor, makeDummyAssetInfo);
@@ -43,7 +43,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				throw new ArgumentException(null, nameof(type));
 			}
 
-			if(type.BaseType is TypeDefinition baseTypeDefinition)
+			if (type.BaseType is TypeDefinition baseTypeDefinition)
 			{
 				return baseTypeDefinition;
 			}
@@ -100,7 +100,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ret);
 			processor.OptimizeMacros();
 		}
-		
+
 		private static void AddFieldAssignments(this CilInstructionCollection processor, TypeDefinition type)
 		{
 			foreach (FieldDefinition field in type.Fields)

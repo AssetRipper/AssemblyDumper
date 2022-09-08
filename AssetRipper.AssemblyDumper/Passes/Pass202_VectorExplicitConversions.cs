@@ -20,7 +20,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			DoImplementation<Quaternionf, IQuaternionf>(SharedState.Instance.SubclassGroups["Quaternionf"], 4);
 		}
 
-		private static void DoImplementation<TClass,TInterface>(SubclassGroup group, int size)
+		private static void DoImplementation<TClass, TInterface>(SubclassGroup group, int size)
 		{
 			AddInterface<TInterface>(group, size);
 			foreach (TypeDefinition type in group.Types)
@@ -41,16 +41,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldfld, type.Fields.Single(field => field.Name == "m_X_"));
-			
+
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldfld, type.Fields.Single(field => field.Name == "m_Y_"));
 
-			if(size > 2)
+			if (size > 2)
 			{
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Ldfld, type.Fields.Single(field => field.Name == "m_Z_"));
 			}
-			if(size > 3)
+			if (size > 3)
 			{
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Ldfld, type.Fields.Single(field => field.Name == "m_W_"));
@@ -69,7 +69,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition method = type.AddMethod("op_Explicit", ConversionAttributes, type.ToTypeSignature());
 			method.AddParameter(commonType, "value");
 			CilInstructionCollection processor = method.GetProcessor();
-			
+
 			processor.Add(CilOpCodes.Newobj, constructor);
 
 			processor.Add(CilOpCodes.Dup);
@@ -121,8 +121,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void ImplementVectorProperty(this TypeDefinition type, string propertyName)
 		{
 			type.ImplementFullProperty(
-				propertyName, 
-				InterfaceUtils.InterfacePropertyImplementation, 
+				propertyName,
+				InterfaceUtils.InterfacePropertyImplementation,
 				null,
 				type.GetFieldByName($"m_{propertyName}_"));
 		}

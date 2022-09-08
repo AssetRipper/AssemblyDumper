@@ -23,7 +23,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				EditorNode = editorNode;
 				VersionRange = versionRange;
 				Name = releaseNode?.TypeName ?? editorNode?.TypeName ?? throw new Exception("All type names were null");
-				if(releaseNode is null)
+				if (releaseNode is null)
 				{
 					NodesToBeAltered = new UniversalNode[] { editorNode! };
 				}
@@ -88,7 +88,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void AddClassesToSharedStateSubclasses(List<SubclassCandidate> unprocessedList)
 		{
 			List<SubclassCandidate> consolidatedCandidates = ProcessList(unprocessedList);
-			if(consolidatedCandidates.Count == 0)
+			if (consolidatedCandidates.Count == 0)
 			{
 				throw new Exception("Candidate ount can't be zero");
 			}
@@ -100,7 +100,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				SharedState.Instance.SubclassInformation.Add(candidate.Name, classList);
 				UniversalClass newClass = new UniversalClass(candidate.ReleaseNode?.ShallowCloneAsRootNode(), candidate.EditorNode?.ShallowCloneAsRootNode());
 				classList.Add(candidate.VersionRange.Start, newClass);
-				if(candidate.VersionRange.End != UnityVersion.MaxVersion)
+				if (candidate.VersionRange.End != UnityVersion.MaxVersion)
 				{
 					classList.Add(candidate.VersionRange.End, null);
 				}
@@ -109,13 +109,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				Console.WriteLine($"Using conflict naming for {consolidatedCandidates[0].Name}");
 				//Use _2 naming
-				for(int i = 0; i < consolidatedCandidates.Count; i++)
+				for (int i = 0; i < consolidatedCandidates.Count; i++)
 				{
 					SubclassCandidate candidate = consolidatedCandidates[i];
 					string typeName = $"{candidate.Name}_{i}";
 					VersionedList<UniversalClass> classList = new();
 					SharedState.Instance.SubclassInformation.Add(typeName, classList);
-					foreach(UniversalNode node in candidate.NodesToBeAltered)
+					foreach (UniversalNode node in candidate.NodesToBeAltered)
 					{
 						node.TypeName = typeName;
 					}
@@ -137,12 +137,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 				VersionedList<UniversalClass> classList = new();
 				SharedState.Instance.SubclassInformation.Add(consolidatedCandidates[0].Name, classList);
 				SubclassCandidate[] candidates = consolidatedCandidates.OrderBy(c => c.VersionRange.Start).ToArray();
-				for(int i = 0; i < candidates.Length; i++)
+				for (int i = 0; i < candidates.Length; i++)
 				{
 					SubclassCandidate candidate = candidates[i];
 					UniversalClass newClass = new UniversalClass(candidate.ReleaseNode?.ShallowCloneAsRootNode(), candidate.EditorNode?.ShallowCloneAsRootNode());
 					classList.Add(candidate.VersionRange.Start, newClass);
-					if(i + 1 < candidates.Length && candidate.VersionRange.End != candidates[i + 1].VersionRange.Start)
+					if (i + 1 < candidates.Length && candidate.VersionRange.End != candidates[i + 1].VersionRange.Start)
 					{
 						classList.Add(candidate.VersionRange.End, null);
 					}
@@ -156,9 +156,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static bool AnyIntersections(List<SubclassCandidate> consolidatedCandidates)
 		{
-			for(int i = 0; i < consolidatedCandidates.Count; i++)
+			for (int i = 0; i < consolidatedCandidates.Count; i++)
 			{
-				for(int j = i + 1; j < consolidatedCandidates.Count; j++)
+				for (int j = i + 1; j < consolidatedCandidates.Count; j++)
 				{
 					if (consolidatedCandidates[i].VersionRange.Intersects(consolidatedCandidates[j].VersionRange))
 					{
@@ -186,8 +186,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return unifiedList;
 		}
 
-		private static void SplitByNullability(List<SubclassCandidate> inputList, 
-			out List<SubclassCandidate> bothList, 
+		private static void SplitByNullability(List<SubclassCandidate> inputList,
+			out List<SubclassCandidate> bothList,
 			out List<SubclassCandidate> releaseList,
 			out List<SubclassCandidate> editorList)
 		{
@@ -203,7 +203,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			foreach (SubclassCandidate candidate in inputList)
 			{
 				bool merged = false;
-				for(int i = 0; i < outputList.Count; i++)
+				for (int i = 0; i < outputList.Count; i++)
 				{
 					if (outputList[i].CanMerge(candidate))
 					{
@@ -236,10 +236,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void MergeIntoBothList(List<SubclassCandidate> bothList, List<SubclassCandidate> singleList)
 		{
 			List<SubclassCandidate> leftovers = new();
-			foreach(SubclassCandidate singleCandidate in singleList)
+			foreach (SubclassCandidate singleCandidate in singleList)
 			{
 				bool successful = false;
-				for(int i = 0; i < bothList.Count; i++)
+				for (int i = 0; i < bothList.Count; i++)
 				{
 					if (bothList[i].Contains(singleCandidate))
 					{
@@ -260,9 +260,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void FinalMergeAttempts(List<SubclassCandidate> bothList, List<SubclassCandidate> releaseList, List<SubclassCandidate> editorList)
 		{
-			if(bothList.Count == 0)
+			if (bothList.Count == 0)
 			{
-				if(releaseList.Count == 1 && editorList.Count == 1)
+				if (releaseList.Count == 1 && editorList.Count == 1)
 				{
 					SubclassCandidate releaseCandidate = releaseList[0];
 					SubclassCandidate editorCandidate = editorList[0];

@@ -11,9 +11,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			Dictionary<string, long> nameDictionary = CreateDictionary();
 			ClassIdTypeDefintion = EnumCreator.CreateFromDictionary(SharedState.Instance, SharedState.RootNamespace, "ClassIDType", nameDictionary);
-			
+
 			List<KeyValuePair<string, long>> alphabeticalList = nameDictionary.ToList();
-			alphabeticalList.Sort((a,b) => a.Key.CompareTo(b.Key));
+			alphabeticalList.Sort((a, b) => a.Key.CompareTo(b.Key));
 			TypeDefinition alphabeticalEnum = EnumCreator.CreateFromDictionary(SharedState.Instance, SharedState.RootNamespace, "ClassIDTypeAlphabetical", alphabeticalList);
 
 			foreach (FieldDefinition field in ClassIdTypeDefintion.Fields)
@@ -39,7 +39,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			Dictionary<int, string> rawDictionary = SharedState.Instance.ClassGroups.OrderBy(pair => pair.Key).ToDictionary(pair => pair.Key, pair => pair.Value.Name);
 			HashSet<string> duplicateNames = GetDuplicates(rawDictionary.Values);
 			Dictionary<string, long> result = new Dictionary<string, long>(rawDictionary.Count);
-			foreach((int id, string rawName) in rawDictionary)
+			foreach ((int id, string rawName) in rawDictionary)
 			{
 				if (duplicateNames.Contains(rawName))
 				{
@@ -57,7 +57,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			HashSet<string> uniqueStrings = new HashSet<string>();
 			HashSet<string> duplicates = new HashSet<string>();
-			foreach(string str in rawStrings)
+			foreach (string str in rawStrings)
 			{
 				if (!uniqueStrings.Contains(str))
 				{

@@ -52,12 +52,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			else
 			{
-				for(int i = 0; i < loadedClasses.Count; i++)
+				for (int i = 0; i < loadedClasses.Count; i++)
 				{
 					KeyValuePair<UnityVersion, UniversalClass?> pair = loadedClasses[i];
 					UnityVersion endVersion = i + 1 < loadedClasses.Count ? loadedClasses[i + 1].Key : UnityVersion.MaxVersion;
 					UniversalClass? universalClass = pair.Value;
-					if(universalClass is not null)
+					if (universalClass is not null)
 					{
 						string typeName = $"{universalClass.Name}_{pair.Key.ToString(false, true, false)}";
 						CreateType(universalClass, pair.Key, endVersion, typeName, universalClass.GetOriginalTypeName(), group);
@@ -70,7 +70,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			TypeDefinition type = new TypeDefinition(group.Namespace, typeName, TypeAttributes.Public | TypeAttributes.BeforeFieldInit);
 			SharedState.Instance.Module.TopLevelTypes.Add(type);
-			
+
 			group.Instances.Add(new GeneratedClassInstance(universalClass, type, startVersion, endVersion));
 			SharedState.Instance.TypesToGroups.Add(type, group);
 		}
