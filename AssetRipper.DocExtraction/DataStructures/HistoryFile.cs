@@ -22,7 +22,7 @@ public sealed class HistoryFile
 
 	public static HistoryFile FromFile(string path)
 	{
-		using FileStream fileStream = File.Create(path);
+		using FileStream fileStream = File.OpenRead(path);
 		return JsonSerializer.Deserialize(fileStream, JsonSourceGenerationContext.Default.HistoryFile)
 			?? throw new Exception("Failed to deserialize json");
 	}
