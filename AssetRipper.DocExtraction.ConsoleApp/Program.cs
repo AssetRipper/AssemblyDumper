@@ -5,6 +5,7 @@ using AssetRipper.VersionUtilities;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -55,42 +56,57 @@ internal static class Program
 		foreach (DocumentationFile documentationFile in ExtractAllDocumentation(inputDirectory))
 		{
 			UnityVersion version = UnityVersion.Parse(documentationFile.UnityVersion);
-			foreach (ClassDocumentation @class in documentationFile.Classes)
-			{
-				if (classes.TryGetValue(@class.FullName.ToString(), out ClassHistory? classHistory))
-				{
-					classHistory.Add(version, @class);
-				}
-				else
-				{
-					classes.Add(@class.FullName.ToString(), ClassHistory.From(version, @class));
-				}
-			}
-			foreach (StructDocumentation @struct in documentationFile.Structs)
-			{
-				if (structs.TryGetValue(@struct.FullName.ToString(), out StructHistory? structHistory))
-				{
-					structHistory.Add(version, @struct);
-				}
-				else
-				{
-					structs.Add(@struct.FullName.ToString(), StructHistory.From(version, @struct));
-				}
-			}
-			foreach (EnumDocumentation @enum in documentationFile.Enums)
-			{
-				if (enums.TryGetValue(@enum.FullName.ToString(), out EnumHistory? enumHistory))
-				{
-					enumHistory.Add(version, @enum);
-				}
-				else
-				{
-					enums.Add(@enum.FullName.ToString(), EnumHistory.From(version, @enum));
-				}
-			}
+
+			ProcessListIntoDictionary<ClassHistory, DataMemberHistory, ClassDocumentation, DataMemberDocumentation>(
+				version,
+				classes,
+				documentationFile.Classes);
+			ProcessListIntoDictionary<StructHistory, DataMemberHistory, StructDocumentation, DataMemberDocumentation>(
+				version,
+				structs,
+				documentationFile.Structs);
+			ProcessListIntoDictionary<EnumHistory, EnumMemberHistory, EnumDocumentation, EnumMemberDocumentation>(
+				version,
+				enums,
+				documentationFile.Enums);
+
 			Console.WriteLine(documentationFile.UnityVersion);
 		}
 		historyFile.SaveAsJson(outputPath);
+	}
+
+	private static void ProcessListIntoDictionary<THistory, TMemberHistory, TDocumentation, TMemberDocumentation>(
+		UnityVersion version,
+		Dictionary<string, THistory> dictionary,
+		List<TDocumentation> list)
+		where TMemberDocumentation : DocumentationBase, new()
+		where TDocumentation : TypeDocumentation<TMemberDocumentation>, new()
+		where TMemberHistory : HistoryBase, new()
+		where THistory : TypeHistory<TMemberHistory, TMemberDocumentation>, new()
+	{
+		HashSet<string> processedClasses = new();
+		foreach (TDocumentation @class in list)
+		{
+			string fullName = @class.FullName.ToString();
+			if (dictionary.TryGetValue(fullName, out THistory? classHistory))
+			{
+				classHistory.Add(version, @class);
+			}
+			else
+			{
+				classHistory = new();
+				classHistory.Initialize(version, @class);
+				dictionary.Add(fullName, classHistory);
+			}
+			processedClasses.Add(fullName);
+		}
+		foreach ((string fullName, THistory classHistory) in dictionary)
+		{
+			if (!processedClasses.Contains(fullName))
+			{
+				classHistory.Add(version, null);
+			}
+		}
 	}
 
 	private static IEnumerable<DocumentationFile> ExtractAllDocumentation(string inputDirectory)
