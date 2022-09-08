@@ -186,6 +186,20 @@ namespace AssetRipper.AssemblyDumper.Utils
 			_list.Insert(insertionIndex, new KeyValuePair<UnityVersion, T?>(divisionPoint, clone));
 		}
 
+		public VersionedList<T> GetSubList(Range<UnityVersion> range)
+		{
+			VersionedList<T> result = new();
+			for (int i = 0; i < Count; i++)
+			{
+				Range<UnityVersion> currentRange = GetRange(i);
+				if (currentRange.Intersects(range, out Range<UnityVersion> intersection))
+				{
+					result.Add(intersection.Start, this[i].Value);
+				}
+			}
+			return result;
+		}
+
 		public IEnumerator<KeyValuePair<UnityVersion, T?>> GetEnumerator() => _list.GetEnumerator();
 
 		IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_list).GetEnumerator();

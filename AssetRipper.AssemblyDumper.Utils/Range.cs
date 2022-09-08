@@ -38,23 +38,61 @@
 			return Contains(other.Start) || other.Contains(Start);
 		}
 
+		public bool Intersects(Range<T> other, out Range<T> intersection)
+		{
+			if (Intersects(other))
+			{
+				intersection = MakeIntersectionInternal(other);
+				return true;
+			}
+			else
+			{
+				intersection = default;
+				return false;
+			}
+		}
+
 		public bool CanUnion(Range<T> other)
 		{
 			return Intersects(other) || Start.Equals(other.End) || End.Equals(other.Start);
 		}
 
+		public bool CanUnion(Range<T> other, out Range<T> union)
+		{
+			if (CanUnion(other))
+			{
+				union = MakeUnionInternal(other);
+				return true;
+			}
+			else
+			{
+				union = default;
+				return false;
+			}
+		}
+
 		public Range<T> MakeUnion(Range<T> other)
 		{
 			return CanUnion(other)
-				? new Range<T>(Minimum(Start, other.Start), Maximum(End, other.End))
+				? MakeUnionInternal(other)
 				: throw new ArgumentException("These ranges cannot be unioned", nameof(other));
+		}
+
+		private Range<T> MakeUnionInternal(Range<T> other)
+		{
+			return new Range<T>(Minimum(Start, other.Start), Maximum(End, other.End));
 		}
 
 		public Range<T> MakeIntersection(Range<T> other)
 		{
 			return Intersects(other)
-				? new Range<T>(Maximum(Start, other.Start), Minimum(End, other.End))
+				? MakeIntersectionInternal(other)
 				: throw new ArgumentException("These ranges do not intersect", nameof(other));
+		}
+
+		private Range<T> MakeIntersectionInternal(Range<T> other)
+		{
+			return new Range<T>(Maximum(Start, other.Start), Minimum(End, other.End));
 		}
 
 		private static T Minimum(T left, T right)
