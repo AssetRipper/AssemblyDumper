@@ -42,6 +42,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ret);
 
 			processor.OptimizeMacros();
+
+			Console.WriteLine($"\t{SharedState.Instance.SourceVersions.Length} source versions.");
 		}
 	}
 }

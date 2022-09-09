@@ -32,6 +32,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 					FieldGroupDictionary.Add(field, SharedState.Instance.ClassGroups[id]);
 				}
 			}
+
+			Console.WriteLine($"\t{nameDictionary.Count} ClassIDType numbers.");
 		}
 
 		private static Dictionary<string, long> CreateDictionary()

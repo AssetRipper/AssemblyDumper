@@ -7,7 +7,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			AssemblyDefinition? assembly = SharedState.Instance.Assembly;
+			AssemblyDefinition assembly = SharedState.Instance.Assembly;
 
 			string filePath = Path.Combine(Environment.CurrentDirectory, assembly.Name!.ToString() + ".dll");
 
@@ -24,6 +24,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 
 				assembly.Write(filePath, builder);
+				Console.WriteLine($"\t{SharedState.Instance.Module.TopLevelTypes.Count} top level types.");
 			}
 			catch (AggregateException aggregateException)
 			{
