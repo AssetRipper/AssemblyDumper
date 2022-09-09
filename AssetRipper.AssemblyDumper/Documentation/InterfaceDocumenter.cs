@@ -6,9 +6,9 @@ namespace AssetRipper.AssemblyDumper.Documentation
 	{
 		public static void AddInterfaceDocumentation(ClassGroupBase group)
 		{
-			if (TryGetHistoryForGroup(group, Passes.Pass350_AddEnums.historyFile, out ComplexTypeHistory? history))
+			if (TryGetHistoryForGroup(group, SharedState.Instance.HistoryFile, out ComplexTypeHistory? history))
 			{
-				AddDocumentationFromHistory(group, history, Passes.Pass350_AddEnums.historyFile);
+				AddDocumentationFromHistory(group, history, SharedState.Instance.HistoryFile);
 			}
 			AddInterfaceTypeDocumentation(group);
 			AddInterfacePropertyDocumentation(group);

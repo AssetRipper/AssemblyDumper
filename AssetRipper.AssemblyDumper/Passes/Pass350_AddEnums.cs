@@ -7,19 +7,17 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	internal static class Pass350_AddEnums
 	{
-		internal static HistoryFile historyFile = new();
 		internal readonly static Dictionary<TypeDefinition, EnumHistory> enumDictionary = new();
 		public static void DoPass()
 		{
-			historyFile = HistoryFile.FromFile("consolidated.json");
 			IMethodDefOrRef flagsConstructor = SharedState.Instance.Importer.ImportDefaultConstructor<FlagsAttribute>();
 			int count = 0;
-			Dictionary<string, int> duplicateNames = GetDuplicateNames(historyFile.Enums.Values);
-			foreach (EnumHistory enumHistory in historyFile.Enums.Values)
+			Dictionary<string, int> duplicateNames = GetDuplicateNames(SharedState.Instance.HistoryFile.Enums.Values);
+			foreach (EnumHistory enumHistory in SharedState.Instance.HistoryFile.Enums.Values)
 			{
-				if (enumHistory.ElementType.Count != 1)
+				if (!enumHistory.TryGetMergedElementType(out ElementType elementType))
 				{
-					Console.WriteLine($"Could not convert {enumHistory.FullName} to IL because it has multiple underlying types.");
+					Console.WriteLine($"Could not convert {enumHistory.FullName} to IL because it has incompatible underlying types.");
 					continue;
 				}
 
@@ -34,14 +32,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 					enumName = enumHistory.Name;
 				}
 
-				EnumUnderlyingType enumType = enumHistory.ElementType[0].Value.ToEnumUnderlyingType();
-
 				TypeDefinition type = EnumCreator.CreateFromDictionary(
 					SharedState.Instance,
 					SharedState.EnumsNamespace,
 					enumName,
 					GetFields(enumHistory),
-					enumType);
+					elementType.ToEnumUnderlyingType());
 
 				if (enumHistory.IsFlagsEnum)
 				{
@@ -52,7 +48,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 				count++;
 			}
-			Console.WriteLine($"{count} enums created.");
+			Console.WriteLine($"\t{count} generated enums.");
 		}
 
 		private static Dictionary<string, int> GetDuplicateNames(IEnumerable<EnumHistory> enums)

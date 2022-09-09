@@ -2,6 +2,7 @@
 using AssetRipper.AssemblyCreationTools.Attributes;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyDumper.Utils;
+using AssetRipper.DocExtraction.DataStructures;
 
 namespace AssetRipper.AssemblyDumper
 {
@@ -28,8 +29,9 @@ namespace AssetRipper.AssemblyDumper
 		public UnityVersion MaxVersion { get; }
 		public UnityVersion[] SourceVersions { get; }
 		public UniversalCommonString CommonString { get; }
+		public HistoryFile HistoryFile { get; }
 		public Dictionary<int, VersionedList<UniversalClass>> ClassInformation { get; }
-		public Dictionary<string, VersionedList<UniversalClass>> SubclassInformation { get; }
+		public Dictionary<string, VersionedList<UniversalClass>> SubclassInformation { get; } = new();
 		public Dictionary<int, ClassGroup> ClassGroups { get; } = new();
 		public Dictionary<string, SubclassGroup> SubclassGroups { get; } = new();
 		public Dictionary<TypeDefinition, ClassGroupBase> TypesToGroups { get; } = new();
@@ -54,7 +56,7 @@ namespace AssetRipper.AssemblyDumper
 			SourceVersions = sourceVersions;
 			CommonString = commonString;
 			ClassInformation = classes;
-			SubclassInformation = new();
+			HistoryFile = HistoryFile.FromFile("consolidated.json");
 
 			//input array is sequentially ordered
 			MinVersion = sourceVersions[0];

@@ -1,5 +1,6 @@
 ﻿using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using AssetRipper.AssemblyDumper.Utils;
+using AssetRipper.DocExtraction.Extensions;
 using AssetRipper.DocExtraction.MetaData;
 using AssetRipper.VersionUtilities;
 
@@ -31,4 +32,50 @@ public sealed class EnumHistory : TypeHistory<EnumMemberHistory, EnumMemberDocum
 		AddIfNotEqual(ElementType, version, @enum.ElementType);
 		IsFlagsEnum |= @enum.IsFlagsEnum;
 	}
+
+	public bool TryGetSingleElementType(out ElementType elementType)
+	{
+		if (ElementType.Count == 1)
+		{
+			elementType = ElementType[0].Value;
+			return true;
+		}
+		else
+		{
+			elementType = default;
+			return false;
+		}
+	}
+
+	public bool TryGetMergedElementType(out ElementType elementType)
+	{
+		if (ElementType.Count == 0)
+		{
+			elementType = default;
+			return false;
+		}
+		else if (ElementType.Count == 1)
+		{
+			elementType = ElementType[0].Value;
+			return true;
+		}
+		else
+		{
+			try
+			{
+				elementType = ElementType[0].Value;
+				for (int i = 1; i < ElementType.Count; i++)
+				{
+					elementType = elementType.Merge(ElementType[i].Value);
+				}
+				return true;
+			}
+			catch (ArgumentOutOfRangeException)
+			{
+				elementType = default;
+				return false;
+			}
+		}
+	}
+
 }
