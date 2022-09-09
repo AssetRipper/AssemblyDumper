@@ -64,6 +64,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					}
 				}
 			}
+			group.InitializeHistory(SharedState.Instance.HistoryFile);
 		}
 
 		private static void CreateType(UniversalClass universalClass, UnityVersion startVersion, UnityVersion endVersion, string typeName, string originalTypeName, ClassGroupBase group)

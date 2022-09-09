@@ -6,9 +6,9 @@ namespace AssetRipper.AssemblyDumper.Documentation
 	{
 		public static void AddInterfaceDocumentation(ClassGroupBase group)
 		{
-			if (TryGetHistoryForGroup(group, SharedState.Instance.HistoryFile, out ComplexTypeHistory? history))
+			if (group.History is not null)
 			{
-				AddDocumentationFromHistory(group, history, SharedState.Instance.HistoryFile);
+				AddDocumentationFromHistory(group, group.History, SharedState.Instance.HistoryFile);
 			}
 			AddInterfaceTypeDocumentation(group);
 			AddInterfacePropertyDocumentation(group);
@@ -35,26 +35,6 @@ namespace AssetRipper.AssemblyDumper.Documentation
 					}
 				}
 			}
-		}
-
-		private static bool TryGetHistoryForGroup(ClassGroupBase group, HistoryFile historyFile, [NotNullWhen(true)] out ComplexTypeHistory? history)
-		{
-			if (!group.Instances[0].TryGetHistory(historyFile, out ComplexTypeHistory? firstHistory))
-			{
-				history = null;
-				return false;
-			}
-			for (int i = 1; i < group.Instances.Count; i++)
-			{
-				GeneratedClassInstance instance = group.Instances[i];
-				if (!instance.TryGetHistory(historyFile, out ComplexTypeHistory? subsequentHistory) || firstHistory != subsequentHistory)
-				{
-					history = null;
-					return false;
-				}
-			}
-			history = firstHistory;
-			return true;
 		}
 
 		private static Dictionary<PropertyDefinition, string> GetFieldsToInterfaceProperties(ClassGroupBase group)

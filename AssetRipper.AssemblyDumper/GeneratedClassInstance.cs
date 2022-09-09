@@ -18,6 +18,7 @@ namespace AssetRipper.AssemblyDumper
 		public IReadOnlyDictionary<PropertyDefinition, string?> PropertiesToFields => propertiesToFields;
 		public IReadOnlyDictionary<string, PropertyDefinition> FieldsToProperties => fieldsToProperties;
 		public Dictionary<PropertyDefinition, PropertyDefinition> InterfacePropertiesToInstanceProperties { get; } = new();
+		public ComplexTypeHistory? History { get; set; }
 
 		public GeneratedClassInstance(string name, int id, UniversalClass @class, TypeDefinition type, Range<UnityVersion> versionRange)
 		{
@@ -75,17 +76,17 @@ namespace AssetRipper.AssemblyDumper
 			}
 		}
 
-		public bool TryGetHistory(HistoryFile historyFile, [NotNullWhen(true)] out ComplexTypeHistory? history)
+		public void InitializeHistory(HistoryFile historyFile)
 		{
 			if (ID < 0)
 			{
-				return TryGetSubclass(Name, VersionRange.Start, historyFile, out history);
+				TryGetSubclass(Name, VersionRange.Start, historyFile, out ComplexTypeHistory? history);
+				History = history;
 			}
 			else
 			{
-				bool result = TryGetClass(Name, VersionRange.Start, historyFile, out ClassHistory? classHistory);
-				history = classHistory;
-				return result;
+				TryGetClass(Name, VersionRange.Start, historyFile, out ClassHistory? classHistory);
+				History = classHistory;
 			}
 		}
 

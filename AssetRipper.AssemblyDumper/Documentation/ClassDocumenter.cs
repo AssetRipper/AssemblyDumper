@@ -11,9 +11,9 @@ namespace AssetRipper.AssemblyDumper.Documentation
 	{
 		public static void AddClassDocumentation(GeneratedClassInstance instance)
 		{
-			if (instance.TryGetHistory(SharedState.Instance.HistoryFile, out ComplexTypeHistory? history))
+			if (instance.History is not null)
 			{
-				AddDocumentationFromHistory(instance, history, SharedState.Instance.HistoryFile);
+				AddDocumentationFromHistory(instance, instance.History, SharedState.Instance.HistoryFile);
 			}
 
 			AddClassTypeDocumentation(instance);

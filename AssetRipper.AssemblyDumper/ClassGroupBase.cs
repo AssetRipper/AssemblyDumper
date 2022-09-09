@@ -1,10 +1,13 @@
-﻿namespace AssetRipper.AssemblyDumper
+﻿using AssetRipper.DocExtraction.DataStructures;
+
+namespace AssetRipper.AssemblyDumper
 {
 	internal abstract class ClassGroupBase
 	{
 		public List<GeneratedClassInstance> Instances { get; } = new();
 		public TypeDefinition Interface { get; }
 		public List<PropertyDefinition> InterfaceProperties { get; } = new();
+		public ComplexTypeHistory? History { get; set; }
 
 		public abstract string Name { get; }
 		public abstract string Namespace { get; }
@@ -70,6 +73,30 @@
 				{
 					maximum = instanceVersion;
 				}
+			}
+		}
+
+		public void InitializeHistory(HistoryFile historyFile)
+		{
+			History = null;
+
+			foreach (GeneratedClassInstance instance in Instances)
+			{
+				instance.InitializeHistory(historyFile);
+			}
+
+			ComplexTypeHistory? firstHistory = Instances[0].History;
+			if (firstHistory is not null)
+			{
+				for (int i = 1; i < Instances.Count; i++)
+				{
+					ComplexTypeHistory? subsequentHistory = Instances[i].History;
+					if (firstHistory != subsequentHistory)
+					{
+						return;
+					}
+				}
+				History = firstHistory;
 			}
 		}
 	}
