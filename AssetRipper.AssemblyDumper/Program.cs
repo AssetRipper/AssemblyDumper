@@ -191,6 +191,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass505_FixOldAudioClip.DoPass();
 			}
+			using (new TimingCookie("Pass 506: Fixing UnityConnectSettings"))
+			{
+				Pass506_FixUnityConnectSettings.DoPass();
+			}
 			using (new TimingCookie("Pass 520: Custom Field Initializers"))
 			{
 				Pass520_CustomFieldInitializers.DoPass();
