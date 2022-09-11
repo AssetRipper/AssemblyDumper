@@ -72,6 +72,15 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			lines.Add(line);
 		}
 
+		public static void AddPropertyDefinitionLine(PropertyBase property, string line)
+		{
+			AddPropertyDefinitionLine(property.Definition, line);
+			if (property.SpecialDefinition is not null)
+			{
+				AddPropertyDefinitionLine(property.SpecialDefinition, line);
+			}
+		}
+
 		public static void AddFieldDefinitionLine(FieldDefinition field, string line)
 		{
 			List<string> lines = fieldDefinitionDocumentation.GetOrAdd(field);
