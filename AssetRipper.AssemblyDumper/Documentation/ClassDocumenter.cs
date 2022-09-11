@@ -136,6 +136,14 @@ namespace AssetRipper.AssemblyDumper.Documentation
 					VersionedListDocumenter.AddSet(classProperty.Definition, docStringSubList, "Summary: ");
 					VersionedListDocumenter.AddList(classProperty.Definition, obsoleteMessageSubList, "Obsolete Message: ");
 
+					if (classProperty.SpecialDefinition is not null)
+					{
+						VersionedListDocumenter.AddSet(classProperty.SpecialDefinition, nativeNameSubList, "Native Name: ");
+						VersionedListDocumenter.AddList(classProperty.SpecialDefinition, managedTypeSubList, "Managed Type: ");
+						VersionedListDocumenter.AddSet(classProperty.SpecialDefinition, docStringSubList, "Summary: ");
+						VersionedListDocumenter.AddList(classProperty.SpecialDefinition, obsoleteMessageSubList, "Obsolete Message: ");
+					}
+
 					if (classProperty.BackingField is not null)
 					{
 						VersionedListDocumenter.AddSet(classProperty.BackingField, nativeNameSubList, "Native Name: ");

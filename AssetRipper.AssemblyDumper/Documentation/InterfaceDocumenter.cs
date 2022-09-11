@@ -24,12 +24,22 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			{
 				if (interfaceProperty.History is not null)
 				{
-					VersionedListDocumenter.AddSet(interfaceProperty.Definition, interfaceProperty.History.NativeName, "Native Name: ");
-					VersionedListDocumenter.AddList(interfaceProperty.Definition, interfaceProperty.History.TypeFullName, "Managed Type: ");
-					VersionedListDocumenter.AddSet(interfaceProperty.Definition, interfaceProperty.History.DocumentationString, "Summary: ");
-					VersionedListDocumenter.AddList(interfaceProperty.Definition, interfaceProperty.History.ObsoleteMessage, "Obsolete Message: ");
+					AddPropertyDocumentationFromHistory(interfaceProperty.Definition, interfaceProperty.History);
+
+					if (interfaceProperty.SpecialDefinition is not null)
+					{
+						AddPropertyDocumentationFromHistory(interfaceProperty.SpecialDefinition, interfaceProperty.History);
+					}
 				}
 			}
+		}
+
+		private static void AddPropertyDocumentationFromHistory(PropertyDefinition property, DataMemberHistory history)
+		{
+			VersionedListDocumenter.AddSet(property, history.NativeName, "Native Name: ");
+			VersionedListDocumenter.AddList(property, history.TypeFullName, "Managed Type: ");
+			VersionedListDocumenter.AddSet(property, history.DocumentationString, "Summary: ");
+			VersionedListDocumenter.AddList(property, history.ObsoleteMessage, "Obsolete Message: ");
 		}
 	}
 }

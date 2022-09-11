@@ -19,7 +19,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			IdEnumDocumenter.AddIdEnumDocumentation();
 
-			foreach ((TypeDefinition type, EnumHistory history) in Pass040_AddEnums.enumDictionary)
+			foreach ((TypeDefinition type, EnumHistory history) in Pass040_AddEnums.EnumDictionary.Values)
 			{
 				EnumTypeDocumenter.AddEnumTypeDocumentation(type, history);
 			}

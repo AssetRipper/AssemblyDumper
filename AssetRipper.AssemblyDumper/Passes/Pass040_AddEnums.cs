@@ -7,13 +7,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	internal static class Pass040_AddEnums
 	{
-		internal readonly static Dictionary<TypeDefinition, EnumHistory> enumDictionary = new();
+		private static readonly Dictionary<string, (TypeDefinition, EnumHistory)> enumDictionary = new();
+		internal static IReadOnlyDictionary<string, (TypeDefinition, EnumHistory)> EnumDictionary => enumDictionary;
 		public static void DoPass()
 		{
 			IMethodDefOrRef flagsConstructor = SharedState.Instance.Importer.ImportDefaultConstructor<FlagsAttribute>();
 			int count = 0;
 			Dictionary<string, int> duplicateNames = GetDuplicateNames(SharedState.Instance.HistoryFile.Enums.Values);
-			foreach (EnumHistory enumHistory in SharedState.Instance.HistoryFile.Enums.Values)
+			foreach ((string fullName, EnumHistory enumHistory) in SharedState.Instance.HistoryFile.Enums)
 			{
 				if (!enumHistory.TryGetMergedElementType(out ElementType elementType))
 				{
@@ -44,7 +45,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					type.AddCustomAttribute(flagsConstructor);
 				}
 
-				enumDictionary.Add(type, enumHistory);
+				enumDictionary.Add(fullName, (type, enumHistory));
 
 				count++;
 			}

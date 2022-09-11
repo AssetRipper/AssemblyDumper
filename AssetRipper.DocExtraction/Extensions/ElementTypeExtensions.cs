@@ -36,6 +36,22 @@ public static class ElementTypeExtensions
 		};
 	}
 
+	public static bool IsFixedSizeInteger(this ElementType elementType)
+	{
+		return elementType switch
+		{
+			ElementType.I1 => true,
+			ElementType.U1 => true,
+			ElementType.I2 => true,
+			ElementType.U2 => true,
+			ElementType.I4 => true,
+			ElementType.U4 => true,
+			ElementType.I8 => true,
+			ElementType.U8 => true,
+			_ => false,
+		};
+	}
+
 	public static bool IsUnsigned(this ElementType elementType) => !elementType.IsSigned();
 
 	public static ElementType Merge(this ElementType first, ElementType second)

@@ -91,6 +91,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass054_AssignPropertyHistories.DoPass();
 			}
+			using (new TimingCookie("Pass 055: Create Enum Properties"))
+			{
+				Pass055_CreateEnumProperties.DoPass();
+			}
 			using (new TimingCookie("Pass 080: PPtr Conversions"))
 			{
 				Pass080_PPtrConversions.DoPass();

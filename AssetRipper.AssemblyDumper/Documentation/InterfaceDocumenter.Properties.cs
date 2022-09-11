@@ -16,59 +16,64 @@ namespace AssetRipper.AssemblyDumper.Documentation
 
 		private static void AddInterfacePropertyDocumentation(ClassGroupBase group)
 		{
-			Dictionary<PropertyDefinition, FieldPresense> interfacePropertyData = GetReleaseAndEditorOnlyData(group);
+			Dictionary<InterfaceProperty, FieldPresense> interfacePropertyData = GetReleaseAndEditorOnlyData(group);
 
 			foreach (InterfaceProperty interfaceProperty in group.InterfaceProperties)
 			{
-				AddInterfacePropertyDocumentation(
-					interfaceProperty.Definition,
-					interfaceProperty.HasMethod is not null,
-					interfaceProperty.Definition.IsValueType(),
-					interfacePropertyData[interfaceProperty.Definition]);
+				AddInterfacePropertyDocumentation(interfaceProperty, interfacePropertyData[interfaceProperty]);
 
 				if (interfaceProperty.HasMethod is not null)
 				{
 					string versionString = interfaceProperty.PresentRange.GetString();
 					DocumentationHandler.AddMethodDefinitionLine(interfaceProperty.HasMethod, versionString);
-					DocumentationHandler.AddPropertyDefinitionLine(interfaceProperty.Definition, versionString);
+					AddDocumentationLine(interfaceProperty, versionString);
 				}
 			}
 		}
 
-		private static void AddInterfacePropertyDocumentation(PropertyDefinition property, bool hasMethodExists, bool isValueType, FieldPresense presense)
+		private static void AddInterfacePropertyDocumentation(InterfaceProperty interfaceProperty, FieldPresense presense)
 		{
-			string str = hasMethodExists
-				? isValueType
+			string str = interfaceProperty.HasMethod is not null
+				? interfaceProperty.Definition.IsValueType()
 					? "Maybe absent"
 					: "Maybe null"
-				: isValueType
+				: interfaceProperty.Definition.IsValueType()
 					? "Not absent"
 					: "Not null";
 
-			DocumentationHandler.AddPropertyDefinitionLine(property, str);
+			AddDocumentationLine(interfaceProperty, str);
 
 			if ((presense & FieldPresense.AlwaysReleaseOnly) != 0)
 			{
-				DocumentationHandler.AddPropertyDefinitionLine(property, "Release Only");
+				AddDocumentationLine(interfaceProperty, "Release Only");
 			}
 			else if ((presense & FieldPresense.SometimesReleaseOnly) != 0)
 			{
-				DocumentationHandler.AddPropertyDefinitionLine(property, "Sometimes Release Only");
+				AddDocumentationLine(interfaceProperty, "Sometimes Release Only");
 			}
 			if ((presense & FieldPresense.AlwaysEditorOnly) != 0)
 			{
-				DocumentationHandler.AddPropertyDefinitionLine(property, "Editor Only");
+				AddDocumentationLine(interfaceProperty, "Editor Only");
 			}
 			else if ((presense & FieldPresense.SometimesEditorOnly) != 0)
 			{
-				DocumentationHandler.AddPropertyDefinitionLine(property, "Sometimes Editor Only");
+				AddDocumentationLine(interfaceProperty, "Sometimes Editor Only");
+			}
+		}
+
+		private static void AddDocumentationLine(InterfaceProperty interfaceProperty, string str)
+		{
+			DocumentationHandler.AddPropertyDefinitionLine(interfaceProperty.Definition, str);
+			if (interfaceProperty.SpecialDefinition is not null)
+			{
+				DocumentationHandler.AddPropertyDefinitionLine(interfaceProperty.SpecialDefinition, str);
 			}
 		}
 
 		/// <summary>
 		/// Property : Release Only, Editor Only
 		/// </summary>
-		private static Dictionary<PropertyDefinition, FieldPresense> GetReleaseAndEditorOnlyData(ClassGroupBase group)
+		private static Dictionary<InterfaceProperty, FieldPresense> GetReleaseAndEditorOnlyData(ClassGroupBase group)
 		{
 			Dictionary<string, List<KeyValuePair<GeneratedClassInstance, string?>>> propDictionary = new();
 			foreach (GeneratedClassInstance instance in group.Instances)
@@ -80,10 +85,10 @@ namespace AssetRipper.AssemblyDumper.Documentation
 				}
 			}
 
-			Dictionary<PropertyDefinition, FieldPresense> result = new();
-			foreach (PropertyDefinition property in group.Interface.Properties)
+			Dictionary<InterfaceProperty, FieldPresense> result = new();
+			foreach (InterfaceProperty interfaceProperty in group.InterfaceProperties)
 			{
-				List<KeyValuePair<GeneratedClassInstance, string?>> propList = propDictionary[property.Name!.ToString()];
+				List<KeyValuePair<GeneratedClassInstance, string?>> propList = propDictionary[interfaceProperty.Definition.Name!.ToString()];
 
 				bool sometimesReleaseOnly = propList.Any(pair => IsFieldReleaseOnly(pair.Key, pair.Value));
 				bool releaseOnly = sometimesReleaseOnly && propList.All(pair => IsFieldAbsentOrReleaseOnly(pair.Key, pair.Value));
@@ -109,7 +114,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 					presense |= FieldPresense.SometimesEditorOnly;
 				}
 
-				result[property] = presense;
+				result[interfaceProperty] = presense;
 			}
 			return result;
 		}
