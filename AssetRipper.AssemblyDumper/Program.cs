@@ -75,9 +75,13 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass052_InterfacePropertiesAndMethods.DoPass();
 			}
-			using (new TimingCookie("Pass 053: Interface Inheritance"))
+			using (new TimingCookie("Pass 053: Has Methods and Nullable Attributes"))
 			{
-				Pass053_InterfaceInheritance.DoPass();
+				Pass053_HasMethodsAndNullableAttributes.DoPass();
+			}
+			using (new TimingCookie("Pass 054: Assign Property Histories"))
+			{
+				Pass054_AssignPropertyHistories.DoPass();
 			}
 			using (new TimingCookie("Pass 055: Marker Interfaces"))
 			{
@@ -218,6 +222,10 @@ namespace AssetRipper.AssemblyDumper
 			using (new TimingCookie("Pass 900: Fill Type Tree Methods"))
 			{
 				Pass900_FillTypeTreeMethods.DoPass();
+			}
+			using (new TimingCookie("Pass 920: Interface Inheritance"))
+			{
+				Pass920_InterfaceInheritance.DoPass();
 			}
 			using (new TimingCookie("Pass 940: Make Asset Factory"))
 			{

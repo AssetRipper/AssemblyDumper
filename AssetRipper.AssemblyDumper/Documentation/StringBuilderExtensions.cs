@@ -13,7 +13,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			sb.Append(" to ");
 			sb.Append(range.End == UnityVersion.MaxVersion ? "Max" : range.End);
 		}
-		public static void AppendUnityVersionRanges(this StringBuilder sb, List<UnityVersionRange> ranges)
+		public static void AppendUnityVersionRanges(this StringBuilder sb, IReadOnlyList<UnityVersionRange> ranges)
 		{
 			sb.AppendUnityVersionRange(ranges[0]);
 			for (int i = 1; i < ranges.Count; i++)

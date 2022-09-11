@@ -6,55 +6,30 @@ namespace AssetRipper.AssemblyDumper.Documentation
 	{
 		public static void AddInterfaceDocumentation(ClassGroupBase group)
 		{
-			if (group.History is not null)
-			{
-				AddDocumentationFromHistory(group, group.History, SharedState.Instance.HistoryFile);
-			}
+			AddDocumentationFromHistory(group);
 			AddInterfaceTypeDocumentation(group);
 			AddInterfacePropertyDocumentation(group);
 		}
 
-		private static void AddDocumentationFromHistory(ClassGroupBase group, ComplexTypeHistory history, HistoryFile historyFile)
+		private static void AddDocumentationFromHistory(ClassGroupBase group)
 		{
-			VersionedListDocumenter.AddSet(group.Interface, history.NativeName, "Native Name: ");
-			VersionedListDocumenter.AddSet(group.Interface, history.DocumentationString, "Summary: ");
-			VersionedListDocumenter.AddList(group.Interface, history.ObsoleteMessage, "Obsolete Message: ");
-
-			Dictionary<PropertyDefinition, string> fieldsToProperties = GetFieldsToInterfaceProperties(group);
-			foreach ((_, DataMemberHistory memberHistory) in history.GetAllMembers(historyFile))
+			if (group.History is not null)
 			{
-				string memberName = Passes.Pass002_RenameSubnodes.GetValidFieldName(memberHistory.Name);
-				foreach ((PropertyDefinition property, string fieldName) in fieldsToProperties)
-				{
-					if (memberName == fieldName)
-					{
-						VersionedListDocumenter.AddSet(property, memberHistory.NativeName, "Native Name: ");
-						VersionedListDocumenter.AddList(property, memberHistory.TypeFullName, "Managed Type: ");
-						VersionedListDocumenter.AddSet(property, memberHistory.DocumentationString, "Summary: ");
-						VersionedListDocumenter.AddList(property, memberHistory.ObsoleteMessage, "Obsolete Message: ");
-					}
-				}
-			}
-		}
-
-		private static Dictionary<PropertyDefinition, string> GetFieldsToInterfaceProperties(ClassGroupBase group)
-		{
-			Dictionary<PropertyDefinition, string> result = new();
-
-			foreach (PropertyDefinition interfaceProperty in group.InterfaceProperties)
-			{
-				foreach (GeneratedClassInstance instance in group.Instances)
-				{
-					string? fieldName = instance.PropertiesToFields[instance.InterfacePropertiesToInstanceProperties[interfaceProperty]];
-					if (fieldName is not null)
-					{
-						result.Add(interfaceProperty, fieldName);
-						break;
-					}
-				}
+				VersionedListDocumenter.AddSet(group.Interface, group.History.NativeName, "Native Name: ");
+				VersionedListDocumenter.AddSet(group.Interface, group.History.DocumentationString, "Summary: ");
+				VersionedListDocumenter.AddList(group.Interface, group.History.ObsoleteMessage, "Obsolete Message: ");
 			}
 
-			return result;
+			foreach (InterfaceProperty interfaceProperty in group.InterfaceProperties)
+			{
+				if (interfaceProperty.History is not null)
+				{
+					VersionedListDocumenter.AddSet(interfaceProperty.Definition, interfaceProperty.History.NativeName, "Native Name: ");
+					VersionedListDocumenter.AddList(interfaceProperty.Definition, interfaceProperty.History.TypeFullName, "Managed Type: ");
+					VersionedListDocumenter.AddSet(interfaceProperty.Definition, interfaceProperty.History.DocumentationString, "Summary: ");
+					VersionedListDocumenter.AddList(interfaceProperty.Definition, interfaceProperty.History.ObsoleteMessage, "Obsolete Message: ");
+				}
+			}
 		}
 	}
 }

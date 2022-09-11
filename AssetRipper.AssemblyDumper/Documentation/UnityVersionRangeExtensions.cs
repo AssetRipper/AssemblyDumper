@@ -4,7 +4,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 {
 	internal static class UnityVersionRangeExtensions
 	{
-		public static List<UnityVersionRange> GetUnionedRanges(this IEnumerable<UnityVersionRange> ranges)
+		public static IReadOnlyList<UnityVersionRange> GetUnionedRanges(this IEnumerable<UnityVersionRange> ranges)
 		{
 			List<UnityVersionRange> unionedRanges = new();
 			foreach (UnityVersionRange range in ranges)
@@ -21,7 +21,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			return unionedRanges;
 		}
 
-		public static string GetString(this List<UnityVersionRange> ranges)
+		public static string GetString(this IReadOnlyList<UnityVersionRange> ranges)
 		{
 			StringBuilder sb = new();
 			sb.AppendUnityVersionRanges(ranges);

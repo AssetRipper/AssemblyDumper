@@ -18,20 +18,19 @@ namespace AssetRipper.AssemblyDumper.Documentation
 		{
 			Dictionary<PropertyDefinition, FieldPresense> interfacePropertyData = GetReleaseAndEditorOnlyData(group);
 
-			foreach (PropertyDefinition interfaceProperty in group.Interface.Properties)
+			foreach (InterfaceProperty interfaceProperty in group.InterfaceProperties)
 			{
-				string propertyName = interfaceProperty.Name!;
-				string hasMethodName = GeneratedInterfaceUtils.GetHasMethodName(propertyName);
-				MethodDefinition? hasMethod = group.Interface.Methods.SingleOrDefault(m => m.Name == hasMethodName);
-				bool isValueType = interfaceProperty.IsValueType();
-				FieldPresense presense = interfacePropertyData[interfaceProperty];
+				AddInterfacePropertyDocumentation(
+					interfaceProperty.Definition,
+					interfaceProperty.HasMethod is not null,
+					interfaceProperty.Definition.IsValueType(),
+					interfacePropertyData[interfaceProperty.Definition]);
 
-				AddInterfacePropertyDocumentation(interfaceProperty, hasMethod is not null, isValueType, presense);
-				if (hasMethod is not null)
+				if (interfaceProperty.HasMethod is not null)
 				{
-					string versionString = GetVersionString(group, interfaceProperty);
-					DocumentationHandler.AddMethodDefinitionLine(hasMethod, versionString);
-					DocumentationHandler.AddPropertyDefinitionLine(interfaceProperty, versionString);
+					string versionString = interfaceProperty.PresentRange.GetString();
+					DocumentationHandler.AddMethodDefinitionLine(interfaceProperty.HasMethod, versionString);
+					DocumentationHandler.AddPropertyDefinitionLine(interfaceProperty.Definition, versionString);
 				}
 			}
 		}
@@ -74,10 +73,10 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			Dictionary<string, List<KeyValuePair<GeneratedClassInstance, string?>>> propDictionary = new();
 			foreach (GeneratedClassInstance instance in group.Instances)
 			{
-				foreach ((PropertyDefinition property, string? fieldName) in instance.PropertiesToFields)
+				foreach (ClassProperty classProperty in instance.Properties)
 				{
-					List<KeyValuePair<GeneratedClassInstance, string?>> propList = propDictionary.GetOrAdd(property.Name!.ToString());
-					propList.Add(new KeyValuePair<GeneratedClassInstance, string?>(instance, fieldName));
+					List<KeyValuePair<GeneratedClassInstance, string?>> propList = propDictionary.GetOrAdd(classProperty.Definition.Name!);
+					propList.Add(new KeyValuePair<GeneratedClassInstance, string?>(instance, classProperty.BackingField?.Name));
 				}
 			}
 
@@ -147,21 +146,6 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			return fieldName is not null
 				&& instance.GetEditorFieldByName(fieldName) is null
 				&& instance.GetReleaseFieldByName(fieldName) is not null;
-		}
-
-		private static string GetVersionString(ClassGroupBase group, PropertyDefinition interfaceProperty)
-		{
-			return group.Instances
-				.Where(instance => HasFieldForProperty(instance, interfaceProperty))
-				.Select(instance => instance.VersionRange)
-				.GetUnionedRanges()
-				.GetString();
-		}
-
-		private static bool HasFieldForProperty(GeneratedClassInstance instance, PropertyDefinition interfaceProperty)
-		{
-			PropertyDefinition instanceProperty = instance.InterfacePropertiesToInstanceProperties[interfaceProperty];
-			return !string.IsNullOrEmpty(instance.PropertiesToFields[instanceProperty]);
 		}
 	}
 }

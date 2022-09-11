@@ -37,7 +37,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldloca, variable);
 			processor.Add(CilOpCodes.Initobj, hashCodeType);
 
-			foreach (PropertyDefinition property in instance.InterfacePropertiesToInstanceProperties.Values)
+			foreach (PropertyDefinition property in instance.Properties.Select(c => c.Definition))
 			{
 				processor.Add(CilOpCodes.Ldloca, variable);
 				processor.Add(CilOpCodes.Ldarg_0);

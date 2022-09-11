@@ -11,7 +11,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
 			{
-				if (group.InterfaceProperties.All(prop => prop.Signature?.ReturnType is SzArrayTypeSignature or CorLibTypeSignature) && group.InterfaceProperties.Count > 0)
+				if (group.InterfaceProperties.Select(i => i.Definition).All(prop => prop.Signature?.ReturnType is SzArrayTypeSignature or CorLibTypeSignature) && group.InterfaceProperties.Count > 0)
 				{
 					group.ImplementSetValuesMethod();
 					group.ImplementCopyValuesMethod();
@@ -29,12 +29,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 				MethodDefinition method = instance.Type.AddMethod("CopyValues", InterfaceUtils.InterfaceMethodImplementation, SharedState.Instance.Importer.Void);
 				method.AddParameter(group.Interface.ToTypeSignature(), "source");
 				CilInstructionCollection processor = method.GetProcessor();
-				foreach ((PropertyDefinition interfaceProperty, PropertyDefinition property) in instance.InterfacePropertiesToInstanceProperties)
+				foreach (ClassProperty classProperty in instance.Properties)
 				{
 					processor.Add(CilOpCodes.Ldarg_0);
 					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Callvirt, interfaceProperty.GetMethod ?? throw new Exception("Interface get method can't be null"));
-					processor.Add(CilOpCodes.Call, property.SetMethod ?? throw new Exception("Set method can't be null"));
+					processor.Add(CilOpCodes.Callvirt, classProperty.Base.Definition.GetMethod ?? throw new Exception("Interface get method can't be null"));
+					processor.Add(CilOpCodes.Call, classProperty.Definition.SetMethod ?? throw new Exception("Set method can't be null"));
 				}
 				processor.Add(CilOpCodes.Ret);
 				processor.OptimizeMacros();
@@ -57,7 +57,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					? new Vector4PropertyEnumerable_Instance(instance)
 					: group.IsColorRGBAf()
 						? new ColorPropertyEnumerable_Instance(instance)
-						: instance.InterfacePropertiesToInstanceProperties.Values;
+						: instance.Properties.Select(c => c.Definition);
 				foreach (PropertyDefinition property in properties)
 				{
 					Parameter parameter = method.AddParameter(property.Signature!.ReturnType, GetParameterName(property.Name));
@@ -76,7 +76,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				? new Vector4PropertyEnumerable_Group(group)
 				: group.IsColorRGBAf()
 					? new ColorPropertyEnumerable_Group(group)
-					: group.InterfaceProperties;
+					: group.InterfaceProperties.Select(i => i.Definition);
 		}
 
 		private static string GetParameterName(string? propertyName)
@@ -114,7 +114,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			public Vector4PropertyEnumerable_Instance(GeneratedClassInstance instance) => this.instance = instance;
 			protected override PropertyDefinition GetProperty(string propertyName)
 			{
-				return instance.InterfacePropertiesToInstanceProperties.Single(pair => pair.Value.Name == propertyName).Value;
+				return instance.Properties.Select(c => c.Definition).Single(property => property.Name == propertyName);
 			}
 		}
 		private sealed class Vector4PropertyEnumerable_Group : Vector4PropertyEnumerableBase
@@ -123,7 +123,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			public Vector4PropertyEnumerable_Group(SubclassGroup group) => this.group = group;
 			protected override PropertyDefinition GetProperty(string propertyName)
 			{
-				return group.InterfaceProperties.Single(property => property.Name == propertyName);
+				return group.InterfaceProperties.Select(i => i.Definition).Single(property => property.Name == propertyName);
 			}
 		}
 
@@ -146,7 +146,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			public ColorPropertyEnumerable_Instance(GeneratedClassInstance instance) => this.instance = instance;
 			protected override PropertyDefinition GetProperty(string propertyName)
 			{
-				return instance.InterfacePropertiesToInstanceProperties.Single(pair => pair.Value.Name == propertyName).Value;
+				return instance.Properties.Select(c => c.Definition).Single(property => property.Name == propertyName);
 			}
 		}
 		private sealed class ColorPropertyEnumerable_Group : ColorPropertyEnumerableBase
@@ -155,7 +155,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			public ColorPropertyEnumerable_Group(SubclassGroup group) => this.group = group;
 			protected override PropertyDefinition GetProperty(string propertyName)
 			{
-				return group.InterfaceProperties.Single(property => property.Name == propertyName);
+				return group.InterfaceProperties.Select(i => i.Definition).Single(property => property.Name == propertyName);
 			}
 		}
 	}

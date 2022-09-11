@@ -6,7 +6,7 @@ namespace AssetRipper.AssemblyDumper
 	{
 		public List<GeneratedClassInstance> Instances { get; } = new();
 		public TypeDefinition Interface { get; }
-		public List<PropertyDefinition> InterfaceProperties { get; } = new();
+		public List<InterfaceProperty> InterfaceProperties { get; } = new();
 		public ComplexTypeHistory? History { get; set; }
 
 		public abstract string Name { get; }

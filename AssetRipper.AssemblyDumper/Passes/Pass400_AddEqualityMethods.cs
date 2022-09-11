@@ -88,8 +88,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldarg_1);
 			processor.Add(CilOpCodes.Brfalse, returnFalseLabel);
 
-			foreach ((PropertyDefinition interfaceProperty, PropertyDefinition instanceProperty) in instance.InterfacePropertiesToInstanceProperties)
+			foreach (ClassProperty classProperty in instance.Properties)
 			{
+				PropertyDefinition interfaceProperty = classProperty.Base.Definition;
+				PropertyDefinition instanceProperty = classProperty.Definition;
 				if (instanceProperty.Signature!.ReturnType is CorLibTypeSignature corLibTypeSignature && corLibTypeSignature.IsValueType)
 				{
 					processor.Add(CilOpCodes.Ldarg_0);

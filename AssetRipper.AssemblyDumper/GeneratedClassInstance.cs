@@ -5,9 +5,6 @@ namespace AssetRipper.AssemblyDumper
 {
 	internal sealed class GeneratedClassInstance
 	{
-		private readonly Dictionary<PropertyDefinition, string?> propertiesToFields = new();
-		private readonly Dictionary<string, PropertyDefinition> fieldsToProperties = new();
-
 		public string Name { get; set; }
 		public int ID { get; set; }
 		public UniversalClass Class { get; set; }
@@ -15,10 +12,8 @@ namespace AssetRipper.AssemblyDumper
 		public Range<UnityVersion> VersionRange { get; set; }
 		public GeneratedClassInstance? Base { get; set; }
 		public List<GeneratedClassInstance> Derived { get; } = new();
-		public IReadOnlyDictionary<PropertyDefinition, string?> PropertiesToFields => propertiesToFields;
-		public IReadOnlyDictionary<string, PropertyDefinition> FieldsToProperties => fieldsToProperties;
-		public Dictionary<PropertyDefinition, PropertyDefinition> InterfacePropertiesToInstanceProperties { get; } = new();
 		public ComplexTypeHistory? History { get; set; }
+		public List<ClassProperty> Properties { get; } = new();
 
 		public GeneratedClassInstance(string name, int id, UniversalClass @class, TypeDefinition type, Range<UnityVersion> versionRange)
 		{
@@ -65,15 +60,6 @@ namespace AssetRipper.AssemblyDumper
 				: Class.ReleaseRootNode is not null
 					? Class.ReleaseRootNode.Version
 					: 1;
-		}
-
-		public void AddPropertyFieldPair(PropertyDefinition property, string? field)
-		{
-			propertiesToFields.Add(property, field);
-			if (field is not null)
-			{
-				fieldsToProperties.Add(field, property);
-			}
 		}
 
 		public void InitializeHistory(HistoryFile historyFile)

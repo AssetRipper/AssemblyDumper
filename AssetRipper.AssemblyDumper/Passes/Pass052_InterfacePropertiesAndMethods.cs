@@ -35,41 +35,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 			Dictionary<string, (string, TypeSignature, bool)> propertyDictionary = group.GetPropertyDictionary();
 			HashSet<string> differingFieldNames = group.GetDifferingFieldNames();
 
-			group.Interface.AddNullableContextAttribute(NullableAnnotation.NotNull);
-			group.Interface.AddNullableAttribute(NullableAnnotation.Oblivious);
-			foreach (TypeDefinition instanceType in group.Types)
-			{
-				instanceType.AddNullableContextAttribute(NullableAnnotation.NotNull);
-				instanceType.AddNullableAttribute(NullableAnnotation.Oblivious);
-			}
-
 			foreach ((string propertyName, (string fieldName, TypeSignature propertyTypeSignature, bool hasConflictingTypes)) in propertyDictionary)
 			{
 				bool missingOnSomeVersions = differingFieldNames.Contains(fieldName);
 				bool isValueType = propertyTypeSignature.IsValueType;
+
 				PropertyDefinition propertyDeclaration = group.Interface.AddInterfacePropertyDeclaration(propertyName, propertyTypeSignature);
-				group.InterfaceProperties.Add(propertyDeclaration);
-				if (hasConflictingTypes || missingOnSomeVersions)
-				{
-					MethodDefinition methodDeclaration = group.Interface.AddIsTypeMethodDeclaration(propertyName);
-					if (!isValueType)
-					{
-						methodDeclaration.AddMemberNotNullAttribute(SharedState.Instance.Importer, true, propertyName);
-						if (propertyTypeSignature is SzArrayTypeSignature or GenericInstanceTypeSignature)
-						{
-							propertyDeclaration.AddNullableAttribute(GetNullableByteArray(propertyTypeSignature));
-						}
-						else
-						{
-							propertyDeclaration.AddNullableAttribute(NullableAnnotation.MaybeNull);
-						}
-						propertyDeclaration.GetMethod!.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
-						if (propertyDeclaration.SetMethod is not null)
-						{
-							propertyDeclaration.SetMethod!.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
-						}
-					}
-				}
+				InterfaceProperty interfaceProperty = new InterfaceProperty(propertyDeclaration, group);
+				group.InterfaceProperties.Add(interfaceProperty);
+				
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
 					TypeDefinition type = instance.Type;
@@ -79,42 +53,26 @@ namespace AssetRipper.AssemblyDumper.Passes
 						TypeSignature? fieldType = field?.Signature?.FieldType;
 						bool presentAndMatchesType = fieldType is not null &&
 							(!hasConflictingTypes || signatureComparer.Equals(fieldType, propertyTypeSignature));
-						type.AddIsTypeMethodImplementation(propertyName, presentAndMatchesType);
+						
 						PropertyDefinition property = presentAndMatchesType
 							? type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, field)
 							: type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, null);
-						instance.AddPropertyFieldPair(property, presentAndMatchesType ? fieldName : null);
-						instance.InterfacePropertiesToInstanceProperties.Add(propertyDeclaration, property);
-						if (!isValueType)
+
+						ClassProperty classProperty = presentAndMatchesType
+							? new ClassProperty(property, field, interfaceProperty, instance)
+							: new ClassProperty(property, null, interfaceProperty, instance);
+						instance.Properties.Add(classProperty);
+
+						if (!isValueType && presentAndMatchesType && propertyTypeSignature is SzArrayTypeSignature && field is not null)
 						{
-							if (propertyTypeSignature is SzArrayTypeSignature or GenericInstanceTypeSignature)
-							{
-								property.AddNullableAttribute(GetNullableByteArray(propertyTypeSignature));
-							}
-							else
-							{
-								property.AddNullableAttribute(NullableAnnotation.MaybeNull);
-							}
-							property.GetMethod!.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
-							if (propertyDeclaration.SetMethod is not null)
-							{
-								property.SetMethod!.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
-							}
-							if (presentAndMatchesType)
-							{
-								if (propertyTypeSignature is SzArrayTypeSignature && field is not null)
-								{
-									property.FixNullableArraySetMethod(field);
-								}
-								property.GetMethod!.AddNotNullAttribute();
-							}
+							property.FixNullableArraySetMethod(field);
 						}
 					}
 					else
 					{
 						PropertyDefinition property = type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, field);
-						instance.AddPropertyFieldPair(property, field?.Name);
-						instance.InterfacePropertiesToInstanceProperties.Add(propertyDeclaration, property);
+						ClassProperty classProperty = new ClassProperty(property, field, interfaceProperty, instance);
+						instance.Properties.Add(classProperty);
 					}
 				}
 			}
@@ -249,7 +207,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			if (types.Count == 0)
 			{
-				throw new ArgumentException(nameof(types));
+				throw new ArgumentException(null, nameof(types));
 			}
 
 			if (TryGetTypeDefinitionsForTypeSignatures(types, out List<TypeDefinition>? typeDefinitions))
@@ -302,14 +260,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static PropertyDefinition AddInterfacePropertyDeclaration(this TypeDefinition @interface, string propertyName, TypeSignature propertyType)
 		{
-			if (ShouldUseFullProperty(propertyType))
-			{
-				return @interface.AddFullProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType);
-			}
-			else
-			{
-				return @interface.AddGetterProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType);
-			}
+			return ShouldUseFullProperty(propertyType)
+				? @interface.AddFullProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType)
+				: @interface.AddGetterProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType);
 		}
 
 		private static bool ShouldUseFullProperty(TypeSignature propertyType)
@@ -397,27 +350,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.OptimizeMacros();
 		}
 
-		private static MethodDefinition AddIsTypeMethodDeclaration(this TypeDefinition @interface, string propertyName)
-		{
-			return @interface.AddMethod(
-				GeneratedInterfaceUtils.GetHasMethodName(propertyName),
-				InterfaceUtils.InterfaceMethodDeclaration,
-				SharedState.Instance.Importer.Boolean);
-		}
-
-		private static void AddIsTypeMethodImplementation(this TypeDefinition declaringType, string propertyName, bool isType)
-		{
-			MethodDefinition method = declaringType.AddMethod(
-				GeneratedInterfaceUtils.GetHasMethodName(propertyName),
-				InterfaceUtils.InterfaceMethodImplementation,
-				SharedState.Instance.Importer.Boolean);
-			method.CilMethodBody!.Instructions.FillWithSimpleBooleanReturn(isType);
-
-
-			//method.CustomAttributes.Add(new CustomAttribute(null, new CustomAttributeSignature()));
-			//method.Parameters.First().Definition.
-		}
-
 		private static IEnumerable<string> GetFieldNames(this UniversalClass universalClass)
 		{
 			return universalClass.EditorRootNode.GetFieldNames().Union(universalClass.ReleaseRootNode.GetFieldNames()).Distinct();
@@ -478,60 +410,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 			}
 			return true;
-		}
-
-		private static CustomAttribute AddNullableAttribute(this IHasCustomAttribute hasCustomAttribute, NullableAnnotation annotation)
-		{
-			return hasCustomAttribute.AddCustomAttribute(SharedState.Instance.NullableAttributeConstructorByte, SharedState.Instance.Importer.UInt8, (byte)annotation);
-		}
-
-		private static CustomAttribute AddNullableAttribute(this IHasCustomAttribute hasCustomAttribute, byte[] annotationArray)
-		{
-			return hasCustomAttribute.AddCustomAttribute(SharedState.Instance.NullableAttributeConstructorByteArray, SharedState.Instance.Importer.UInt8.MakeSzArrayType(), annotationArray);
-		}
-
-		private static CustomAttribute AddNullableContextAttribute(this IHasCustomAttribute hasCustomAttribute, NullableAnnotation annotation)
-		{
-			return hasCustomAttribute.AddCustomAttribute(SharedState.Instance.NullableContextAttributeConstructor, SharedState.Instance.Importer.UInt8, (byte)annotation);
-		}
-
-		private static CustomAttribute AddNotNullAttribute(this MethodDefinition method)
-		{
-			IMethodDefOrRef attributeConstructor = SharedState.Instance.Importer.ImportDefaultConstructor<NotNullAttribute>();
-			return method
-				.GetOrAddReturnTypeParameterDefinition()
-				.AddCustomAttribute(attributeConstructor);
-		}
-
-		private static byte[] GetNullableByteArray(TypeSignature type)
-		{
-			List<byte> result = new();
-			AddNullableIndicatorBytes(type, result);
-			result[0] = 2;
-			return result.ToArray();
-		}
-
-		private static void AddNullableIndicatorBytes(TypeSignature type, List<byte> byteList)
-		{
-			byteList.Add(type.IsValueType ? (byte)0 : (byte)1);
-			if (type is SzArrayTypeSignature arrayType)
-			{
-				AddNullableIndicatorBytes(arrayType.BaseType, byteList);
-			}
-			else if (type is GenericInstanceTypeSignature genericInstanceTypeSignature)
-			{
-				foreach (TypeSignature typeArgument in genericInstanceTypeSignature.TypeArguments)
-				{
-					AddNullableIndicatorBytes(typeArgument, byteList);
-				}
-			}
-		}
-
-		private enum NullableAnnotation : byte
-		{
-			Oblivious,
-			NotNull,
-			MaybeNull,
 		}
 	}
 }

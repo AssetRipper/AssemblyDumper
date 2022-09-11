@@ -1,8 +1,6 @@
-﻿using AssetRipper.AssemblyCreationTools.Fields;
-using AssetRipper.AssemblyDumper.Utils;
+﻿using AssetRipper.AssemblyDumper.Utils;
 using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
 using AssetRipper.Core.Utils;
-using AssetRipper.DocExtraction.DataStructures;
 using AssetRipper.DocExtraction.MetaData;
 
 namespace AssetRipper.AssemblyDumper.Documentation
@@ -11,18 +9,15 @@ namespace AssetRipper.AssemblyDumper.Documentation
 	{
 		public static void AddClassDocumentation(GeneratedClassInstance instance)
 		{
-			if (instance.History is not null)
-			{
-				AddDocumentationFromHistory(instance, instance.History, SharedState.Instance.HistoryFile);
-			}
+			AddDocumentationFromHistory(instance);
 
 			AddClassTypeDocumentation(instance);
 
 			if (instance.Class.EditorRootNode is not null || instance.Class.ReleaseRootNode is not null)
 			{
-				foreach ((PropertyDefinition property, string? fieldName) in instance.PropertiesToFields)
+				foreach (ClassProperty classProperty in instance.Properties)
 				{
-					AddPropertyDocumentation(instance, property, fieldName);
+					AddPropertyDocumentation(instance, classProperty.Definition, classProperty.BackingField?.Name);
 				}
 			}
 		}
@@ -118,33 +113,35 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			return string.Join(" | ", ((TransferMetaFlags)flag).Split());
 		}
 
-		private static void AddDocumentationFromHistory(GeneratedClassInstance instance, ComplexTypeHistory history, HistoryFile historyFile)
+		private static void AddDocumentationFromHistory(GeneratedClassInstance instance)
 		{
-			VersionedListDocumenter.AddSet(instance.Type, history.NativeName.GetSubList(instance.VersionRange), "Native Name: ");
-			VersionedListDocumenter.AddSet(instance.Type, history.DocumentationString.GetSubList(instance.VersionRange), "Summary: ");
-			VersionedListDocumenter.AddList(instance.Type, history.ObsoleteMessage.GetSubList(instance.VersionRange), "Obsolete Message: ");
-
-			foreach ((_, DataMemberHistory memberHistory) in history.GetAllMembers(instance.VersionRange.Start, historyFile))
+			if (instance.History is not null)
 			{
-				string fieldName = Passes.Pass002_RenameSubnodes.GetValidFieldName(memberHistory.Name);
-				if (instance.FieldsToProperties.TryGetValue(fieldName, out PropertyDefinition? property))
+				VersionedListDocumenter.AddSet(instance.Type, instance.History.NativeName.GetSubList(instance.VersionRange), "Native Name: ");
+				VersionedListDocumenter.AddSet(instance.Type, instance.History.DocumentationString.GetSubList(instance.VersionRange), "Summary: ");
+				VersionedListDocumenter.AddList(instance.Type, instance.History.ObsoleteMessage.GetSubList(instance.VersionRange), "Obsolete Message: ");
+			}
+			
+			foreach (ClassProperty classProperty in instance.Properties)
+			{
+				if (classProperty.History is not null)
 				{
-					VersionedList<string> nativeNameSubList = memberHistory.NativeName.GetSubList(instance.VersionRange);
-					VersionedList<FullName> managedTypeSubList = memberHistory.TypeFullName.GetSubList(instance.VersionRange);
-					VersionedList<string> docStringSubList = memberHistory.DocumentationString.GetSubList(instance.VersionRange);
-					VersionedList<string> obsoleteMessageSubList = memberHistory.ObsoleteMessage.GetSubList(instance.VersionRange);
+					VersionedList<string> nativeNameSubList = classProperty.History.NativeName.GetSubList(instance.VersionRange);
+					VersionedList<FullName> managedTypeSubList = classProperty.History.TypeFullName.GetSubList(instance.VersionRange);
+					VersionedList<string> docStringSubList = classProperty.History.DocumentationString.GetSubList(instance.VersionRange);
+					VersionedList<string> obsoleteMessageSubList = classProperty.History.ObsoleteMessage.GetSubList(instance.VersionRange);
 
-					VersionedListDocumenter.AddSet(property, nativeNameSubList, "Native Name: ");
-					VersionedListDocumenter.AddList(property, managedTypeSubList, "Managed Type: ");
-					VersionedListDocumenter.AddSet(property, docStringSubList, "Summary: ");
-					VersionedListDocumenter.AddList(property, obsoleteMessageSubList, "Obsolete Message: ");
+					VersionedListDocumenter.AddSet(classProperty.Definition, nativeNameSubList, "Native Name: ");
+					VersionedListDocumenter.AddList(classProperty.Definition, managedTypeSubList, "Managed Type: ");
+					VersionedListDocumenter.AddSet(classProperty.Definition, docStringSubList, "Summary: ");
+					VersionedListDocumenter.AddList(classProperty.Definition, obsoleteMessageSubList, "Obsolete Message: ");
 
-					if (instance.Type.TryGetFieldByName(fieldName, out FieldDefinition? field))
+					if (classProperty.BackingField is not null)
 					{
-						VersionedListDocumenter.AddSet(field, nativeNameSubList, "Native Name: ");
-						VersionedListDocumenter.AddList(field, managedTypeSubList, "Managed Type: ");
-						VersionedListDocumenter.AddSet(field, docStringSubList, "Summary: ");
-						VersionedListDocumenter.AddList(field, obsoleteMessageSubList, "Obsolete Message: ");
+						VersionedListDocumenter.AddSet(classProperty.BackingField, nativeNameSubList, "Native Name: ");
+						VersionedListDocumenter.AddList(classProperty.BackingField, managedTypeSubList, "Managed Type: ");
+						VersionedListDocumenter.AddSet(classProperty.BackingField, docStringSubList, "Summary: ");
+						VersionedListDocumenter.AddList(classProperty.BackingField, obsoleteMessageSubList, "Obsolete Message: ");
 					}
 				}
 			}

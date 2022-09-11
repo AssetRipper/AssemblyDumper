@@ -2,7 +2,7 @@
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
-	internal static class Pass053_InterfaceInheritance
+	internal static class Pass920_InterfaceInheritance
 	{
 		public static void DoPass()
 		{
