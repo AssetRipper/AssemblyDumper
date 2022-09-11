@@ -71,7 +71,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static bool TryGetObjectHideFlagsField(this TypeDefinition type, [NotNullWhen(true)] out FieldDefinition? field)
 		{
-			field = type.TryGetFieldByName("m_ObjectHideFlags");
+			field = type.TryGetFieldByName("m_HideFlags");
 			return field?.Signature?.FieldType.Name == "UInt32";
 		}
 	}

@@ -436,6 +436,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				node.Name = "m_ImageData";
 			}
+			else if (node.Name == "m_TextureFormat")
+			{
+				node.Name = "m_Format";//For better linking with documentation
+			}
+			else if (node.Name == "m_TextureDimension")
+			{
+				node.Name = "m_Dimension";//For better linking with documentation
+			}
+			else if (node.Name == "m_ObjectHideFlags")
+			{
+				node.Name = "m_HideFlags";//For better linking with documentation
+			}
 			else if (node.TypeName == "Mesh")
 			{
 				if (node.TryGetSubNodeByTypeAndName("vector", "m_Shapes", out UniversalNode? meshBlendShapesListNode))
