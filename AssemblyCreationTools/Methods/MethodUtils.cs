@@ -8,15 +8,15 @@
 			return MakeMethodOnGenericType(importer, instanceType, constructorDefinition);
 		}
 
-		public static IMethodDefOrRef MakeMethodOnGenericType(CachedReferenceImporter importer, GenericInstanceTypeSignature instanceType, MethodDefinition definition)
+		public static IMethodDefOrRef MakeMethodOnGenericType(CachedReferenceImporter importer, GenericInstanceTypeSignature instanceType, IMethodDefOrRef definition)
 		{
 			IMethodDefOrRef? importedMethod = importer.UnderlyingImporter.ImportMethod(definition);
 			return new MemberReference(instanceType.ToTypeDefOrRef(), importedMethod.Name, importedMethod.Signature);
 		}
 
-		public static IMethodDefOrRef MakeMethodOnGenericType(CachedReferenceImporter importer, GenericInstanceTypeSignature instanceType, Func<MethodDefinition, bool> filter)
+		public static IMethodDefOrRef MakeMethodOnGenericType(CachedReferenceImporter importer, GenericInstanceTypeSignature instanceType, Func<IMethodDefOrRef, bool> filter)
 		{
-			MethodDefinition methodDefinition = importer.LookupType(instanceType.GenericType.FullName)!.Methods.Single(filter);
+			IMethodDefOrRef methodDefinition = importer.LookupType(instanceType.GenericType.FullName)!.Methods.Single(filter);
 			return MakeMethodOnGenericType(importer, instanceType, methodDefinition);
 		}
 
