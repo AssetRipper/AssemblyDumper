@@ -40,12 +40,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				else
 				{
-					history = dictionary.FirstOrDefault(pair =>
-					{
-						string fieldName = Pass002_RenameSubnodes.GetValidFieldName(pair.Value.Name);
-						return fieldName == classProperty.BackingField.Name;
-	
-					}).Value;
+					history = dictionary.FirstOrDefault(pair => HistoryIsApplicable(pair.Value, classProperty.BackingField)).Value;
 				}
 			}
 			else
@@ -53,6 +48,28 @@ namespace AssetRipper.AssemblyDumper.Passes
 				history = null;
 			}
 			classProperty.History = history;
+		}
+
+		private static bool HistoryIsApplicable(DataMemberHistory history, FieldDefinition field)
+		{
+			string historyNameNormalized = Pass002_RenameSubnodes.GetValidFieldName(history.Name).ToLowerInvariant();
+			string fieldName = field.Name!.ToString().ToLowerInvariant();
+			if (historyNameNormalized == fieldName)
+			{
+				return true;
+			}
+			foreach (string? nativeName in history.NativeName.Values)
+			{
+				if (nativeName is null)
+				{
+				}
+				else if (fieldName == nativeName.ToLowerInvariant()
+					|| fieldName == Pass002_RenameSubnodes.GetValidFieldName(nativeName).ToLowerInvariant())
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 
 		private static DataMemberHistory? DetermineHistoryFromImplementations(this InterfaceProperty interfaceProperty)
