@@ -1,20 +1,23 @@
 ﻿namespace AssetRipper.AssemblyDumper.Utils
 {
-	public readonly struct Range<T> : IEquatable<Range<T>> where T : struct, IEquatable<T>, IComparable<T>
+	public readonly struct Range<T> : IEquatable<Range<T>> where T : notnull, IComparable<T>, IEquatable<T>
 	{
 		/// <summary>
-		/// Represent the inclusive start of the Range.
+		/// Represents the inclusive start of the Range.
 		/// </summary>
 		public T Start { get; }
 
 		/// <summary>
-		/// Represent the exclusive end of the Range.
+		/// Represents the exclusive end of the Range.
 		/// </summary>
+		/// <remarks>
+		/// This must be greater than <see cref="Start"/>.
+		/// </remarks>
 		public T End { get; }
 
 		public Range(T start, T end)
 		{
-			if (start.CompareTo(end) >= 0)
+			if (start.IsGreaterEqual(end))
 			{
 				throw new ArgumentException($"{nameof(start)} {start} must be less than {nameof(end)} {end}");
 			}
@@ -25,12 +28,22 @@
 
 		public bool Contains(T value)
 		{
-			return Start.CompareTo(value) <= 0 && End.CompareTo(value) > 0;
+			return Start.IsLessEqual(value) && End.IsGreater(value);
 		}
 
 		public bool Contains(Range<T> range)
 		{
-			return Start.CompareTo(range.Start) <= 0 && End.CompareTo(range.End) >= 0;
+			return Start.IsLessEqual(range.Start) && End.IsGreaterEqual(range.End);
+		}
+
+		public bool IsStrictlyLess(Range<T> other)
+		{
+			return End.IsLessEqual(other.Start);
+		}
+
+		public bool IsStrictlyGreater(Range<T> other)
+		{
+			return Start.IsGreaterEqual(other.End);
 		}
 
 		public bool Intersects(Range<T> other)
@@ -97,12 +110,12 @@
 
 		private static T Minimum(T left, T right)
 		{
-			return left.CompareTo(right) < 0 ? left : right;
+			return left.IsLess(right) ? left : right;
 		}
 
 		private static T Maximum(T left, T right)
 		{
-			return left.CompareTo(right) > 0 ? left : right;
+			return left.IsGreater(right) ? left : right;
 		}
 
 		public override bool Equals(object? obj)

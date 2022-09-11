@@ -64,5 +64,35 @@ namespace AssetRipper.AssemblyDumper.Tests
 		{
 			Assert.IsFalse(ZeroToTen.Contains(100));
 		}
+
+		[Test]
+		public void EndBeforeStartThrows()
+		{
+			Assert.Throws<ArgumentException>(() => new Range<int>(4, 3));
+		}
+
+		[Test]
+		public void EndEqualsStartThrows()
+		{
+			Assert.Throws<ArgumentException>(() => new Range<int>(4, 4));
+		}
+
+		[Test]
+		public void StrictComparisons()
+		{
+			//Correct
+			Assert.That(ZeroToTen.IsStrictlyLess(TenToTwenty));
+			Assert.That(TenToTwenty.IsStrictlyGreater(ZeroToTen));
+
+			//Reversed
+			Assert.That(!TenToTwenty.IsStrictlyLess(ZeroToTen));
+			Assert.That(!ZeroToTen.IsStrictlyGreater(TenToTwenty));
+
+			//Overlapping
+			Assert.That(!TenToTwenty.IsStrictlyLess(ZeroToEleven));
+			Assert.That(!ZeroToEleven.IsStrictlyLess(TenToTwenty));
+			Assert.That(!TenToTwenty.IsStrictlyGreater(ZeroToEleven));
+			Assert.That(!ZeroToEleven.IsStrictlyGreater(TenToTwenty));
+		}
 	}
 }
