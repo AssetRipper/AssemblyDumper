@@ -81,6 +81,15 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			}
 		}
 
+		public static void AddPropertyDefinitionLine(ClassProperty property, string line)
+		{
+			AddPropertyDefinitionLine((PropertyBase)property, line);
+			if (property.BackingField is not null && property.BackingField.DeclaringType == property.Class.Type)
+			{
+				AddFieldDefinitionLine(property.BackingField, line);
+			}
+		}
+
 		public static void AddFieldDefinitionLine(FieldDefinition field, string line)
 		{
 			List<string> lines = fieldDefinitionDocumentation.GetOrAdd(field);

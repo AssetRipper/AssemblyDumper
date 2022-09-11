@@ -67,8 +67,6 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			UniversalNode? editorNode = instance.GetEditorFieldByName(fieldName);
 			UniversalNode mainNode = releaseNode ?? editorNode ?? throw new Exception($"In {instance.Name}, could not find nodes for {fieldName}");
 
-			DocumentationHandler.AddPropertyDefinitionLine(classProperty, $"Field name: {fieldName}");
-
 			if (mainNode.Name != mainNode.OriginalName)
 			{
 				DocumentationHandler.AddPropertyDefinitionLine(classProperty, $"Original field name: \"{XmlUtils.EscapeXmlInvalidCharacters(mainNode.OriginalName)}\"");
@@ -76,7 +74,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 
 			if (mainNode.TypeName != mainNode.OriginalTypeName)
 			{
-				DocumentationHandler.AddPropertyDefinitionLine(classProperty, $"Original Type: \"{XmlUtils.EscapeXmlInvalidCharacters(mainNode.OriginalTypeName)}\"");
+				DocumentationHandler.AddPropertyDefinitionLine(classProperty, $"Original type: \"{XmlUtils.EscapeXmlInvalidCharacters(mainNode.OriginalTypeName)}\"");
 			}
 
 			DocumentationHandler.AddPropertyDefinitionLine(classProperty, $"Ascii Crc: {CrcUtils.CalculateDigestAscii(mainNode.OriginalName)}");
