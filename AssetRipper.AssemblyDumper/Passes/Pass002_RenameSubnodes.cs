@@ -443,6 +443,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 					meshBlendShapesListNode.Name = "m_ShapesList";
 				}
 			}
+			else if (node.TypeName == "MeshRenderer")
+			{
+				node.TryRenameSubNode("m_StitchSeams", "m_StitchLightmapSeams"); // Early 2017.2 betas
+			}
 			else if (node.TypeName == "ComputeShaderPlatformVariant")// 2020 and later
 			{
 				node.TypeName = "ComputeShaderVariant";
