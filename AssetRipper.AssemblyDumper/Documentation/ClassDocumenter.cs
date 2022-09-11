@@ -144,7 +144,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 						VersionedListDocumenter.AddList(classProperty.SpecialDefinition, obsoleteMessageSubList, "Obsolete Message: ");
 					}
 
-					if (classProperty.BackingField is not null)
+					if (classProperty.BackingField is not null && classProperty.BackingField.DeclaringType == classProperty.Class.Type)
 					{
 						VersionedListDocumenter.AddSet(classProperty.BackingField, nativeNameSubList, "Native Name: ");
 						VersionedListDocumenter.AddList(classProperty.BackingField, managedTypeSubList, "Managed Type: ");
