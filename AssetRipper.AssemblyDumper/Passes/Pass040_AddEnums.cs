@@ -5,7 +5,7 @@ using AssetRipper.DocExtraction.DataStructures;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
-	internal static class Pass350_AddEnums
+	internal static class Pass040_AddEnums
 	{
 		internal readonly static Dictionary<TypeDefinition, EnumHistory> enumDictionary = new();
 		public static void DoPass()

@@ -71,6 +71,14 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass017_FillConstructors.DoPass();
 			}
+			using (new TimingCookie("Pass 040: Add Enum Types"))
+			{
+				Pass040_AddEnums.DoPass();
+			}
+			using (new TimingCookie("Pass 045: Marker Interfaces"))
+			{
+				Pass045_AddMarkerInterfaces.DoPass();
+			}
 			using (new TimingCookie("Pass 052: Interface Properties and Methods"))
 			{
 				Pass052_InterfacePropertiesAndMethods.DoPass();
@@ -82,10 +90,6 @@ namespace AssetRipper.AssemblyDumper
 			using (new TimingCookie("Pass 054: Assign Property Histories"))
 			{
 				Pass054_AssignPropertyHistories.DoPass();
-			}
-			using (new TimingCookie("Pass 055: Marker Interfaces"))
-			{
-				Pass055_AddMarkerInterfaces.DoPass();
 			}
 			using (new TimingCookie("Pass 080: PPtr Conversions"))
 			{
@@ -150,10 +154,6 @@ namespace AssetRipper.AssemblyDumper
 			using (new TimingCookie("Pass 302: Has Enabled Interface"))
 			{
 				Pass302_HasEnabledInterface.DoPass();
-			}
-			using (new TimingCookie("Pass 350: Add Enum Types"))
-			{
-				Pass350_AddEnums.DoPass();
 			}
 			using (new TimingCookie("Pass 400: IEquatable Interface"))
 			{

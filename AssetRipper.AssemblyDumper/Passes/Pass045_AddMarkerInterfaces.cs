@@ -3,7 +3,7 @@ using AssetRipper.Core.Interfaces;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
-	internal static class Pass055_AddMarkerInterfaces
+	internal static class Pass045_AddMarkerInterfaces
 	{
 		public static void DoPass()
 		{
