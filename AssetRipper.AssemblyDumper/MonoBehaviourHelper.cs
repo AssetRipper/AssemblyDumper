@@ -36,7 +36,7 @@ namespace AssetRipper.AssemblyDumper
 
 		public static IUnityObjectBase FindAsset(IUnityObjectBase monoBehaviour, IPPtr pptr)
 		{
-			return new PPtr<IUnityObjectBase>(pptr.FileIndex, pptr.PathIndex).FindAsset(monoBehaviour.SerializedFile);
+			return new PPtr<IUnityObjectBase>(pptr.FileIndex, pptr.PathIndex).TryGetAsset(monoBehaviour.SerializedFile);
 		}
 
 		public static bool IsAssemblyManagerSet(this IUnityObjectBase monoBehaviour)
