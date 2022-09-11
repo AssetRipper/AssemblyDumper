@@ -9,6 +9,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass102_FillYamlMethods
 	{
+		/// <summary>
+		/// Uses original names for robustness and clarity
+		/// </summary>
+		private static readonly HashSet<string> FieldsBeforeSerializedVersion = new()
+		{
+			"m_ObjectHideFlags",
+			"m_ExtensionPtr",
+			"m_PrefabParentObject",
+			"m_CorrespondingSourceObject",
+			"m_PrefabInternal",
+			"m_PrefabAsset",
+			"m_PrefabInstance",
+		};
+
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static IMethodDefOrRef addSerializedVersionMethod;
 		private static IMethodDefOrRef mappingAddMethod;
@@ -99,9 +113,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 			if (rootNode != null)
 			{
 				processor.MaybeEmitFlowMappingStyle(rootNode, resultNode);
-				processor.AddAddSerializedVersion(resultNode, rootNode.Version);
-				foreach (UniversalNode? unityNode in rootNode.SubNodes)
+				bool emittedSerializedVersion = false;
+				foreach (UniversalNode unityNode in rootNode.SubNodes)
 				{
+					if (!emittedSerializedVersion && !FieldsBeforeSerializedVersion.Contains(unityNode.OriginalName))
+					{
+						processor.AddAddSerializedVersion(resultNode, rootNode.Version);
+						emittedSerializedVersion = true;
+					}
 					AddExportToProcessor(unityNode, processor, fields, resultNode, version);
 				}
 			}
