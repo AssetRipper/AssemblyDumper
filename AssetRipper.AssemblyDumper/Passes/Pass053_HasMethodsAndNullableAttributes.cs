@@ -1,5 +1,4 @@
 ﻿using AssetRipper.AssemblyCreationTools.Attributes;
-using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.DocExtraction.Extensions;
@@ -99,21 +98,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 		}
 
-		private static void AddNullableAttributesForMaybeNull(this PropertyDefinition property)
-		{
-			TypeSignature propertyTypeSignature = property.Signature!.ReturnType;
-			if (propertyTypeSignature is SzArrayTypeSignature or GenericInstanceTypeSignature)
-			{
-				property.AddNullableAttribute(GetNullableByteArray(propertyTypeSignature));
-			}
-			else
-			{
-				property.AddNullableAttribute(NullableAnnotation.MaybeNull);
-			}
-			property.GetMethod!.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
-			property.SetMethod?.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
-		}
-
 		private static MethodDefinition AddHasMethodDeclaration(this TypeDefinition @interface, string propertyName)
 		{
 			return @interface.AddMethod(
@@ -132,58 +116,5 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static CustomAttribute AddNullableAttribute(this IHasCustomAttribute hasCustomAttribute, NullableAnnotation annotation)
-		{
-			return hasCustomAttribute.AddCustomAttribute(SharedState.Instance.NullableAttributeConstructorByte, SharedState.Instance.Importer.UInt8, (byte)annotation);
-		}
-
-		private static CustomAttribute AddNullableAttribute(this IHasCustomAttribute hasCustomAttribute, byte[] annotationArray)
-		{
-			return hasCustomAttribute.AddCustomAttribute(SharedState.Instance.NullableAttributeConstructorByteArray, SharedState.Instance.Importer.UInt8.MakeSzArrayType(), annotationArray);
-		}
-
-		private static CustomAttribute AddNullableContextAttribute(this IHasCustomAttribute hasCustomAttribute, NullableAnnotation annotation)
-		{
-			return hasCustomAttribute.AddCustomAttribute(SharedState.Instance.NullableContextAttributeConstructor, SharedState.Instance.Importer.UInt8, (byte)annotation);
-		}
-
-		private static CustomAttribute AddNotNullAttribute(this MethodDefinition method)
-		{
-			IMethodDefOrRef attributeConstructor = SharedState.Instance.Importer.ImportDefaultConstructor<NotNullAttribute>();
-			return method
-				.GetOrAddReturnTypeParameterDefinition()
-				.AddCustomAttribute(attributeConstructor);
-		}
-
-		private static byte[] GetNullableByteArray(TypeSignature type)
-		{
-			List<byte> result = new();
-			AddNullableIndicatorBytes(type, result);
-			result[0] = 2;
-			return result.ToArray();
-		}
-
-		private static void AddNullableIndicatorBytes(TypeSignature type, List<byte> byteList)
-		{
-			byteList.Add(type.IsValueType ? (byte)0 : (byte)1);
-			if (type is SzArrayTypeSignature arrayType)
-			{
-				AddNullableIndicatorBytes(arrayType.BaseType, byteList);
-			}
-			else if (type is GenericInstanceTypeSignature genericInstanceTypeSignature)
-			{
-				foreach (TypeSignature typeArgument in genericInstanceTypeSignature.TypeArguments)
-				{
-					AddNullableIndicatorBytes(typeArgument, byteList);
-				}
-			}
-		}
-
-		private enum NullableAnnotation : byte
-		{
-			Oblivious,
-			NotNull,
-			MaybeNull,
-		}
 	}
 }

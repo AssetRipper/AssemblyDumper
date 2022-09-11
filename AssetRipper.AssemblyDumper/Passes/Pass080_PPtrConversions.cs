@@ -8,6 +8,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	internal static class Pass080_PPtrConversions
 	{
+		public static IReadOnlyDictionary<TypeDefinition, TypeDefinition> PPtrsToParameters => pptrsToParameters;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 		private static ITypeDefOrRef commonPPtrType;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -19,6 +20,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodAttributes.NewSlot |
 			MethodAttributes.Virtual;
 		const MethodAttributes ConversionAttributes = MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.HideBySig;
+		private static readonly Dictionary<TypeDefinition, TypeDefinition> pptrsToParameters = new();
 
 		public static void DoPass()
 		{
@@ -33,6 +35,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 					bool usingMarkerInterface = !GetInterfaceParameterTypeDefinition(group, out TypeDefinition parameterType);
 					group.Interface.AddPPtrInterfaceImplementation(parameterType, pptrTypeImported);
 
+					pptrsToParameters.Add(group.Interface, parameterType);
+
 					foreach (GeneratedClassInstance instance in group.Instances)
 					{
 						DoPassOnTypeDefinition(instance.Type, parameterType);
@@ -40,6 +44,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 						{
 							TypeDefinition instanceParameterType = GetInstanceParameterTypeDefinition(instance);
 							instance.Type.AddPPtrInterfaceImplementation(instanceParameterType, pptrTypeImported);
+							pptrsToParameters.Add(instance.Type, instanceParameterType);
+						}
+						else
+						{
+							pptrsToParameters.Add(instance.Type, parameterType);
 						}
 					}
 				}

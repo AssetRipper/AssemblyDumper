@@ -99,6 +99,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass080_PPtrConversions.DoPass();
 			}
+			using (new TimingCookie("Pass 081: PPtr Properties"))
+			{
+				Pass081_CreatePPtrProperties.DoPass();
+			}
 			using (new TimingCookie("Pass 099: Create Empty Methods"))
 			{
 				Pass099_CreateEmptyMethods.DoPass();
