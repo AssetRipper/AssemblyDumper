@@ -70,30 +70,54 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return seconds;
 		}
 
-		private static HashSet<KeyValuePair<string, long>> GetFields(EnumHistory history)
+		private static IEnumerable<KeyValuePair<string, long>> GetFields(EnumHistory history)
 		{
-			HashSet<KeyValuePair<string, long>> result = new();
+			HashSet<KeyValuePair<string, long>> set = new();
 			foreach (EnumMemberHistory member in history.Members.Values)
 			{
 				if (member.Value.Count == 1)
 				{
-					result.Add(new KeyValuePair<string, long>(member.Name, member.Value[0].Value));
+					set.Add(new KeyValuePair<string, long>(member.Name, member.Value[0].Value));
 				}
 				else
 				{
 					foreach (long value in member.Value.Values)
 					{
 						string fieldName = GetEnumFieldName(member.Name, value);
-						result.Add(new KeyValuePair<string, long>(fieldName, value));
+						set.Add(new KeyValuePair<string, long>(fieldName, value));
 					}
 				}
 			}
-			return result;
+			var list = set.ToList();
+			list.Sort(CompareEnumFields);
+			return list;
 		}
 
 		private static string GetEnumFieldName(string name, long value)
 		{
 			return value < 0 ? $"{name}_N{-value}" : $"{name}_{value}";
+		}
+
+		/// <summary>
+		/// Compare two enum fields
+		/// </summary>
+		/// <param name="a"></param>
+		/// <param name="b"></param>
+		/// <returns>
+		/// <paramref name="a"/> &lt; <paramref name="b"/> : -1<br/>
+		/// <paramref name="a"/> == <paramref name="b"/> : 0<br/>
+		/// <paramref name="a"/> &gt; <paramref name="b"/> : 1<br/>
+		/// </returns>
+		private static int CompareEnumFields(KeyValuePair<string, long> a, KeyValuePair<string, long> b)
+		{
+			if (a.Value != b.Value)
+			{
+				return a.Value < b.Value ? -1 : 1;
+			}
+			else
+			{
+				return a.Key.CompareTo(b.Key);
+			}
 		}
 	}
 }
