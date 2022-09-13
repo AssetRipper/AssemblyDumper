@@ -1,4 +1,5 @@
 ﻿using AssetRipper.AssemblyDumper.Utils;
+using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
 using AssetRipper.Tpk.Shared;
 using AssetRipper.Tpk.TypeTrees;
 
@@ -36,6 +37,8 @@ namespace AssetRipper.AssemblyDumper
 		private string typeName = "";
 		private string name = "";
 		private List<UniversalNode> subNodes = new();
+
+		public bool IgnoreInMetaFiles => ((TransferMetaFlags)MetaFlag).IsIgnoreInMetaFiles();
 
 		public UniversalNode()
 		{

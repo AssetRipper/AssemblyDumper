@@ -1,5 +1,6 @@
 ﻿using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
+using AssetRipper.Core;
 using AssetRipper.Core.IO;
 using AssetRipper.Core.IO.Extensions;
 using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
@@ -12,7 +13,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 		/// <summary>
 		/// Uses original names for robustness and clarity
 		/// </summary>
-		private static readonly HashSet<string> FieldsBeforeSerializedVersion = new()
+		/// <remarks>
+		/// These fields are excluded from meta files even though they don't have flags indicating that.
+		/// </remarks>
+		private static readonly HashSet<string> AdditionalFieldsToSkipInImporters = new()
 		{
 			"m_ObjectHideFlags",
 			"m_ExtensionPtr",
@@ -77,28 +81,29 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
+					bool isImporter = instance.InheritsFromType(1003);//The id for AssetImporter
 					Dictionary<string, FieldDefinition> fields = instance.Type.GetAllFieldsInTypeAndBase().ToDictionary(f => f.Name!.Value, f => f);
 					emittingRelease = false;
-					instance.Type.FillEditorMethod(instance.Class, fields, instance.VersionRange.Start);
+					instance.FillEditorMethod(fields, isImporter);
 					emittingRelease = true;
-					instance.Type.FillReleaseMethod(instance.Class, fields, instance.VersionRange.Start);
+					instance.FillReleaseMethod(fields, isImporter);
 				}
 			}
 		}
 
-		private static void FillEditorMethod(this TypeDefinition type, UniversalClass klass, Dictionary<string, FieldDefinition> fields, UnityVersion version)
+		private static void FillEditorMethod(this GeneratedClassInstance instance, Dictionary<string, FieldDefinition> fields, bool isImporter)
 		{
-			MethodDefinition editorModeYamlMethod = type.Methods.Single(m => m.Name == "ExportYamlEditor");
-			editorModeYamlMethod.FillMethod(klass.EditorRootNode, fields, version);
+			MethodDefinition editorModeYamlMethod = instance.Type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlEditor));
+			editorModeYamlMethod.FillMethod(instance.Class.EditorRootNode, fields, instance.VersionRange.Start, isImporter);
 		}
 
-		private static void FillReleaseMethod(this TypeDefinition type, UniversalClass klass, Dictionary<string, FieldDefinition> fields, UnityVersion version)
+		private static void FillReleaseMethod(this GeneratedClassInstance instance, Dictionary<string, FieldDefinition> fields, bool isImporter)
 		{
-			MethodDefinition? releaseModeYamlMethod = type.Methods.Single(m => m.Name == "ExportYamlRelease");
-			releaseModeYamlMethod.FillMethod(klass.ReleaseRootNode, fields, version);
+			MethodDefinition editorModeYamlMethod = instance.Type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlRelease));
+			editorModeYamlMethod.FillMethod(instance.Class.EditorRootNode, fields, instance.VersionRange.Start, isImporter);
 		}
 
-		private static void FillMethod(this MethodDefinition method, UniversalNode? rootNode, Dictionary<string, FieldDefinition> fields, UnityVersion version)
+		private static void FillMethod(this MethodDefinition method, UniversalNode? rootNode, Dictionary<string, FieldDefinition> fields, UnityVersion version, bool isImporter)
 		{
 			CilMethodBody body = method.CilMethodBody!;
 			CilInstructionCollection processor = body.Instructions;
@@ -113,15 +118,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 			if (rootNode != null)
 			{
 				processor.MaybeEmitFlowMappingStyle(rootNode, resultNode);
-				bool emittedSerializedVersion = false;
+				processor.AddAddSerializedVersion(resultNode, rootNode.Version);
 				foreach (UniversalNode unityNode in rootNode.SubNodes)
 				{
-					if (!emittedSerializedVersion && !FieldsBeforeSerializedVersion.Contains(unityNode.OriginalName))
+					if (!isImporter
+						|| (!unityNode.IgnoreInMetaFiles && !AdditionalFieldsToSkipInImporters.Contains(unityNode.OriginalName)))
 					{
-						processor.AddAddSerializedVersion(resultNode, rootNode.Version);
-						emittedSerializedVersion = true;
+						AddExportToProcessor(unityNode, processor, fields, resultNode, version);
 					}
-					AddExportToProcessor(unityNode, processor, fields, resultNode, version);
 				}
 			}
 

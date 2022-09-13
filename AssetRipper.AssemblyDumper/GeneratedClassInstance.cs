@@ -62,6 +62,11 @@ namespace AssetRipper.AssemblyDumper
 					: 1;
 		}
 
+		public bool InheritsFromType(int id)
+		{
+			return ID == id || (Base?.InheritsFromType(id) ?? false);
+		}
+
 		public void InitializeHistory(HistoryFile historyFile)
 		{
 			if (ID < 0)
