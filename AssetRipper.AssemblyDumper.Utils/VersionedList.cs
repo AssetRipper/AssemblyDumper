@@ -58,11 +58,14 @@ namespace AssetRipper.AssemblyDumper.Utils
 
 		public bool IsReadOnly => false;
 
-		private UnityVersion MostRecentVersion => Count == 0 ? default : this[Count - 1].Key;
+		/// <summary>
+		/// Throws if <see cref="Count"/> == 0
+		/// </summary>
+		private UnityVersion MostRecentVersion => this[Count - 1].Key;
 
 		public void Add(KeyValuePair<UnityVersion, T?> pair)
 		{
-			if (pair.Key <= MostRecentVersion)
+			if (Count > 0 && pair.Key <= MostRecentVersion)
 			{
 				throw new Exception($"Version {pair.Key} was not greater than the most recent version {MostRecentVersion}");
 			}

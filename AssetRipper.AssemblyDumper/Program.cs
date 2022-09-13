@@ -71,6 +71,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass017_FillConstructors.DoPass();
 			}
+			using (new TimingCookie("Pass 039: Inject Enum Values"))
+			{
+				Pass039_InjectEnumValues.DoPass();
+			}
 			using (new TimingCookie("Pass 040: Add Enum Types"))
 			{
 				Pass040_AddEnums.DoPass();
