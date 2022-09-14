@@ -7,6 +7,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	internal static class Pass040_AddEnums
 	{
+		private static readonly HashSet<string> blackList = new()
+		{
+			"UnityEditor.PackageManager.LogLevel",
+			"UnityEngine.LogOption",
+			"UnityEngine.LogType",
+		};
+
 		private static readonly Dictionary<string, (TypeDefinition, EnumHistory)> enumDictionary = new();
 		internal static IReadOnlyDictionary<string, (TypeDefinition, EnumHistory)> EnumDictionary => enumDictionary;
 		public static void DoPass()
@@ -16,6 +23,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			Dictionary<string, int> duplicateNames = GetDuplicateNames(SharedState.Instance.HistoryFile.Enums.Values);
 			foreach ((string fullName, EnumHistory enumHistory) in SharedState.Instance.HistoryFile.Enums)
 			{
+				if (blackList.Contains(fullName))
+				{
+					continue;
+				}
 				if (!enumHistory.TryGetMergedElementType(out ElementType elementType))
 				{
 					Console.WriteLine($"Could not convert {enumHistory.FullName} to IL because it has incompatible underlying types.");
