@@ -9,13 +9,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{ "UnityEngine.TextureFormat",
 				new()
 				{
-					("AutomaticCompressedHDR", -7, "Choose a compressed HDR format automatically."),
-					("AutomaticHDR", -6, "Choose an HDR format automatically."),
-					("AutomaticCrunched", -5, "Choose a crunched format automatically."),
-					("AutomaticTruecolor", -3, "Choose a Truecolor format automatically."),
-					("Automatic16bit", -2, "Choose a 16 bit format automatically."),
-					("Automatic", -1, "Choose texture format automatically based on the texture parameters."),
-					("AutomaticCompressed", -1, "Choose a compressed format automatically."),
+					("DXT3", 11, ""),
+				} },
+			{ "UnityEditor.TextureImporterFormat",
+				new()
+				{
+					("DXT3", 11, ""),
 				} },
 		};
 
@@ -37,7 +36,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						member.Name = fieldName;
 						member.NativeName.Add(UnityVersion.MinVersion, null);
 						member.Value.Add(UnityVersion.MinVersion, value);
-						member.DocumentationString.Add(UnityVersion.MinVersion, $"Injected. {description}");
+						member.DocumentationString.Add(UnityVersion.MinVersion, string.IsNullOrEmpty(description) ? "Injected" : $"Injected. {description}");
 						member.ObsoleteMessage.Add(UnityVersion.MinVersion, null);
 						member.Exists.Add(UnityVersion.MinVersion, true);
 						history.Members.Add(fieldName, member);
