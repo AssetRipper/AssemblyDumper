@@ -30,7 +30,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void SetHistory(ClassProperty classProperty, IReadOnlyDictionary<string, DataMemberHistory> dictionary)
 		{
-			if (classProperty.OriginalFieldName is not null && dictionary.TryGetValue(classProperty.OriginalFieldName, out DataMemberHistory? history))
+			if (classProperty.OriginalFieldName is not null && TryGetHistoryFromOriginalName(classProperty.OriginalFieldName, dictionary, out DataMemberHistory? history))
 			{
 			}
 			else if (classProperty.BackingField is not null)
@@ -50,6 +50,25 @@ namespace AssetRipper.AssemblyDumper.Passes
 			classProperty.History = history;
 		}
 
+		private static bool TryGetHistoryFromOriginalName(string originalName, IReadOnlyDictionary<string, DataMemberHistory> dictionary, [NotNullWhen(true)] out DataMemberHistory? history)
+		{
+			if (dictionary.TryGetValue(originalName, out history))
+			{
+				return true;
+			}
+			else
+			{
+				history = dictionary.FirstOrDefault(pair => HistoryIsApplicable(pair.Value, originalName)).Value;
+				return history is not null;
+			}
+		}
+
+		private static bool HistoryIsApplicable(DataMemberHistory history, string originalName)
+		{
+			string historyNameNormalized = Pass002_RenameSubnodes.GetValidFieldName(history.Name).ToLowerInvariant();
+			string fieldName = originalName.ToLowerInvariant();
+			return historyNameNormalized == fieldName;
+		}
 		private static bool HistoryIsApplicable(DataMemberHistory history, FieldDefinition field)
 		{
 			string historyNameNormalized = Pass002_RenameSubnodes.GetValidFieldName(history.Name).ToLowerInvariant();
