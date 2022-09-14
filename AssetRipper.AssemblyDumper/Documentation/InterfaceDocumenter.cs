@@ -28,6 +28,10 @@ namespace AssetRipper.AssemblyDumper.Documentation
 
 					if (interfaceProperty.SpecialDefinition is not null)
 					{
+						if (interfaceProperty.SpecialDefinition.Signature?.ReturnType.ToTypeDefOrRef() is TypeDefinition typeDefinition && typeDefinition.IsEnum)
+						{
+							DocumentationHandler.AddPropertyDefinitionLine(interfaceProperty.Definition, "Enum variant available.");
+						}
 						AddPropertyDocumentationFromHistory(interfaceProperty.SpecialDefinition, interfaceProperty.History);
 					}
 				}
