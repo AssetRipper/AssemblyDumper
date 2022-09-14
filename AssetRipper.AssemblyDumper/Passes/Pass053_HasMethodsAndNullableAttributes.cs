@@ -86,11 +86,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 					{
 						continue;
 					}
-					else if (property.PresentRange == otherProperty.PresentRange)
+					//other is always present when this is present
+					else if (otherProperty.PresentRange.Contains(property.PresentRange))
 					{
 						property.HasMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, true, otherProperty.Definition.Name!);
 					}
-					else if (property.PresentRange == otherProperty.AbsentRange)
+					//other is always present when this is absent
+					else if (otherProperty.PresentRange.Contains(property.AbsentRange))
 					{
 						property.HasMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, false, otherProperty.Definition.Name!);
 					}

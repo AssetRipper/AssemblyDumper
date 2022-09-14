@@ -129,6 +129,18 @@ namespace AssetRipper.AssemblyDumper.Utils
 			return rangeList.Any(r => r.Contains(range));
 		}
 
+		public bool Contains(DiscontinuousRange<T> other)
+		{
+			foreach (Range<T> range in other.rangeList)
+			{
+				if (!Contains(range))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+
 		public bool Intersects(Range<T> range)
 		{
 			return rangeList.Any(r => r.Intersects(range));
