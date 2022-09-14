@@ -1,4 +1,7 @@
-﻿namespace AssetRipper.AssemblyCreationTools.Methods
+﻿using AssetRipper.AssemblyCreationTools.Attributes;
+using AssetRipper.AssemblyCreationTools.Fields;
+
+namespace AssetRipper.AssemblyCreationTools.Methods
 {
 	public static class PropertyCreator
 	{
@@ -118,6 +121,44 @@
 			processor.Add(CilOpCodes.Ret);
 			processor.OptimizeMacros();
 			return setter;
+		}
+
+		public static PropertyDefinition ImplementFullAutoProperty(
+			this TypeDefinition declaringType,
+			string propertyName,
+			MethodAttributes methodAttributes,
+			TypeSignature propertyType,
+			CachedReferenceImporter importer,
+			out FieldDefinition field,
+			PropertyAttributes propertyAttributes = PropertyAttributes.None)
+		{
+			field = CreateBackingField(declaringType, propertyName, propertyType, importer);
+			PropertyDefinition property = declaringType.ImplementFullProperty(propertyName, methodAttributes, propertyType, field, propertyAttributes);
+			property.GetMethod!.AddCompilerGeneratedAttribute(importer);
+			property.SetMethod!.AddCompilerGeneratedAttribute(importer);
+			return property;
+		}
+
+		public static PropertyDefinition ImplementGetterAutoProperty(
+			this TypeDefinition declaringType,
+			string propertyName,
+			MethodAttributes methodAttributes,
+			TypeSignature propertyType,
+			CachedReferenceImporter importer,
+			out FieldDefinition field,
+			PropertyAttributes propertyAttributes = PropertyAttributes.None)
+		{
+			field = CreateBackingField(declaringType, propertyName, propertyType, importer);
+			PropertyDefinition property = declaringType.ImplementGetterProperty(propertyName, methodAttributes, propertyType, field, propertyAttributes);
+			property.GetMethod!.AddCompilerGeneratedAttribute(importer);
+			return property;
+		}
+
+		private static FieldDefinition CreateBackingField(TypeDefinition declaringType, string propertyName, TypeSignature fieldType, CachedReferenceImporter importer)
+		{
+			FieldDefinition field = declaringType.AddField(fieldType, $"<{propertyName}>k__BackingField", false, FieldVisibility.Private);
+			field.AddCompilerGeneratedAttribute(importer);
+			return field;
 		}
 	}
 }

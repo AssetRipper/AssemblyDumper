@@ -155,6 +155,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass206_BoneWeights4ExplicitConversions.DoPass();
 			}
+			using (new TimingCookie("Pass 250: TextAsset FileExtension Property"))
+			{
+				Pass250_TextAssetFileExtension.DoPass();
+			}
 			using (new TimingCookie("Pass 300: Has Name Interface"))
 			{
 				Pass300_HasNameInterface.DoPass();
