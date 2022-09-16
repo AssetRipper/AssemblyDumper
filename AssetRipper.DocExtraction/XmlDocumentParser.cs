@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using AssetRipper.VersionUtilities;
+using System.IO;
 using System.Xml;
 
 namespace AssetRipper.DocExtraction;
@@ -53,5 +54,18 @@ public static class XmlDocumentParser
 	{
 		XmlNode summaryNode = memberNode.ChildNodes[0]!;
 		return summaryNode.Name == "summary" ? summaryNode.InnerText.Trim() : throw new Exception("Child was not summary");
+	}
+
+	/// <summary>
+	/// Extracts the Unity version from Info.plist inside UnityPlayer.app
+	/// </summary>
+	/// <param name="path"></param>
+	/// <returns></returns>
+	public static UnityVersion ExtractUnityVersionFromXml(string path)
+	{
+		XmlDocument doc = new();
+		doc.Load(path);
+		string version = doc.LastChild!.FirstChild!.ChildNodes[21]!.InnerText;
+		return UnityVersion.Parse(version);
 	}
 }

@@ -117,8 +117,7 @@ internal static class Program
 			string editorXmlPath = Path.Combine(versionFolder, @"Editor\Data\Managed\UnityEditor.xml");
 			string engineDllPath = Path.Combine(versionFolder, @"Editor\Data\Managed\UnityEngine.dll");
 			string editorDllPath = Path.Combine(versionFolder, @"Editor\Data\Managed\UnityEditor.dll");
-			string versionString = unityVersion.IsLess(5) ? unityVersion.ToStringWithoutType() : unityVersion.ToString();
-			yield return DocumentationExtractor.ExtractDocumentation(versionString, engineXmlPath, editorXmlPath, engineDllPath, editorDllPath);
+			yield return DocumentationExtractor.ExtractDocumentation(unityVersion.ToString(), engineXmlPath, editorXmlPath, engineDllPath, editorDllPath);
 		}
 	}
 
@@ -128,9 +127,31 @@ internal static class Program
 		foreach (string versionFolder in Directory.GetDirectories(inputDirectory))
 		{
 			UnityVersion unityVersion = UnityVersion.Parse(Path.GetFileName(versionFolder));
-			if (unityVersion.Major < 3)
+			if (unityVersion.IsLess(3))
 			{
 				continue;
+			}
+			else if (unityVersion.IsLess(4, 5))
+			{
+				string infoPlistPath = Path.Combine(versionFolder, "Editor/Data/PlaybackEngines/macstandaloneplayer/UnityPlayer.app/Contents/Info.plist");
+				UnityVersion actualVersion = XmlDocumentParser.ExtractUnityVersionFromXml(infoPlistPath);
+				list.Add((actualVersion, versionFolder));
+			}
+			else if (unityVersion.IsLess(4, 6, 2))
+			{
+				string infoPlistPath = Path.Combine(versionFolder, "Editor/Data/PlaybackEngines/macstandalonesupport/Variations/universal_development/UnityPlayer.app/Contents/Info.plist");
+				UnityVersion actualVersion = XmlDocumentParser.ExtractUnityVersionFromXml(infoPlistPath);
+				list.Add((actualVersion, versionFolder));
+			}
+			else if (unityVersion.IsEqual(4, 6, 4))//This particular version doesn't have Info.plist
+			{
+				list.Add((new UnityVersion(4, 6, 4, UnityVersionType.Final, 1), versionFolder));
+			}
+			else if (unityVersion.IsLess(5))
+			{
+				string infoPlistPath = Path.Combine(versionFolder, "Editor/Data/PlaybackEngines/macstandalonesupport/Variations/universal_development_mono/UnityPlayer.app/Contents/Info.plist");
+				UnityVersion actualVersion = XmlDocumentParser.ExtractUnityVersionFromXml(infoPlistPath);
+				list.Add((actualVersion, versionFolder));
 			}
 			else
 			{
