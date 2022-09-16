@@ -55,6 +55,8 @@ public static class AssemblyParser
 		}
 	}
 
+	//Static fields and properties are included because some editor classes have important properties as static.
+
 	private static ClassDocumentation AddClassDocumetation(Dictionary<string, string> typeSummaries, Dictionary<string, string> fieldSummaries, Dictionary<string, string> propertySummaries, TypeDefinition type, string typeFullName)
 	{
 		ClassDocumentation classDocumentation = new()
@@ -70,7 +72,7 @@ public static class AssemblyParser
 
 		foreach (FieldDefinition field in type.Fields)
 		{
-			if (field.IsPublic && !field.IsStatic)
+			if (field.IsPublic)
 			{
 				string fieldName = field.Name ?? throw new NullReferenceException("Field Name cannot be null");
 				DataMemberDocumentation fieldDocumentation = new()
@@ -88,7 +90,7 @@ public static class AssemblyParser
 
 		foreach (PropertyDefinition property in type.Properties)
 		{
-			if (property.IsPublic() && !property.IsStatic() && !property.HasParameters())
+			if (property.IsPublic() && !property.HasParameters())
 			{
 				string propertyName = property.Name ?? throw new NullReferenceException("Property Name cannot be null");
 				DataMemberDocumentation propertyDocumentation = new()
@@ -164,7 +166,7 @@ public static class AssemblyParser
 
 		foreach (FieldDefinition field in type.Fields)
 		{
-			if (field.IsPublic && !field.IsStatic)
+			if (field.IsPublic)
 			{
 				string fieldName = field.Name ?? throw new NullReferenceException("Field Name cannot be null");
 				DataMemberDocumentation fieldDocumentation = new()
@@ -182,7 +184,7 @@ public static class AssemblyParser
 
 		foreach (PropertyDefinition property in type.Properties)
 		{
-			if (property.IsPublic() && !property.IsStatic() && !property.HasParameters())
+			if (property.IsPublic() && !property.HasParameters())
 			{
 				string propertyName = property.Name ?? throw new NullReferenceException("Property Name cannot be null");
 				DataMemberDocumentation propertyDocumentation = new()
