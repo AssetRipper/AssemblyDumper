@@ -165,30 +165,36 @@ namespace AssetRipper.AssemblyDumper.Passes
 			string parameterTypeName = pptrInstance.Name.Substring(5, pptrInstance.Name.LastIndexOf('_') - 5);
 			if (SharedState.Instance.NameToTypeID.TryGetValue(parameterTypeName, out HashSet<int>? list))
 			{
-				GeneratedClassInstance? result = null;
+				List<GeneratedClassInstance> instances = new();
 
 				foreach (int id in list)
 				{
 					ClassGroup group = SharedState.Instance.ClassGroups[id];
 					foreach (GeneratedClassInstance instance in group.Instances)
 					{
-						if (instance.VersionRange.Contains(pptrInstance.VersionRange.Start) && parameterTypeName == instance.Name)
+						if (instance.VersionRange.Intersects(pptrInstance.VersionRange) && parameterTypeName == instance.Name)
 						{
-							if (result is null)
-							{
-								result = instance;
-							}
-							else
-							{
-								return SharedState.Instance.MarkerInterfaces[parameterTypeName];
-							}
+							instances.Add(instance);
 						}
 					}
 				}
 
-				return result is null
-					? throw new Exception($"Could not find type {parameterTypeName} on version {pptrInstance.VersionRange.Start}")
-					: result.Type;
+				if (instances.Count == 0)
+				{
+					throw new Exception($"Could not find type {parameterTypeName} on version {pptrInstance.VersionRange.Start} to {pptrInstance.VersionRange.End}");
+				}
+				else if (instances.Count == 1)
+				{
+					return instances[0].Type;
+				}
+				else if (instances.Select(instance => instance.Group).Distinct().Count() == 1)
+				{
+					return instances[0].Group.Interface;
+				}
+				else
+				{
+					return SharedState.Instance.MarkerInterfaces[parameterTypeName];
+				}
 			}
 			else
 			{

@@ -72,7 +72,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			TypeDefinition type = new TypeDefinition(group.Namespace, typeName, TypeAttributes.Public | TypeAttributes.BeforeFieldInit);
 			SharedState.Instance.Module.TopLevelTypes.Add(type);
 
-			group.Instances.Add(new GeneratedClassInstance(universalClass, type, startVersion, endVersion));
+			group.Instances.Add(new GeneratedClassInstance(group, universalClass, type, startVersion, endVersion));
 			SharedState.Instance.TypesToGroups.Add(type, group);
 		}
 	}
