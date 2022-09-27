@@ -7,8 +7,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			ClassGroup group = SharedState.Instance.ClassGroups[49];
-			AddNullableStringProperty(group, "FileExtension");
+			//ClassGroup group = SharedState.Instance.ClassGroups[49];
+			//AddNullableStringProperty(group, "FileExtension");
 		}
 
 		private static void AddNullableStringProperty(ClassGroup group, string propertyName)
