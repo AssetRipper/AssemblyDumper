@@ -9,7 +9,7 @@
 			{
 				UniversalNode node = @class.Class.ReleaseRootNode?.TryGetSubNodeByName(backingField.Name)
 					?? @class.Class.EditorRootNode?.TryGetSubNodeByName(backingField.Name)
-					?? throw new Exception("Failed to find node");
+					?? throw new Exception($"Failed to find node: {@class.Name}.{backingField.Name} on {@class.VersionRange}");
 				OriginalFieldName = node.OriginalName;
 			}
 			Class = @class;

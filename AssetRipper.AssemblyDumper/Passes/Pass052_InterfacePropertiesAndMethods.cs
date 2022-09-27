@@ -50,7 +50,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					if (hasConflictingTypes || missingOnSomeVersions)
 					{
 						TypeSignature? fieldType = field?.Signature?.FieldType;
-						bool presentAndMatchesType = fieldType is not null &&
+						bool presentAndMatchesType = fieldType is not null && instance.Class.ContainsField(fieldName) &&
 							(!hasConflictingTypes || signatureComparer.Equals(fieldType, propertyTypeSignature));
 						
 						PropertyDefinition property = presentAndMatchesType

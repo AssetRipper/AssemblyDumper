@@ -155,5 +155,11 @@ namespace AssetRipper.AssemblyDumper
 		{
 			return Name;
 		}
+
+		public bool ContainsField(string fieldName)
+		{
+			UniversalNode? node = ReleaseRootNode?.TryGetSubNodeByName(fieldName) ?? EditorRootNode?.TryGetSubNodeByName(fieldName);
+			return node is not null;
+		}
 	}
 }
