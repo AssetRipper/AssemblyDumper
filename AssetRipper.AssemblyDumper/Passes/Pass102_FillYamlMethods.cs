@@ -1,5 +1,6 @@
 ﻿using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
+using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Core;
 using AssetRipper.Core.IO;
 using AssetRipper.Core.IO.Extensions;

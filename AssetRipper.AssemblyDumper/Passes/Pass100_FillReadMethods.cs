@@ -1,5 +1,7 @@
 ﻿using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
+using AssetRipper.AssemblyCreationTools.Types;
+using AssetRipper.Core;
 using AssetRipper.Core.IO;
 using AssetRipper.Core.IO.Asset;
 using AssetRipper.Core.IO.Extensions;
@@ -51,14 +53,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void DoPassOnInstance(GeneratedClassInstance instance)
 		{
-			MethodDefinition editorModeReadMethod = instance.Type.Methods.Single(m => m.Name == "ReadEditor");
-			MethodDefinition releaseModeReadMethod = instance.Type.Methods.Single(m => m.Name == "ReadRelease");
+			MethodDefinition editorModeReadMethod = instance.Type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ReadEditor));
+			MethodDefinition releaseModeReadMethod = instance.Type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ReadRelease));
 
-			CilMethodBody editorModeBody = editorModeReadMethod.CilMethodBody!;
-			CilMethodBody releaseModeBody = releaseModeReadMethod.CilMethodBody!;
-
-			CilInstructionCollection editorModeProcessor = editorModeBody.Instructions;
-			CilInstructionCollection releaseModeProcessor = releaseModeBody.Instructions;
+			CilInstructionCollection editorModeProcessor = editorModeReadMethod.CilMethodBody!.Instructions;
+			CilInstructionCollection releaseModeProcessor = releaseModeReadMethod.CilMethodBody!.Instructions;
 
 			Dictionary<string, FieldDefinition> fields = instance.Type.GetAllFieldsInTypeAndBase().ToDictionary(f => f.Name!.Value, f => f);
 
@@ -708,7 +707,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			//Resolve things we'll need
 			GenericInstanceTypeSignature genericDictType = GenericTypeResolver.ResolveDictionaryType(node, version);
 			IMethodDefOrRef genericDictCtor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, genericDictType, 0);
-			IMethodDefOrRef addMethod = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictType, SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>)).Methods.Single(m => m.Name == "Add" && m.Parameters.Count == 2));
+			IMethodDefOrRef addMethod = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictType, SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>))!.Methods.Single(m => m.Name == "Add" && m.Parameters.Count == 2));
 
 			//Read length of array
 			processor.Add(CilOpCodes.Ldarg_1); //Load reader
