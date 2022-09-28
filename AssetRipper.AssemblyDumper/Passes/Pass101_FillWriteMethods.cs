@@ -14,7 +14,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 	public static class Pass101_FillWriteMethods
 	{
 		private static IMethodDefOrRef? alignStreamMethod;
-		private static IMethodDefOrRef? writeInt32Method;
+		private static IMethodDescriptor? writeInt32Method;
 		private static ITypeDefOrRef? assetWriterReference;
 
 		private static ITypeDefOrRef? assetDictionaryReference;
@@ -29,7 +29,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static string WriteMethod => emittingRelease ? WriteRelease : WriteEditor;
 
 		private static readonly bool throwNotSupported = false;
-		private static readonly Dictionary<string, IMethodDefOrRef> methodDictionary = new();
+		private static readonly Dictionary<string, IMethodDescriptor> methodDictionary = new();
 		private static readonly SignatureComparer signatureComparer = new()
 		{
 			AcceptNewerAssemblyVersionNumbers = true,
@@ -85,7 +85,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.HelpersNamespace, $"{WriteMethod}Methods");
 			type.IsPublic = false;
-			foreach ((string _, IMethodDefOrRef method) in methodDictionary.OrderBy(pair => pair.Key))
+			foreach ((string _, IMethodDescriptor method) in methodDictionary.OrderBy(pair => pair.Key))
 			{
 				if (method is MethodDefinition methodDefinition && methodDefinition.DeclaringType is null)
 				{
@@ -111,7 +111,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					foreach (UniversalNode unityNode in klass.EditorRootNode.SubNodes)
 					{
 						FieldDefinition field = type.GetFieldByName(unityNode.Name, true);
-						IMethodDefOrRef fieldWriteMethod = GetOrMakeMethod(unityNode, field.Signature!.FieldType, version);
+						IMethodDescriptor fieldWriteMethod = GetOrMakeMethod(unityNode, field.Signature!.FieldType, version);
 						processor.Add(CilOpCodes.Ldarg_0);//this
 						processor.Add(CilOpCodes.Ldfld, field);
 						processor.Add(CilOpCodes.Ldarg_1);//writer
@@ -139,7 +139,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					foreach (UniversalNode unityNode in klass.ReleaseRootNode.SubNodes)
 					{
 						FieldDefinition field = type.GetFieldByName(unityNode.Name, true);
-						IMethodDefOrRef fieldWriteMethod = GetOrMakeMethod(unityNode, field.Signature!.FieldType, version);
+						IMethodDescriptor fieldWriteMethod = GetOrMakeMethod(unityNode, field.Signature!.FieldType, version);
 						processor.Add(CilOpCodes.Ldarg_0);//this
 						processor.Add(CilOpCodes.Ldfld, field);
 						processor.Add(CilOpCodes.Ldarg_1);//writer
@@ -151,10 +151,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.OptimizeMacros();
 		}
 
-		private static IMethodDefOrRef GetOrMakeMethod(UniversalNode node, TypeSignature type, UnityVersion version)
+		private static IMethodDescriptor GetOrMakeMethod(UniversalNode node, TypeSignature type, UnityVersion version)
 		{
 			string uniqueName = GetName(node, version);
-			if (methodDictionary.TryGetValue(uniqueName, out IMethodDefOrRef? method))
+			if (methodDictionary.TryGetValue(uniqueName, out IMethodDescriptor? method))
 			{
 				return method;
 			}
@@ -252,7 +252,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static IMethodDefOrRef? MakeTypelessDataMethod(string uniqueName, bool align)
+		private static IMethodDescriptor? MakeTypelessDataMethod(string uniqueName, bool align)
 		{
 			IMethodDefOrRef writeBytesMethod = SharedState.Instance.Importer.ImportMethod<BinaryWriter>(m =>
 			{
@@ -281,9 +281,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static IMethodDefOrRef? MakePrimitiveMethod(string uniqueName, UniversalNode node, bool align)
+		private static IMethodDescriptor? MakePrimitiveMethod(string uniqueName, UniversalNode node, bool align)
 		{
-			IMethodDefOrRef primitiveMethod = GetPrimitiveMethod(node);
+			IMethodDescriptor primitiveMethod = GetPrimitiveMethod(node);
 			MethodDefinition method = NewWriteMethod(uniqueName, primitiveMethod.Signature!.ParameterTypes[0]);
 			CilInstructionCollection processor = method.GetProcessor();
 			processor.Add(CilOpCodes.Ldarg_1);
@@ -298,10 +298,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static IMethodDefOrRef? MakePairMethod(string uniqueName, UniversalNode firstTypeNode, TypeSignature typeSignature1, UniversalNode secondTypeNode, TypeSignature typeSignature2, UnityVersion version, bool align)
+		private static IMethodDescriptor? MakePairMethod(string uniqueName, UniversalNode firstTypeNode, TypeSignature typeSignature1, UniversalNode secondTypeNode, TypeSignature typeSignature2, UnityVersion version, bool align)
 		{
-			IMethodDefOrRef firstWriteMethod = GetOrMakeMethod(firstTypeNode, typeSignature1, version);
-			IMethodDefOrRef secondWriteMethod = GetOrMakeMethod(secondTypeNode, typeSignature2, version);
+			IMethodDescriptor firstWriteMethod = GetOrMakeMethod(firstTypeNode, typeSignature1, version);
+			IMethodDescriptor secondWriteMethod = GetOrMakeMethod(secondTypeNode, typeSignature2, version);
 
 			GenericInstanceTypeSignature genericPairType = keyValuePairReference!.MakeGenericInstanceType(typeSignature1, typeSignature2);
 
@@ -334,9 +334,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static IMethodDefOrRef? MakeArrayMethod(string uniqueName, UniversalNode elementTypeNode, TypeSignature elementType, UnityVersion version, bool align)
+		private static IMethodDescriptor? MakeArrayMethod(string uniqueName, UniversalNode elementTypeNode, TypeSignature elementType, UnityVersion version, bool align)
 		{
-			IMethodDefOrRef elementWriteMethod = GetOrMakeMethod(elementTypeNode, elementType, version);
+			IMethodDescriptor elementWriteMethod = GetOrMakeMethod(elementTypeNode, elementType, version);
 
 			SzArrayTypeSignature arrayTypeSignature = elementType.MakeSzArrayType();
 
@@ -395,9 +395,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static IMethodDefOrRef? MakeListMethod(string uniqueName, UniversalNode elementTypeNode, TypeSignature elementType, UnityVersion version, bool align)
+		private static IMethodDescriptor? MakeListMethod(string uniqueName, UniversalNode elementTypeNode, TypeSignature elementType, UnityVersion version, bool align)
 		{
-			IMethodDefOrRef elementWriteMethod = GetOrMakeMethod(elementTypeNode, elementType, version);
+			IMethodDescriptor elementWriteMethod = GetOrMakeMethod(elementTypeNode, elementType, version);
 
 			GenericInstanceTypeSignature genericListType = assetListReference!.MakeGenericInstanceType(elementType);
 
@@ -466,10 +466,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static IMethodDefOrRef? MakeDictionaryMethod(string uniqueName, UniversalNode firstTypeNode, TypeSignature typeSignature1, UniversalNode secondTypeNode, TypeSignature typeSignature2, UnityVersion version, bool align)
+		private static IMethodDescriptor? MakeDictionaryMethod(string uniqueName, UniversalNode firstTypeNode, TypeSignature typeSignature1, UniversalNode secondTypeNode, TypeSignature typeSignature2, UnityVersion version, bool align)
 		{
-			IMethodDefOrRef firstWriteMethod = GetOrMakeMethod(firstTypeNode, typeSignature1, version);
-			IMethodDefOrRef secondWriteMethod = GetOrMakeMethod(secondTypeNode, typeSignature2, version);
+			IMethodDescriptor firstWriteMethod = GetOrMakeMethod(firstTypeNode, typeSignature1, version);
+			IMethodDescriptor secondWriteMethod = GetOrMakeMethod(secondTypeNode, typeSignature2, version);
 
 			GenericInstanceTypeSignature genericPairType = keyValuePairReference!.MakeGenericInstanceType(typeSignature1, typeSignature2);
 
@@ -633,7 +633,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			};
 		}
 
-		private static IMethodDefOrRef GetPrimitiveMethod(UniversalNode node)
+		private static IMethodDescriptor GetPrimitiveMethod(UniversalNode node)
 		{
 			return node.TypeName switch
 			{
@@ -653,7 +653,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			};
 		}
 
-		private static IMethodDefOrRef ImportPrimitiveWriteMethod(ElementType elementType)
+		private static IMethodDescriptor ImportPrimitiveWriteMethod(ElementType elementType)
 		{
 			return SharedState.Instance.Importer.ImportMethod<BinaryWriter>(m =>
 			{
@@ -675,7 +675,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static CilInstruction AddCall(this CilInstructionCollection processor, IMethodDefOrRef method)
+		private static CilInstruction AddCall(this CilInstructionCollection processor, IMethodDescriptor method)
 		{
 			return method is MethodDefinition definition && definition.IsStatic
 				? processor.Add(CilOpCodes.Call, method)
