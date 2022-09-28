@@ -1,4 +1,5 @@
-﻿using AssetRipper.AssemblyCreationTools.Fields;
+﻿using AssetRipper.AssemblyCreationTools;
+using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Core;
@@ -473,7 +474,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldloc, iLocal);
 			if (isArray)
 			{
-				processor.AddLoadElement(elementType.ToTypeDefOrRef());
+				processor.AddLoadElement(elementType);
 			}
 			else
 			{
@@ -650,55 +651,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 				processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
 				processor.Add(CilOpCodes.Ldc_I4, (int)MappingStyle.Flow);
 				processor.Add(CilOpCodes.Call, setter);
-			}
-		}
-
-		private static void AddLoadElement(this CilInstructionCollection processor, ITypeDefOrRef elementType)
-		{
-			if (elementType is SzArrayTypeSignature)
-			{
-				processor.Add(CilOpCodes.Ldelem_Ref);
-				return;
-			}
-
-			string elementTypeName = elementType.FullName;
-			switch (elementTypeName)
-			{
-				case "System.Boolean":
-					processor.Add(CilOpCodes.Ldelem_U1);
-					return;
-				case "System.SByte":
-					processor.Add(CilOpCodes.Ldelem_I1);
-					return;
-				case "System.Byte":
-					processor.Add(CilOpCodes.Ldelem_U1);
-					return;
-				case "System.Int16":
-					processor.Add(CilOpCodes.Ldelem_I2);
-					return;
-				case "System.UInt16":
-					processor.Add(CilOpCodes.Ldelem_U2);
-					return;
-				case "System.Int32":
-					processor.Add(CilOpCodes.Ldelem_I4);
-					return;
-				case "System.UInt32":
-					processor.Add(CilOpCodes.Ldelem_U4);
-					return;
-				case "System.Int64":
-					processor.Add(CilOpCodes.Ldelem_I8);
-					return;
-				case "System.UInt64":
-					throw new NotSupportedException();
-				case "System.Single":
-					processor.Add(CilOpCodes.Ldelem_R4);
-					return;
-				case "System.Double":
-					processor.Add(CilOpCodes.Ldelem_R8);
-					return;
-				default:
-					processor.Add(CilOpCodes.Ldelem_Ref);
-					return;
 			}
 		}
 	}
