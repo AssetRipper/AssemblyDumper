@@ -106,7 +106,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 				VersionedListDocumenter.AddSet(instance.Type, instance.History.DocumentationString.GetSubList(instance.VersionRange), "Summary: ");
 				VersionedListDocumenter.AddList(instance.Type, instance.History.ObsoleteMessage.GetSubList(instance.VersionRange), "Obsolete Message: ");
 			}
-			
+
 			foreach (ClassProperty classProperty in instance.Properties)
 			{
 				if (classProperty.History is not null)

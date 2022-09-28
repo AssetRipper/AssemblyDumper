@@ -679,8 +679,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static CilInstruction AddCall(this CilInstructionCollection processor, IMethodDefOrRef method)
 		{
-			return method is MethodDefinition definition && definition.IsStatic 
-				? processor.Add(CilOpCodes.Call, method) 
+			return method is MethodDefinition definition && definition.IsStatic
+				? processor.Add(CilOpCodes.Call, method)
 				: processor.Add(CilOpCodes.Callvirt, method);
 		}
 	}

@@ -1,5 +1,4 @@
-﻿using AssetRipper.AssemblyCreationTools.Fields;
-using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Core.IO;
 using System.Text;
@@ -8,14 +7,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	internal static class Pass052_InterfacePropertiesAndMethods
 	{
-		private static readonly SignatureComparer signatureComparer;
-
-		static Pass052_InterfacePropertiesAndMethods()
+		private static readonly SignatureComparer signatureComparer = new()
 		{
-			signatureComparer = new SignatureComparer();
-			signatureComparer.AcceptNewerAssemblyVersionNumbers = true;
-			signatureComparer.IgnoreAssemblyVersionNumbers = true;
-		}
+			AcceptNewerAssemblyVersionNumbers = true,
+			IgnoreAssemblyVersionNumbers = true
+		};
 
 		public static void DoPass()
 		{
@@ -42,7 +38,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				PropertyDefinition propertyDeclaration = group.Interface.AddInterfacePropertyDeclaration(propertyName, propertyTypeSignature);
 				InterfaceProperty interfaceProperty = new InterfaceProperty(propertyDeclaration, group);
 				group.InterfaceProperties.Add(interfaceProperty);
-				
+
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
 					TypeDefinition type = instance.Type;
@@ -52,7 +48,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						TypeSignature? fieldType = field?.Signature?.FieldType;
 						bool presentAndMatchesType = fieldType is not null && instance.Class.ContainsField(fieldName) &&
 							(!hasConflictingTypes || signatureComparer.Equals(fieldType, propertyTypeSignature));
-						
+
 						PropertyDefinition property = presentAndMatchesType
 							? type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, field)
 							: type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, null);
@@ -363,7 +359,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			if (type is CorLibTypeSignature)
 			{
-				return type.Name ?? "";
+				return type.Name ?? throw new NullReferenceException();
 			}
 			else if (type is TypeDefOrRefSignature normalType)
 			{
@@ -378,7 +374,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			else if (type is GenericInstanceTypeSignature genericInstanceType)
 			{
 				string baseTypeName = GetName(genericInstanceType.GenericType.ToTypeSignature());
-				StringBuilder sb = new StringBuilder();
+				StringBuilder sb = new();
 				sb.Append(baseTypeName);
 				foreach (TypeSignature typeArgument in genericInstanceType.TypeArguments)
 				{

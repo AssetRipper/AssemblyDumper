@@ -1,5 +1,4 @@
-﻿using AssetRipper.AssemblyCreationTools.Fields;
-using AssetRipper.AssemblyCreationTools.Types;
+﻿using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.AssemblyDumper.Utils;
 using AssetRipper.DocExtraction.DataStructures;
 

@@ -30,15 +30,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 			for (int i = 0; i < processor.Count; i++)
 			{
 				CilInstruction instruction = processor[i];
-				if (instruction.OpCode == CilOpCodes.Stfld 
-					&& instruction.Operand is FieldDefinition field 
+				if (instruction.OpCode == CilOpCodes.Stfld
+					&& instruction.Operand is FieldDefinition field
 					&& (field.Name == "m_UnityPurchasingSettings" || field.Name == "m_CrashReportingSettings"))
 				{
 					//ldarg.0
 					//ldarg.1
 					//call
 					//stfld
-	
+
 					return i - 3;
 				}
 			}

@@ -1,5 +1,4 @@
-﻿using AssetRipper.AssemblyCreationTools.Fields;
-using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.DocExtraction.DataStructures;
 using AssetRipper.DocExtraction.Extensions;
@@ -30,7 +29,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 							foreach (ClassProperty classProperty in interfaceProperty.Implementations)
 							{
-								if (classProperty.BackingField?.Signature?.FieldType is CorLibTypeSignature fieldTypeSignature 
+								if (classProperty.BackingField?.Signature?.FieldType is CorLibTypeSignature fieldTypeSignature
 									&& fieldTypeSignature.ElementType.IsFixedSizeInteger())
 								{
 									classProperty.SpecialDefinition = classProperty.Class.Type.AddFullProperty(

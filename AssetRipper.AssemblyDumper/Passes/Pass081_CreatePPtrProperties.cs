@@ -18,7 +18,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			});
 			IMethodDefOrRef pptrAccessListEmptyMethod = SharedState.Instance.Importer.ImportMethod(typeof(PPtrAccessList<,>), method =>
 			{
-				return method.Name == $"get_{nameof(PPtrAccessList<IPPtr<IUnityObjectBase>,IUnityObjectBase>.Empty)}";
+				return method.Name == $"get_{nameof(PPtrAccessList<IPPtr<IUnityObjectBase>, IUnityObjectBase>.Empty)}";
 			});
 			IMethodDefOrRef pptrTryGetAssetMethod = SharedState.Instance.Importer.ImportMethod(typeof(PPtr), method =>
 			{
