@@ -83,8 +83,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void CreateHelperClassForWriteMethods()
 		{
-			string name = emittingRelease ? $"{WriteRelease}Methods" : $"{WriteEditor}Methods";
-			TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.HelpersNamespace, name);
+			TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.HelpersNamespace, $"{WriteMethod}Methods");
 			type.IsPublic = false;
 			foreach ((string _, IMethodDefOrRef method) in methodDictionary.OrderBy(pair => pair.Key))
 			{
@@ -93,6 +92,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					type.Methods.Add(methodDefinition);
 				}
 			}
+			Console.WriteLine($"\t{type.Methods.Count} {WriteMethod} helper methods");
 		}
 
 		private static void FillEditorWriteMethod(this TypeDefinition type, UniversalClass klass, UnityVersion version)
@@ -106,7 +106,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			else
 			{
-				//Console.WriteLine($"Generating the editor read method for {name}");
 				if (klass.EditorRootNode != null)
 				{
 					foreach (UniversalNode unityNode in klass.EditorRootNode.SubNodes)
@@ -135,7 +134,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			else
 			{
-				//Console.WriteLine($"Generating the release read method for {name}");
 				if (klass.ReleaseRootNode != null)
 				{
 					foreach (UniversalNode unityNode in klass.ReleaseRootNode.SubNodes)
