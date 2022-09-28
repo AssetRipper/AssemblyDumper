@@ -24,6 +24,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static ITypeDefOrRef? keyValuePairReference;
 		private static TypeDefinition? keyValuePairDefinition;
 
+		private static MethodDefinition? writeAssetDefinition;
+		private static MethodDefinition? writeAssetAlignDefinition;
+
 		private const string WriteRelease = nameof(UnityAssetBase.WriteRelease);
 		private const string WriteEditor = nameof(UnityAssetBase.WriteEditor);
 		private static string WriteMethod => emittingRelease ? WriteRelease : WriteEditor;
@@ -58,6 +61,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			emittingRelease = true;
 			methodDictionary.Clear();
+			writeAssetDefinition = MakeGenericListMethod(false);
+			writeAssetAlignDefinition = MakeGenericListMethod(true);
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
 				foreach (GeneratedClassInstance instance in group.Instances)
@@ -69,6 +74,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			emittingRelease = false;
 			methodDictionary.Clear();
+			writeAssetDefinition = MakeGenericListMethod(false);
+			writeAssetAlignDefinition = MakeGenericListMethod(true);
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
 				foreach (GeneratedClassInstance instance in group.Instances)
@@ -85,6 +92,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.HelpersNamespace, $"{WriteMethod}Methods");
 			type.IsPublic = false;
+			type.Methods.Add(writeAssetDefinition!);
+			type.Methods.Add(writeAssetAlignDefinition!);
 			foreach ((string _, IMethodDescriptor method) in methodDictionary.OrderBy(pair => pair.Key))
 			{
 				if (method is MethodDefinition methodDefinition && methodDefinition.DeclaringType is null)
@@ -395,10 +404,38 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static IMethodDescriptor? MakeListMethod(string uniqueName, UniversalNode elementTypeNode, TypeSignature elementType, UnityVersion version, bool align)
+		private static IMethodDescriptor MakeListMethod(string uniqueName, UniversalNode elementTypeNode, TypeSignature elementType, UnityVersion version, bool align)
 		{
-			IMethodDescriptor elementWriteMethod = GetOrMakeMethod(elementTypeNode, elementType, version);
+			if (elementType is TypeDefOrRefSignature typeDefOrRefSignature && typeDefOrRefSignature.Type is TypeDefinition)
+			{
+				return align
+					? writeAssetAlignDefinition!.MakeGenericInstanceMethod(elementType)
+					: writeAssetDefinition!.MakeGenericInstanceMethod(elementType);
+			}
+			else
+			{
+				IMethodDescriptor elementWriteMethod = GetOrMakeMethod(elementTypeNode, elementType, version);
+				return MakeListMethod(uniqueName, elementType, elementWriteMethod, align);
+			}
+		}
 
+		private static MethodDefinition MakeGenericListMethod(bool align)
+		{
+			string uniqueName = align ? "ArrayAlign_Asset" : "Array_Asset";
+			GenericParameterSignature elementType = new GenericParameterSignature(SharedState.Instance.Module, GenericParameterType.Method, 0);
+			IMethodDefOrRef writeMethod = SharedState.Instance.Importer.ImportMethod<UnityAssetBase>(m => m.Name == WriteMethod);
+			MethodDefinition method = MakeListMethod(uniqueName, elementType, writeMethod, align);
+
+			GenericParameter genericParameter = new GenericParameter("T");
+			genericParameter.Constraints.Add(new GenericParameterConstraint(SharedState.Instance.Importer.ImportType<UnityAssetBase>()));
+			method.GenericParameters.Add(genericParameter);
+			method.Signature!.GenericParameterCount = 1;
+
+			return method;
+		}
+
+		private static MethodDefinition MakeListMethod(string uniqueName, TypeSignature elementType, IMethodDescriptor elementWriteMethod, bool align)
+		{
 			GenericInstanceTypeSignature genericListType = assetListReference!.MakeGenericInstanceType(elementType);
 
 			IMethodDefOrRef countMethod = MethodUtils.MakeMethodOnGenericType(
