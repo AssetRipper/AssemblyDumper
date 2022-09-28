@@ -91,6 +91,19 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 			return attribute;
 		}
 
+		/// <summary>
+		/// Applies the <see cref="System.Runtime.CompilerServices.ExtensionAttribute"/>
+		/// </summary>
+		/// <param name="_this">The entity on which to apply the attribute</param>
+		/// <param name="importer">The importer for the module containing the entity</param>
+		/// <returns>The resulting custom attribute</returns>
+		public static CustomAttribute AddExtensionAttribute(this IHasCustomAttribute _this, CachedReferenceImporter importer)
+		{
+			IMethodDefOrRef constructor = importer.ImportDefaultConstructor<System.Runtime.CompilerServices.ExtensionAttribute>();
+			CustomAttribute attribute = _this.AddCustomAttribute(constructor);
+			return attribute;
+		}
+
 		public static CustomAttribute AddMemberNotNullAttribute(this IHasCustomAttribute _this, CachedReferenceImporter importer, bool returnValue, string memberName)
 		{
 			IMethodDefOrRef constructor = importer.ImportConstructor<System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute>(

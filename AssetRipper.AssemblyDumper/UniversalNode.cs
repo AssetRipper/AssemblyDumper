@@ -39,6 +39,7 @@ namespace AssetRipper.AssemblyDumper
 		private List<UniversalNode> subNodes = new();
 
 		public bool IgnoreInMetaFiles => ((TransferMetaFlags)MetaFlag).IsIgnoreInMetaFiles();
+		public bool AlignBytes => ((TransferMetaFlags)MetaFlag).IsAlignBytes();
 
 		public UniversalNode()
 		{
