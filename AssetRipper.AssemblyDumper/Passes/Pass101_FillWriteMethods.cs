@@ -426,7 +426,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef writeMethod = SharedState.Instance.Importer.ImportMethod<UnityAssetBase>(m => m.Name == WriteMethod);
 			MethodDefinition method = MakeListMethod(uniqueName, elementType, writeMethod, align);
 
-			GenericParameter genericParameter = new GenericParameter("T");
+			GenericParameter genericParameter = new GenericParameter("T", GenericParameterAttributes.DefaultConstructorConstraint);
 			genericParameter.Constraints.Add(new GenericParameterConstraint(SharedState.Instance.Importer.ImportType<UnityAssetBase>()));
 			method.GenericParameters.Add(genericParameter);
 			method.Signature!.GenericParameterCount = 1;
@@ -566,7 +566,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldloc, iLocal);
 			processor.AddCall(getPairMethod);
 			processor.Add(CilOpCodes.Stloc, pairLocal);
-
+			
 			processor.Add(CilOpCodes.Ldloc, pairLocal);
 			processor.AddCall(keyMethod);
 			processor.Add(CilOpCodes.Ldarg_1);
