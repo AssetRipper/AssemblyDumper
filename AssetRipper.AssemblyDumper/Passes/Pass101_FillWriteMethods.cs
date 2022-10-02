@@ -48,11 +48,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			assetDictionaryReference = SharedState.Instance.Importer.ImportType(typeof(AssetDictionary<,>));
 			assetListReference = SharedState.Instance.Importer.ImportType(typeof(AssetList<>));
-			keyValuePairReference = SharedState.Instance.Importer.ImportType(typeof(NullableKeyValuePair<,>));
+			keyValuePairReference = SharedState.Instance.Importer.ImportType(typeof(AssetPair<,>));
 
 			assetDictionaryDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>));
 			assetListDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetList<>));
-			keyValuePairDefinition = SharedState.Instance.Importer.LookupType(typeof(NullableKeyValuePair<,>));
+			keyValuePairDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetPair<,>));
 		}
 
 		public static void DoPass()
@@ -219,7 +219,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						UniversalNode secondTypeNode = node.SubNodes[1];
 						bool align = node.AlignBytes;
 						GenericInstanceTypeSignature genericSignature = (GenericInstanceTypeSignature)type;
-						Debug.Assert(genericSignature.GenericType.Name == $"{nameof(NullableKeyValuePair<int, int>)}`2");
+						Debug.Assert(genericSignature.GenericType.Name == $"{nameof(AssetPair<int, int>)}`2");
 						Debug.Assert(genericSignature.TypeArguments.Count == 2);
 						method = MakePairMethod(uniqueName, firstTypeNode, genericSignature.TypeArguments[0], secondTypeNode, genericSignature.TypeArguments[1], version, align);
 					}
@@ -317,12 +317,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef keyMethod = MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
 				genericPairType,
-				keyValuePairDefinition!.Methods.Single(m => m.Name == $"get_{nameof(NullableKeyValuePair<int, int>.Key)}"));
+				keyValuePairDefinition!.Methods.Single(m => m.Name == $"get_{nameof(AssetPair<int, int>.Key)}"));
 
 			IMethodDefOrRef valueMethod = MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
 				genericPairType,
-				keyValuePairDefinition!.Methods.Single(m => m.Name == $"get_{nameof(NullableKeyValuePair<int, int>.Value)}"));
+				keyValuePairDefinition!.Methods.Single(m => m.Name == $"get_{nameof(AssetPair<int, int>.Value)}"));
 
 			MethodDefinition method = NewWriteMethod(uniqueName, genericPairType);
 			CilInstructionCollection processor = method.GetProcessor();
@@ -513,12 +513,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef keyMethod = MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
 				genericPairType,
-				keyValuePairDefinition!.Methods.Single(m => m.Name == $"get_{nameof(NullableKeyValuePair<int, int>.Key)}"));
+				keyValuePairDefinition!.Methods.Single(m => m.Name == $"get_{nameof(AssetPair<int, int>.Key)}"));
 
 			IMethodDefOrRef valueMethod = MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
 				genericPairType,
-				keyValuePairDefinition!.Methods.Single(m => m.Name == $"get_{nameof(NullableKeyValuePair<int, int>.Value)}"));
+				keyValuePairDefinition!.Methods.Single(m => m.Name == $"get_{nameof(AssetPair<int, int>.Value)}"));
 
 			GenericInstanceTypeSignature genericDictionaryType = assetDictionaryReference!.MakeGenericInstanceType(typeSignature1, typeSignature2);
 
@@ -655,7 +655,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return node.TypeName switch
 			{
 				"bool" => "Boolean",
-				"char" => "Character",
+				//"char" => "Character",
+				"char" => "UInt8",
 				"SInt8" => "SInt8",
 				"UInt8" => "UInt8",
 				"short" or "SInt16" => "SInt16",
@@ -675,7 +676,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return node.TypeName switch
 			{
 				"bool" => ImportPrimitiveWriteMethod(ElementType.Boolean),
-				"char" => ImportPrimitiveWriteMethod(ElementType.Char),
+				//"char" => ImportPrimitiveWriteMethod(ElementType.Char),
+				"char" => ImportPrimitiveWriteMethod(ElementType.U1),
 				"SInt8" => ImportPrimitiveWriteMethod(ElementType.I1),
 				"UInt8" => ImportPrimitiveWriteMethod(ElementType.U1),
 				"short" or "SInt16" => ImportPrimitiveWriteMethod(ElementType.I2),

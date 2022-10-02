@@ -30,16 +30,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 			for (int i = 0; i < processor.Count; i++)
 			{
 				CilInstruction instruction = processor[i];
-				if (instruction.OpCode == CilOpCodes.Stfld
+				if (instruction.OpCode == CilOpCodes.Ldfld
 					&& instruction.Operand is FieldDefinition field
 					&& (field.Name == "m_UnityPurchasingSettings" || field.Name == "m_CrashReportingSettings"))
 				{
-					//ldarg.0
-					//ldarg.1
-					//call
-					//stfld
+					//ldarg.0  asset
+					//ldfld    field
+					//ldarg.1  reader
+					//callvirt ReadRelease
 
-					return i - 3;
+					return i - 1;
 				}
 			}
 			throw new Exception("Could not determine the insertion point");

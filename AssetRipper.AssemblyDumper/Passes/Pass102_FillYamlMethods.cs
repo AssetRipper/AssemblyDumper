@@ -277,9 +277,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 				|| firstSubNode.TypeName == Pass002_RenameSubnodes.Utf8StringName
 				|| firstSubNode.TypeName == Pass002_RenameSubnodes.GuidName;
 
-			MethodDefinition getKeyDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetRipper.Core.IO.NullableKeyValuePair<,>), m => m.Name == "get_Key");
+			MethodDefinition getKeyDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetPair<,>), m => m.Name == "get_Key");
 			IMethodDefOrRef getKeyReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, pairType, getKeyDefinition);
-			MethodDefinition getValueDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetRipper.Core.IO.NullableKeyValuePair<,>), m => m.Name == "get_Value");
+			MethodDefinition getValueDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetPair<,>), m => m.Name == "get_Value");
 			IMethodDefOrRef getValueReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, pairType, getValueDefinition);
 
 			CilLocalVariable pair = new CilLocalVariable(pairType);
@@ -530,7 +530,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			//Get length of dictionary
 			processor.Add(CilOpCodes.Ldloc, dictLocal);
-			MethodDefinition getCountDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetRipper.Core.IO.AssetDictionary<,>))!.Properties.Single(m => m.Name == "Count").GetMethod!;
+			MethodDefinition getCountDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>))!.Properties.Single(m => m.Name == nameof(AssetDictionary<int, int>.Count)).GetMethod!;
 			IMethodDefOrRef getCountReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictType, getCountDefinition);
 			processor.Add(CilOpCodes.Call, getCountReference);
 

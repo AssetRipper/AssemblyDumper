@@ -1,11 +1,13 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyCreationTools;
+using AssetRipper.AssemblyCreationTools.Attributes;
+using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Core;
 using AssetRipper.Core.IO;
 using AssetRipper.Core.IO.Asset;
 using AssetRipper.Core.IO.Extensions;
-using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
 using AssetRipper.IO.Endian;
+using System.Diagnostics;
 using System.IO;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -13,98 +15,180 @@ namespace AssetRipper.AssemblyDumper.Passes
 	public static class Pass100_FillReadMethods
 	{
 		private static IMethodDefOrRef? alignStreamMethod;
-		private static IMethodDefOrRef? readByteArrayMethod;
 		private static IMethodDefOrRef? readInt32Method;
-		private static TypeDefinition? assetReaderDefinition;
 		private static ITypeDefOrRef? assetReaderReference;
-		private static TypeDefinition? endianReaderDefinition;
-		private static ITypeDefOrRef? endianReaderReference;
-		private static TypeDefinition? binaryReaderDefinition;
-		private static ITypeDefOrRef? binaryReaderReference;
-		private static TypeDefinition? endianReaderExtensionsDefinition;
-		private static CilInstructionLabel DummyInstructionLabel { get; } = new CilInstructionLabel();
+
+		private static ITypeDefOrRef? assetDictionaryReference;
+		private static TypeDefinition? assetDictionaryDefinition;
+		private static ITypeDefOrRef? assetListReference;
+		private static TypeDefinition? assetListDefinition;
+		private static ITypeDefOrRef? keyValuePairReference;
+		private static TypeDefinition? keyValuePairDefinition;
+
+		private static MethodDefinition? readAssetListDefinition;
+		private static MethodDefinition? readAssetListAlignDefinition;
+		private static MethodDefinition? readAssetDictionaryDefinition;
+		private static MethodDefinition? readAssetDictionaryAlignDefinition;
+
+		private static readonly Dictionary<ElementType, IMethodDefOrRef> primitiveReadMethods = new();
+
+		private const string ReadRelease = nameof(UnityAssetBase.ReadRelease);
+		private const string ReadEditor = nameof(UnityAssetBase.ReadEditor);
+		private const int MaxArraySize = 1024;
+
+		private static string ReadMethod => emittingRelease ? ReadRelease : ReadEditor;
+
+		private static readonly Dictionary<string, IMethodDescriptor> methodDictionary = new();
+		private static readonly SignatureComparer signatureComparer = new()
+		{
+			AcceptNewerAssemblyVersionNumbers = true,
+			IgnoreAssemblyVersionNumbers = true
+		};
+		private static bool emittingRelease;
 
 		public static void DoPass()
 		{
 			Initialize();
+
+			emittingRelease = true;
+			methodDictionary.Clear();
+			readAssetListDefinition = MakeGenericListMethod(false);
+			readAssetListAlignDefinition = MakeGenericListMethod(true);
+			readAssetDictionaryDefinition = MakeGenericDictionaryMethod(false);
+			readAssetDictionaryAlignDefinition = MakeGenericDictionaryMethod(true);
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
-					DoPassOnInstance(instance);
+					instance.Type.FillReleaseWriteMethod(instance.Class, instance.VersionRange.Start);
 				}
 			}
+			CreateHelperClassForWriteMethods();
+
+			emittingRelease = false;
+			methodDictionary.Clear();
+			readAssetListDefinition = MakeGenericListMethod(false);
+			readAssetListAlignDefinition = MakeGenericListMethod(true);
+			readAssetDictionaryDefinition = MakeGenericDictionaryMethod(false);
+			readAssetDictionaryAlignDefinition = MakeGenericDictionaryMethod(true);
+			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
+			{
+				foreach (GeneratedClassInstance instance in group.Instances)
+				{
+					instance.Type.FillEditorWriteMethod(instance.Class, instance.VersionRange.Start);
+				}
+			}
+			CreateHelperClassForWriteMethods();
+
+			methodDictionary.Clear();
 		}
 
 		private static void Initialize()
 		{
-			alignStreamMethod = SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.AlignStream));
-			readByteArrayMethod = SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadByteArray) && m.Parameters.Count == 0);
 			readInt32Method = SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadInt32));
-			assetReaderDefinition = SharedState.Instance.Importer.LookupType<AssetReader>();
+
+			primitiveReadMethods.Add(ElementType.Boolean, SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadBoolean)));
+			primitiveReadMethods.Add(ElementType.Char, SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadChar)));
+			primitiveReadMethods.Add(ElementType.I1, SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadSByte)));
+			primitiveReadMethods.Add(ElementType.U1, SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadByte)));
+			primitiveReadMethods.Add(ElementType.I2, SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadInt16)));
+			primitiveReadMethods.Add(ElementType.U2, SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadUInt16)));
+			primitiveReadMethods.Add(ElementType.I4, readInt32Method);
+			primitiveReadMethods.Add(ElementType.U4, SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadUInt32)));
+			primitiveReadMethods.Add(ElementType.I8, SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadInt64)));
+			primitiveReadMethods.Add(ElementType.U8, SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadUInt64)));
+			primitiveReadMethods.Add(ElementType.R4, SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadSingle)));
+			primitiveReadMethods.Add(ElementType.R8, SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadDouble)));
+
+			alignStreamMethod = SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.AlignStream));
 			assetReaderReference = SharedState.Instance.Importer.ImportType<AssetReader>();
-			endianReaderDefinition = SharedState.Instance.Importer.LookupType<EndianReader>();
-			endianReaderReference = SharedState.Instance.Importer.ImportType<EndianReader>();
-			binaryReaderDefinition = SharedState.Instance.Importer.LookupType<BinaryReader>();
-			binaryReaderReference = SharedState.Instance.Importer.ImportType<BinaryReader>();
-			endianReaderExtensionsDefinition = SharedState.Instance.Importer.LookupType(typeof(EndianReaderExtensions));
+
+			assetDictionaryReference = SharedState.Instance.Importer.ImportType(typeof(AssetDictionary<,>));
+			assetListReference = SharedState.Instance.Importer.ImportType(typeof(AssetList<>));
+			keyValuePairReference = SharedState.Instance.Importer.ImportType(typeof(AssetPair<,>));
+
+			assetDictionaryDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>));
+			assetListDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetList<>));
+			keyValuePairDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetPair<,>));
 		}
 
-		private static void DoPassOnInstance(GeneratedClassInstance instance)
+		private static void CreateHelperClassForWriteMethods()
 		{
-			MethodDefinition editorModeReadMethod = instance.Type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ReadEditor));
-			MethodDefinition releaseModeReadMethod = instance.Type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ReadRelease));
-
-			CilInstructionCollection editorModeProcessor = editorModeReadMethod.CilMethodBody!.Instructions;
-			CilInstructionCollection releaseModeProcessor = releaseModeReadMethod.CilMethodBody!.Instructions;
-
-			Dictionary<string, FieldDefinition> fields = instance.Type.GetAllFieldsInTypeAndBase().ToDictionary(f => f.Name!.Value, f => f);
-
-			//Console.WriteLine($"Generating the editor read method for {name}");
-			if (instance.Class.EditorRootNode != null)
+			TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.HelpersNamespace, $"{ReadMethod}Methods");
+			type.IsPublic = false;
+			type.Methods.Add(readAssetListDefinition!);
+			type.Methods.Add(readAssetListAlignDefinition!);
+			type.Methods.Add(readAssetDictionaryDefinition!);
+			type.Methods.Add(readAssetDictionaryAlignDefinition!);
+			foreach ((string _, IMethodDescriptor method) in methodDictionary.OrderBy(pair => pair.Key))
 			{
-				foreach (UniversalNode unityNode in instance.Class.EditorRootNode.SubNodes)
+				if (method is MethodDefinition methodDefinition && methodDefinition.DeclaringType is null)
 				{
-					AddLoadToProcessor(unityNode, editorModeProcessor, fields, instance.VersionRange.Start);
+					type.Methods.Add(methodDefinition);
 				}
 			}
+			Console.WriteLine($"\t{type.Methods.Count} {ReadMethod} helper methods");
+		}
 
-			//Console.WriteLine($"Generating the release read method for {name}");
-			if (instance.Class.ReleaseRootNode != null)
+		private static void FillEditorWriteMethod(this TypeDefinition type, UniversalClass klass, UnityVersion version)
+		{
+			type.FillMethod(ReadEditor, klass.EditorRootNode, version);
+		}
+
+		private static void FillReleaseWriteMethod(this TypeDefinition type, UniversalClass klass, UnityVersion version)
+		{
+			type.FillMethod(ReadRelease, klass.ReleaseRootNode, version);
+		}
+
+		private static void FillMethod(this TypeDefinition type, string methodName, UniversalNode? rootNode, UnityVersion version)
+		{
+			MethodDefinition method = type.Methods.First(m => m.Name == methodName);
+			CilInstructionCollection processor = method.GetProcessor();
+
+			if (rootNode is not null)
 			{
-				foreach (UniversalNode unityNode in instance.Class.ReleaseRootNode.SubNodes)
+				foreach (UniversalNode unityNode in rootNode.SubNodes)
 				{
-					AddLoadToProcessor(unityNode, releaseModeProcessor, fields, instance.VersionRange.Start);
+					FieldDefinition field = type.GetFieldByName(unityNode.Name, true);
+					IMethodDescriptor fieldWriteMethod = GetOrMakeMethod(unityNode, field.Signature!.FieldType, version);
+					if (field.Signature!.FieldType.IsArrayOrPrimitive())
+					{
+						processor.Add(CilOpCodes.Ldarg_0);//this
+						processor.Add(CilOpCodes.Ldarg_1);//reader
+						processor.AddCall(fieldWriteMethod);
+						processor.Add(CilOpCodes.Stfld, field);
+					}
+					else
+					{
+						processor.Add(CilOpCodes.Ldarg_0);//this
+						processor.Add(CilOpCodes.Ldfld, field);
+						processor.Add(CilOpCodes.Ldarg_1);//reader
+						processor.AddCall(fieldWriteMethod);
+					}
 				}
 			}
-
-			editorModeProcessor.Add(CilOpCodes.Ret);
-			releaseModeProcessor.Add(CilOpCodes.Ret);
-
-			editorModeProcessor.OptimizeMacros();
-			releaseModeProcessor.OptimizeMacros();
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
 		}
 
-		private static void AddLoadToProcessor(UniversalNode node, CilInstructionCollection processor, Dictionary<string, FieldDefinition> fields, UnityVersion version)
+		private static IMethodDescriptor GetOrMakeMethod(UniversalNode node, TypeSignature type, UnityVersion version)
 		{
-			//Get field
-			fields.TryGetValue(node.Name, out FieldDefinition? field);
-
-			if (field == null)
+			string uniqueName = GetName(node, version);
+			if (methodDictionary.TryGetValue(uniqueName, out IMethodDescriptor? method))
 			{
-				throw new Exception($"Field {node.Name} cannot be found in {processor.Owner.Owner.DeclaringType} (fields are {string.Join(", ", fields.Values.Select(f => f.Name))})");
+				return method;
 			}
 
-			ReadFieldContent(node, processor, field, version);
-		}
-
-		private static void ReadFieldContent(UniversalNode node, CilInstructionCollection processor, FieldDefinition field, UnityVersion version)
-		{
 			if (SharedState.Instance.SubclassGroups.TryGetValue(node.TypeName, out SubclassGroup? subclassGroup))
 			{
-				TypeDefinition fieldType = subclassGroup.GetTypeForVersion(version);
-				ReadAssetTypeToField(node, processor, field, fieldType, 0);
-				return;
+				TypeDefinition typeDefinition = subclassGroup.GetTypeForVersion(version);
+				Debug.Assert(signatureComparer.Equals(typeDefinition.ToTypeSignature(), type));
+				method = typeDefinition.GetMethodByName(ReadMethod);
+				//method = NewWriteMethod(uniqueName, type);
+				//CilInstructionCollection processor = ((MethodDefinition)method).GetProcessor();
+				//processor.AddNotSupportedException();
+				methodDictionary.Add(uniqueName, method);
+				return method;
 			}
 
 			switch (node.TypeName)
@@ -112,725 +196,824 @@ namespace AssetRipper.AssemblyDumper.Passes
 				case "vector":
 				case "set":
 				case "staticvector":
-					ReadVectorToField(node, processor, field, 1, version);
-					return;
+					{
+						UniversalNode arrayNode = node.SubNodes[0];
+						UniversalNode elementTypeNode = arrayNode.SubNodes[1];
+						bool align = node.AlignBytes || arrayNode.AlignBytes;
+						if (type is GenericInstanceTypeSignature genericSignature)
+						{
+							Debug.Assert(genericSignature.GenericType.Name == $"{nameof(AssetList<int>)}`1");
+							Debug.Assert(genericSignature.TypeArguments.Count == 1);
+							method = MakeListMethod(uniqueName, elementTypeNode, genericSignature.TypeArguments[0], version, align);
+						}
+						else
+						{
+							SzArrayTypeSignature arrayType = (SzArrayTypeSignature)type;
+							TypeSignature elementType = arrayType.BaseType;
+							method = MakeArrayMethod(uniqueName, elementTypeNode, elementType, version, align);
+						}
+					}
+					break;
 				case "map":
-					ReadDictionaryToField(node, processor, field, version);
-					return;
+					{
+						UniversalNode arrayNode = node.SubNodes[0];
+						UniversalNode pairNode = arrayNode.SubNodes[1];
+						UniversalNode firstTypeNode = pairNode.SubNodes[0];
+						UniversalNode secondTypeNode = pairNode.SubNodes[1];
+						bool align = node.AlignBytes || arrayNode.AlignBytes;
+						GenericInstanceTypeSignature genericSignature = (GenericInstanceTypeSignature)type;
+						Debug.Assert(genericSignature.GenericType.Name == $"{nameof(AssetDictionary<int, int>)}`2");
+						Debug.Assert(genericSignature.TypeArguments.Count == 2);
+						method = MakeDictionaryMethod(uniqueName, firstTypeNode, genericSignature.TypeArguments[0], secondTypeNode, genericSignature.TypeArguments[1], version, align);
+					}
+					break;
 				case "pair":
-					ReadPairToField(node, processor, field, version);
-					return;
+					{
+						UniversalNode firstTypeNode = node.SubNodes[0];
+						UniversalNode secondTypeNode = node.SubNodes[1];
+						bool align = node.AlignBytes;
+						GenericInstanceTypeSignature genericSignature = (GenericInstanceTypeSignature)type;
+						Debug.Assert(genericSignature.GenericType.Name == $"{nameof(AssetPair<int, int>)}`2");
+						Debug.Assert(genericSignature.TypeArguments.Count == 2);
+						method = MakePairMethod(uniqueName, firstTypeNode, genericSignature.TypeArguments[0], secondTypeNode, genericSignature.TypeArguments[1], version, align);
+					}
+					break;
 				case "TypelessData": //byte array
-					ReadByteArrayToField(node, processor, field);
-					return;
+					{
+						method = MakeTypelessDataMethod(uniqueName, node.AlignBytes);
+					}
+					break;
 				case "Array":
-					ReadArrayToField(node, processor, field, 1, version);
-					return;
+					{
+						UniversalNode elementTypeNode = node.SubNodes[1];
+						bool align = node.AlignBytes;
+						if (type is GenericInstanceTypeSignature genericSignature)
+						{
+							Debug.Assert(genericSignature.GenericType.Name == $"{nameof(AssetList<int>)}`1");
+							Debug.Assert(genericSignature.TypeArguments.Count == 1);
+							method = MakeListMethod(uniqueName, elementTypeNode, genericSignature.TypeArguments[0], version, align);
+						}
+						else
+						{
+							SzArrayTypeSignature arrayType = (SzArrayTypeSignature)type;
+							TypeSignature elementType = arrayType.BaseType;
+							method = MakeArrayMethod(uniqueName, elementTypeNode, elementType, version, align);
+						}
+					}
+					break;
+				default:
+					method = MakePrimitiveMethod(uniqueName, node, node.AlignBytes);
+					break;
 			}
 
-			ReadPrimitiveTypeToField(node, processor, field, 0);
+			methodDictionary.Add(uniqueName, method);
+			return method;
 		}
 
-		private static CilLocalVariable ReadContentToLocal(UniversalNode node, CilInstructionCollection processor, UnityVersion version)
+		private static IMethodDescriptor MakeDictionaryMethod(string uniqueName, UniversalNode keyTypeNode, TypeSignature keySignature, UniversalNode valueTypeNode, TypeSignature valueSignature, UnityVersion version, bool align)
+		{
+			if (keySignature.IsTypeDefinition() && valueSignature.IsTypeDefinition())
+			{
+				return align
+					? readAssetDictionaryAlignDefinition!.MakeGenericInstanceMethod(keySignature, valueSignature)
+					: readAssetDictionaryDefinition!.MakeGenericInstanceMethod(keySignature, valueSignature);
+			}
+			else
+			{
+				IMethodDescriptor firstWriteMethod = GetOrMakeMethod(keyTypeNode, keySignature, version);
+				IMethodDescriptor secondWriteMethod = GetOrMakeMethod(valueTypeNode, valueSignature, version);
+				return MakeDictionaryMethod(uniqueName, firstWriteMethod, keySignature, secondWriteMethod, valueSignature, align);
+			}
+		}
+
+		private static MethodDefinition MakeGenericDictionaryMethod(bool align)
+		{
+			string uniqueName = align ? "MapAlign_Asset_Asset" : "Map_Asset_Asset";
+			GenericParameterSignature keyType = new GenericParameterSignature(SharedState.Instance.Module, GenericParameterType.Method, 0);
+			GenericParameterSignature valueType = new GenericParameterSignature(SharedState.Instance.Module, GenericParameterType.Method, 1);
+			IMethodDefOrRef readMethod = SharedState.Instance.Importer.ImportMethod<UnityAssetBase>(m => m.Name == ReadMethod);
+			MethodDefinition method = MakeDictionaryMethod(uniqueName, readMethod, keyType, readMethod, valueType, align);
+
+			GenericParameter keyParameter = new GenericParameter("TKey", GenericParameterAttributes.DefaultConstructorConstraint);
+			keyParameter.Constraints.Add(new GenericParameterConstraint(SharedState.Instance.Importer.ImportType<UnityAssetBase>()));
+			method.GenericParameters.Add(keyParameter);
+			GenericParameter valueParameter = new GenericParameter("TValue", GenericParameterAttributes.DefaultConstructorConstraint);
+			valueParameter.Constraints.Add(new GenericParameterConstraint(SharedState.Instance.Importer.ImportType<UnityAssetBase>()));
+			method.GenericParameters.Add(valueParameter);
+			method.Signature!.GenericParameterCount = 2;
+
+			return method;
+		}
+
+		private static MethodDefinition MakeDictionaryMethod(string uniqueName, IMethodDescriptor keyReadMethod, TypeSignature keySignature, IMethodDescriptor valueReadMethod, TypeSignature valueSignature, bool align)
+		{
+			GenericInstanceTypeSignature genericDictionaryType = assetDictionaryReference!.MakeGenericInstanceType(keySignature, valueSignature);
+
+			IMethodDefOrRef getPairMethod = MethodUtils.MakeMethodOnGenericType(
+				SharedState.Instance.Importer,
+				genericDictionaryType,
+				assetDictionaryDefinition!.Methods.Single(m => m.Name == nameof(AssetDictionary<int, int>.GetPair)));
+
+			MethodDefinition addMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetDictionary<,>), m => m.Name == nameof(AssetDictionary<int, int>.Add) && m.Parameters.Count == 2);
+			IMethodDefOrRef addMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictionaryType, addMethodDefinition);
+			MethodDefinition clearMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetDictionary<,>), m => m.Name == nameof(AssetDictionary<int, int>.Clear));
+			IMethodDefOrRef clearMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictionaryType, clearMethodDefinition);
+
+			MethodDefinition method = NewMethod(uniqueName, genericDictionaryType);
+			CilInstructionCollection processor = method.GetProcessor();
+
+			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable keyLocal = processor.AddLocalVariable(keySignature);
+			CilLocalVariable valueLocal = processor.AddLocalVariable(valueSignature);
+
+			CilInstructionLabel loopConditionStartList = new();
+
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Call, clearMethodReference);
+
+			//Read count
+			processor.Add(CilOpCodes.Ldarg_1);//reader
+			processor.AddCall(readInt32Method!);
+			processor.Add(CilOpCodes.Stloc, countLocal);
+
+			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
+
+			//Create an empty, unconditional branch which will jump down to the loop condition.
+			//This converts the do..while loop into a for loop.
+			processor.Add(CilOpCodes.Br, loopConditionStartList);
+
+			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
+			ICilLabel jumpTargetList = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
+
+			//Read key
+			if (keySignature.IsArrayOrPrimitive())
+			{
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(keyReadMethod);
+				processor.Add(CilOpCodes.Stloc, keyLocal);
+			}
+			else if (keySignature is GenericParameterSignature)
+			{
+				IMethodDefOrRef createInstanceMethod = SharedState.Instance.Importer.ImportMethod(typeof(Activator), m => m.Name == nameof(Activator.CreateInstance) && m.Parameters.Count == 0 && m.GenericParameters.Count == 1);
+				processor.Add(CilOpCodes.Call, createInstanceMethod.MakeGenericInstanceMethod(keySignature));
+				processor.Add(CilOpCodes.Stloc, keyLocal);
+				processor.Add(CilOpCodes.Ldloc, keyLocal);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(keyReadMethod);
+			}
+			else
+			{
+				processor.Add(CilOpCodes.Newobj, keySignature.GetDefaultConstructor());
+				processor.Add(CilOpCodes.Stloc, keyLocal);
+				processor.Add(CilOpCodes.Ldloc, keyLocal);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(keyReadMethod);
+			}
+
+			//Read value
+			if (valueSignature.IsArrayOrPrimitive())
+			{
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(valueReadMethod);
+				processor.Add(CilOpCodes.Stloc, valueLocal);
+			}
+			else if (valueSignature is GenericParameterSignature)
+			{
+				IMethodDefOrRef createInstanceMethod = SharedState.Instance.Importer.ImportMethod(typeof(Activator), m => m.Name == nameof(Activator.CreateInstance) && m.Parameters.Count == 0 && m.GenericParameters.Count == 1);
+				processor.Add(CilOpCodes.Call, createInstanceMethod.MakeGenericInstanceMethod(valueSignature));
+				processor.Add(CilOpCodes.Stloc, valueLocal);
+				processor.Add(CilOpCodes.Ldloc, valueLocal);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(valueReadMethod);
+			}
+			else
+			{
+				processor.Add(CilOpCodes.Newobj, valueSignature.GetDefaultConstructor());
+				processor.Add(CilOpCodes.Stloc, valueLocal);
+				processor.Add(CilOpCodes.Ldloc, valueLocal);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(valueReadMethod);
+			}
+
+			//Add to dictionary
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldloc, keyLocal);
+			processor.Add(CilOpCodes.Ldloc, valueLocal);
+			processor.AddCall(addMethodReference);
+
+			//Increment i
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Add(CilOpCodes.Add); //Add 
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
+
+			//Jump to start of loop if i < count
+			loopConditionStartList.Instruction = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			processor.Add(CilOpCodes.Blt, jumpTargetList); //Jump back up if less than
+
+			if (align)
+			{
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(alignStreamMethod!);
+			}
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
+			return method;
+		}
+
+		private static IMethodDescriptor MakePairMethod(string uniqueName, UniversalNode keyTypeNode, TypeSignature keySignature, UniversalNode valueTypeNode, TypeSignature valueSignature, UnityVersion version, bool align)
+		{
+			IMethodDescriptor keyReadMethod = GetOrMakeMethod(keyTypeNode, keySignature, version);
+			IMethodDescriptor valueReadMethod = GetOrMakeMethod(valueTypeNode, valueSignature, version);
+
+			GenericInstanceTypeSignature genericPairType = keyValuePairReference!.MakeGenericInstanceType(keySignature, valueSignature);
+
+			MethodDefinition method = NewMethod(uniqueName, genericPairType);
+			CilInstructionCollection processor = method.GetProcessor();
+
+			if (keySignature.IsArrayOrPrimitive())
+			{
+				IMethodDefOrRef setKeyMethod = MethodUtils.MakeMethodOnGenericType(
+					SharedState.Instance.Importer,
+					genericPairType,
+					keyValuePairDefinition!.Methods.Single(m => m.Name == $"set_{nameof(AssetPair<int, int>.Key)}"));
+
+				processor.Add(CilOpCodes.Ldarg_0);//pair
+				processor.Add(CilOpCodes.Ldarg_1);//writer
+				processor.AddCall(keyReadMethod);
+				processor.AddCall(setKeyMethod);
+			}
+			else
+			{
+				IMethodDefOrRef getKeyMethod = MethodUtils.MakeMethodOnGenericType(
+					SharedState.Instance.Importer,
+					genericPairType,
+					keyValuePairDefinition!.Methods.Single(m => m.Name == $"get_{nameof(AssetPair<int, int>.Key)}"));
+
+				processor.Add(CilOpCodes.Ldarg_0);//pair
+				processor.AddCall(getKeyMethod);
+				processor.Add(CilOpCodes.Ldarg_1);//writer
+				processor.AddCall(keyReadMethod);
+			}
+
+			if (valueSignature.IsArrayOrPrimitive())
+			{
+				IMethodDefOrRef setValueMethod = MethodUtils.MakeMethodOnGenericType(
+					SharedState.Instance.Importer,
+					genericPairType,
+					keyValuePairDefinition!.Methods.Single(m => m.Name == $"set_{nameof(AssetPair<int, int>.Value)}"));
+
+				processor.Add(CilOpCodes.Ldarg_0);//pair
+				processor.Add(CilOpCodes.Ldarg_1);//writer
+				processor.AddCall(valueReadMethod);
+				processor.AddCall(setValueMethod);
+			}
+			else
+			{
+				IMethodDefOrRef getValueMethod = MethodUtils.MakeMethodOnGenericType(
+					SharedState.Instance.Importer,
+					genericPairType,
+					keyValuePairDefinition!.Methods.Single(m => m.Name == $"get_{nameof(AssetPair<int, int>.Value)}"));
+
+				processor.Add(CilOpCodes.Ldarg_0);//pair
+				processor.AddCall(getValueMethod);
+				processor.Add(CilOpCodes.Ldarg_1);//writer
+				processor.AddCall(valueReadMethod);
+			}
+
+			if (align)
+			{
+				processor.Add(CilOpCodes.Ldarg_1);//writer
+				processor.AddCall(alignStreamMethod!);
+			}
+			processor.Add(CilOpCodes.Ret);
+			return method;
+		}
+
+		private static IMethodDescriptor MakeTypelessDataMethod(string uniqueName, bool align)
+		{
+			CorLibTypeSignature elementType = SharedState.Instance.Importer.UInt8;
+			SzArrayTypeSignature arrayType = elementType.MakeSzArrayType();
+			GenericInstanceTypeSignature listType = SharedState.Instance.Importer.ImportType(typeof(List<>)).MakeGenericInstanceType(elementType);
+			MethodDefinition method = NewMethod(uniqueName, arrayType);
+			CilInstructionCollection processor = method.GetProcessor();
+
+			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable arrayLocal = processor.AddLocalVariable(arrayType);
+			CilLocalVariable listLocal = processor.AddLocalVariable(listType);
+
+			//Read count
+			processor.Add(CilOpCodes.Ldarg_0);//reader
+			processor.AddCall(readInt32Method!);
+			processor.Add(CilOpCodes.Stloc, countLocal);
+
+			CilInstructionLabel readAsListInstruction = new();
+			CilInstructionLabel loopConditionStartLabel = new();
+			CilInstructionLabel returnInstruction = new();
+
+			//Check size of count
+			processor.Add(CilOpCodes.Ldloc, countLocal);
+			processor.Add(CilOpCodes.Ldc_I4, MaxArraySize);
+			processor.Add(CilOpCodes.Bgt, readAsListInstruction);
+
+			//Read into array (because that's more efficient)
+			IMethodDefOrRef endOfStreamConstructor = SharedState.Instance.Importer.ImportDefaultConstructor<EndOfStreamException>();
+			IMethodDefOrRef readBytesMethod = SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadBytes));
+
+			processor.Add(CilOpCodes.Ldarg_0);//reader
+			processor.Add(CilOpCodes.Ldloc, countLocal);
+			processor.AddCall(readBytesMethod);
+			processor.Add(CilOpCodes.Stloc, arrayLocal);
+
+			processor.Add(CilOpCodes.Ldloc, arrayLocal);
+			processor.Add(CilOpCodes.Ldlen);
+			processor.Add(CilOpCodes.Conv_I4);
+			processor.Add(CilOpCodes.Ldloc, countLocal);
+			processor.Add(CilOpCodes.Beq, returnInstruction);
+
+			processor.Add(CilOpCodes.Newobj, endOfStreamConstructor);
+			processor.Add(CilOpCodes.Throw);
+
+			//Read into list (because we don't trust large counts)
+
+			MethodDefinition listConstructorDefinition = SharedState.Instance.Importer.LookupMethod(typeof(List<>), m =>
+			{
+				return m.IsConstructor
+					&& m.Parameters.Count == 1
+					&& m.Parameters[0].ParameterType is CorLibTypeSignature corLibTypeSignature
+					&& corLibTypeSignature.ElementType == ElementType.I4;
+			});
+			IMethodDefOrRef listConstructorReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, listType, listConstructorDefinition);
+			MethodDefinition addMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == nameof(List<int>.Add));
+			IMethodDefOrRef addMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, listType, addMethodDefinition);
+			MethodDefinition toArrayMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == nameof(List<int>.ToArray));
+			IMethodDefOrRef toArrayMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, listType, toArrayMethodDefinition);
+
+			readAsListInstruction.Instruction = processor.Add(CilOpCodes.Ldc_I4, MaxArraySize);
+			processor.Add(CilOpCodes.Newobj, listConstructorReference);
+			processor.Add(CilOpCodes.Stloc, listLocal);
+
+			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
+
+			//Create an empty, unconditional branch which will jump down to the loop condition.
+			//This converts the do..while loop into a for loop.
+			processor.Add(CilOpCodes.Br, loopConditionStartLabel);
+
+			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
+			ICilLabel jumpTarget = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
+
+			//Read byte and add to list
+			processor.Add(CilOpCodes.Ldloc, listLocal);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.AddCall(primitiveReadMethods[ElementType.U1]);
+			processor.AddCall(addMethodReference);
+
+			//Increment i
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Add(CilOpCodes.Add); //Add 
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
+
+			//Jump to start of loop if i < count
+			loopConditionStartLabel.Instruction = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
+
+			processor.Add(CilOpCodes.Ldloc, listLocal);
+			processor.AddCall(toArrayMethodReference);
+			processor.Add(CilOpCodes.Stloc, arrayLocal);
+
+			returnInstruction.Instruction = processor.Add(CilOpCodes.Nop);
+			if (align)
+			{
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.AddCall(alignStreamMethod!);
+			}
+			processor.Add(CilOpCodes.Ldloc, arrayLocal);
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
+			return method;
+		}
+
+		private static IMethodDescriptor MakeListMethod(string uniqueName, UniversalNode elementTypeNode, TypeSignature elementType, UnityVersion version, bool align)
+		{
+			if (elementType.IsTypeDefinition())
+			{
+				return align
+					? readAssetListAlignDefinition!.MakeGenericInstanceMethod(elementType)
+					: readAssetListDefinition!.MakeGenericInstanceMethod(elementType);
+			}
+			else
+			{
+				IMethodDescriptor elementReadMethod = GetOrMakeMethod(elementTypeNode, elementType, version);
+				return MakeListMethod(uniqueName, elementType, elementReadMethod, align);
+			}
+		}
+
+		private static MethodDefinition MakeGenericListMethod(bool align)
+		{
+			string uniqueName = align ? "ArrayAlign_Asset" : "Array_Asset";
+			GenericParameterSignature elementType = new GenericParameterSignature(SharedState.Instance.Module, GenericParameterType.Method, 0);
+			IMethodDefOrRef readMethod = SharedState.Instance.Importer.ImportMethod<UnityAssetBase>(m => m.Name == ReadMethod);
+			MethodDefinition method = MakeListMethod(uniqueName, elementType, readMethod, align);
+
+			GenericParameter genericParameter = new GenericParameter("T", GenericParameterAttributes.DefaultConstructorConstraint);
+			genericParameter.Constraints.Add(new GenericParameterConstraint(SharedState.Instance.Importer.ImportType<UnityAssetBase>()));
+			method.GenericParameters.Add(genericParameter);
+			method.Signature!.GenericParameterCount = 1;
+
+			return method;
+		}
+
+		private static MethodDefinition MakeListMethod(string uniqueName, TypeSignature elementType, IMethodDescriptor elementReadMethod, bool align)
+		{
+			GenericInstanceTypeSignature genericListType = assetListReference!.MakeGenericInstanceType(elementType);
+
+			MethodDefinition addMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == nameof(AssetList<int>.Add));
+			IMethodDefOrRef addMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericListType, addMethodDefinition);
+			MethodDefinition clearMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == nameof(AssetList<int>.Clear));
+			IMethodDefOrRef clearMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericListType, clearMethodDefinition);
+
+			MethodDefinition method = NewMethod(uniqueName, genericListType);
+			CilInstructionCollection processor = method.GetProcessor();
+
+			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+
+			CilInstructionLabel loopConditionStartList = new();
+
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Call, clearMethodReference);
+
+			//Read count
+			processor.Add(CilOpCodes.Ldarg_1);//reader
+			processor.AddCall(readInt32Method!);
+			processor.Add(CilOpCodes.Stloc, countLocal);
+
+			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
+
+			//Create an empty, unconditional branch which will jump down to the loop condition.
+			//This converts the do..while loop into a for loop.
+			processor.Add(CilOpCodes.Br, loopConditionStartList);
+
+			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
+			ICilLabel jumpTargetList = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
+
+			//Read and add to list
+			processor.Add(CilOpCodes.Ldarg_0);
+			if (elementType.IsArrayOrPrimitive())
+			{
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(elementReadMethod);
+			}
+			else if (elementType is GenericParameterSignature)
+			{
+				IMethodDefOrRef createInstanceMethod = SharedState.Instance.Importer.ImportMethod(typeof(Activator), m => m.Name == nameof(Activator.CreateInstance) && m.Parameters.Count == 0 && m.GenericParameters.Count == 1);
+				processor.Add(CilOpCodes.Call, createInstanceMethod.MakeGenericInstanceMethod(elementType));
+				processor.Add(CilOpCodes.Dup);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(elementReadMethod);
+			}
+			else
+			{
+				processor.Add(CilOpCodes.Newobj, elementType.GetDefaultConstructor());
+				processor.Add(CilOpCodes.Dup);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(elementReadMethod);
+			}
+			processor.AddCall(addMethodReference);
+
+			//Increment i
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Add(CilOpCodes.Add); //Add 
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
+
+			//Jump to start of loop if i < count
+			loopConditionStartList.Instruction = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			processor.Add(CilOpCodes.Blt, jumpTargetList); //Jump back up if less than
+
+			if (align)
+			{
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(alignStreamMethod!);
+			}
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
+
+			return method;
+		}
+
+		private static IMethodDescriptor MakeArrayMethod(string uniqueName, UniversalNode elementTypeNode, TypeSignature elementType, UnityVersion version, bool align)
+		{
+			if (elementType is CorLibTypeSignature corLibTypeSignature && corLibTypeSignature.ElementType == ElementType.U1)
+			{
+				return MakeTypelessDataMethod(uniqueName, align);
+			}
+
+			IMethodDescriptor elementReadMethod = GetOrMakeMethod(elementTypeNode, elementType, version);
+
+			SzArrayTypeSignature arrayType = elementType.MakeSzArrayType();
+			GenericInstanceTypeSignature listType = SharedState.Instance.Importer.ImportType(typeof(List<>)).MakeGenericInstanceType(elementType);
+			MethodDefinition method = NewMethod(uniqueName, arrayType);
+			CilInstructionCollection processor = method.GetProcessor();
+
+			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable arrayLocal = processor.AddLocalVariable(arrayType);
+			CilLocalVariable listLocal = processor.AddLocalVariable(listType);
+
+			//Read count
+			processor.Add(CilOpCodes.Ldarg_0);//reader
+			processor.AddCall(readInt32Method!);
+			processor.Add(CilOpCodes.Stloc, countLocal);
+
+			CilInstructionLabel readAsListInstruction = new();
+			CilInstructionLabel loopConditionStartArray = new();
+			CilInstructionLabel loopConditionStartList = new();
+			CilInstructionLabel returnInstruction = new();
+
+			//Check size of count
+			processor.Add(CilOpCodes.Ldloc, countLocal);
+			processor.Add(CilOpCodes.Ldc_I4, MaxArraySize);
+			processor.Add(CilOpCodes.Bgt, readAsListInstruction);
+
+			//Read into array
+			processor.Add(CilOpCodes.Ldloc, countLocal);
+			processor.Add(CilOpCodes.Newarr, elementType.ToTypeDefOrRef());
+			processor.Add(CilOpCodes.Stloc, arrayLocal);
+
+			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
+
+			//Create an empty, unconditional branch which will jump down to the loop condition.
+			//This converts the do..while loop into a for loop.
+			processor.Add(CilOpCodes.Br, loopConditionStartArray);
+
+			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
+			ICilLabel jumpTargetArray = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
+
+			//Read and add to array
+			processor.Add(CilOpCodes.Ldloc, arrayLocal);
+			processor.Add(CilOpCodes.Ldloc, iLocal);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.AddCall(elementReadMethod);
+			processor.AddStoreElement(elementType);
+
+			//Increment i
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Add(CilOpCodes.Add); //Add 
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
+
+			//Jump to start of loop if i < count
+			loopConditionStartArray.Instruction = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			processor.Add(CilOpCodes.Blt, jumpTargetArray); //Jump back up if less than
+
+			processor.Add(CilOpCodes.Br, returnInstruction);//Jump to return statement
+
+			//Read into list (because we don't trust large counts)
+
+			MethodDefinition listConstructorDefinition = SharedState.Instance.Importer.LookupMethod(typeof(List<>), m =>
+			{
+				return m.IsConstructor
+					&& m.Parameters.Count == 1
+					&& m.Parameters[0].ParameterType is CorLibTypeSignature corLibTypeSignature
+					&& corLibTypeSignature.ElementType == ElementType.I4;
+			});
+			IMethodDefOrRef listConstructorReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, listType, listConstructorDefinition);
+			MethodDefinition addMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == nameof(List<int>.Add));
+			IMethodDefOrRef addMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, listType, addMethodDefinition);
+			MethodDefinition toArrayMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == nameof(List<int>.ToArray));
+			IMethodDefOrRef toArrayMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, listType, toArrayMethodDefinition);
+
+			readAsListInstruction.Instruction = processor.Add(CilOpCodes.Ldc_I4, MaxArraySize);
+			processor.Add(CilOpCodes.Newobj, listConstructorReference);
+			processor.Add(CilOpCodes.Stloc, listLocal);
+
+			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
+
+			//Create an empty, unconditional branch which will jump down to the loop condition.
+			//This converts the do..while loop into a for loop.
+			processor.Add(CilOpCodes.Br, loopConditionStartList);
+
+			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
+			ICilLabel jumpTargetList = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
+
+			//Read byte and add to list
+			processor.Add(CilOpCodes.Ldloc, listLocal);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.AddCall(elementReadMethod);
+			processor.AddCall(addMethodReference);
+
+			//Increment i
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Add(CilOpCodes.Add); //Add 
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
+
+			//Jump to start of loop if i < count
+			loopConditionStartList.Instruction = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			processor.Add(CilOpCodes.Blt, jumpTargetList); //Jump back up if less than
+
+			processor.Add(CilOpCodes.Ldloc, listLocal);
+			processor.AddCall(toArrayMethodReference);
+			processor.Add(CilOpCodes.Stloc, arrayLocal);
+
+			returnInstruction.Instruction = processor.Add(CilOpCodes.Nop);
+			if (align)
+			{
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.AddCall(alignStreamMethod!);
+			}
+			processor.Add(CilOpCodes.Ldloc, arrayLocal);
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
+			return method;
+		}
+
+		private static IMethodDescriptor MakePrimitiveMethod(string uniqueName, UniversalNode node, bool align)
+		{
+			IMethodDescriptor primitiveMethod = GetPrimitiveMethod(node);
+			if (align)
+			{
+				MethodDefinition method = NewMethod(uniqueName, primitiveMethod.Signature!.ReturnType);
+				CilInstructionCollection processor = method.GetProcessor();
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.AddCall(primitiveMethod);
+				if (align)
+				{
+					processor.Add(CilOpCodes.Ldarg_0);
+					processor.AddCall(alignStreamMethod!);
+				}
+				processor.Add(CilOpCodes.Ret);
+				return method;
+			}
+			else
+			{
+				return primitiveMethod;
+			}
+		}
+
+		private static string GetName(UniversalNode node, UnityVersion version)
 		{
 			if (SharedState.Instance.SubclassGroups.TryGetValue(node.TypeName, out SubclassGroup? subclassGroup))
 			{
 				TypeDefinition fieldType = subclassGroup.GetTypeForVersion(version);
-				return ReadAssetTypeToLocal(node, processor, fieldType, 0);
+				return fieldType.Name ?? throw new NullReferenceException();
 			}
 
+			switch (node.TypeName)
+			{
+				case "vector":
+				case "set":
+				case "staticvector":
+					{
+						UniversalNode arrayNode = node.SubNodes[0];
+						UniversalNode listTypeNode = arrayNode.SubNodes[1];
+						string listName = GetName(listTypeNode, version);
+						return node.AlignBytes || arrayNode.AlignBytes ? $"ArrayAlign_{listName}" : $"Array_{listName}";
+					}
+				case "map":
+					{
+						UniversalNode arrayNode = node.SubNodes[0];
+						UniversalNode pairNode = arrayNode.SubNodes[1];
+						UniversalNode firstTypeNode = pairNode.SubNodes[0];
+						UniversalNode secondTypeNode = pairNode.SubNodes[1];
+						string firstTypeName = GetName(firstTypeNode, version);
+						string secondTypeName = GetName(secondTypeNode, version);
+						return node.AlignBytes || arrayNode.AlignBytes
+							? $"MapAlign_{firstTypeName}_{secondTypeName}"
+							: $"Map_{firstTypeName}_{secondTypeName}";
+					}
+				case "pair":
+					{
+						UniversalNode firstTypeNode = node.SubNodes[0];
+						UniversalNode secondTypeNode = node.SubNodes[1];
+						string firstTypeName = GetName(firstTypeNode, version);
+						string secondTypeName = GetName(secondTypeNode, version);
+						return node.AlignBytes ? $"PairAlign_{firstTypeName}_{secondTypeName}" : $"Pair_{firstTypeName}_{secondTypeName}";
+					}
+				case "TypelessData": //byte array
+					{
+						return node.AlignBytes ? "TypelessDataAlign" : "TypelessData";
+					}
+				case "Array":
+					{
+						UniversalNode listTypeNode = node.SubNodes[1];
+						string listName = GetName(listTypeNode, version);
+						return node.AlignBytes ? $"ArrayAlign_{listName}" : $"Array_{listName}";
+					}
+				default:
+					return GetPrimitiveName(node);
+			}
+		}
+
+		private static string GetPrimitiveName(UniversalNode node)
+		{
 			return node.TypeName switch
 			{
-				"vector" or "set" or "staticvector" => ReadVectorToLocal(node, processor, 1, version),
-				"map" => ReadDictionaryToLocal(node, processor, version),
-				"pair" => ReadPairToLocal(node, processor, version),
-				"TypelessData" => ReadByteArrayToLocal(node, processor),
-				"Array" => ReadArrayToLocal(node, processor, 1, version),
-				_ => ReadPrimitiveTypeToLocal(node, processor, 0),
+				"bool" => "Boolean",
+				//"char" => "Character",
+				"char" => "UInt8",
+				"SInt8" => "SInt8",
+				"UInt8" => "UInt8",
+				"short" or "SInt16" => "SInt16",
+				"ushort" or "UInt16" or "unsigned short" => "UInt16",
+				"int" or "SInt32" or "Type*" => "SInt32",
+				"uint" or "UInt32" or "unsigned int" => "UInt32",
+				"SInt64" or "long long" => "SInt64",
+				"UInt64" or "FileSize" or "unsigned long long" => "UInt64",
+				"float" => "Single",
+				"double" => "Double",
+				_ => throw new NotSupportedException(node.TypeName),
 			};
 		}
 
-		private static void MaybeAlignBytes(UniversalNode node, CilInstructionCollection processor)
-		{
-			if (((TransferMetaFlags)node.MetaFlag).IsAlignBytes())
-			{
-				//Load reader
-				processor.Add(CilOpCodes.Ldarg_1);
+		/// <summary>
+		/// Array and primitive read methods have the Func&lt;AssetReader, T&gt; signature.<br/>
+		/// Others have the Action&lt;T, AssetReader&gt; signature.
+		/// </summary>
+		/// <param name="type"></param>
+		/// <returns></returns>
+		private static bool IsArrayOrPrimitive(this TypeSignature type) => type is SzArrayTypeSignature or CorLibTypeSignature;
 
-				//Call it
-				processor.Add(CilOpCodes.Call, alignStreamMethod!);
-			}
+		private static bool IsTypeDefinition(this TypeSignature type)
+		{
+			return type is TypeDefOrRefSignature defOrRefSignature && defOrRefSignature.Type is TypeDefinition;
 		}
 
-		private static void ReadPrimitiveTypeToField(UniversalNode node, CilInstructionCollection processor, FieldDefinition field, int arrayDepth)
+		private static IMethodDescriptor GetPrimitiveMethod(UniversalNode node)
 		{
-			//Load this
-			processor.Add(CilOpCodes.Ldarg_0);
-
-			ReadPrimitiveTypeWithoutAligning(node, processor, arrayDepth);
-
-			//Store result in field
-			processor.Add(CilOpCodes.Stfld, field);
-
-			MaybeAlignBytes(node, processor);
-		}
-
-		private static CilLocalVariable ReadPrimitiveTypeToLocal(UniversalNode node, CilInstructionCollection processor, int arrayDepth)
-		{
-			TypeSignature fieldType = ReadPrimitiveTypeWithoutAligning(node, processor, arrayDepth);
-			CilLocalVariable local = new CilLocalVariable(fieldType);
-			processor.Owner.LocalVariables.Add(local);
-			processor.Add(CilOpCodes.Stloc, local);
-			MaybeAlignBytes(node, processor);
-			return local;
-		}
-
-		private static TypeSignature ReadPrimitiveTypeWithoutAligning(UniversalNode node, CilInstructionCollection processor, int arrayDepth)
-		{
-			//Primitives
-			string csPrimitiveTypeName = PrimitiveTypes.CppPrimitivesToCSharpPrimitives[node.TypeName];
-			CorLibTypeSignature csPrimitiveType = SharedState.Instance.Importer.GetCppPrimitiveTypeSignature(node.TypeName) ?? throw new Exception();
-
-			//Read
-			MethodDefinition? primitiveReadMethod = arrayDepth switch
+			return node.TypeName switch
 			{
-				0 => assetReaderDefinition?.Methods.SingleOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}") //String
-					 ?? endianReaderDefinition?.Methods.SingleOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}")
-					 ?? binaryReaderDefinition?.Methods.SingleOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}"), //Byte, SByte, and Boolean
-				1 => endianReaderDefinition?.Methods.SingleOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}Array" && m.Parameters.Count == 1),
-				2 => endianReaderExtensionsDefinition?.Methods.SingleOrDefault(m => m.Name == $"Read{csPrimitiveTypeName}ArrayArray"),
-				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth), $"ReadPrimitiveType does not support array depth '{arrayDepth}'"),
-			};
-
-			if (primitiveReadMethod == null)
-			{
-				throw new Exception($"Missing a read method for {csPrimitiveTypeName} in {processor.Owner.Owner.DeclaringType}");
-			}
-
-			//Load reader
-			processor.Add(CilOpCodes.Ldarg_1);
-
-			if (arrayDepth == 1)//Read{Primitive}Array has an allowAlignment parameter
-			{
-				processor.Add(CilOpCodes.Ldc_I4, 0);//load false onto the stack
-			}
-
-			//Call read method
-			processor.Add(CilOpCodes.Callvirt, SharedState.Instance.Importer.UnderlyingImporter.ImportMethod(primitiveReadMethod));
-
-			return arrayDepth switch
-			{
-				0 => csPrimitiveType,
-				1 => csPrimitiveType.MakeSzArrayType(),
-				2 => csPrimitiveType.MakeSzArrayType().MakeSzArrayType(),
-				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth)),
+				"bool" => SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadBoolean)),
+				//"char" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadChar)),
+				"char" => SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadByte)),
+				"SInt8" => SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadSByte)),
+				"UInt8" => SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadByte)),
+				"short" or "SInt16" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadInt16)),
+				"ushort" or "UInt16" or "unsigned short" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadUInt16)),
+				"int" or "SInt32" or "Type*" => readInt32Method!,
+				"uint" or "UInt32" or "unsigned int" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadUInt32)),
+				"SInt64" or "long long" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadInt64)),
+				"UInt64" or "FileSize" or "unsigned long long" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadUInt64)),
+				"float" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadSingle)),
+				"double" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadDouble)),
+				_ => throw new NotSupportedException(node.TypeName),
 			};
 		}
 
-		private static void ReadAssetTypeToField(UniversalNode node, CilInstructionCollection processor, FieldDefinition field, TypeDefinition fieldType, int arrayDepth)
+		private static MethodDefinition NewMethod(string uniqueName, TypeSignature parameter)
 		{
-			//Load "this" for field store later
-			processor.Add(CilOpCodes.Ldarg_0);
-
-			ReadAssetTypeWithoutAligning(node, processor, fieldType, arrayDepth);
-
-			//Store result in field
-			processor.Add(CilOpCodes.Stfld, field);
-
-			//Maybe Align Bytes
-			MaybeAlignBytes(node, processor);
-		}
-
-		private static CilLocalVariable ReadAssetTypeToLocal(UniversalNode node, CilInstructionCollection processor, TypeDefinition fieldBaseType, int arrayDepth)
-		{
-			TypeSignature fieldSignature = ReadAssetTypeWithoutAligning(node, processor, fieldBaseType, arrayDepth);
-			CilLocalVariable local = new CilLocalVariable(fieldSignature);
-			processor.Owner.LocalVariables.Add(local);
-			processor.Add(CilOpCodes.Stloc, local);
-			MaybeAlignBytes(node, processor);
-			return local;
-		}
-
-		private static TypeSignature ReadAssetTypeWithoutAligning(UniversalNode node, CilInstructionCollection processor, TypeDefinition fieldBaseType, int arrayDepth)
-		{
-			TypeSignature fieldBaseSignature = fieldBaseType.ToTypeSignature();
-			//Load reader
-			processor.Add(CilOpCodes.Ldarg_1);
-
-			//Get ReadAsset
-			MethodDefinition readMethod = arrayDepth switch
+			if (parameter.IsArrayOrPrimitive())
 			{
-				0 => assetReaderDefinition!.Methods.First(m => m.Name == "ReadAsset"),
-				1 => assetReaderDefinition!.Methods.First(m => m.Name == "ReadAssetList" && m.Parameters.Count == 1),
-				2 => assetReaderDefinition!.Methods.First(m => m.Name == "ReadAssetListList" && m.Parameters.Count == 1),
-				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth), $"ReadAssetType does not support array depth '{arrayDepth}'"),
-			};
-
-			//Make generic ReadAsset<T>
-			MethodSpecification genericInst = MethodUtils.MakeGenericInstanceMethod(SharedState.Instance.Importer, readMethod, fieldBaseSignature);
-
-			if (arrayDepth > 0)//ReadAssetArray and ReadAssetArrayArray have an allowAlignment parameter
-			{
-				processor.Add(CilOpCodes.Ldc_I4, 0);//load false onto the stack
-			}
-
-			//Call it
-			processor.Add(CilOpCodes.Call, genericInst);
-
-			TypeSignature fieldFullType = arrayDepth switch
-			{
-				0 => fieldBaseSignature,
-				1 => fieldBaseSignature.MakeAssetListType(),
-				2 => fieldBaseSignature.MakeAssetListType().MakeAssetListType(),
-				_ => throw new ArgumentOutOfRangeException(nameof(arrayDepth)),
-			};
-
-			//processor.AddDefaultValue(fieldFullType);
-
-			return fieldFullType;
-		}
-
-		private static void ReadByteArrayToField(UniversalNode node, CilInstructionCollection processor, FieldDefinition field)
-		{
-			//Load "this" for field store later
-			processor.Add(CilOpCodes.Ldarg_0);
-			ReadByteArrayWithoutAligning(node, processor);
-			//Store result in field
-			processor.Add(CilOpCodes.Stfld, field);
-			MaybeAlignBytes(node, processor);
-		}
-
-		private static CilLocalVariable ReadByteArrayToLocal(UniversalNode node, CilInstructionCollection processor)
-		{
-			ReadByteArrayWithoutAligning(node, processor);
-			CilLocalVariable local = new CilLocalVariable(SharedState.Instance.Importer.UInt8.MakeSzArrayType());
-			processor.Owner.LocalVariables.Add(local);
-			processor.Add(CilOpCodes.Stloc, local);
-			MaybeAlignBytes(node, processor);
-			return local;
-		}
-
-		private static void ReadByteArrayWithoutAligning(UniversalNode node, CilInstructionCollection processor)
-		{
-			//Load reader
-			processor.Add(CilOpCodes.Ldarg_1);
-
-			//Call it
-			processor.Add(CilOpCodes.Call, readByteArrayMethod!);
-		}
-
-		private static void ReadVectorToField(UniversalNode node, CilInstructionCollection processor, FieldDefinition field, int arrayDepth, UnityVersion version)
-		{
-			UniversalNode listTypeNode = node.SubNodes[0];
-			if (listTypeNode.TypeName is "Array")
-			{
-				ReadArrayToField(listTypeNode, processor, field, arrayDepth, version);
+				MethodSignature methodSignature = MethodSignature.CreateStatic(parameter);
+				MethodDefinition method = new MethodDefinition($"{ReadMethod}_{uniqueName}", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, methodSignature);
+				method.CilMethodBody = new CilMethodBody(method);
+				method.AddParameter(assetReaderReference!.ToTypeSignature(), "reader");
+				method.AddExtensionAttribute(SharedState.Instance.Importer);
+				return method;
 			}
 			else
 			{
-				throw new ArgumentException($"Invalid subnode for {node.TypeName}", nameof(node));
+				MethodSignature methodSignature = MethodSignature.CreateStatic(SharedState.Instance.Importer.Void);
+				MethodDefinition method = new MethodDefinition($"{ReadMethod}_{uniqueName}", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, methodSignature);
+				method.CilMethodBody = new CilMethodBody(method);
+				method.AddParameter(parameter, "value");
+				method.AddParameter(assetReaderReference!.ToTypeSignature(), "reader");
+				method.AddExtensionAttribute(SharedState.Instance.Importer);
+				return method;
 			}
-
-			MaybeAlignBytes(node, processor);
 		}
 
-		private static CilLocalVariable ReadVectorToLocal(UniversalNode node, CilInstructionCollection processor, int arrayDepth, UnityVersion version)
+		private static CilInstruction AddCall(this CilInstructionCollection processor, IMethodDescriptor method)
 		{
-			UniversalNode listTypeNode = node.SubNodes[0];
-			if (listTypeNode.TypeName is "Array")
+			return method is MethodDefinition definition && definition.IsStatic
+				? processor.Add(CilOpCodes.Call, method)
+				: processor.Add(CilOpCodes.Callvirt, method);
+		}
+
+		private static IMethodDefOrRef GetDefaultConstructor(this TypeSignature type)
+		{
+			return type switch
 			{
-				CilLocalVariable result = ReadArrayToLocal(listTypeNode, processor, arrayDepth, version);
-				MaybeAlignBytes(node, processor);
-				return result;
-			}
-			else
-			{
-				throw new ArgumentException($"Invalid subnode for {node.TypeName}", nameof(node));
-			}
-		}
-
-		private static void ReadArrayToField(UniversalNode node, CilInstructionCollection processor, FieldDefinition field, int arrayDepth, UnityVersion version)
-		{
-			UniversalNode listTypeNode = node.SubNodes[1];
-			if (SharedState.Instance.SubclassGroups.TryGetValue(listTypeNode.TypeName, out SubclassGroup? subclassGroup))
-			{
-				TypeDefinition fieldType = subclassGroup.GetTypeForVersion(version);
-				ReadAssetTypeToField(listTypeNode, processor, field, fieldType, arrayDepth);
-			}
-			else
-			{
-				switch (listTypeNode.TypeName)
-				{
-					case "vector" or "set" or "staticvector":
-						ReadVectorToField(listTypeNode, processor, field, arrayDepth + 1, version);
-						break;
-					case "Array":
-						ReadArrayToField(listTypeNode, processor, field, arrayDepth + 1, version);
-						break;
-					case "map":
-						if (arrayDepth > 1)
-						{
-							throw new("ReadArray does not support dictionary arrays with a depth > 1. Found in {node.Name} (field {field}) of {processor.Body.Method.DeclaringType}");
-						}
-
-						ReadDictionaryArrayToField(processor, field, node, version);
-						break;
-					case "pair":
-						if (arrayDepth > 2)
-						{
-							throw new($"ReadArray does not support Pair arrays with a depth > 2. Found in {node.Name} (field {field}) of {processor.Owner.Owner.DeclaringType}");
-						}
-
-						if (arrayDepth == 2)
-						{
-							ReadPairArrayArrayToField(processor, field, listTypeNode, version);
-							break;
-						}
-
-						ReadPairArrayToField(processor, field, listTypeNode, version);
-						break;
-					default:
-						ReadPrimitiveTypeToField(listTypeNode, processor, field, arrayDepth);
-						break;
-				}
-			}
-
-			MaybeAlignBytes(node, processor);
-		}
-
-		private static CilLocalVariable ReadArrayToLocal(UniversalNode node, CilInstructionCollection processor, int arrayDepth, UnityVersion version)
-		{
-			UniversalNode listTypeNode = node.SubNodes[1];
-			if (SharedState.Instance.SubclassGroups.TryGetValue(listTypeNode.TypeName, out SubclassGroup? subclassGroup))
-			{
-				TypeDefinition fieldType = subclassGroup.GetTypeForVersion(version);
-				return ReadAssetTypeToLocal(listTypeNode, processor, fieldType, arrayDepth);
-			}
-			switch (listTypeNode.TypeName)
-			{
-				case "vector" or "set" or "staticvector":
-					return ReadVectorToLocal(listTypeNode, processor, arrayDepth + 1, version);
-				case "Array":
-					return ReadArrayToLocal(listTypeNode, processor, arrayDepth + 1, version);
-				case "map":
-					if (arrayDepth > 1)
-					{
-						throw new NotSupportedException($"ReadArray does not support dictionary arrays with a depth > 1. Found in {node.Name} of {processor.Owner.Owner.DeclaringType}");
-					}
-
-					return ReadDictionaryArrayToLocal(processor, node, version);
-				case "pair":
-					if (arrayDepth > 2)
-					{
-						throw new($"ReadArray does not support Pair arrays with a depth > 2. Found in {node.Name} of {processor.Owner.Owner.DeclaringType}");
-					}
-
-					if (arrayDepth == 2)
-					{
-						return ReadPairArrayArrayToLocal(processor, listTypeNode, version);
-					}
-
-					return ReadPairArrayToLocal(processor, listTypeNode, version);
-				default:
-					return ReadPrimitiveTypeToLocal(listTypeNode, processor, arrayDepth);
-			}
-		}
-
-		private static void ReadPairArrayToField(CilInstructionCollection processor, FieldDefinition field, UniversalNode listTypeNode, UnityVersion version)
-		{
-			CilLocalVariable arrayLocal = ReadPairArrayToLocal(processor, listTypeNode, version);
-			//Now just store field
-			processor.Add(CilOpCodes.Ldarg_0); //Load this
-			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array
-			processor.Add(CilOpCodes.Stfld, field); //Store field
-		}
-
-		private static CilLocalVariable ReadPairArrayToLocal(CilInstructionCollection processor, UniversalNode listTypeNode, UnityVersion version)
-		{
-			//Strategy:
-			//Read Count
-			//Make array of size count
-			//For i = 0 .. count
-			//	Read pair, store in array
-			//Store array in field
-
-			//Resolve things we'll need
-			UniversalNode first = listTypeNode.SubNodes[0];
-			UniversalNode second = listTypeNode.SubNodes[1];
-			GenericInstanceTypeSignature genericKvp = GenericTypeResolver.ResolvePairType(first, second, version);
-
-			//SzArrayTypeSignature arrayType = genericKvp.MakeSzArrayType();
-			GenericInstanceTypeSignature arrayType = genericKvp.MakeAssetListType();
-
-			//Read length of array
-			processor.Add(CilOpCodes.Ldarg_1); //Load reader
-			processor.Add(CilOpCodes.Call, readInt32Method!); //Call int reader
-
-			//Make local and store length in it
-			CilLocalVariable countLocal = new CilLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-			processor.Owner.LocalVariables.Add(countLocal); //Add to method
-			processor.Add(CilOpCodes.Stloc, countLocal); //Store count in it
-
-			//Create empty array and local for it
-			//processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			//processor.Add(CilOpCodes.Newarr, genericKvp.ToTypeDefOrRef()); //Create new array of kvp with given count
-			processor.Add(CilOpCodes.Newobj, GetAssetListConstructor(genericKvp));
-			CilLocalVariable arrayLocal = new CilLocalVariable(arrayType); //Create local
-			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
-			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
-
-			//Make an i
-			CilLocalVariable iLocal = new CilLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-			processor.Owner.LocalVariables.Add(iLocal); //Add to method
-			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
-
-			//Create a label for a dummy instruction to jump back to
-			CilInstructionLabel jumpTargetLabel = new CilInstructionLabel();
-
-			//Create an empty, unconditional branch which will jump down to the loop condition.
-			//This converts the do..while loop into a for loop.
-			CilInstruction unconditionalBranch = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
-
-			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			jumpTargetLabel.Instruction = processor.Add(CilOpCodes.Nop); //Create a dummy instruction to jump back to
-
-			//Read element at index i of array
-			CilLocalVariable pairLocal = ReadPairToLocal(listTypeNode, processor, version); //Read the pair
-			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array local
-														 //processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Ldloc, pairLocal);
-			//processor.Add(CilOpCodes.Stelem, genericKvp.ToTypeDefOrRef()); //Store in array
-			//processor.Add(CilOpCodes.Call, GetAssetListSetItemMethod(genericKvp));
-			processor.Add(CilOpCodes.Call, GetAssetListAddMethod(genericKvp));
-
-			//Increment i
-			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Add(CilOpCodes.Add); //Add 
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
-
-			//Jump to start of loop if i < count
-			ICilLabel loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
-			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStartLabel;
-
-			return arrayLocal;
-		}
-
-		private static void ReadPairArrayArrayToField(CilInstructionCollection processor, FieldDefinition field, UniversalNode listTypeNode, UnityVersion version)
-		{
-			CilLocalVariable arrayLocal = ReadPairArrayArrayToLocal(processor, listTypeNode, version);
-			//Now just store field
-			processor.Add(CilOpCodes.Ldarg_0); //Load this
-			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array
-			processor.Add(CilOpCodes.Stfld, field); //Store field
-		}
-
-		private static CilLocalVariable ReadPairArrayArrayToLocal(CilInstructionCollection processor, UniversalNode pairNode, UnityVersion version)
-		{
-			//Strategy:
-			//Read Count
-			//Make array of size count
-			//For i = 0 .. count
-			//	Read array of pairs, store in array of arrays
-			//Store array in field
-
-			//Resolve things we'll need
-			UniversalNode first = pairNode.SubNodes[0];
-			UniversalNode second = pairNode.SubNodes[1];
-			GenericInstanceTypeSignature genericKvp = GenericTypeResolver.ResolvePairType(first, second, version);
-
-			//SzArrayTypeSignature arrayType = genericKvp.MakeSzArrayType();
-			GenericInstanceTypeSignature arrayType = genericKvp.MakeAssetListType();
-
-			//Read length of array
-			processor.Add(CilOpCodes.Ldarg_1); //Load reader
-			processor.Add(CilOpCodes.Call, readInt32Method!); //Call int reader
-
-			//Make local and store length in it
-			CilLocalVariable countLocal = new CilLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-			processor.Owner.LocalVariables.Add(countLocal); //Add to method
-			processor.Add(CilOpCodes.Stloc, countLocal); //Store count in it
-
-			//Create empty array and local for it
-			//processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			//processor.Add(CilOpCodes.Newarr, arrayType.ToTypeDefOrRef()); //Create new array of arrays of kvps with given count
-			processor.Add(CilOpCodes.Newobj, GetAssetListConstructor(arrayType));
-			//CilLocalVariable arrayLocal = new CilLocalVariable(arrayType.MakeSzArrayType()); //Create local
-			CilLocalVariable arrayLocal = new CilLocalVariable(arrayType.MakeAssetListType()); //Create local
-			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
-			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
-
-			//Make an i
-			CilLocalVariable iLocal = new CilLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-			processor.Owner.LocalVariables.Add(iLocal); //Add to method
-			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
-
-			//Create an empty, unconditional branch which will jump down to the loop condition.
-			//This converts the do..while loop into a for loop.
-			CilInstruction unconditionalBranch = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
-
-			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			ICilLabel jumpTarget = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
-
-			//Read element at index i of array
-			CilLocalVariable pairArrayLocal = ReadPairArrayToLocal(processor, pairNode, version); //Read the array of pairs
-
-			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array of arrays local
-														 //processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Ldloc, pairArrayLocal); //Load array of pairs
-															 //processor.Add(CilOpCodes.Stelem, arrayType.ToTypeDefOrRef()); //Store in array
-															 //processor.Add(CilOpCodes.Call, GetAssetListSetItemMethod(arrayType));
-			processor.Add(CilOpCodes.Call, GetAssetListAddMethod(arrayType));
-
-			//Increment i
-			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Add(CilOpCodes.Add); //Add 
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
-
-			//Jump to start of loop if i < count
-			ICilLabel loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
-			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStartLabel;
-
-			MaybeAlignBytes(pairNode, processor);
-
-			return arrayLocal;
-		}
-
-		private static void ReadDictionaryArrayToField(CilInstructionCollection processor, FieldDefinition field, UniversalNode node, UnityVersion version)
-		{
-			CilLocalVariable arrayLocal = ReadDictionaryArrayToLocal(processor, node, version);
-			//Now just store field
-			processor.Add(CilOpCodes.Ldarg_0); //Load this
-			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array
-			processor.Add(CilOpCodes.Stfld, field); //Store field
-		}
-
-		private static CilLocalVariable ReadDictionaryArrayToLocal(CilInstructionCollection processor, UniversalNode node, UnityVersion version)
-		{
-			//you know the drill
-			//read count
-			//make empty array
-			//for i = 0 .. count 
-			//  read an entire bloody dictionary
-			//set field
-
-			//we need an array type, so let's get that
-			UniversalNode dictNode = node.SubNodes[1];
-			GenericInstanceTypeSignature dictType = GenericTypeResolver.ResolveDictionaryType(dictNode, version);
-			//SzArrayTypeSignature arrayType = dictType.MakeSzArrayType(); //cursed. that is all.
-			GenericInstanceTypeSignature arrayType = dictType.MakeAssetListType();
-
-			//Read length of array
-			processor.Add(CilOpCodes.Ldarg_1); //Load reader
-			processor.Add(CilOpCodes.Call, readInt32Method!); //Call int reader
-
-			//Make local and store length in it
-			CilLocalVariable countLocal = new CilLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-			processor.Owner.LocalVariables.Add(countLocal); //Add to method
-			processor.Add(CilOpCodes.Stloc, countLocal); //Store count in it
-
-			//Create empty array and local for it
-			//processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			//processor.Add(CilOpCodes.Newarr, dictType.ToTypeDefOrRef()); //Create new array of dictionaries with given count
-			processor.Add(CilOpCodes.Newobj, GetAssetListConstructor(dictType));
-			CilLocalVariable arrayLocal = new CilLocalVariable(arrayType); //Create local
-			processor.Owner.LocalVariables.Add(arrayLocal); //Add to method
-			processor.Add(CilOpCodes.Stloc, arrayLocal); //Store array in local
-
-			//Make an i
-			CilLocalVariable iLocal = new CilLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-			processor.Owner.LocalVariables.Add(iLocal); //Add to method
-			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
-
-			//Create an empty, unconditional branch which will jump down to the loop condition.
-			//This converts the do..while loop into a for loop.
-			CilInstruction unconditionalBranch = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
-
-			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			ICilLabel jumpTarget = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
-
-			//Read element at index i of array
-			CilLocalVariable dictLocal = ReadDictionaryToLocal(dictNode, processor, version);
-			processor.Add(CilOpCodes.Ldloc, arrayLocal); //Load array local
-														 //processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load dict
-														//processor.Add(CilOpCodes.Stelem, dictType.ToTypeDefOrRef()); //Store in array
-														//processor.Add(CilOpCodes.Call, GetAssetListSetItemMethod(dictType));
-			processor.Add(CilOpCodes.Call, GetAssetListAddMethod(dictType));
-
-			//Increment i
-			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Add(CilOpCodes.Add); //Add 
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
-
-			//Jump to start of loop if i < count
-			ICilLabel loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
-			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStartLabel;
-
-			MaybeAlignBytes(node, processor);
-
-			return arrayLocal;
-		}
-
-		private static void ReadDictionaryToField(UniversalNode node, CilInstructionCollection processor, FieldDefinition field, UnityVersion version)
-		{
-			CilLocalVariable dictLocal = ReadDictionaryToLocal(node, processor, version);
-			//Now just store field
-			processor.Add(CilOpCodes.Ldarg_0); //Load this
-
-			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load dict
-
-			processor.Add(CilOpCodes.Stfld, field); //Store field
-		}
-
-		private static CilLocalVariable ReadDictionaryToLocal(UniversalNode node, CilInstructionCollection processor, UnityVersion version)
-		{
-			//Strategy:
-			//Read Count
-			//Make dictionary
-			//For i = 0 .. count
-			//	Read key, read value, store in dict
-			//Store dict in field
-
-			//Resolve things we'll need
-			GenericInstanceTypeSignature genericDictType = GenericTypeResolver.ResolveDictionaryType(node, version);
-			IMethodDefOrRef genericDictCtor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, genericDictType, 0);
-			IMethodDefOrRef addMethod = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictType, SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>))!.Methods.Single(m => m.Name == "Add" && m.Parameters.Count == 2));
-
-			//Read length of array
-			processor.Add(CilOpCodes.Ldarg_1); //Load reader
-			processor.Add(CilOpCodes.Call, readInt32Method!); //Call int reader
-
-			//Make local and store length in it
-			CilLocalVariable countLocal = new CilLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-			processor.Owner.LocalVariables.Add(countLocal); //Add to method
-			processor.Add(CilOpCodes.Stloc, countLocal); //Store count in it
-
-			//Create empty dict and local for it
-			processor.Add(CilOpCodes.Newobj, genericDictCtor); //Create new dictionary
-			CilLocalVariable dictLocal = new CilLocalVariable(genericDictType); //Create local
-			processor.Owner.LocalVariables.Add(dictLocal); //Add to method
-			processor.Add(CilOpCodes.Stloc, dictLocal); //Store dict in local
-
-			//Make an i
-			CilLocalVariable iLocal = new CilLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-			processor.Owner.LocalVariables.Add(iLocal); //Add to method
-			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
-
-			//Create an empty, unconditional branch which will jump down to the loop condition.
-			//This converts the do..while loop into a for loop.
-			CilInstruction unconditionalBranch = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
-
-			//Now we just read key + value, increment i, compare against count, and jump back to here if it's less
-			ICilLabel jumpTarget = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
-
-			//Read ith key-value pair of dict 
-			CilLocalVariable local1 = ReadContentToLocal(node.SubNodes[0].SubNodes[1].SubNodes[0], processor, version); //Load first
-			CilLocalVariable local2 = ReadContentToLocal(node.SubNodes[0].SubNodes[1].SubNodes[1], processor, version); //Load second
-			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load dict local
-			processor.Add(CilOpCodes.Ldloc, local1); //Load 1st local
-			processor.Add(CilOpCodes.Ldloc, local2); //Load 2nd local
-			processor.Add(CilOpCodes.Call, addMethod); //Call Add(TKey, TValue)
-
-			//Increment i
-			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Add(CilOpCodes.Add); //Add 
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
-
-			//Jump to start of loop if i < count
-			ICilLabel loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
-			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Blt, jumpTarget); //Jump back up if less than
-			unconditionalBranch.Operand = loopConditionStartLabel;
-
-			MaybeAlignBytes(node, processor);
-
-			return dictLocal;
-		}
-
-		private static void ReadPairToField(UniversalNode node, CilInstructionCollection processor, FieldDefinition field, UnityVersion version)
-		{
-			//Load this for later usage
-			processor.Add(CilOpCodes.Ldarg_0);
-
-			ReadPair(node, processor, version);
-
-			//Store in field if desired
-			processor.Add(CilOpCodes.Stfld, field);
-		}
-
-		private static CilLocalVariable ReadPairToLocal(UniversalNode node, CilInstructionCollection processor, UnityVersion version)
-		{
-			TypeSignature pairType = ReadPair(node, processor, version);
-			CilLocalVariable local = new CilLocalVariable(pairType);
-			processor.Owner.LocalVariables.Add(local);
-			processor.Add(CilOpCodes.Stloc, local);
-			return local;
-		}
-
-		private static TypeSignature ReadPair(UniversalNode node, CilInstructionCollection processor, UnityVersion version)
-		{
-			//Read one, read two, construct tuple, store field
-			//Passing a null field to any of the Read generators causes no field store or this load to be emitted
-			//Which is just what we want
-			UniversalNode first = node.SubNodes[0];
-			UniversalNode second = node.SubNodes[1];
-
-			//Load the left side of the pair
-			CilLocalVariable local1 = ReadContentToLocal(first, processor, version);
-
-			//Load the right side of the pair
-			CilLocalVariable local2 = ReadContentToLocal(second, processor, version);
-
-			processor.Add(CilOpCodes.Ldloc, local1);
-			processor.Add(CilOpCodes.Ldloc, local2);
-
-			GenericInstanceTypeSignature genericKvp = GenericTypeResolver.ResolvePairType(first, second, version);
-
-			IMethodDefOrRef genericCtor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, genericKvp, 2);
-
-			//Call constructor
-			processor.Add(CilOpCodes.Newobj, genericCtor);
-
-			return genericKvp;
-		}
-
-		private static IMethodDefOrRef GetAssetListSetItemMethod(TypeSignature typeArgument)
-		{
-			MethodDefinition method = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == $"set_Item");
-			GenericInstanceTypeSignature assetListTypeSignature = typeArgument.MakeAssetListType();
-			return MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, assetListTypeSignature, method);
-		}
-
-		private static IMethodDefOrRef GetAssetListAddMethod(TypeSignature typeArgument)
-		{
-			MethodDefinition method = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == $"Add");
-			GenericInstanceTypeSignature assetListTypeSignature = typeArgument.MakeAssetListType();
-			return MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, assetListTypeSignature, method);
-		}
-
-		private static IMethodDefOrRef GetAssetListConstructor(TypeSignature typeArgument)
-		{
-			GenericInstanceTypeSignature assetListTypeSignature = typeArgument.MakeAssetListType();
-			return MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, assetListTypeSignature, 0);
-		}
-
-		private static GenericInstanceTypeSignature MakeAssetListType(this TypeSignature typeArgument)
-		{
-			return SharedState.Instance.Importer.ImportType(typeof(AssetList<>)).MakeGenericInstanceType(typeArgument);
+				TypeDefOrRefSignature typeDefOrRefSignature => typeDefOrRefSignature.Type is TypeDefinition typeDefinition
+											? typeDefinition.GetDefaultConstructor()
+											: throw new InvalidOperationException(),
+				GenericInstanceTypeSignature genericInstanceTypeSignature => MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, genericInstanceTypeSignature, 0),
+				_ => throw new NotSupportedException(),
+			};
 		}
 	}
 }

@@ -57,7 +57,7 @@ namespace AssetRipper.AssemblyDumper
 			}
 
 			//Construct a KeyValuePair
-			ITypeDefOrRef kvpType = SharedState.Instance.Importer.ImportType(typeof(NullableKeyValuePair<,>));
+			ITypeDefOrRef kvpType = SharedState.Instance.Importer.ImportType(typeof(AssetPair<,>));
 			GenericInstanceTypeSignature genericKvp = kvpType.MakeGenericInstanceType(firstType, secondType);
 			return genericKvp;
 		}
