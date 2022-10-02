@@ -42,8 +42,9 @@
 
 		public static CilInstruction AddLoadElement(this CilInstructionCollection processor, TypeSignature elementType)
 		{
-			return elementType is CorLibTypeSignature corLibTypeSignature
-				? corLibTypeSignature.ElementType switch
+			return elementType switch
+			{
+				CorLibTypeSignature corLibTypeSignature => corLibTypeSignature.ElementType switch
 				{
 					ElementType.Boolean => processor.Add(CilOpCodes.Ldelem_U1),
 					ElementType.I1 => processor.Add(CilOpCodes.Ldelem_I1),
@@ -56,9 +57,35 @@
 					ElementType.U8 => processor.Add(CilOpCodes.Ldelem_I8),
 					ElementType.R4 => processor.Add(CilOpCodes.Ldelem_R4),
 					ElementType.R8 => processor.Add(CilOpCodes.Ldelem_R8),
-					_ => processor.Add(CilOpCodes.Ldelem_Ref),
-				}
-				: processor.Add(CilOpCodes.Ldelem_Ref);
+					_ => elementType.IsValueType ? processor.Add(CilOpCodes.Ldelem) : processor.Add(CilOpCodes.Ldelem_Ref)
+				},
+				GenericParameterSignature => processor.Add(CilOpCodes.Ldelem),
+				_ => elementType.IsValueType ? processor.Add(CilOpCodes.Ldelem) : processor.Add(CilOpCodes.Ldelem_Ref)
+			};
+		}
+
+		public static CilInstruction AddStoreElement(this CilInstructionCollection processor, TypeSignature elementType)
+		{
+			return elementType switch
+			{
+				CorLibTypeSignature corLibTypeSignature => corLibTypeSignature.ElementType switch
+				{
+					ElementType.Boolean => processor.Add(CilOpCodes.Stelem_I1),
+					ElementType.I1 => processor.Add(CilOpCodes.Stelem_I1),
+					ElementType.U1 => processor.Add(CilOpCodes.Stelem_I1),
+					ElementType.I2 => processor.Add(CilOpCodes.Stelem_I2),
+					ElementType.U2 => processor.Add(CilOpCodes.Stelem_I2),
+					ElementType.I4 => processor.Add(CilOpCodes.Stelem_I4),
+					ElementType.U4 => processor.Add(CilOpCodes.Stelem_I4),
+					ElementType.I8 => processor.Add(CilOpCodes.Stelem_I8),
+					ElementType.U8 => processor.Add(CilOpCodes.Stelem_I8),
+					ElementType.R4 => processor.Add(CilOpCodes.Stelem_R4),
+					ElementType.R8 => processor.Add(CilOpCodes.Stelem_R8),
+					_ => processor.Add(CilOpCodes.Stelem_Ref),
+				},
+				GenericParameterSignature => processor.Add(CilOpCodes.Stelem),
+				_ => elementType.IsValueType ? processor.Add(CilOpCodes.Stelem) : processor.Add(CilOpCodes.Stelem_Ref)
+			};
 		}
 	}
 }
