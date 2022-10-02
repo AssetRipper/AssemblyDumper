@@ -7,11 +7,16 @@ using AssetRipper.Core.IO;
 using AssetRipper.Core.IO.Extensions;
 using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
 using AssetRipper.Yaml;
+using AssetRipper.Yaml.Extensions;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass102_FillYamlMethods
 	{
+		private const string ExportYamlRelease = nameof(UnityAssetBase.ExportYamlRelease);
+		private const string ExportYamlEditor = nameof(UnityAssetBase.ExportYamlEditor);
+		private static string ExportYamlMethod => emittingRelease ? ExportYamlRelease : ExportYamlEditor;
+
 		/// <summary>
 		/// Uses original names for robustness and clarity
 		/// </summary>
@@ -48,8 +53,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void Initialize()
 		{
-			Func<MethodDefinition, bool> filter = m => m.Name == nameof(YamlSerializedVersionExtensions.AddSerializedVersion);
-			addSerializedVersionMethod = SharedState.Instance.Importer.ImportMethod(typeof(YamlSerializedVersionExtensions), filter);
+			addSerializedVersionMethod = SharedState.Instance.Importer.ImportMethod(typeof(YamlSerializedVersionExtensions), 
+				m => m.Name == nameof(YamlSerializedVersionExtensions.AddSerializedVersion));
 
 			mappingAddMethod = SharedState.Instance.Importer.ImportMethod<YamlMappingNode>(
 				m => m.Name == nameof(YamlMappingNode.Add) &&
@@ -57,13 +62,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 				m.Parameters[0].ParameterType.Name == nameof(YamlNode) &&
 				m.Parameters[1].ParameterType.Name == nameof(YamlNode));
 
-			Func<MethodDefinition, bool> filter1 = m => m.Name == "ExportYaml" && m.Parameters.Count == 1;
-			byteArrayToYamlMethod = SharedState.Instance.Importer.ImportMethod(typeof(AssetRipper.Yaml.Extensions.YamlArrayExtensions), filter1);
+			byteArrayToYamlMethod = SharedState.Instance.Importer.ImportMethod(typeof(YamlArrayExtensions), 
+				m => m.Name == nameof(YamlArrayExtensions.ExportYaml) && m.Parameters.Count == 1);
 
-			addTypelessDataMethod = SharedState.Instance.Importer.ImportMethod(typeof(AssetRipper.Yaml.Extensions.YamlArrayExtensions), m => m.Name == "AddTypelessData");
+			addTypelessDataMethod = SharedState.Instance.Importer.ImportMethod(typeof(YamlArrayExtensions), 
+				m => m.Name == nameof(YamlArrayExtensions.AddTypelessData));
 
 			sequenceAddMethod = SharedState.Instance.Importer.ImportMethod<YamlSequenceNode>(
-				m => m.Name == "Add" &&
+				m => m.Name == nameof(YamlSequenceNode.Add) &&
 				m.Parameters.Count == 1 &&
 				m.Parameters[0].ParameterType.Name == nameof(YamlNode));
 
@@ -95,13 +101,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void FillEditorMethod(this GeneratedClassInstance instance, Dictionary<string, FieldDefinition> fields, bool isImporter)
 		{
-			MethodDefinition editorModeYamlMethod = instance.Type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlEditor));
+			MethodDefinition editorModeYamlMethod = instance.Type.Methods.Single(m => m.Name == ExportYamlEditor);
 			editorModeYamlMethod.FillMethod(instance.Class.EditorRootNode, fields, instance.VersionRange.Start, isImporter);
 		}
 
 		private static void FillReleaseMethod(this GeneratedClassInstance instance, Dictionary<string, FieldDefinition> fields, bool isImporter)
 		{
-			MethodDefinition editorModeYamlMethod = instance.Type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlRelease));
+			MethodDefinition editorModeYamlMethod = instance.Type.Methods.Single(m => m.Name == ExportYamlRelease);
 			editorModeYamlMethod.FillMethod(instance.Class.EditorRootNode, fields, instance.VersionRange.Start, isImporter);
 		}
 
@@ -605,14 +611,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static MethodDefinition GetYamlExportMethod(this TypeDefinition type)
 		{
-			if (emittingRelease)
-			{
-				return type.Methods.Single(m => m.Name == "ExportYamlRelease");
-			}
-			else
-			{
-				return type.Methods.Single(m => m.Name == "ExportYamlEditor");
-			}
+			return type.Methods.Single(m => m.Name == ExportYamlMethod);
 		}
 
 		private static IMethodDefOrRef GetScalarNodeConstructor(TypeSignature parameterType)
