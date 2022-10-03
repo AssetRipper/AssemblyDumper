@@ -40,6 +40,43 @@ namespace AssetRipper.AssemblyDumper
 
 		public bool IgnoreInMetaFiles => ((TransferMetaFlags)MetaFlag).IsIgnoreInMetaFiles();
 		public bool AlignBytes => ((TransferMetaFlags)MetaFlag).IsAlignBytes();
+		public bool TreatIntegerAsBoolean => ((TransferMetaFlags)MetaFlag).IsTreatIntegerValueAsBoolean();
+		private bool TreatIntegerAsChar => ((TransferMetaFlags)MetaFlag).IsCharPropertyMask();
+
+		public NodeType NodeType
+		{
+			get
+			{
+				return subNodes.Count == 0
+					? TypeName switch
+					{
+						"bool" => NodeType.Boolean,
+						//"char" => NodeType.Character,
+						"char" => NodeType.UInt8,
+						"SInt8" => NodeType.Int8,
+						"UInt8" => NodeType.UInt8,
+						"short" or "SInt16" => NodeType.Int16,
+						"ushort" or "UInt16" or "unsigned short" => TreatIntegerAsChar ? NodeType.Character : NodeType.UInt16,
+						"int" or "SInt32" or "Type*" => NodeType.Int32,
+						"uint" or "UInt32" or "unsigned int" => NodeType.UInt32,
+						"SInt64" or "long long" => NodeType.Int64,
+						"UInt64" or "FileSize" or "unsigned long long" => NodeType.UInt64,
+						"float" => NodeType.Single,
+						"double" => NodeType.Double,
+						_ => NodeType.Type,
+					}
+					: TypeName switch
+					{
+						"Array" => NodeType.Array,
+						"vector" or "staticvector" or "set" => NodeType.Vector,
+						"map" => NodeType.Map,
+						"pair" => NodeType.Pair,
+						"TypelessData" => NodeType.TypelessData,
+						"string" => NodeType.String,
+						_ => NodeType.Type,
+					};
+			}
+		}
 
 		public UniversalNode()
 		{

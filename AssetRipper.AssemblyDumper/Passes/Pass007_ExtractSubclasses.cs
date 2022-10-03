@@ -75,19 +75,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 			List<(UniversalNode?, UniversalNode?)> fieldList = GenerateFieldList(releaseNode, editorNode);
 			foreach ((UniversalNode? releaseField, UniversalNode? editorField) in fieldList)
 			{
-				string typeName = releaseField?.TypeName! ?? editorField!.TypeName!;
-				if (PrimitiveTypes.primitiveNames.Contains(typeName))
+				UniversalNode mainNode = releaseField ?? editorField ?? throw new NullReferenceException();
+				NodeType nodeType = mainNode.NodeType;
+				
+				if (!nodeType.IsPrimitive())
 				{
-					continue;
+					if (nodeType == NodeType.Type)
+					{
+						List<SubclassCandidate> candidateList = GetOrAddSubclassCandidateList(mainNode.TypeName);
+						candidateList.Add(new SubclassCandidate(releaseField, editorField, classData.VersionRange));
+					}
+					AddDependentTypes(releaseField, editorField, classData);
 				}
-
-				if (!PrimitiveTypes.generics.Contains(typeName))
-				{
-					List<SubclassCandidate> candidateList = GetOrAddSubclassCandidateList(typeName);
-					candidateList.Add(new SubclassCandidate(releaseField, editorField, classData.VersionRange));
-				}
-
-				AddDependentTypes(releaseField, editorField, classData);
 			}
 		}
 

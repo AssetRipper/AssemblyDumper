@@ -78,7 +78,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 
 			node.Name = GetValidFieldName(node.Name!);
-			if (!PrimitiveTypes.primitivesAndGenerics.Contains(node.TypeName)) //don't rename special type names like long long, map, or Array
+			if (node.NodeType == NodeType.Type) //don't rename special type names like long long, map, or Array
 			{
 				node.TypeName = GetValidTypeName(node.TypeName!);
 			}

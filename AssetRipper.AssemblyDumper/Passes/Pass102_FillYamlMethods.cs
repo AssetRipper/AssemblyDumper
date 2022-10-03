@@ -171,23 +171,21 @@ namespace AssetRipper.AssemblyDumper.Passes
 				return;
 			}
 
-			switch (node.TypeName)
+			switch (node.NodeType)
 			{
-				case "vector":
-				case "set":
-				case "staticvector":
+				case NodeType.Vector:
 					processor.AddExportVectorField(node, field, yamlMappingNode, version);
 					return;
-				case "map":
+				case NodeType.Map:
 					processor.AddExportDictionaryField(node, field, yamlMappingNode, version);
 					return;
-				case "pair":
+				case NodeType.Pair:
 					processor.AddExportPairField(node, field, yamlMappingNode, version);
 					return;
-				case "TypelessData": //byte array
+				case NodeType.TypelessData: //byte array
 					processor.AddExportTypelessDataField(node, field, yamlMappingNode);
 					return;
-				case "Array":
+				case NodeType.Array:
 					processor.AddExportArrayField(node, field, yamlMappingNode, version);
 					return;
 				default:
@@ -205,28 +203,26 @@ namespace AssetRipper.AssemblyDumper.Passes
 				return;
 			}
 
-			switch (node.TypeName)
+			switch (node.NodeType)
 			{
-				case "vector":
-				case "set":
-				case "staticvector":
+				case NodeType.Vector:
 					processor.AddLocalForLoadedVector(node, version, out localVariable);
 					return;
-				case "map":
+				case NodeType.Map:
 					processor.AddLocalForLoadedDictionary(node, version, out localVariable);
 					return;
-				case "pair":
+				case NodeType.Pair:
 					processor.AddLocalForLoadedPair(node, out localVariable, version);
 					return;
-				case "TypelessData": //byte array
+				case NodeType.TypelessData: //byte array
 									 //processor.AddLocalForLoadedByteArray(out localVariable);
 									 //return;
 					throw new NotSupportedException("TypelessData");
-				case "Array":
+				case NodeType.Array:
 					processor.AddLocalForLoadedArray(node, version, out localVariable);
 					return;
 				default:
-					processor.AddLocalForLoadedPrimitiveValue(node.TypeName, out localVariable);
+					processor.AddLocalForLoadedPrimitiveValue(node.NodeType, out localVariable);
 					return;
 			}
 		}
@@ -245,7 +241,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
 			processor.AddScalarNodeForString(node.OriginalName);
 			processor.AddLoadField(field);
-			processor.AddScalarNodeForLoadedPrimitiveValue(node.TypeName);
+			processor.AddScalarNodeForLoadedPrimitiveValue(node.NodeType);
 			processor.Add(CilOpCodes.Call, mappingAddMethod);
 		}
 
@@ -279,7 +275,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			UniversalNode firstSubNode = pairNode.SubNodes[0];
 			UniversalNode secondSubNode = pairNode.SubNodes[1];
 			GenericInstanceTypeSignature pairType = GenericTypeResolver.ResolvePairType(firstSubNode, secondSubNode, version);
-			bool firstIsScalar = SharedState.Instance.Importer.GetCppPrimitiveTypeSignature(firstSubNode.TypeName) != null
+			bool firstIsScalar = firstSubNode.NodeType.IsPrimitive()
 				|| firstSubNode.TypeName == Pass002_RenameSubnodes.Utf8StringName
 				|| firstSubNode.TypeName == Pass002_RenameSubnodes.GuidName;
 
@@ -595,15 +591,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Newobj, GetScalarNodeConstructor(SharedState.Instance.Importer.String));
 		}
 
-		private static void AddScalarNodeForLoadedPrimitiveValue(this CilInstructionCollection processor, string typeName)
+		private static void AddScalarNodeForLoadedPrimitiveValue(this CilInstructionCollection processor, NodeType nodeType)
 		{
-			CorLibTypeSignature? type = SharedState.Instance.Importer.GetCppPrimitiveTypeSignature(typeName) ?? throw new ArgumentException(nameof(typeName));
-			processor.Add(CilOpCodes.Newobj, GetScalarNodeConstructor(type));
+			processor.Add(CilOpCodes.Newobj, GetScalarNodeConstructor(nodeType.ToPrimitiveTypeSignature()));
 		}
 
-		private static void AddLocalForLoadedPrimitiveValue(this CilInstructionCollection processor, string typeName, out CilLocalVariable localVariable)
+		private static void AddLocalForLoadedPrimitiveValue(this CilInstructionCollection processor, NodeType nodeType, out CilLocalVariable localVariable)
 		{
-			processor.AddScalarNodeForLoadedPrimitiveValue(typeName);
+			processor.AddScalarNodeForLoadedPrimitiveValue(nodeType);
 			localVariable = new CilLocalVariable(yamlScalarNodeReference.ToTypeSignature());
 			processor.Owner.LocalVariables.Add(localVariable);
 			processor.Add(CilOpCodes.Stloc, localVariable);

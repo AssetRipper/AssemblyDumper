@@ -173,7 +173,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static IMethodDescriptor GetOrMakeMethod(UniversalNode node, TypeSignature type, UnityVersion version)
 		{
-			string uniqueName = GetName(node, version);
+			string uniqueName = UniqueNameFactory.GetReadWriteName(node, version);
 			if (methodDictionary.TryGetValue(uniqueName, out IMethodDescriptor? method))
 			{
 				return method;
@@ -191,11 +191,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 				return method;
 			}
 
-			switch (node.TypeName)
+			switch (node.NodeType)
 			{
-				case "vector":
-				case "set":
-				case "staticvector":
+				case NodeType.Vector:
 					{
 						UniversalNode arrayNode = node.SubNodes[0];
 						UniversalNode elementTypeNode = arrayNode.SubNodes[1];
@@ -214,7 +212,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						}
 					}
 					break;
-				case "map":
+				case NodeType.Map:
 					{
 						UniversalNode arrayNode = node.SubNodes[0];
 						UniversalNode pairNode = arrayNode.SubNodes[1];
@@ -227,7 +225,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						method = MakeDictionaryMethod(uniqueName, firstTypeNode, genericSignature.TypeArguments[0], secondTypeNode, genericSignature.TypeArguments[1], version, align);
 					}
 					break;
-				case "pair":
+				case NodeType.Pair:
 					{
 						UniversalNode firstTypeNode = node.SubNodes[0];
 						UniversalNode secondTypeNode = node.SubNodes[1];
@@ -238,12 +236,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 						method = MakePairMethod(uniqueName, firstTypeNode, genericSignature.TypeArguments[0], secondTypeNode, genericSignature.TypeArguments[1], version, align);
 					}
 					break;
-				case "TypelessData": //byte array
+				case NodeType.TypelessData: //byte array
 					{
 						method = MakeTypelessDataMethod(uniqueName, node.AlignBytes);
 					}
 					break;
-				case "Array":
+				case NodeType.Array:
 					{
 						UniversalNode elementTypeNode = node.SubNodes[1];
 						bool align = node.AlignBytes;
@@ -865,81 +863,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 		}
 
-		private static string GetName(UniversalNode node, UnityVersion version)
-		{
-			if (SharedState.Instance.SubclassGroups.TryGetValue(node.TypeName, out SubclassGroup? subclassGroup))
-			{
-				TypeDefinition fieldType = subclassGroup.GetTypeForVersion(version);
-				return fieldType.Name ?? throw new NullReferenceException();
-			}
-
-			switch (node.TypeName)
-			{
-				case "vector":
-				case "set":
-				case "staticvector":
-					{
-						UniversalNode arrayNode = node.SubNodes[0];
-						UniversalNode listTypeNode = arrayNode.SubNodes[1];
-						string listName = GetName(listTypeNode, version);
-						return node.AlignBytes || arrayNode.AlignBytes ? $"ArrayAlign_{listName}" : $"Array_{listName}";
-					}
-				case "map":
-					{
-						UniversalNode arrayNode = node.SubNodes[0];
-						UniversalNode pairNode = arrayNode.SubNodes[1];
-						UniversalNode firstTypeNode = pairNode.SubNodes[0];
-						UniversalNode secondTypeNode = pairNode.SubNodes[1];
-						string firstTypeName = GetName(firstTypeNode, version);
-						string secondTypeName = GetName(secondTypeNode, version);
-						return node.AlignBytes || arrayNode.AlignBytes
-							? $"MapAlign_{firstTypeName}_{secondTypeName}"
-							: $"Map_{firstTypeName}_{secondTypeName}";
-					}
-				case "pair":
-					{
-						UniversalNode firstTypeNode = node.SubNodes[0];
-						UniversalNode secondTypeNode = node.SubNodes[1];
-						string firstTypeName = GetName(firstTypeNode, version);
-						string secondTypeName = GetName(secondTypeNode, version);
-						return node.AlignBytes ? $"PairAlign_{firstTypeName}_{secondTypeName}" : $"Pair_{firstTypeName}_{secondTypeName}";
-					}
-				case "TypelessData": //byte array
-					{
-						return node.AlignBytes ? "TypelessDataAlign" : "TypelessData";
-					}
-				case "Array":
-					{
-						UniversalNode listTypeNode = node.SubNodes[1];
-						string listName = GetName(listTypeNode, version);
-						return node.AlignBytes ? $"ArrayAlign_{listName}" : $"Array_{listName}";
-					}
-				default:
-					return GetPrimitiveName(node);
-			}
-		}
-
-		private static string GetPrimitiveName(UniversalNode node)
-		{
-			return node.TypeName switch
-			{
-				"bool" => "Boolean",
-				//"char" => "Character",
-				"char" => "UInt8",
-				"SInt8" => "SInt8",
-				"UInt8" => "UInt8",
-				"short" or "SInt16" => "SInt16",
-				"ushort" or "UInt16" or "unsigned short" => "UInt16",
-				"int" or "SInt32" or "Type*" => "SInt32",
-				"uint" or "UInt32" or "unsigned int" => "UInt32",
-				"SInt64" or "long long" => "SInt64",
-				"UInt64" or "FileSize" or "unsigned long long" => "UInt64",
-				"float" => "Single",
-				"double" => "Double",
-				_ => throw new NotSupportedException(node.TypeName),
-			};
-		}
-
 		/// <summary>
 		/// Array and primitive read methods have the Func&lt;AssetReader, T&gt; signature.<br/>
 		/// Others have the Action&lt;T, AssetReader&gt; signature.
@@ -955,21 +878,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static IMethodDescriptor GetPrimitiveMethod(UniversalNode node)
 		{
-			return node.TypeName switch
+			return node.NodeType switch
 			{
-				"bool" => SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadBoolean)),
-				//"char" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadChar)),
-				"char" => SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadByte)),
-				"SInt8" => SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadSByte)),
-				"UInt8" => SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadByte)),
-				"short" or "SInt16" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadInt16)),
-				"ushort" or "UInt16" or "unsigned short" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadUInt16)),
-				"int" or "SInt32" or "Type*" => readInt32Method!,
-				"uint" or "UInt32" or "unsigned int" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadUInt32)),
-				"SInt64" or "long long" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadInt64)),
-				"UInt64" or "FileSize" or "unsigned long long" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadUInt64)),
-				"float" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadSingle)),
-				"double" => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadDouble)),
+				NodeType.Boolean => SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadBoolean)),
+				NodeType.Character => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadChar)),
+				NodeType.Int8 => SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadSByte)),
+				NodeType.UInt8 => SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == nameof(BinaryReader.ReadByte)),
+				NodeType.Int16 => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadInt16)),
+				NodeType.UInt16 => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadUInt16)),
+				NodeType.Int32 => readInt32Method!,
+				NodeType.UInt32 => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadUInt32)),
+				NodeType.Int64 => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadInt64)),
+				NodeType.UInt64 => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadUInt64)),
+				NodeType.Single => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadSingle)),
+				NodeType.Double => SharedState.Instance.Importer.ImportMethod<EndianReader>(m => m.Name == nameof(EndianReader.ReadDouble)),
 				_ => throw new NotSupportedException(node.TypeName),
 			};
 		}

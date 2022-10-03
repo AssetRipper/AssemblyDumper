@@ -64,16 +64,15 @@ namespace AssetRipper.AssemblyDumper
 
 		public static TypeSignature ResolveNode(UniversalNode node, UnityVersion version)
 		{
-			string typeName = node.TypeName!;
-			return typeName switch
+			return node.NodeType switch
 			{
-				"pair" => ResolvePairType(node, version),
-				"map" => ResolveDictionaryType(node, version),
-				"vector" or "set" or "staticvector" => ResolveVectorType(node, version),
-				"TypelessData" => SharedState.Instance.Importer.UInt8.MakeSzArrayType(),
-				"Array" => ResolveArrayType(node, version),
-				_ => SharedState.Instance.Importer.GetCppPrimitiveTypeSignature(typeName)
-						?? SharedState.Instance.SubclassGroups[typeName].GetTypeForVersion(version).ToTypeSignature(),
+				NodeType.Pair => ResolvePairType(node, version),
+				NodeType.Map => ResolveDictionaryType(node, version),
+				NodeType.Vector => ResolveVectorType(node, version),
+				NodeType.TypelessData => SharedState.Instance.Importer.UInt8.MakeSzArrayType(),
+				NodeType.Array => ResolveArrayType(node, version),
+				NodeType.Type => SharedState.Instance.SubclassGroups[node.TypeName].GetTypeForVersion(version).ToTypeSignature(),
+				_ => node.NodeType.ToPrimitiveTypeSignature(),
 			};
 		}
 	}
