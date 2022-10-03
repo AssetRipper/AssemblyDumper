@@ -24,8 +24,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static ITypeDefOrRef? keyValuePairReference;
 		private static TypeDefinition? keyValuePairDefinition;
 
-		private static MethodDefinition? writeAssetDefinition;
 		private static MethodDefinition? writeAssetAlignDefinition;
+		private static MethodDefinition? writeAssetListDefinition;
+		private static MethodDefinition? writeAssetListAlignDefinition;
 
 		private const string WriteRelease = nameof(UnityAssetBase.WriteRelease);
 		private const string WriteEditor = nameof(UnityAssetBase.WriteEditor);
@@ -61,8 +62,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			emittingRelease = true;
 			methodDictionary.Clear();
-			writeAssetDefinition = MakeGenericListMethod(false);
-			writeAssetAlignDefinition = MakeGenericListMethod(true);
+			writeAssetAlignDefinition = MakeGenericAssetAlignMethod();
+			writeAssetListDefinition = MakeGenericListMethod(false);
+			writeAssetListAlignDefinition = MakeGenericListMethod(true);
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
 				foreach (GeneratedClassInstance instance in group.Instances)
@@ -74,8 +76,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			emittingRelease = false;
 			methodDictionary.Clear();
-			writeAssetDefinition = MakeGenericListMethod(false);
-			writeAssetAlignDefinition = MakeGenericListMethod(true);
+			writeAssetAlignDefinition = MakeGenericAssetAlignMethod();
+			writeAssetListDefinition = MakeGenericListMethod(false);
+			writeAssetListAlignDefinition = MakeGenericListMethod(true);
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
 				foreach (GeneratedClassInstance instance in group.Instances)
@@ -92,8 +95,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.HelpersNamespace, $"{WriteMethod}Methods");
 			type.IsPublic = false;
-			type.Methods.Add(writeAssetDefinition!);
 			type.Methods.Add(writeAssetAlignDefinition!);
+			type.Methods.Add(writeAssetListDefinition!);
+			type.Methods.Add(writeAssetListAlignDefinition!);
 			foreach ((string _, IMethodDescriptor method) in methodDictionary.OrderBy(pair => pair.Key))
 			{
 				if (method is MethodDefinition methodDefinition && methodDefinition.DeclaringType is null)
@@ -172,7 +176,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				TypeDefinition typeDefinition = subclassGroup.GetTypeForVersion(version);
 				Debug.Assert(signatureComparer.Equals(typeDefinition.ToTypeSignature(), type));
-				method = typeDefinition.GetMethodByName(WriteMethod);
+				MethodDefinition typeWriteMethod = typeDefinition.GetMethodByName(WriteMethod);
+				method = node.AlignBytes ? writeAssetAlignDefinition!.MakeGenericInstanceMethod(type) : typeWriteMethod;
 				methodDictionary.Add(uniqueName, method);
 				return method;
 			}
@@ -256,6 +261,29 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 
 			methodDictionary.Add(uniqueName, method);
+			return method;
+		}
+
+		private static MethodDefinition MakeGenericAssetAlignMethod()
+		{
+			string uniqueName = "AssetAlign";
+			GenericParameterSignature elementType = new GenericParameterSignature(SharedState.Instance.Module, GenericParameterType.Method, 0);
+			IMethodDefOrRef writeMethod = SharedState.Instance.Importer.ImportMethod<UnityAssetBase>(m => m.Name == WriteMethod);
+			MethodDefinition method = NewWriteMethod(uniqueName, elementType);
+
+			CilInstructionCollection processor = method.GetProcessor();
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldarg_1);
+			processor.Add(CilOpCodes.Callvirt, writeMethod);
+			processor.Add(CilOpCodes.Ldarg_1);
+			processor.AddCall(alignStreamMethod!);
+			processor.Add(CilOpCodes.Ret);
+
+			GenericParameter genericParameter = new GenericParameter("T", GenericParameterAttributes.DefaultConstructorConstraint);
+			genericParameter.Constraints.Add(new GenericParameterConstraint(SharedState.Instance.Importer.ImportType<UnityAssetBase>()));
+			method.GenericParameters.Add(genericParameter);
+			method.Signature!.GenericParameterCount = 1;
+
 			return method;
 		}
 
@@ -407,8 +435,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			if (elementType is TypeDefOrRefSignature typeDefOrRefSignature && typeDefOrRefSignature.Type is TypeDefinition)
 			{
 				return align
-					? writeAssetAlignDefinition!.MakeGenericInstanceMethod(elementType)
-					: writeAssetDefinition!.MakeGenericInstanceMethod(elementType);
+					? writeAssetListAlignDefinition!.MakeGenericInstanceMethod(elementType)
+					: writeAssetListDefinition!.MakeGenericInstanceMethod(elementType);
 			}
 			else
 			{

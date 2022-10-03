@@ -25,6 +25,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static ITypeDefOrRef? keyValuePairReference;
 		private static TypeDefinition? keyValuePairDefinition;
 
+		private static MethodDefinition? readAssetAlignDefinition;
 		private static MethodDefinition? readAssetListDefinition;
 		private static MethodDefinition? readAssetListAlignDefinition;
 		private static MethodDefinition? readAssetDictionaryDefinition;
@@ -52,6 +53,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			emittingRelease = true;
 			methodDictionary.Clear();
+			readAssetAlignDefinition = MakeGenericAssetAlignMethod();
 			readAssetListDefinition = MakeGenericListMethod(false);
 			readAssetListAlignDefinition = MakeGenericListMethod(true);
 			readAssetDictionaryDefinition = MakeGenericDictionaryMethod(false);
@@ -67,6 +69,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			emittingRelease = false;
 			methodDictionary.Clear();
+			readAssetAlignDefinition = MakeGenericAssetAlignMethod();
 			readAssetListDefinition = MakeGenericListMethod(false);
 			readAssetListAlignDefinition = MakeGenericListMethod(true);
 			readAssetDictionaryDefinition = MakeGenericDictionaryMethod(false);
@@ -116,6 +119,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.HelpersNamespace, $"{ReadMethod}Methods");
 			type.IsPublic = false;
+			type.Methods.Add(readAssetAlignDefinition!);
 			type.Methods.Add(readAssetListDefinition!);
 			type.Methods.Add(readAssetListAlignDefinition!);
 			type.Methods.Add(readAssetDictionaryDefinition!);
@@ -183,10 +187,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				TypeDefinition typeDefinition = subclassGroup.GetTypeForVersion(version);
 				Debug.Assert(signatureComparer.Equals(typeDefinition.ToTypeSignature(), type));
-				method = typeDefinition.GetMethodByName(ReadMethod);
-				//method = NewWriteMethod(uniqueName, type);
-				//CilInstructionCollection processor = ((MethodDefinition)method).GetProcessor();
-				//processor.AddNotSupportedException();
+				MethodDefinition typeReadMethod = typeDefinition.GetMethodByName(ReadMethod);
+				method = node.AlignBytes ? readAssetAlignDefinition!.MakeGenericInstanceMethod(type) : typeReadMethod;
 				methodDictionary.Add(uniqueName, method);
 				return method;
 			}
@@ -265,6 +267,29 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 
 			methodDictionary.Add(uniqueName, method);
+			return method;
+		}
+
+		private static MethodDefinition MakeGenericAssetAlignMethod()
+		{
+			string uniqueName = "AssetAlign";
+			GenericParameterSignature elementType = new GenericParameterSignature(SharedState.Instance.Module, GenericParameterType.Method, 0);
+			IMethodDefOrRef readMethod = SharedState.Instance.Importer.ImportMethod<UnityAssetBase>(m => m.Name == ReadMethod);
+			MethodDefinition method = NewMethod(uniqueName, elementType);
+
+			CilInstructionCollection processor = method.GetProcessor();
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldarg_1);
+			processor.Add(CilOpCodes.Callvirt, readMethod);
+			processor.Add(CilOpCodes.Ldarg_1);
+			processor.AddCall(alignStreamMethod!);
+			processor.Add(CilOpCodes.Ret);
+
+			GenericParameter genericParameter = new GenericParameter("T", GenericParameterAttributes.DefaultConstructorConstraint);
+			genericParameter.Constraints.Add(new GenericParameterConstraint(SharedState.Instance.Importer.ImportType<UnityAssetBase>()));
+			method.GenericParameters.Add(genericParameter);
+			method.Signature!.GenericParameterCount = 1;
+
 			return method;
 		}
 

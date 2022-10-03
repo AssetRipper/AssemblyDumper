@@ -7,7 +7,7 @@
 			if (SharedState.Instance.SubclassGroups.TryGetValue(node.TypeName, out SubclassGroup? subclassGroup))
 			{
 				TypeDefinition fieldType = subclassGroup.GetTypeForVersion(version);
-				return fieldType.Name ?? throw new NullReferenceException();
+				return node.AlignBytes ? $"{fieldType.Name}Align" : fieldType.Name ?? throw new NullReferenceException();
 			}
 
 			switch (node.NodeType)
