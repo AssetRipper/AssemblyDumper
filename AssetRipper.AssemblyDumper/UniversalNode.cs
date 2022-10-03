@@ -5,7 +5,7 @@ using AssetRipper.Tpk.TypeTrees;
 
 namespace AssetRipper.AssemblyDumper
 {
-	internal sealed class UniversalNode : IEquatable<UniversalNode?>, IDeepCloneable<UniversalNode>
+	internal sealed class UniversalNode : IEquatable<UniversalNode>, IDeepCloneable<UniversalNode>
 	{
 		/// <summary>
 		/// The current type name
@@ -199,7 +199,7 @@ namespace AssetRipper.AssemblyDumper
 
 		public bool Equals(UniversalNode? other)
 		{
-			return other != null &&
+			return other is not null &&
 				   TypeName == other.TypeName &&
 				   OriginalTypeName == other.OriginalTypeName &&
 				   Name == other.Name &&

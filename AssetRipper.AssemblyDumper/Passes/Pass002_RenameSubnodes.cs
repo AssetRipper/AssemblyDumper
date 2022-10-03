@@ -72,11 +72,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 		/// <param name="node"></param>
 		private static void FixNamesRecursively(this UniversalNode node)
 		{
-			if (node == null)
-			{
-				return;
-			}
-
 			node.Name = GetValidFieldName(node.Name!);
 			if (node.NodeType == NodeType.Type) //don't rename special type names like long long, map, or Array
 			{
