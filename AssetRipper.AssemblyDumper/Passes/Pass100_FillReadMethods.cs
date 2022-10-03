@@ -33,11 +33,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static readonly Dictionary<ElementType, IMethodDefOrRef> primitiveReadMethods = new();
 
+		private static string ReadMethod => emittingRelease ? ReadRelease : ReadEditor;
 		private const string ReadRelease = nameof(UnityAssetBase.ReadRelease);
 		private const string ReadEditor = nameof(UnityAssetBase.ReadEditor);
 		private const int MaxArraySize = 1024;
-
-		private static string ReadMethod => emittingRelease ? ReadRelease : ReadEditor;
 
 		private static readonly Dictionary<string, IMethodDescriptor> methodDictionary = new();
 		private static readonly SignatureComparer signatureComparer = new()
@@ -49,10 +48,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
+			methodDictionary.Clear();
 			Initialize();
 
 			emittingRelease = true;
-			methodDictionary.Clear();
 			readAssetAlignDefinition = MakeGenericAssetAlignMethod();
 			readAssetListDefinition = MakeGenericListMethod(false);
 			readAssetListAlignDefinition = MakeGenericListMethod(true);
@@ -66,9 +65,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 			}
 			CreateHelperClassForWriteMethods();
+			methodDictionary.Clear();
 
 			emittingRelease = false;
-			methodDictionary.Clear();
 			readAssetAlignDefinition = MakeGenericAssetAlignMethod();
 			readAssetListDefinition = MakeGenericListMethod(false);
 			readAssetListAlignDefinition = MakeGenericListMethod(true);
@@ -82,7 +81,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 			}
 			CreateHelperClassForWriteMethods();
-
 			methodDictionary.Clear();
 		}
 
@@ -154,12 +152,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 				foreach (UniversalNode unityNode in rootNode.SubNodes)
 				{
 					FieldDefinition field = type.GetFieldByName(unityNode.Name, true);
-					IMethodDescriptor fieldWriteMethod = GetOrMakeMethod(unityNode, field.Signature!.FieldType, version);
+					IMethodDescriptor fieldReadMethod = GetOrMakeMethod(unityNode, field.Signature!.FieldType, version);
 					if (field.Signature!.FieldType.IsArrayOrPrimitive())
 					{
 						processor.Add(CilOpCodes.Ldarg_0);//this
 						processor.Add(CilOpCodes.Ldarg_1);//reader
-						processor.AddCall(fieldWriteMethod);
+						processor.AddCall(fieldReadMethod);
 						processor.Add(CilOpCodes.Stfld, field);
 					}
 					else
@@ -167,7 +165,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						processor.Add(CilOpCodes.Ldarg_0);//this
 						processor.Add(CilOpCodes.Ldfld, field);
 						processor.Add(CilOpCodes.Ldarg_1);//reader
-						processor.AddCall(fieldWriteMethod);
+						processor.AddCall(fieldReadMethod);
 					}
 				}
 			}
