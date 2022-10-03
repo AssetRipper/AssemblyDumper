@@ -56,5 +56,57 @@
 					}
 			}
 		}
+
+		public static string GetYamlName(UniversalNode node, UnityVersion version)
+		{
+			if (SharedState.Instance.SubclassGroups.TryGetValue(node.TypeName, out SubclassGroup? subclassGroup))
+			{
+				TypeDefinition fieldType = subclassGroup.GetTypeForVersion(version);
+				return fieldType.Name ?? throw new NullReferenceException();
+			}
+
+			switch (node.NodeType)
+			{
+				case NodeType.Vector:
+					{
+						UniversalNode arrayNode = node.SubNodes[0];
+						UniversalNode listTypeNode = arrayNode.SubNodes[1];
+						string listName = GetYamlName(listTypeNode, version);
+						return $"Array_{listName}";
+					}
+				case NodeType.Map:
+					{
+						UniversalNode arrayNode = node.SubNodes[0];
+						UniversalNode pairNode = arrayNode.SubNodes[1];
+						UniversalNode firstTypeNode = pairNode.SubNodes[0];
+						UniversalNode secondTypeNode = pairNode.SubNodes[1];
+						string firstTypeName = GetYamlName(firstTypeNode, version);
+						string secondTypeName = GetYamlName(secondTypeNode, version);
+						return $"Map_{firstTypeName}_{secondTypeName}";
+					}
+				case NodeType.Pair:
+					{
+						UniversalNode firstTypeNode = node.SubNodes[0];
+						UniversalNode secondTypeNode = node.SubNodes[1];
+						string firstTypeName = GetYamlName(firstTypeNode, version);
+						string secondTypeName = GetYamlName(secondTypeNode, version);
+						return $"Pair_{firstTypeName}_{secondTypeName}";
+					}
+				case NodeType.TypelessData: //byte array
+					{
+						return "TypelessData";
+					}
+				case NodeType.Array:
+					{
+						UniversalNode listTypeNode = node.SubNodes[1];
+						string listName = GetYamlName(listTypeNode, version);
+						return $"Array_{listName}";
+					}
+				default:
+					{
+						return node.NodeType.ToPrimitiveTypeName();
+					}
+			}
+		}
 	}
 }

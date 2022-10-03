@@ -1,4 +1,5 @@
 ﻿using AssetRipper.AssemblyCreationTools;
+using AssetRipper.AssemblyCreationTools.Attributes;
 using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
@@ -6,8 +7,10 @@ using AssetRipper.Core;
 using AssetRipper.Core.IO;
 using AssetRipper.Core.IO.Extensions;
 using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
+using AssetRipper.Core.Project;
 using AssetRipper.Yaml;
 using AssetRipper.Yaml.Extensions;
+using System.Diagnostics;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -46,7 +49,23 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static ITypeDefOrRef yamlMappingNodeReference;
 		private static ITypeDefOrRef yamlScalarNodeReference;
 		private static ITypeDefOrRef yamlSequenceNodeReference;
+		private static ITypeDefOrRef exportContainerReference;
+
+		private static ITypeDefOrRef assetDictionaryReference;
+		private static TypeDefinition assetDictionaryDefinition;
+		private static ITypeDefOrRef assetListReference;
+		private static TypeDefinition assetListDefinition;
+		private static ITypeDefOrRef keyValuePairReference;
+		private static TypeDefinition keyValuePairDefinition;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+		private static readonly Dictionary<string, IMethodDescriptor> methodDictionary = new();
+
+		private static readonly SignatureComparer signatureComparer = new()
+		{
+			AcceptNewerAssemblyVersionNumbers = true,
+			IgnoreAssemblyVersionNumbers = true
+		};
 		private static CilInstructionLabel DummyInstructionLabel { get; } = new CilInstructionLabel();
 
 		private static bool emittingRelease = true;
@@ -80,59 +99,115 @@ namespace AssetRipper.AssemblyDumper.Passes
 			yamlMappingNodeReference = SharedState.Instance.Importer.ImportType<YamlMappingNode>();
 			yamlScalarNodeReference = SharedState.Instance.Importer.ImportType<YamlScalarNode>();
 			yamlSequenceNodeReference = SharedState.Instance.Importer.ImportType<YamlSequenceNode>();
+
+			exportContainerReference = SharedState.Instance.Importer.ImportType<IExportContainer>();
+
+			assetDictionaryReference = SharedState.Instance.Importer.ImportType(typeof(AssetDictionary<,>));
+			assetListReference = SharedState.Instance.Importer.ImportType(typeof(AssetList<>));
+			keyValuePairReference = SharedState.Instance.Importer.ImportType(typeof(AccessPairBase<,>));
+
+			assetDictionaryDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>))!;
+			assetListDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetList<>))!;
+			keyValuePairDefinition = SharedState.Instance.Importer.LookupType(typeof(AccessPairBase<,>))!;
 		}
 
 		public static void DoPass()
 		{
+			methodDictionary.Clear();
 			Initialize();
+			emittingRelease = false;
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
 					bool isImporter = instance.InheritsFromType(1003);//The id for AssetImporter
-					Dictionary<string, FieldDefinition> fields = instance.Type.GetAllFieldsInTypeAndBase().ToDictionary(f => f.Name!.Value, f => f);
-					emittingRelease = false;
-					instance.FillEditorMethod(fields, isImporter);
-					emittingRelease = true;
-					instance.FillReleaseMethod(fields, isImporter);
+					instance.FillEditorMethod(isImporter);
 				}
 			}
+			CreateHelperClassForWriteMethods();
+			methodDictionary.Clear();
+
+			emittingRelease = true;
+			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
+			{
+				foreach (GeneratedClassInstance instance in group.Instances)
+				{
+					bool isImporter = instance.InheritsFromType(1003);//The id for AssetImporter
+					instance.FillReleaseMethod(isImporter);
+				}
+			}
+			CreateHelperClassForWriteMethods();
+			methodDictionary.Clear();
 		}
 
-		private static void FillEditorMethod(this GeneratedClassInstance instance, Dictionary<string, FieldDefinition> fields, bool isImporter)
+		private static void CreateHelperClassForWriteMethods()
 		{
-			MethodDefinition editorModeYamlMethod = instance.Type.Methods.Single(m => m.Name == ExportYamlEditor);
-			editorModeYamlMethod.FillMethod(instance.Class.EditorRootNode, fields, instance.VersionRange.Start, isImporter);
+			TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.HelpersNamespace, $"{ExportYamlMethod}Methods");
+			type.IsPublic = false;
+			//type.Methods.Add(readAssetListDefinition!);
+			//type.Methods.Add(readAssetDictionaryDefinition!);
+			foreach ((string _, IMethodDescriptor method) in methodDictionary.OrderBy(pair => pair.Key))
+			{
+				if (method is MethodDefinition methodDefinition && methodDefinition.DeclaringType is null)
+				{
+					type.Methods.Add(methodDefinition);
+				}
+			}
+			Console.WriteLine($"\t{type.Methods.Count} {ExportYamlMethod} helper methods");
 		}
 
-		private static void FillReleaseMethod(this GeneratedClassInstance instance, Dictionary<string, FieldDefinition> fields, bool isImporter)
+		private static void FillEditorMethod(this GeneratedClassInstance instance, bool isImporter)
 		{
-			MethodDefinition editorModeYamlMethod = instance.Type.Methods.Single(m => m.Name == ExportYamlRelease);
-			editorModeYamlMethod.FillMethod(instance.Class.EditorRootNode, fields, instance.VersionRange.Start, isImporter);
+			instance.Type.FillMethod(ExportYamlEditor, instance.Class.EditorRootNode, instance.VersionRange.Start, isImporter);
 		}
 
-		private static void FillMethod(this MethodDefinition method, UniversalNode? rootNode, Dictionary<string, FieldDefinition> fields, UnityVersion version, bool isImporter)
+		private static void FillReleaseMethod(this GeneratedClassInstance instance, bool isImporter)
 		{
-			CilMethodBody body = method.CilMethodBody!;
-			CilInstructionCollection processor = body.Instructions;
+			instance.Type.FillMethod(ExportYamlRelease, instance.Class.ReleaseRootNode, instance.VersionRange.Start, isImporter);
+		}
 
-			body.InitializeLocals = true;
-			CilLocalVariable resultNode = new CilLocalVariable(yamlMappingNodeReference.ToTypeSignature());
-			body.LocalVariables.Add(resultNode);
+		private static bool GetActualIgnoreInMetaFiles(this UniversalNode node)
+		{
+			return node.IgnoreInMetaFiles || AdditionalFieldsToSkipInImporters.Contains(node.OriginalName);
+		}
+
+		private static void FillMethod(this TypeDefinition type, string methodName, UniversalNode? rootNode, UnityVersion version, bool isImporter)
+		{
+			MethodDefinition method = type.Methods.First(m => m.Name == methodName);
+			CilInstructionCollection processor = method.GetProcessor();
+
+			CilLocalVariable resultNode = processor.AddLocalVariable(yamlMappingNodeReference.ToTypeSignature());
 			processor.Add(CilOpCodes.Newobj, mappingNodeConstructor);
 			processor.Add(CilOpCodes.Stloc, resultNode);
 
-			//Console.WriteLine($"Generating the release read method for {name}");
-			if (rootNode != null)
+			if (rootNode is not null)
 			{
 				processor.MaybeEmitFlowMappingStyle(rootNode, resultNode);
 				processor.AddAddSerializedVersion(resultNode, rootNode.Version);
 				foreach (UniversalNode unityNode in rootNode.SubNodes)
 				{
-					if (!isImporter
-						|| (!unityNode.IgnoreInMetaFiles && !AdditionalFieldsToSkipInImporters.Contains(unityNode.OriginalName)))
+					if (!isImporter || !unityNode.GetActualIgnoreInMetaFiles())
 					{
-						AddExportToProcessor(unityNode, processor, fields, resultNode, version);
+						FieldDefinition field = type.GetFieldByName(unityNode.Name, true);
+						if (unityNode.NodeType == NodeType.TypelessData)
+						{
+							processor.Add(CilOpCodes.Ldloc, resultNode);
+							processor.Add(CilOpCodes.Ldstr, unityNode.OriginalName);
+							processor.Add(CilOpCodes.Ldarg_0);
+							processor.Add(CilOpCodes.Ldfld, field);
+							processor.Add(CilOpCodes.Call, addTypelessDataMethod);
+						}
+						else
+						{
+							IMethodDescriptor fieldExportMethod = GetOrMakeMethod(unityNode, field.Signature!.FieldType, version);
+							processor.Add(CilOpCodes.Ldloc, resultNode);
+							processor.AddScalarNodeForString(unityNode.OriginalName);
+							processor.Add(CilOpCodes.Ldarg_0);//this
+							processor.Add(CilOpCodes.Ldfld, field);
+							processor.Add(CilOpCodes.Ldarg_1);//container
+							processor.AddCall(fieldExportMethod);
+							processor.Add(CilOpCodes.Call, mappingAddMethod);
+						}
 					}
 				}
 			}
@@ -149,305 +224,268 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Call, addSerializedVersionMethod);
 		}
 
-		private static void AddExportToProcessor(UniversalNode node, CilInstructionCollection processor, Dictionary<string, FieldDefinition> fields, CilLocalVariable yamlMappingNode, UnityVersion version)
+		private static IMethodDescriptor GetOrMakeMethod(UniversalNode node, TypeSignature type, UnityVersion version)
 		{
-			//Get field
-			fields.TryGetValue(node.Name, out FieldDefinition? field);
-
-			if (field == null)
+			string uniqueName = UniqueNameFactory.GetYamlName(node, version);
+			if (methodDictionary.TryGetValue(uniqueName, out IMethodDescriptor? method))
 			{
-				throw new Exception($"Field {node.Name} cannot be found in {processor.Owner.Owner.DeclaringType} (fields are {string.Join(", ", fields.Values.Select(f => f.Name))})");
+				return method;
 			}
 
-			processor.AddExportFieldContent(node, field, yamlMappingNode, version);
-		}
-
-		private static void AddExportFieldContent(this CilInstructionCollection processor, UniversalNode node, FieldDefinition field, CilLocalVariable yamlMappingNode, UnityVersion version)
-		{
 			if (SharedState.Instance.SubclassGroups.TryGetValue(node.TypeName, out SubclassGroup? subclassGroup))
 			{
 				TypeDefinition typeDefinition = subclassGroup.GetTypeForVersion(version);
-				processor.AddExportAssetField(node, field, yamlMappingNode, typeDefinition);
-				return;
+				Debug.Assert(signatureComparer.Equals(typeDefinition.ToTypeSignature(), type));
+				method = typeDefinition.GetMethodByName(ExportYamlMethod);
+				methodDictionary.Add(uniqueName, method);
+				return method;
 			}
 
 			switch (node.NodeType)
 			{
 				case NodeType.Vector:
-					processor.AddExportVectorField(node, field, yamlMappingNode, version);
-					return;
+					{
+						UniversalNode arrayNode = node.SubNodes[0];
+						UniversalNode elementTypeNode = arrayNode.SubNodes[1];
+						if (type is GenericInstanceTypeSignature genericSignature)
+						{
+							Debug.Assert(genericSignature.GenericType.Name == $"{nameof(AssetList<int>)}`1");
+							Debug.Assert(genericSignature.TypeArguments.Count == 1);
+							method = MakeListMethod(uniqueName, elementTypeNode, genericSignature.TypeArguments[0], version);
+						}
+						else
+						{
+							SzArrayTypeSignature arrayType = (SzArrayTypeSignature)type;
+							TypeSignature elementType = arrayType.BaseType;
+							method = MakeArrayMethod(uniqueName, elementTypeNode, elementType, version);
+						}
+					}
+					break;
 				case NodeType.Map:
-					processor.AddExportDictionaryField(node, field, yamlMappingNode, version);
-					return;
+					{
+						UniversalNode arrayNode = node.SubNodes[0];
+						UniversalNode pairNode = arrayNode.SubNodes[1];
+						GenericInstanceTypeSignature genericMapSignature = (GenericInstanceTypeSignature)type;
+						Debug.Assert(genericMapSignature.GenericType.Name == $"{nameof(AssetDictionary<int, int>)}`2");
+						Debug.Assert(genericMapSignature.TypeArguments.Count == 2);
+						GenericInstanceTypeSignature genericPairSignature = keyValuePairReference.MakeGenericInstanceType(genericMapSignature.TypeArguments[0], genericMapSignature.TypeArguments[1]);
+						method = MakeDictionaryMethod(uniqueName, genericMapSignature, pairNode, genericPairSignature, version);
+					}
+					break;
 				case NodeType.Pair:
-					processor.AddExportPairField(node, field, yamlMappingNode, version);
-					return;
-				case NodeType.TypelessData: //byte array
-					processor.AddExportTypelessDataField(node, field, yamlMappingNode);
-					return;
+					{
+						UniversalNode firstTypeNode = node.SubNodes[0];
+						UniversalNode secondTypeNode = node.SubNodes[1];
+						GenericInstanceTypeSignature genericSignature = (GenericInstanceTypeSignature)type;
+						Debug.Assert(genericSignature.GenericType.Name?.ToString() is $"{nameof(AssetPair<int, int>)}`2" or $"{nameof(AccessPairBase<int, int>)}`2");
+						Debug.Assert(genericSignature.TypeArguments.Count == 2);
+						method = MakePairMethod(uniqueName, firstTypeNode, genericSignature.TypeArguments[0], secondTypeNode, genericSignature.TypeArguments[1], version);
+					}
+					break;
 				case NodeType.Array:
-					processor.AddExportArrayField(node, field, yamlMappingNode, version);
-					return;
+					{
+						UniversalNode elementTypeNode = node.SubNodes[1];
+						if (type is GenericInstanceTypeSignature genericSignature)
+						{
+							Debug.Assert(genericSignature.GenericType.Name == $"{nameof(AssetList<int>)}`1");
+							Debug.Assert(genericSignature.TypeArguments.Count == 1);
+							method = MakeListMethod(uniqueName, elementTypeNode, genericSignature.TypeArguments[0], version);
+						}
+						else
+						{
+							SzArrayTypeSignature arrayType = (SzArrayTypeSignature)type;
+							TypeSignature elementType = arrayType.BaseType;
+							method = MakeArrayMethod(uniqueName, elementTypeNode, elementType, version);
+						}
+					}
+					break;
+				case NodeType.TypelessData:
+					{
+						throw new NotSupportedException();
+					}
 				default:
-					processor.AddExportPrimitiveField(node, field, yamlMappingNode);
-					return;
-			}
-		}
-
-		private static void AddLocalForLoadedValue(this CilInstructionCollection processor, UniversalNode node, out CilLocalVariable localVariable, UnityVersion version)
-		{
-			if (SharedState.Instance.SubclassGroups.TryGetValue(node.TypeName, out SubclassGroup? subclassGroup))
-			{
-				TypeDefinition typeDefinition = subclassGroup.GetTypeForVersion(version);
-				processor.AddLocalForLoadedAssetValue(typeDefinition, out localVariable);
-				return;
+					method = MakePrimitiveMethod(uniqueName, node, type);
+					break;
 			}
 
-			switch (node.NodeType)
-			{
-				case NodeType.Vector:
-					processor.AddLocalForLoadedVector(node, version, out localVariable);
-					return;
-				case NodeType.Map:
-					processor.AddLocalForLoadedDictionary(node, version, out localVariable);
-					return;
-				case NodeType.Pair:
-					processor.AddLocalForLoadedPair(node, out localVariable, version);
-					return;
-				case NodeType.TypelessData: //byte array
-									 //processor.AddLocalForLoadedByteArray(out localVariable);
-									 //return;
-					throw new NotSupportedException("TypelessData");
-				case NodeType.Array:
-					processor.AddLocalForLoadedArray(node, version, out localVariable);
-					return;
-				default:
-					processor.AddLocalForLoadedPrimitiveValue(node.NodeType, out localVariable);
-					return;
-			}
+			methodDictionary.Add(uniqueName, method);
+			return method;
 		}
 
-		private static void AddExportAssetField(this CilInstructionCollection processor, UniversalNode node, FieldDefinition field, CilLocalVariable yamlMappingNode, TypeDefinition typeDefinition)
+		private static IMethodDescriptor MakeDictionaryMethod(string uniqueName, GenericInstanceTypeSignature genericDictType, UniversalNode pairNode, GenericInstanceTypeSignature genericPairType, UnityVersion version)
 		{
-			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
-			processor.AddScalarNodeForString(node.OriginalName);
-			processor.AddLoadField(field);
-			processor.AddNodeForLoadedAssetValue(typeDefinition);
-			processor.Add(CilOpCodes.Call, mappingAddMethod);
+			IMethodDescriptor pairExportMethod = GetOrMakeMethod(pairNode, genericPairType, version);
+
+			MethodDefinition method = NewMethod(uniqueName, genericDictType);
+			CilInstructionCollection processor = method.GetProcessor();
+
+			CilLocalVariable sequenceLocal = new CilLocalVariable(yamlSequenceNodeReference.ToTypeSignature());
+			processor.Owner.LocalVariables.Add(sequenceLocal);
+			processor.Add(CilOpCodes.Ldc_I4, 1); //SequenceStyle.BlockCurve
+			processor.Add(CilOpCodes.Newobj, sequenceNodeConstructor);
+			processor.Add(CilOpCodes.Stloc, sequenceLocal);
+
+			//Get length of dictionary
+			processor.Add(CilOpCodes.Ldarg_0);
+			MethodDefinition getCountDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>))!.Properties.Single(m => m.Name == nameof(AssetDictionary<int, int>.Count)).GetMethod!;
+			IMethodDefOrRef getCountReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictType, getCountDefinition);
+			processor.Add(CilOpCodes.Call, getCountReference);
+
+			//Make local and store length in it
+			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32); //Create local
+			processor.Add(CilOpCodes.Stloc, countLocal); //Store count in it
+
+			//Make an i
+			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32); //Create local
+			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
+
+			//Create an empty, unconditional branch which will jump down to the loop condition.
+			//This converts the do..while loop into a for loop.
+			CilInstruction unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
+
+			//Now we just read key + value, increment i, compare against count, and jump back to here if it's less
+			ICilLabel jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create the dummy instruction to jump back to
+
+			//Export Yaml
+			MethodDefinition getItemDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>))!.Methods.Single(m => m.Name == nameof(AssetDictionary<int, int>.GetPair));
+			IMethodDefOrRef getItemReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictType, getItemDefinition);
+
+			CilLocalVariable pairExportLocal = processor.AddLocalVariable(yamlNodeReference.ToTypeSignature());
+			processor.Add(CilOpCodes.Ldarg_0); //Load Dictionary
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			processor.Add(CilOpCodes.Call, getItemReference); //Get the i_th key value pair
+			processor.Add(CilOpCodes.Ldarg_1);
+			processor.AddCall(pairExportMethod); //Emit yaml node for that key value pair
+			processor.Add(CilOpCodes.Stloc, pairExportLocal);
+
+			processor.Add(CilOpCodes.Ldloc, sequenceLocal);
+			processor.Add(CilOpCodes.Ldloc, pairExportLocal);
+			processor.Add(CilOpCodes.Call, sequenceAddMethod); //Call the add method
+
+			//Increment i
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			processor.Add(CilOpCodes.Add); //Add 
+			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
+
+			//Jump to start of loop if i < count
+			ICilLabel? loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
+			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
+			unconditionalBranchInstruction.Operand = loopConditionStartLabel;
+
+			processor.Add(CilOpCodes.Ldloc, sequenceLocal);
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
+
+			return method;
 		}
 
-		private static void AddExportPrimitiveField(this CilInstructionCollection processor, UniversalNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
+		private static IMethodDescriptor MakePairMethod(string uniqueName, UniversalNode keyNode, TypeSignature keySignature, UniversalNode valueNode, TypeSignature valueSignature, UnityVersion version)
 		{
-			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
-			processor.AddScalarNodeForString(node.OriginalName);
-			processor.AddLoadField(field);
-			processor.AddScalarNodeForLoadedPrimitiveValue(node.NodeType);
-			processor.Add(CilOpCodes.Call, mappingAddMethod);
-		}
+			GenericInstanceTypeSignature pairType = keyValuePairReference.MakeGenericInstanceType(keySignature, valueSignature);
+			bool firstIsScalar = keyNode.NodeType.IsPrimitive()
+				|| keyNode.TypeName == Pass002_RenameSubnodes.Utf8StringName
+				|| keyNode.TypeName == Pass002_RenameSubnodes.GuidName;
 
-		private static void AddNodeForLoadedAssetValue(this CilInstructionCollection processor, TypeDefinition type)
-		{
-			MethodDefinition exportMethod = type.GetYamlExportMethod();
-			processor.Add(CilOpCodes.Ldarg_1); //IExportCollection container
-			processor.Add(CilOpCodes.Call, exportMethod);
-		}
-
-		private static void AddLocalForLoadedAssetValue(this CilInstructionCollection processor, TypeDefinition type, out CilLocalVariable localVariable)
-		{
-			processor.AddNodeForLoadedAssetValue(type);
-			localVariable = new CilLocalVariable(yamlNodeReference.ToTypeSignature());
-			processor.Owner.LocalVariables.Add(localVariable);
-			processor.Add(CilOpCodes.Stloc, localVariable);
-		}
-
-		private static void AddExportPairField(this CilInstructionCollection processor, UniversalNode node, FieldDefinition field, CilLocalVariable yamlMappingNode, UnityVersion version)
-		{
-			processor.AddLoadField(field);
-			processor.AddLocalForLoadedPair(node, out CilLocalVariable pairNodeLocal, version);
-			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
-			processor.AddScalarNodeForString(node.OriginalName);
-			processor.Add(CilOpCodes.Ldloc, pairNodeLocal);
-			processor.Add(CilOpCodes.Call, mappingAddMethod);
-		}
-
-		private static void AddLocalForLoadedPair(this CilInstructionCollection processor, UniversalNode pairNode, out CilLocalVariable localVariableForOutputNode, UnityVersion version)
-		{
-			UniversalNode firstSubNode = pairNode.SubNodes[0];
-			UniversalNode secondSubNode = pairNode.SubNodes[1];
-			GenericInstanceTypeSignature pairType = GenericTypeResolver.ResolvePairType(firstSubNode, secondSubNode, version);
-			bool firstIsScalar = firstSubNode.NodeType.IsPrimitive()
-				|| firstSubNode.TypeName == Pass002_RenameSubnodes.Utf8StringName
-				|| firstSubNode.TypeName == Pass002_RenameSubnodes.GuidName;
-
-			MethodDefinition getKeyDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetPair<,>), m => m.Name == "get_Key");
+			MethodDefinition getKeyDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AccessPairBase<,>), m => m.Name == "get_Key");
 			IMethodDefOrRef getKeyReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, pairType, getKeyDefinition);
-			MethodDefinition getValueDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetPair<,>), m => m.Name == "get_Value");
+			MethodDefinition getValueDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AccessPairBase<,>), m => m.Name == "get_Value");
 			IMethodDefOrRef getValueReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, pairType, getValueDefinition);
 
-			CilLocalVariable pair = new CilLocalVariable(pairType);
-			processor.Owner.LocalVariables.Add(pair);
-			processor.Add(CilOpCodes.Stloc, pair);
+			IMethodDescriptor keyExportMethod = GetOrMakeMethod(keyNode, keySignature, version);
+			IMethodDescriptor valueExportMethod = GetOrMakeMethod(valueNode, valueSignature, version);
 
-			localVariableForOutputNode = new CilLocalVariable(yamlMappingNodeReference.ToTypeSignature());
-			processor.Owner.LocalVariables.Add(localVariableForOutputNode);
+			MethodDefinition method = NewMethod(uniqueName, pairType);
+			CilInstructionCollection processor = method.GetProcessor();
+
+			CilLocalVariable localVariableForOutputNode = processor.AddLocalVariable(yamlMappingNodeReference.ToTypeSignature());
 			processor.Add(CilOpCodes.Newobj, mappingNodeConstructor);
 			processor.Add(CilOpCodes.Stloc, localVariableForOutputNode);
 
 			if (firstIsScalar)
 			{
-				processor.Add(CilOpCodes.Ldloc, pair);
-				processor.Add(CilOpCodes.Call, getKeyReference);
-				processor.AddLocalForLoadedValue(firstSubNode, out CilLocalVariable firstExportLocal, version);
-
-				processor.Add(CilOpCodes.Ldloc, pair);
-				processor.Add(CilOpCodes.Call, getValueReference);
-				processor.AddLocalForLoadedValue(secondSubNode, out CilLocalVariable secondExportLocal, version);
-
 				processor.Add(CilOpCodes.Ldloc, localVariableForOutputNode);
-				processor.Add(CilOpCodes.Ldloc, firstExportLocal);
-				processor.Add(CilOpCodes.Ldloc, secondExportLocal);
+
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Call, getKeyReference);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(keyExportMethod);
+
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Call, getValueReference);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(valueExportMethod);
+
 				processor.Add(CilOpCodes.Call, mappingAddMethod);
 			}
 			else
 			{
-				processor.Add(CilOpCodes.Ldloc, pair);
-				processor.Add(CilOpCodes.Call, getKeyReference);
-				processor.AddLocalForLoadedValue(firstSubNode, out CilLocalVariable? local1, version);
 				processor.Add(CilOpCodes.Ldloc, localVariableForOutputNode);
 				processor.AddScalarNodeForString("first");
-				processor.Add(CilOpCodes.Ldloc, local1);
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Call, getKeyReference);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(keyExportMethod);
 				processor.Add(CilOpCodes.Call, mappingAddMethod);
 
-				processor.Add(CilOpCodes.Ldloc, pair);
-				processor.Add(CilOpCodes.Call, getValueReference);
-				processor.AddLocalForLoadedValue(secondSubNode, out CilLocalVariable? local2, version);
 				processor.Add(CilOpCodes.Ldloc, localVariableForOutputNode);
 				processor.AddScalarNodeForString("second");
-				processor.Add(CilOpCodes.Ldloc, local2);
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Call, getValueReference);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.AddCall(valueExportMethod);
 				processor.Add(CilOpCodes.Call, mappingAddMethod);
 			}
+
+			processor.Add(CilOpCodes.Ldloc, localVariableForOutputNode);
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
+
+			return method;
 		}
 
-		private static void AddExportVectorField(this CilInstructionCollection processor, UniversalNode vectorNode, FieldDefinition field, CilLocalVariable yamlMappingNode, UnityVersion version)
+		private static IMethodDescriptor MakeListMethod(string uniqueName, UniversalNode elementTypeNode, TypeSignature elementType, UnityVersion version)
 		{
-			//This cloning is necessary to prevent the code from using "Array" instead of the actual name
-			UniversalNode? arrayNode = vectorNode.SubNodes[0].DeepClone();
-			arrayNode.Name = vectorNode.Name;
-			arrayNode.OriginalName = vectorNode.OriginalName;
-			processor.AddExportArrayField(arrayNode, field, yamlMappingNode, version);
+			GenericInstanceTypeSignature genericListType = assetListReference!.MakeGenericInstanceType(elementType);
+			MethodDefinition method = NewMethod(uniqueName, genericListType);
+			CilInstructionCollection processor = method.GetProcessor();
+			IMethodDescriptor elementExportMethod = GetOrMakeMethod(elementTypeNode, elementType, version);
+			processor.FillArrayListMethod(elementExportMethod, genericListType, elementType);
+			return method;
 		}
 
-		private static void AddLocalForLoadedVector(this CilInstructionCollection processor, UniversalNode vectorNode, UnityVersion version, out CilLocalVariable localVariable)
+		private static IMethodDescriptor MakeArrayMethod(string uniqueName, UniversalNode elementTypeNode, TypeSignature elementType, UnityVersion version)
 		{
-			//This cloning is necessary to prevent the code from using "Array" instead of the actual name
-			UniversalNode? arrayNode = vectorNode.SubNodes[0].DeepClone();
-			arrayNode.Name = vectorNode.Name;
-			arrayNode.OriginalName = vectorNode.OriginalName;
-			processor.AddLocalForLoadedArray(arrayNode, version, out localVariable);
-		}
-
-		private static void AddExportTypelessDataField(this CilInstructionCollection processor, UniversalNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
-		{
-			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
-			processor.Add(CilOpCodes.Ldstr, node.OriginalName);
-			processor.AddLoadField(field);
-			processor.Add(CilOpCodes.Call, addTypelessDataMethod);
-		}
-
-		private static void AddExportByteArrayField(this CilInstructionCollection processor, UniversalNode node, FieldDefinition field, CilLocalVariable yamlMappingNode)
-		{
-			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
-			processor.AddScalarNodeForString(node.OriginalName);
-			processor.AddLoadField(field);
-			processor.Add(CilOpCodes.Call, byteArrayToYamlMethod);
-			processor.Add(CilOpCodes.Call, mappingAddMethod);
-		}
-
-		private static void AddLocalForLoadedByteArray(this CilInstructionCollection processor, out CilLocalVariable localVariable)
-		{
-			processor.Add(CilOpCodes.Call, byteArrayToYamlMethod);
-			localVariable = new CilLocalVariable(yamlNodeReference.ToTypeSignature());
-			processor.Owner.LocalVariables.Add(localVariable);
-			processor.Add(CilOpCodes.Stloc, localVariable);
-		}
-
-		private static void AddExportArrayField(this CilInstructionCollection processor, UniversalNode node, FieldDefinition field, CilLocalVariable yamlMappingNode, UnityVersion version)
-		{
-			TypeSignature arrayType = GenericTypeResolver.ResolveArrayType(node, version);
-			TypeSignature elementType = GetElementTypeFromArrayType(arrayType);
-			if (elementType is not SzArrayTypeSignature && elementType.FullName == "System.Byte")
+			SzArrayTypeSignature arrayType = elementType.MakeSzArrayType();
+			MethodDefinition method = NewMethod(uniqueName, arrayType);
+			CilInstructionCollection processor = method.GetProcessor();
+			if (elementType is CorLibTypeSignature corLibTypeSignature && corLibTypeSignature.ElementType == ElementType.U1)
 			{
-				processor.AddExportByteArrayField(node, field, yamlMappingNode);
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Call, byteArrayToYamlMethod);
+				processor.Add(CilOpCodes.Ret);
 			}
 			else
 			{
-				processor.AddLoadField(field);
-				processor.AddLocalForLoadedArray(node, version, out CilLocalVariable sequenceNode);
-				processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
-				processor.AddScalarNodeForString(node.OriginalName);
-				processor.Add(CilOpCodes.Ldloc, sequenceNode);
-				processor.Add(CilOpCodes.Call, mappingAddMethod);
+				IMethodDescriptor elementExportMethod = GetOrMakeMethod(elementTypeNode, elementType, version);
+				processor.FillArrayListMethod(elementExportMethod, arrayType, elementType);
 			}
+			return method;
 		}
 
-		private static TypeSignature GetElementTypeFromArrayType(TypeSignature arrayType)
+		private static void FillArrayListMethod(this CilInstructionCollection processor, IMethodDescriptor elementExportMethod, TypeSignature arrayType, TypeSignature elementType)
 		{
-			if (arrayType is SzArrayTypeSignature szArrayTypeSignature)
-			{
-				return szArrayTypeSignature.BaseType;
-			}
-			else if (arrayType is GenericInstanceTypeSignature genericInstanceTypeSignature)
-			{
-				return genericInstanceTypeSignature.TypeArguments.Single();
-			}
-			else
-			{
-				throw new NotSupportedException($"Arrays can't use the type signature type: {arrayType.GetType()}");
-			}
-		}
-
-		private static IMethodDefOrRef GetAssetListCountMethod(TypeSignature typeArgument)
-		{
-			MethodDefinition method = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == $"get_{nameof(AssetList<int>.Count)}");
-			GenericInstanceTypeSignature assetListTypeSignature = SharedState.Instance.Importer.ImportType(typeof(AssetList<>)).MakeGenericInstanceType(typeArgument);
-			return MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, assetListTypeSignature, method);
-		}
-
-		private static IMethodDefOrRef GetAssetListGetItemMethod(TypeSignature typeArgument)
-		{
-			MethodDefinition method = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == $"get_Item");
-			GenericInstanceTypeSignature assetListTypeSignature = SharedState.Instance.Importer.ImportType(typeof(AssetList<>)).MakeGenericInstanceType(typeArgument);
-			return MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, assetListTypeSignature, method);
-		}
-
-		private static void AddLocalForLoadedArray(this CilInstructionCollection processor, UniversalNode arrayNode, UnityVersion version, out CilLocalVariable sequenceNode)
-		{
-			UniversalNode elementNode = arrayNode.SubNodes[1];
-			TypeSignature arrayType = GenericTypeResolver.ResolveArrayType(arrayNode, version);
-
-			bool isArray = arrayType is SzArrayTypeSignature;
-			TypeSignature elementType = GetElementTypeFromArrayType(arrayType);
-
-			if (elementType is not SzArrayTypeSignature && elementType.FullName == "System.Byte")
-			{
-				throw new NotSupportedException("Byte arrays not supported");
-			}
-
-			CilLocalVariable array = new CilLocalVariable(arrayType);
-			processor.Owner.LocalVariables.Add(array);
-			processor.Add(CilOpCodes.Stloc, array);
-
-			sequenceNode = new CilLocalVariable(yamlSequenceNodeReference.ToTypeSignature());
-			processor.Owner.LocalVariables.Add(sequenceNode);
+			CilLocalVariable sequenceNode = processor.AddLocalVariable(yamlSequenceNodeReference.ToTypeSignature());
 			processor.Add(CilOpCodes.Ldc_I4, 0); //SequenceStyle.Block
 			processor.Add(CilOpCodes.Newobj, sequenceNodeConstructor);
 			processor.Add(CilOpCodes.Stloc, sequenceNode);
 
 			//Make local and store length in it
-			CilLocalVariable countLocal = new CilLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-			processor.Owner.LocalVariables.Add(countLocal); //Add to method
-			processor.Add(CilOpCodes.Ldloc, array); //Load array
-			if (isArray)
+			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32); //Create local
+			processor.Add(CilOpCodes.Ldarg_0); //Load array
+			if (arrayType is SzArrayTypeSignature)
 			{
 				processor.Add(CilOpCodes.Ldlen); //Get length
 			}
@@ -472,9 +510,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 			ICilLabel jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			//Do stuff at index i
-			processor.Add(CilOpCodes.Ldloc, array);
+			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldloc, iLocal);
-			if (isArray)
+			if (arrayType is SzArrayTypeSignature)
 			{
 				processor.AddLoadElement(elementType);
 			}
@@ -483,7 +521,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 				processor.Add(CilOpCodes.Call, GetAssetListGetItemMethod(elementType));
 			}
 
-			processor.AddLocalForLoadedValue(elementNode, out CilLocalVariable elementLocal, version);
+			CilLocalVariable elementLocal = processor.AddLocalVariable(yamlNodeReference.ToTypeSignature());
+			processor.Add(CilOpCodes.Ldarg_1);
+			processor.AddCall(elementExportMethod);
+			processor.Add(CilOpCodes.Stloc, elementLocal);
 
 			processor.Add(CilOpCodes.Ldloc, sequenceNode);
 			processor.Add(CilOpCodes.Ldloc, elementLocal);
@@ -500,89 +541,33 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
 			unconditionalBranchInstruction.Operand = loopConditionStartLabel;
+
+			processor.Add(CilOpCodes.Ldloc, sequenceNode);
+			processor.Add(CilOpCodes.Ret);
 		}
 
-		private static void AddExportDictionaryField(this CilInstructionCollection processor, UniversalNode node, FieldDefinition field, CilLocalVariable yamlMappingNode, UnityVersion version)
+		private static IMethodDescriptor MakePrimitiveMethod(string uniqueName, UniversalNode node, TypeSignature type)
 		{
-			processor.AddLoadField(field);
-			processor.AddLocalForLoadedDictionary(node, version, out CilLocalVariable dictionaryNodeLocal);
-			processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
-			processor.AddScalarNodeForString(node.OriginalName);
-			processor.Add(CilOpCodes.Ldloc, dictionaryNodeLocal);
-			processor.Add(CilOpCodes.Call, mappingAddMethod);
-		}
-
-		private static void AddLocalForLoadedDictionary(this CilInstructionCollection processor, UniversalNode dictionaryNode, UnityVersion version, out CilLocalVariable sequenceLocal)
-		{
-			UniversalNode pairNode = dictionaryNode.SubNodes[0].SubNodes[1];
-			UniversalNode firstNode = dictionaryNode.SubNodes[0].SubNodes[1].SubNodes[0];
-			UniversalNode secondNode = dictionaryNode.SubNodes[0].SubNodes[1].SubNodes[1];
-
-			GenericInstanceTypeSignature genericDictType = GenericTypeResolver.ResolveDictionaryType(dictionaryNode, version);
-			GenericInstanceTypeSignature genericPairType = GenericTypeResolver.ResolvePairType(pairNode, version);
-			CilLocalVariable? dictLocal = new CilLocalVariable(genericDictType); //Create local
-			processor.Owner.LocalVariables.Add(dictLocal); //Add to method
-			processor.Add(CilOpCodes.Stloc, dictLocal); //Store dict in local
-
-			sequenceLocal = new CilLocalVariable(yamlSequenceNodeReference.ToTypeSignature());
-			processor.Owner.LocalVariables.Add(sequenceLocal);
-			processor.Add(CilOpCodes.Ldc_I4, 1); //SequenceStyle.BlockCurve
-			processor.Add(CilOpCodes.Newobj, sequenceNodeConstructor);
-			processor.Add(CilOpCodes.Stloc, sequenceLocal);
-
-			//Get length of dictionary
-			processor.Add(CilOpCodes.Ldloc, dictLocal);
-			MethodDefinition getCountDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>))!.Properties.Single(m => m.Name == nameof(AssetDictionary<int, int>.Count)).GetMethod!;
-			IMethodDefOrRef getCountReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictType, getCountDefinition);
-			processor.Add(CilOpCodes.Call, getCountReference);
-
-			//Make local and store length in it
-			CilLocalVariable countLocal = new CilLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-			processor.Owner.LocalVariables.Add(countLocal); //Add to method
-			processor.Add(CilOpCodes.Stloc, countLocal); //Store count in it
-
-			//Make an i
-			CilLocalVariable iLocal = new CilLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-			processor.Owner.LocalVariables.Add(iLocal); //Add to method
-			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
-
-			//Create an empty, unconditional branch which will jump down to the loop condition.
-			//This converts the do..while loop into a for loop.
-			CilInstruction unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
-
-			//Now we just read key + value, increment i, compare against count, and jump back to here if it's less
-			ICilLabel jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create the dummy instruction to jump back to
-
-			//Export Yaml
-			MethodDefinition getItemDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>))!.Methods.Single(m => m.Name == nameof(AssetDictionary<int, int>.GetPair));
-			IMethodDefOrRef getItemReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictType, getItemDefinition);
-			processor.Add(CilOpCodes.Ldloc, dictLocal); //Load Dictionary
-			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
-			processor.Add(CilOpCodes.Call, getItemReference); //Get the i_th key value pair
-			processor.AddLocalForLoadedPair(pairNode, out CilLocalVariable pairExportLocal, version); //Emit yaml node for that key value pair
-
-			processor.Add(CilOpCodes.Ldloc, sequenceLocal);
-			processor.Add(CilOpCodes.Ldloc, pairExportLocal);
-			processor.Add(CilOpCodes.Call, sequenceAddMethod); //Call the add method
-
-			//Increment i
-			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Add(CilOpCodes.Add); //Add 
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
-
-			//Jump to start of loop if i < count
-			ICilLabel? loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
-			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
-			unconditionalBranchInstruction.Operand = loopConditionStartLabel;
-		}
-
-		private static void AddLoadField(this CilInstructionCollection processor, FieldDefinition field)
-		{
+			MethodDefinition method = NewMethod(uniqueName, type);
+			CilInstructionCollection processor = method.GetProcessor();
 			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, field);
+			processor.AddScalarNodeForLoadedPrimitiveValue(node.NodeType);
+			processor.Add(CilOpCodes.Ret);
+			return method;
+		}
+
+		private static IMethodDefOrRef GetAssetListCountMethod(TypeSignature typeArgument)
+		{
+			MethodDefinition method = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == $"get_{nameof(AssetList<int>.Count)}");
+			GenericInstanceTypeSignature assetListTypeSignature = SharedState.Instance.Importer.ImportType(typeof(AssetList<>)).MakeGenericInstanceType(typeArgument);
+			return MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, assetListTypeSignature, method);
+		}
+
+		private static IMethodDefOrRef GetAssetListGetItemMethod(TypeSignature typeArgument)
+		{
+			MethodDefinition method = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == $"get_Item");
+			GenericInstanceTypeSignature assetListTypeSignature = SharedState.Instance.Importer.ImportType(typeof(AssetList<>)).MakeGenericInstanceType(typeArgument);
+			return MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, assetListTypeSignature, method);
 		}
 
 		private static void AddScalarNodeForString(this CilInstructionCollection processor, string name)
@@ -594,19 +579,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void AddScalarNodeForLoadedPrimitiveValue(this CilInstructionCollection processor, NodeType nodeType)
 		{
 			processor.Add(CilOpCodes.Newobj, GetScalarNodeConstructor(nodeType.ToPrimitiveTypeSignature()));
-		}
-
-		private static void AddLocalForLoadedPrimitiveValue(this CilInstructionCollection processor, NodeType nodeType, out CilLocalVariable localVariable)
-		{
-			processor.AddScalarNodeForLoadedPrimitiveValue(nodeType);
-			localVariable = new CilLocalVariable(yamlScalarNodeReference.ToTypeSignature());
-			processor.Owner.LocalVariables.Add(localVariable);
-			processor.Add(CilOpCodes.Stloc, localVariable);
-		}
-
-		private static MethodDefinition GetYamlExportMethod(this TypeDefinition type)
-		{
-			return type.Methods.Single(m => m.Name == ExportYamlMethod);
 		}
 
 		private static IMethodDefOrRef GetScalarNodeConstructor(TypeSignature parameterType)
@@ -646,6 +618,24 @@ namespace AssetRipper.AssemblyDumper.Passes
 				processor.Add(CilOpCodes.Ldc_I4, (int)MappingStyle.Flow);
 				processor.Add(CilOpCodes.Call, setter);
 			}
+		}
+
+		private static MethodDefinition NewMethod(string uniqueName, TypeSignature parameter)
+		{
+			MethodSignature methodSignature = MethodSignature.CreateStatic(yamlNodeReference.ToTypeSignature());
+			MethodDefinition method = new MethodDefinition($"{ExportYamlMethod}_{uniqueName}", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, methodSignature);
+			method.CilMethodBody = new CilMethodBody(method);
+			method.AddParameter(parameter, "value");
+			method.AddParameter(exportContainerReference.ToTypeSignature(), "container");
+			method.AddExtensionAttribute(SharedState.Instance.Importer);
+			return method;
+		}
+
+		private static CilInstruction AddCall(this CilInstructionCollection processor, IMethodDescriptor method)
+		{
+			return method is MethodDefinition definition && definition.IsStatic
+				? processor.Add(CilOpCodes.Call, method)
+				: processor.Add(CilOpCodes.Callvirt, method);
 		}
 	}
 }
