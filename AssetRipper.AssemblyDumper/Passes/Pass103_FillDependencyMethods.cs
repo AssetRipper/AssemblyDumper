@@ -26,6 +26,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private readonly static List<TypeDefinition> processedTypes = new List<TypeDefinition>();
 		private readonly static List<TypeDefinition> nonDependentTypes = new List<TypeDefinition>();
 
+		private readonly static bool throwNotSupported = true;
+
 		private static void InitializeStaticFields()
 		{
 			commonPPtrTypeRef = SharedState.Instance.Importer.ImportType(typeof(PPtr<>));
@@ -62,7 +64,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 				return;
 			}
 
-			if (type.IsPPtrType())
+			if (throwNotSupported)
+			{
+				type.FillNotSupported();
+			}
+			else if (type.IsPPtrType())
 			{
 				type.FillPPtrType();
 			}
@@ -82,12 +88,19 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static MethodDefinition GetDependencyMethod(this TypeDefinition type)
 		{
-			return type.Methods.Single(x => x.Name == "FetchDependencies");
+			return type.Methods.Single(x => x.Name == nameof(IUnityAssetBase.FetchDependencies));
 		}
 
 		private static bool IsPPtrType(this TypeDefinition type)
 		{
 			return type.Name!.ToString().StartsWith("PPtr_");
+		}
+
+		private static void FillNotSupported(this TypeDefinition type)
+		{
+			MethodDefinition? dependencyMethod = type.GetDependencyMethod();
+			CilInstructionCollection processor = dependencyMethod.CilMethodBody!.Instructions;
+			processor.AddNotSupportedException();
 		}
 
 		private static void FillPPtrType(this TypeDefinition type)
