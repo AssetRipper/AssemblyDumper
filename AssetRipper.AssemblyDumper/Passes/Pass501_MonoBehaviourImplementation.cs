@@ -42,7 +42,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				instance.Type.ImplementFullProperty(nameof(IMonoBehaviourBase.Structure), InterfacePropertyImplementationAttributes, null, structureField);
 				instance.Type.FixReadMethods(readStructureMethod);
 				instance.Type.FixExportMethods(structureField, monoBehaviourHelperType);
-				instance.Type.FixFetchDependencies(structureField, monoBehaviourHelperType);
+				//instance.Type.FixFetchDependencies(structureField, monoBehaviourHelperType);
 			}
 		}
 
