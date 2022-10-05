@@ -1,6 +1,5 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
-using AssetRipper.Core.Classes.Object;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -8,7 +7,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			TypeSignature hideFlagsSignature = SharedState.Instance.Importer.ImportTypeSignature<HideFlags>();
+			TypeSignature hideFlagsSignature = //SharedState.Instance.Importer.ImportTypeSignature<HideFlags>();
+				Pass040_AddEnums.EnumDictionary["UnityEngine.HideFlags"].Item1.ToTypeSignature();
 			TypeDefinition hasHideFlagsInterface = MakeHasHideFlagsInterface(hideFlagsSignature);
 			foreach (ClassGroup group in SharedState.Instance.ClassGroups.Values)
 			{
