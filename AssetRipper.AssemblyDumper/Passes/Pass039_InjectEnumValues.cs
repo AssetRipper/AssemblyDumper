@@ -16,6 +16,17 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					("DXT3", 11, ""),
 				} },
+			{ "UnityEngine.MeshTopology",
+				new()
+				{
+					("TriangleStrip", 1, "Mesh is a triangle strip."),
+				} },
+			{ "UnityEngine.SpritePackingRotation",
+				new()
+				{
+					("Rotate90", 4, "Might not exist. It was included in legacy code."),
+					("Any_Old", 5, "Might not exist. It was included in legacy code."),
+				} },
 		};
 
 		public static void DoPass()
