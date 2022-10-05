@@ -12,6 +12,7 @@ public static class AssemblyParser
 		"System.Attribute",
 		"System.Exception",
 		"System.IO.Stream",
+		"System.SystemException",
 		"UnityEditor.Build.BuildPlayerProcessor",
 		"UnityEditor.Experimental.AssetsModifiedProcessor",
 		"UnityEditor.AssetModificationProcessor",
@@ -33,25 +34,36 @@ public static class AssemblyParser
 		ModuleDefinition module = ModuleDefinition.FromFile(dllPath);
 		foreach (TypeDefinition type in module.TopLevelTypes)
 		{
-			string typeFullName = type.FullName;
-			if (!type.IsPublic || ClassBlackList.Contains(typeFullName) || ClassBlackList.Contains(type.BaseType?.FullName))
-			{
-			}
-			else if (type.IsEnum)
-			{
-				EnumDocumentation enumDocumentation = AddEnumDocumentation(typeSummaries, fieldSummaries, type, typeFullName);
-				enumDictionary.Add(typeFullName, enumDocumentation);
-			}
-			else if (type.IsValueType)
-			{
-				StructDocumentation structDocumentation = AddStructDocumentation(typeSummaries, fieldSummaries, propertySummaries, type, typeFullName);
-				structDictionary.Add(typeFullName, structDocumentation);
-			}
-			else if (!type.IsInterface && !type.IsStatic())
-			{
-				ClassDocumentation classDocumentation = AddClassDocumetation(typeSummaries, fieldSummaries, propertySummaries, type, typeFullName);
-				classDictionary.Add(typeFullName, classDocumentation);
-			}
+			ExtractDocumentationFromType(type, typeSummaries, fieldSummaries, propertySummaries, classDictionary, enumDictionary, structDictionary);
+		}
+	}
+
+	private static void ExtractDocumentationFromType(TypeDefinition type, Dictionary<string, string> typeSummaries, Dictionary<string, string> fieldSummaries, Dictionary<string, string> propertySummaries, Dictionary<string, ClassDocumentation> classDictionary, Dictionary<string, EnumDocumentation> enumDictionary, Dictionary<string, StructDocumentation> structDictionary)
+	{
+		string typeFullName = type.FullName;
+		if (!(type.IsPublic || type.IsNestedPublic) || ClassBlackList.Contains(typeFullName) || ClassBlackList.Contains(type.BaseType?.FullName))
+		{
+			return;
+		}
+		else if (type.IsEnum)
+		{
+			EnumDocumentation enumDocumentation = AddEnumDocumentation(typeSummaries, fieldSummaries, type, typeFullName);
+			enumDictionary.Add(typeFullName, enumDocumentation);
+		}
+		else if (type.IsValueType)
+		{
+			StructDocumentation structDocumentation = AddStructDocumentation(typeSummaries, fieldSummaries, propertySummaries, type, typeFullName);
+			structDictionary.Add(typeFullName, structDocumentation);
+		}
+		else if (!type.IsInterface && !type.IsStatic())
+		{
+			ClassDocumentation classDocumentation = AddClassDocumetation(typeSummaries, fieldSummaries, propertySummaries, type, typeFullName);
+			classDictionary.Add(typeFullName, classDocumentation);
+		}
+
+		foreach (TypeDefinition nestedType in type.NestedTypes)
+		{
+			ExtractDocumentationFromType(nestedType, typeSummaries, fieldSummaries, propertySummaries, classDictionary, enumDictionary, structDictionary);
 		}
 	}
 
@@ -62,10 +74,10 @@ public static class AssemblyParser
 		ClassDocumentation classDocumentation = new()
 		{
 			Name = type.Name ?? throw new NullReferenceException("Name cannot be null"),
-			Namespace = type.Namespace,
+			FullName = typeFullName,
 			BaseName = type.BaseType?.Name is null ? "Object" : type.BaseType.Name,
-			BaseNamespace = type.BaseType?.Name is null ? "System" : type.BaseType.Namespace,
-			DocumentationString = typeSummaries.TryGetValue(typeFullName),
+			BaseFullName = type.BaseType?.Name is null ? "System.Object" : type.BaseType.FullName,
+			DocumentationString = typeSummaries.TryGetValue(typeFullName.Replace('+', '.')),
 			ObsoleteMessage = type.GetObsoleteMessage(),
 			NativeName = type.GetNativeClass(),
 		};
@@ -79,8 +91,8 @@ public static class AssemblyParser
 				{
 					Name = fieldName,
 					TypeName = field.Signature?.FieldType.Name ?? throw new NullReferenceException("Field Signature cannot be null"),
-					TypeNamespace = field.Signature?.FieldType.Namespace,
-					DocumentationString = fieldSummaries.TryGetValue($"{typeFullName}.{field.Name}"),
+					TypeFullName = field.Signature?.FieldType.FullName ?? throw new NullReferenceException("Field Signature cannot be null"),
+					DocumentationString = fieldSummaries.TryGetValue($"{typeFullName.Replace('+', '.')}.{field.Name}"),
 					ObsoleteMessage = field.GetObsoleteMessage(),
 					NativeName = field.GetNativeName(),
 				};
@@ -97,8 +109,8 @@ public static class AssemblyParser
 				{
 					Name = propertyName,
 					TypeName = property.Signature?.ReturnType?.Name ?? throw new NullReferenceException("Property Type cannot be null"),
-					TypeNamespace = property.Signature?.ReturnType?.Namespace,
-					DocumentationString = propertySummaries.TryGetValue($"{typeFullName}.{property.Name}"),
+					TypeFullName = property.Signature?.ReturnType?.FullName ?? throw new NullReferenceException("Property Type cannot be null"),
+					DocumentationString = propertySummaries.TryGetValue($"{typeFullName.Replace('+', '.')}.{property.Name}"),
 					ObsoleteMessage = property.GetObsoleteMessage(),
 					NativeName = property.GetNativeName() ?? property.GetNativeProperty(),
 				};
@@ -122,8 +134,8 @@ public static class AssemblyParser
 			ElementType = ((CorLibTypeSignature)valueField.Signature!.FieldType).ElementType,
 			IsFlagsEnum = type.HasAttribute("System", nameof(FlagsAttribute)),
 			Name = type.Name ?? throw new NullReferenceException("Type Name cannot be null"),
-			Namespace = type.Namespace,
-			DocumentationString = typeSummaries.TryGetValue(typeFullName),
+			FullName = typeFullName,
+			DocumentationString = typeSummaries.TryGetValue(typeFullName.Replace('+', '.')),
 			ObsoleteMessage = type.GetObsoleteMessage(),
 			NativeName = null,//NativeClassAttribute isn't valid on enums
 		};
@@ -138,7 +150,7 @@ public static class AssemblyParser
 				{
 					Name = enumFieldName,
 					Value = enumField.Constant!.ConvertToLong(),
-					DocumentationString = fieldSummaries.TryGetValue($"{typeFullName}.{enumField.Name}"),
+					DocumentationString = fieldSummaries.TryGetValue($"{typeFullName.Replace('+', '.')}.{enumField.Name}"),
 					ObsoleteMessage = enumField.GetObsoleteMessage(),
 					NativeName = enumField.GetNativeName(),
 				};
@@ -158,8 +170,8 @@ public static class AssemblyParser
 		StructDocumentation structDocumentation = new()
 		{
 			Name = type.Name ?? throw new NullReferenceException("Name cannot be null"),
-			Namespace = type.Namespace,
-			DocumentationString = typeSummaries.TryGetValue(typeFullName),
+			FullName = typeFullName,
+			DocumentationString = typeSummaries.TryGetValue(typeFullName.Replace('+', '.')),
 			ObsoleteMessage = type.GetObsoleteMessage(),
 			NativeName = type.GetNativeClass(),
 		};
@@ -173,8 +185,8 @@ public static class AssemblyParser
 				{
 					Name = fieldName,
 					TypeName = field.Signature?.FieldType.Name ?? throw new NullReferenceException("Field Signature cannot be null"),
-					TypeNamespace = field.Signature?.FieldType.Namespace,
-					DocumentationString = fieldSummaries.TryGetValue($"{typeFullName}.{field.Name}"),
+					TypeFullName = field.Signature?.FieldType.FullName ?? throw new NullReferenceException("Field Signature cannot be null"),
+					DocumentationString = fieldSummaries.TryGetValue($"{typeFullName.Replace('+', '.')}.{field.Name}"),
 					ObsoleteMessage = field.GetObsoleteMessage(),
 					NativeName = field.GetNativeName(),
 				};
@@ -191,8 +203,8 @@ public static class AssemblyParser
 				{
 					Name = propertyName,
 					TypeName = property.Signature?.ReturnType?.Name ?? throw new NullReferenceException("Property Type cannot be null"),
-					TypeNamespace = property.Signature?.ReturnType?.Namespace,
-					DocumentationString = propertySummaries.TryGetValue($"{typeFullName}.{property.Name}"),
+					TypeFullName = property.Signature?.ReturnType?.FullName ?? throw new NullReferenceException("Property Type cannot be null"),
+					DocumentationString = propertySummaries.TryGetValue($"{typeFullName.Replace('+', '.')}.{property.Name}"),
 					ObsoleteMessage = property.GetObsoleteMessage(),
 					NativeName = property.GetNativeName() ?? property.GetNativeProperty(),
 				};

@@ -9,18 +9,18 @@ public sealed class DataMemberHistory : HistoryBase
 	/// <summary>
 	/// The full name for the return type of the property
 	/// </summary>
-	public VersionedList<FullName> TypeFullName { get; set; } = new();
+	public VersionedList<FullNameRecord> TypeFullName { get; set; } = new();
 
 	public override void Initialize(UnityVersion version, DocumentationBase first)
 	{
 		base.Initialize(version, first);
 		DataMemberDocumentation dataMember = (DataMemberDocumentation)first;
-		TypeFullName.Add(version, new FullName(dataMember.TypeNamespace, dataMember.TypeName));
+		TypeFullName.Add(version, new FullNameRecord(dataMember.TypeFullName, dataMember.TypeName));
 	}
 
 	protected override void AddNotNull(UnityVersion version, DocumentationBase next)
 	{
 		base.AddNotNull(version, next);
-		AddIfNotEqual(TypeFullName, version, ((DataMemberDocumentation)next).TypeFullName);
+		AddIfNotEqual(TypeFullName, version, ((DataMemberDocumentation)next).TypeFullNameRecord);
 	}
 }

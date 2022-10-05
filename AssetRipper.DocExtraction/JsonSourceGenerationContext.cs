@@ -7,7 +7,7 @@ namespace AssetRipper.DocExtraction;
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(DocumentationFile))]
 [JsonSerializable(typeof(HistoryFile))]
-[JsonSerializable(typeof(FullName))]
+[JsonSerializable(typeof(FullNameRecord))]
 public sealed partial class JsonSourceGenerationContext : JsonSerializerContext
 {
 }

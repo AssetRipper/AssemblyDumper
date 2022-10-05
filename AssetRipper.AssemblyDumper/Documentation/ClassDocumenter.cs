@@ -112,7 +112,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 				if (classProperty.History is not null)
 				{
 					VersionedList<string> nativeNameSubList = classProperty.History.NativeName.GetSubList(instance.VersionRange);
-					VersionedList<FullName> managedTypeSubList = classProperty.History.TypeFullName.GetSubList(instance.VersionRange);
+					VersionedList<FullNameRecord> managedTypeSubList = classProperty.History.TypeFullName.GetSubList(instance.VersionRange);
 					VersionedList<string> docStringSubList = classProperty.History.DocumentationString.GetSubList(instance.VersionRange);
 					VersionedList<string> obsoleteMessageSubList = classProperty.History.ObsoleteMessage.GetSubList(instance.VersionRange);
 

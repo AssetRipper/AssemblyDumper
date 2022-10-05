@@ -7,7 +7,8 @@ public sealed record class DataMemberDocumentation : DocumentationBase
 	/// <summary>
 	/// The namespace for the return type of the property
 	/// </summary>
-	public string? TypeNamespace { get; set; }
+	[JsonIgnore]
+	public string? TypeNamespace => TypeFullNameRecord.Namespace;
 	/// <summary>
 	/// The name for the return type of the property
 	/// </summary>
@@ -15,6 +16,7 @@ public sealed record class DataMemberDocumentation : DocumentationBase
 	/// <summary>
 	/// The full name for the return type of the property
 	/// </summary>
+	public string TypeFullName { get; set; } = "";
 	[JsonIgnore]
-	public FullName TypeFullName => new FullName(TypeNamespace, TypeName);
+	public FullNameRecord TypeFullNameRecord => new FullNameRecord(TypeFullName, TypeName);
 }

@@ -8,17 +8,34 @@ public abstract class TypeHistory<TMember, TMemberDocumentation> : HistoryBase
 	where TMember : HistoryBase, new()
 	where TMemberDocumentation : DocumentationBase, new()
 {
-	[JsonIgnore]
-	public string FullName => string.IsNullOrEmpty(Namespace) ? Name : $"{Namespace}.{Name}";
 	public Dictionary<string, TMember> Members { get; set; } = new();
-	public string? Namespace { get; set; }
+	public string FullName { get; set; } = "";
+	[JsonIgnore]
+	public string? Namespace
+	{
+		get
+		{
+			if (Name.Length == 0)
+			{
+				return FullName;
+			}
+			else if (FullName.Length <= Name.Length + 1)
+			{
+				return null;
+			}
+			else
+			{
+				return FullName.Substring(0, FullName.Length - Name.Length - 1);
+			}
+		}
+	}
 	public override string ToString() => FullName;
 
 	public override void Initialize(UnityVersion version, DocumentationBase first)
 	{
 		base.Initialize(version, first);
 		TypeDocumentation<TMemberDocumentation> type = (TypeDocumentation<TMemberDocumentation>)first;
-		Namespace = type.Namespace;
+		FullName = type.FullName;
 		foreach ((string memberName, TMemberDocumentation memberInstance) in type.Members)
 		{
 			TMember memberHistory = new();

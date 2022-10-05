@@ -9,19 +9,19 @@ public sealed class ClassHistory : ComplexTypeHistory
 	/// <summary>
 	/// The full name for the base type of the class
 	/// </summary>
-	public VersionedList<FullName> BaseFullName { get; set; } = new();
+	public VersionedList<FullNameRecord> BaseFullName { get; set; } = new();
 
 	public override void Initialize(UnityVersion version, DocumentationBase first)
 	{
 		base.Initialize(version, first);
 		ClassDocumentation @class = (ClassDocumentation)first;
-		BaseFullName.Add(version, new FullName(@class.BaseNamespace, @class.BaseName));
+		BaseFullName.Add(version, new FullNameRecord(@class.BaseFullName, @class.BaseName));
 	}
 
 	protected override void AddNotNull(UnityVersion version, DocumentationBase next)
 	{
 		base.AddNotNull(version, next);
-		AddIfNotEqual(BaseFullName, version, ((ClassDocumentation)next).BaseFullName);
+		AddIfNotEqual(BaseFullName, version, ((ClassDocumentation)next).BaseFullNameRecord);
 	}
 
 	public static ClassHistory From(UnityVersion version, ClassDocumentation @class)
