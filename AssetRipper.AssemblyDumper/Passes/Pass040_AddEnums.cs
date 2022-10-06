@@ -7,7 +7,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	internal static class Pass040_AddEnums
 	{
-		private static readonly HashSet<string> blackList = new()
+		private static readonly HashSet<string?> namespaceBlacklist = new()
+		{
+			"UnityEngine.Yoga",
+		};
+		private static readonly HashSet<string> fullNameBlackList = new()
 		{
 			"UnityEditor.PackageManager.LogLevel",
 			"UnityEngine.LogOption",
@@ -23,7 +27,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			Dictionary<string, int> duplicateNames = GetDuplicateNames(SharedState.Instance.HistoryFile.Enums.Values);
 			foreach ((string fullName, EnumHistory enumHistory) in SharedState.Instance.HistoryFile.Enums)
 			{
-				if (blackList.Contains(fullName))
+				if (fullNameBlackList.Contains(fullName) || namespaceBlacklist.Contains(enumHistory.Namespace))
 				{
 					continue;
 				}

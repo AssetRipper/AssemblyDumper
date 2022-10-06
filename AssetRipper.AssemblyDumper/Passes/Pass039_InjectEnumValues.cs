@@ -27,6 +27,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 					("Rotate90", 4, "Might not exist. It was included in legacy code."),
 					("Any_Old", 5, "Might not exist. It was included in legacy code."),
 				} },
+			{ "UnityEditor.Animations.AnimatorConditionMode",
+				new()
+				{
+					("ExitTime", 5, "The condition is true when the source state has stepped over the exit time value."),
+				} },
 		};
 
 		public static void DoPass()
