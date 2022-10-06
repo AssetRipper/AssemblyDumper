@@ -23,6 +23,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
+		generate.bat = generate.bat
 		LICENSE.md = LICENSE.md
 		README.md = README.md
 	EndProjectSection
@@ -39,7 +40,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.DocExtraction",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.DocExtraction.ConsoleApp", "AssetRipper.DocExtraction.ConsoleApp\AssetRipper.DocExtraction.ConsoleApp.csproj", "{B19AA42C-51E1-4845-9A07-13B60B3BB07B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetRipper.AssemblyDumper.Utils", "AssetRipper.AssemblyDumper.Utils\AssetRipper.AssemblyDumper.Utils.csproj", "{3A871555-4360-4D89-996A-1674F6F3D9CD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.AssemblyDumper.Utils", "AssetRipper.AssemblyDumper.Utils\AssetRipper.AssemblyDumper.Utils.csproj", "{3A871555-4360-4D89-996A-1674F6F3D9CD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.AssemblyDumper.Recompiler", "AssetRipper.AssemblyDumper.Recompiler\AssetRipper.AssemblyDumper.Recompiler.csproj", "{F3A24EFD-FE70-4179-8FA0-DC48D8AE6522}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -99,6 +102,10 @@ Global
 		{3A871555-4360-4D89-996A-1674F6F3D9CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3A871555-4360-4D89-996A-1674F6F3D9CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3A871555-4360-4D89-996A-1674F6F3D9CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3A24EFD-FE70-4179-8FA0-DC48D8AE6522}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3A24EFD-FE70-4179-8FA0-DC48D8AE6522}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3A24EFD-FE70-4179-8FA0-DC48D8AE6522}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3A24EFD-FE70-4179-8FA0-DC48D8AE6522}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
