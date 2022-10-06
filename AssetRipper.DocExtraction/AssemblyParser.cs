@@ -9,6 +9,8 @@ public static class AssemblyParser
 {
 	private static readonly HashSet<string?> ClassBlackList = new()
 	{
+		"<Module>",
+		"<PrivateImplementationDetails>",
 		"System.Attribute",
 		"System.Exception",
 		"System.IO.Stream",
@@ -19,7 +21,9 @@ public static class AssemblyParser
 		"UnityEditor.AssetPostprocessor",
 		"UnityEditor.Editor",
 		"UnityEditor.EditorWindow",
+		"UnityEditor.Joint2DEditor",
 		"UnityEngine.PropertyAttribute",
+		"UnityEditor.RendererEditorBase",
 	};
 
 	public static void ExtractDocumentationFromAssembly(
@@ -41,7 +45,7 @@ public static class AssemblyParser
 	private static void ExtractDocumentationFromType(TypeDefinition type, Dictionary<string, string> typeSummaries, Dictionary<string, string> fieldSummaries, Dictionary<string, string> propertySummaries, Dictionary<string, ClassDocumentation> classDictionary, Dictionary<string, EnumDocumentation> enumDictionary, Dictionary<string, StructDocumentation> structDictionary)
 	{
 		string typeFullName = type.FullName;
-		if (!(type.IsPublic || type.IsNestedPublic) || ClassBlackList.Contains(typeFullName) || ClassBlackList.Contains(type.BaseType?.FullName))
+		if (type.GenericParameters.Count > 0 || ClassBlackList.Contains(typeFullName) || ClassBlackList.Contains(type.BaseType?.FullName) || type.IsCompilerGenerated())
 		{
 			return;
 		}
@@ -84,7 +88,7 @@ public static class AssemblyParser
 
 		foreach (FieldDefinition field in type.Fields)
 		{
-			if (field.IsPublic)
+			if (!field.IsCompilerGenerated())
 			{
 				string fieldName = field.Name ?? throw new NullReferenceException("Field Name cannot be null");
 				DataMemberDocumentation fieldDocumentation = new()
@@ -102,7 +106,7 @@ public static class AssemblyParser
 
 		foreach (PropertyDefinition property in type.Properties)
 		{
-			if (property.IsPublic() && !property.HasParameters())
+			if (!property.HasParameters() && !property.IsCompilerGenerated())
 			{
 				string propertyName = property.Name ?? throw new NullReferenceException("Property Name cannot be null");
 				DataMemberDocumentation propertyDocumentation = new()
@@ -178,7 +182,7 @@ public static class AssemblyParser
 
 		foreach (FieldDefinition field in type.Fields)
 		{
-			if (field.IsPublic)
+			if (!field.IsCompilerGenerated())
 			{
 				string fieldName = field.Name ?? throw new NullReferenceException("Field Name cannot be null");
 				DataMemberDocumentation fieldDocumentation = new()
@@ -196,7 +200,7 @@ public static class AssemblyParser
 
 		foreach (PropertyDefinition property in type.Properties)
 		{
-			if (property.IsPublic() && !property.HasParameters())
+			if (!property.HasParameters() && !property.IsCompilerGenerated())
 			{
 				string propertyName = property.Name ?? throw new NullReferenceException("Property Name cannot be null");
 				DataMemberDocumentation propertyDocumentation = new()
@@ -213,5 +217,10 @@ public static class AssemblyParser
 		}
 
 		return structDocumentation;
+	}
+
+	private static bool IsCompilerGenerated(this IHasCustomAttribute hasCustomAttribute)
+	{
+		return hasCustomAttribute.HasAttribute("System.Runtime.CompilerServices", nameof(System.Runtime.CompilerServices.CompilerGeneratedAttribute));
 	}
 }
