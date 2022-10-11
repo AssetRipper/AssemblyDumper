@@ -165,7 +165,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			else if (node.TypeName == KeyframeName)
 			{
-				node.TypeName = $"{KeyframeName}_{node.GetSubNodeByName("m_Value").TypeName}";
+				string valueTypeName = node.GetSubNodeByName("m_Value").TypeName;
+				string elementTypeName = valueTypeName == "float" ? nameof(Single) : valueTypeName;
+				node.TypeName = $"{KeyframeName}_{elementTypeName}";
 			}
 			else if (node.TypeName == AnimationCurveName)
 			{
@@ -194,8 +196,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 				//The packed bit vectors are constant throughout all the unity versions and identifiable by their number of fields
 				node.TypeName = node.SubNodes.Count switch
 				{
-					5 => $"{PackedBitVectorName}_float",
-					3 => $"{PackedBitVectorName}_int",
+					5 => $"{PackedBitVectorName}_Single",
+					3 => $"{PackedBitVectorName}_Int32",
 					2 => $"{PackedBitVectorName}_Quaternionf",
 					_ => throw new NotSupportedException(),
 				};
@@ -245,6 +247,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 					{
 						child.Name = $"m_Sh_{child.Name.Substring(4)}";
 					}
+				}
+			}
+			else if (node.TypeName == "Hash128")
+			{
+				//So that the fields get ordered sequentially
+				for (int i = 0; i < 10; i++)
+				{
+					node.TryRenameSubNode($"m_Bytes_{i}_", $"m_Bytes__{i}");
+				}
+				for (int i = 10; i < 16; i++)
+				{
+					node.TryRenameSubNode($"m_Bytes_{i}_", $"m_Bytes_{i}");
 				}
 			}
 			else if (node.IsAssetServerCache(out UniversalNode? modifiedItemTypeNode))
@@ -358,14 +372,19 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				node.TypeName = "UInt64";
 			}
-			else if (node.Name == "m_PrefabParentObject" && node.TypeName.StartsWith("PPtr", StringComparison.Ordinal))//3.5 - 2018.2
+			else if (node.TypeName.StartsWith("PPtr_", StringComparison.Ordinal))
 			{
-				node.Name = "m_CorrespondingSourceObject";
+				node.TryRenameSubNode("m_FileID", "m_FileID_");
+				node.TryRenameSubNode("m_PathID", "m_PathID_");
+				if (node.Name == "m_PrefabParentObject")//3.5 - 2018.2
+				{
+					node.Name = "m_CorrespondingSourceObject";
+				}
+				/*else if (node.Name == "m_PrefabInternal")//3.5 - 2018.3
+				{
+					node.Name = "m_PrefabAsset";
+				}*/
 			}
-			/*else if (node.Name == "m_PrefabInternal" && node.TypeName.StartsWith("PPtr", StringComparison.Ordinal))//3.5 - 2018.3
-			{
-				node.Name = "m_PrefabAsset";
-			}*/
 			else if (node.TypeName == "IntPoint")
 			{
 				node.TypeName = "Vector2Long";
@@ -373,55 +392,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 			else if (node.TypeName == "Int2_storage")
 			{
 				node.TypeName = "Vector2Int";
-				node.RenameSubNode("m_X", "m_X_");
-				node.RenameSubNode("m_Y", "m_Y_");
 			}
 			else if (node.TypeName == "Int3_storage")
 			{
 				node.TypeName = "Vector3Int";
-				node.RenameSubNode("m_X", "m_X_");
-				node.RenameSubNode("m_Y", "m_Y_");
-				node.RenameSubNode("m_Z", "m_Z_");
 			}
 			else if (node.TypeName == "Float3")
 			{
 				node.TypeName = Vector3FloatName;
-				node.RenameSubNode("m_X", "m_X_");
-				node.RenameSubNode("m_Y", "m_Y_");
-				node.RenameSubNode("m_Z", "m_Z_");
 			}
 			else if (node.TypeName == "Float4")
 			{
 				node.TypeName = Vector4FloatName;
-				node.RenameSubNode("m_X", "m_X_");
-				node.RenameSubNode("m_Y", "m_Y_");
-				node.RenameSubNode("m_Z", "m_Z_");
-				node.RenameSubNode("m_W", "m_W_");
-			}
-			else if (node.TypeName == "Vector2f")
-			{
-				node.RenameSubNode("m_X", "m_X_");
-				node.RenameSubNode("m_Y", "m_Y_");
-			}
-			else if (node.TypeName == "Vector3f")
-			{
-				node.RenameSubNode("m_X", "m_X_");
-				node.RenameSubNode("m_Y", "m_Y_");
-				node.RenameSubNode("m_Z", "m_Z_");
-			}
-			else if (node.TypeName == "Vector4f")
-			{
-				node.RenameSubNode("m_X", "m_X_");
-				node.RenameSubNode("m_Y", "m_Y_");
-				node.RenameSubNode("m_Z", "m_Z_");
-				node.RenameSubNode("m_W", "m_W_");
-			}
-			else if (node.TypeName == "Quaternionf")
-			{
-				node.RenameSubNode("m_X", "m_X_");
-				node.RenameSubNode("m_Y", "m_Y_");
-				node.RenameSubNode("m_Z", "m_Z_");
-				node.RenameSubNode("m_W", "m_W_");
 			}
 			else if (node.TypeName == "Fixed_bitset")
 			{

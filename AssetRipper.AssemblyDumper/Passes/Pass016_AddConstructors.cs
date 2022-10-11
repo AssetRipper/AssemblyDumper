@@ -1,5 +1,5 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.Core.Parser.Asset;
+using AssetRipper.Assets.Metadata;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -43,7 +43,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 
 			TypeDefinition type = instance.Type;
-			type.AddDefaultConstructor(SharedState.Instance.Importer);
+			type.AddEmptyDefaultConstructor();
 			if (instance.ID >= 0)
 			{
 				type.AddAssetInfoConstructor();
@@ -54,6 +54,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static MethodDefinition AddAssetInfoConstructor(this TypeDefinition typeDefinition)
 		{
 			return AddSingleParameterConstructor(typeDefinition, AssetInfoRef, "info");
+		}
+
+		private static MethodDefinition AddEmptyDefaultConstructor(this TypeDefinition typeDefinition)
+		{
+			return typeDefinition.AddMethod(
+				".ctor",
+				PublicInstanceConstructorAttributes,
+				SharedState.Instance.Importer.Void
+			);
 		}
 
 		private static MethodDefinition AddSingleParameterConstructor(this TypeDefinition typeDefinition, ITypeDefOrRef parameterType, string parameterName)

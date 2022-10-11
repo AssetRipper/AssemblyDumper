@@ -2,9 +2,9 @@
 using AssetRipper.AssemblyCreationTools.Attributes;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
-using AssetRipper.Core;
-using AssetRipper.Core.IO;
-using AssetRipper.Core.IO.Asset;
+using AssetRipper.Assets;
+using AssetRipper.Assets.Generics;
+using AssetRipper.Assets.IO.Writing;
 using AssetRipper.IO.Endian;
 using System.Diagnostics;
 using System.IO;

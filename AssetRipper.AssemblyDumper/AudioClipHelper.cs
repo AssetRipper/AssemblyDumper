@@ -1,7 +1,7 @@
-﻿using AssetRipper.Core;
-using AssetRipper.Core.Extensions;
-using AssetRipper.Core.IO.Asset;
-using AssetRipper.Core.Parser.Files.ResourceFiles;
+﻿using AssetRipper.Assets;
+using AssetRipper.Assets.IO.Reading;
+using AssetRipper.IO.Files.Extensions;
+using AssetRipper.IO.Files.ResourceFiles;
 
 #nullable disable
 
@@ -27,8 +27,8 @@ namespace AssetRipper.AssemblyDumper
 		{
 			uint size = reader.ReadUInt32();
 			uint offset = reader.ReadUInt32();
-			string resourceFileName = audioClip.SerializedFile.Name + ".resS";
-			if (TryFindResourceFile(audioClip, resourceFileName, out IResourceFile resourceFile))
+			string resourceFileName = audioClip.Collection.Name + ".resS";
+			if (TryFindResourceFile(audioClip, resourceFileName, out ResourceFile resourceFile))
 			{
 				byte[] result = new byte[size];
 				resourceFile.Stream.Position = offset;
@@ -41,10 +41,10 @@ namespace AssetRipper.AssemblyDumper
 			}
 		}
 
-		private static bool TryFindResourceFile(UnityObjectBase audioClip, string resourceFileName, out IResourceFile resourceFile)
+		private static bool TryFindResourceFile(UnityObjectBase audioClip, string resourceFileName, out ResourceFile resourceFile)
 		{
-			resourceFile = audioClip.SerializedFile.Collection.FindResourceFile(resourceFileName);
-			return resourceFile != null;
+			resourceFile = audioClip.Collection.Bundle.ResolveResource(resourceFileName);
+			return resourceFile is not null;
 		}
 	}
 }

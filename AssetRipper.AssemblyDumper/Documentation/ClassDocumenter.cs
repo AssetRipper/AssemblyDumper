@@ -1,7 +1,7 @@
 ﻿using AssetRipper.AssemblyDumper.Utils;
-using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
-using AssetRipper.Core.Utils;
+using AssetRipper.Assets.Utils;
 using AssetRipper.DocExtraction.MetaData;
+using AssetRipper.IO.Files.SerializedFiles;
 
 namespace AssetRipper.AssemblyDumper.Documentation
 {

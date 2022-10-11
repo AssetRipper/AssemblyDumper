@@ -1,9 +1,10 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.Core;
-using AssetRipper.Core.Interfaces;
-using AssetRipper.Core.IO.Asset;
-using AssetRipper.Core.Parser.Asset;
-using AssetRipper.Core.Project;
+using AssetRipper.Assets;
+using AssetRipper.Assets.Export;
+using AssetRipper.Assets.Export.Dependencies;
+using AssetRipper.Assets.IO.Reading;
+using AssetRipper.Assets.IO.Writing;
+using AssetRipper.Assets.Metadata;
 using AssetRipper.Yaml;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -14,7 +15,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			TypeSignature commonPPtrTypeRef = SharedState.Instance.Importer.ImportTypeSignature(typeof(AssetRipper.Core.Classes.Misc.PPtr<>));
+			TypeSignature commonPPtrTypeRef = SharedState.Instance.Importer.ImportTypeSignature(typeof(PPtr<>));
 			TypeSignature unityObjectBaseInterfaceRef = SharedState.Instance.Importer.ImportTypeSignature<IUnityObjectBase>();
 			GenericInstanceTypeSignature unityObjectBasePPtrRef = commonPPtrTypeRef.MakeGenericInstanceType(unityObjectBaseInterfaceRef);
 			TypeSignature ienumerableTypeRef = SharedState.Instance.Importer.ImportTypeSignature(typeof(IEnumerable<>));

@@ -1,6 +1,6 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
-using AssetRipper.Core.IO;
+using AssetRipper.Assets.Generics;
 using System.Text;
 
 namespace AssetRipper.AssemblyDumper.Passes

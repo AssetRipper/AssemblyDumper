@@ -1,7 +1,6 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.Core;
-using AssetRipper.Core.IO;
-using AssetRipper.Core.IO.Asset;
+using AssetRipper.Assets;
+using System.IO;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -51,16 +50,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Brtrue, returnLabel));
 			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Ceq));
 
-			IMethodDefOrRef getAdjustableStream = SharedState.Instance.Importer.ImportMethod<AssetReader>(m => m.Name == $"get_{nameof(AssetReader.AdjustableStream)}");
-			IMethodDefOrRef getLength = SharedState.Instance.Importer.ImportMethod<AdjustableStream>(m => m.Name == $"get_{nameof(AdjustableStream.Length)}");
-			IMethodDefOrRef getPosition = SharedState.Instance.Importer.ImportMethod<AdjustableStream>(m => m.Name == $"get_{nameof(AdjustableStream.Position)}");
+			IMethodDefOrRef getStream = SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == $"get_{nameof(BinaryReader.BaseStream)}");
+			IMethodDefOrRef getLength = SharedState.Instance.Importer.ImportMethod<Stream>(m => m.Name == $"get_{nameof(Stream.Length)}");
+			IMethodDefOrRef getPosition = SharedState.Instance.Importer.ImportMethod<Stream>(m => m.Name == $"get_{nameof(Stream.Position)}");
 
 			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Callvirt, getLength));
-			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Callvirt, getAdjustableStream));
+			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Callvirt, getStream));
 			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Ldarg_1));
 
 			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Callvirt, getPosition));
-			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Callvirt, getAdjustableStream));
+			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Callvirt, getStream));
 			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Ldarg_1));
 
 			processor.OptimizeMacros();

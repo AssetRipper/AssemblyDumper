@@ -1,8 +1,8 @@
 ﻿using AssetRipper.AssemblyCreationTools;
 using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.Core.Classes.Misc;
-using AssetRipper.Core.Interfaces;
-using AssetRipper.Core.Parser.Asset;
+using AssetRipper.Assets;
+using AssetRipper.Assets.Export.Dependencies;
+using AssetRipper.Assets.Metadata;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -35,7 +35,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			unityObjectBasePPtrRef = commonPPtrTypeRef.MakeGenericInstanceType(unityObjectBaseInterfaceRef.ToTypeSignature());
 			unityObjectBasePPtrListType = SharedState.Instance.Importer.ImportType(typeof(List<>)).MakeGenericInstanceType(unityObjectBasePPtrRef);
 			unityObjectBasePPtrListConstructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, unityObjectBasePPtrListType, 0);
-			MethodDefinition addRangeMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == "AddRange");
+			MethodDefinition addRangeMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == nameof(List<int>.AddRange));
 			unityObjectBasePPtrListAddRange = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, unityObjectBasePPtrListType, addRangeMethodDefinition);
 
 			emptyArray = SharedState.Instance.Importer.ImportMethod<Array>(method => method.Name == "Empty");

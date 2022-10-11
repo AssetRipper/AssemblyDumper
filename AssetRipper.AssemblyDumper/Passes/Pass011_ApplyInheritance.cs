@@ -1,7 +1,7 @@
 ﻿//#define SPLIT_ABSTRACT
 
-using AssetRipper.Core;
-using AssetRipper.Core.Classes;
+using AssetRipper.Assets;
+using AssetRipper.Assets.Utils;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

@@ -1,4 +1,4 @@
-﻿using AssetRipper.Core.Parser.Asset;
+﻿using AssetRipper.Assets.Metadata;
 
 namespace AssetRipper.AssemblyDumper
 {

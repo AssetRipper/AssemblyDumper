@@ -1,9 +1,8 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
-using AssetRipper.Core;
-using AssetRipper.Core.Classes.Misc;
-using AssetRipper.Core.Interfaces;
-using AssetRipper.Core.IO;
+using AssetRipper.Assets;
+using AssetRipper.Assets.Generics;
+using AssetRipper.Assets.Metadata;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -20,13 +19,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				return method.Name == $"get_{nameof(PPtrAccessList<IPPtr<IUnityObjectBase>, IUnityObjectBase>.Empty)}";
 			});
-			IMethodDefOrRef pptrTryGetAssetMethod = SharedState.Instance.Importer.ImportMethod(typeof(PPtr), method =>
+			IMethodDefOrRef pptrTryGetAssetMethod = SharedState.Instance.Importer.ImportMethod(typeof(PPtrExtensions), method =>
 			{
-				return method.Name == nameof(PPtr.TryGetAsset) && method.Parameters.Count == 2;
+				return method.Name == nameof(PPtrExtensions.TryGetAsset) && method.Parameters.Count == 2;
 			});
 			IMethodDefOrRef getSerializedFileMethod = SharedState.Instance.Importer.ImportMethod(typeof(UnityObjectBase), method =>
 			{
-				return method.Name == $"get_{nameof(UnityObjectBase.SerializedFile)}";
+				return method.Name == $"get_{nameof(UnityObjectBase.Collection)}";
 			});
 
 			foreach (ClassGroup group in SharedState.Instance.ClassGroups.Values)

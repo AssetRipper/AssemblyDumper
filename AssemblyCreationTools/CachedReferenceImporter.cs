@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using AssetRipper.AssemblyCreationTools.Types;
+using System.Diagnostics.CodeAnalysis;
 
 namespace AssetRipper.AssemblyCreationTools
 {
@@ -87,8 +88,18 @@ namespace AssetRipper.AssemblyCreationTools
 			return typeDefinition.Methods.Single(filter);
 		}
 
+		public FieldDefinition LookupField<T>(string name) => LookupField(typeof(T), name);
+		public FieldDefinition LookupField(Type type, string name)
+		{
+			TypeDefinition typeDefinition = LookupType(type) ?? throw new ArgumentException($"Module for {type.FullName} not referenced", nameof(type));
+			return typeDefinition.GetFieldByName(name);
+		}
+
 		public IMethodDefOrRef ImportMethod<T>(Func<MethodDefinition, bool> filter) => UnderlyingImporter.ImportMethod(LookupMethod<T>(filter));
 		public IMethodDefOrRef ImportMethod(Type type, Func<MethodDefinition, bool> filter) => UnderlyingImporter.ImportMethod(LookupMethod(type, filter));
+
+		public IFieldDescriptor ImportField<T>(string name) => UnderlyingImporter.ImportField(LookupField<T>(name));
+		public IFieldDescriptor ImportField(Type type, string name) => UnderlyingImporter.ImportField(LookupField(type, name));
 
 		public ITypeDefOrRef ImportType<T>() => ImportType(typeof(T));
 		public ITypeDefOrRef ImportType(Type type)

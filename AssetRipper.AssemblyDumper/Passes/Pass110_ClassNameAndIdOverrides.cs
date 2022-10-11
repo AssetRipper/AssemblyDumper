@@ -1,5 +1,5 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.Core;
+using AssetRipper.Assets;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -14,20 +14,19 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			TypeSignature classIdTypeSignature = SharedState.Instance.Importer.ImportTypeSignature<ClassIDType>();
 			foreach ((int id, ClassGroup group) in SharedState.Instance.ClassGroups)
 			{
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
-					instance.Type.AddClassIdOverride(id, classIdTypeSignature);
+					//instance.Type.AddClassIdOverride(id);
 					instance.Type.AddClassNameOverride(instance.Name);
 				}
 			}
 		}
 
-		private static void AddClassIdOverride(this TypeDefinition type, int id, TypeSignature classIdTypeSignature)
+		private static void AddClassIdOverride(this TypeDefinition type, int id)
 		{
-			PropertyDefinition property = type.AddGetterProperty(nameof(UnityObjectBase.ClassID), PropertyOverrideAttributes, classIdTypeSignature);
+			PropertyDefinition property = type.AddGetterProperty(nameof(UnityObjectBase.ClassID), PropertyOverrideAttributes, SharedState.Instance.Importer.Int32);
 			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 			processor.Add(CilOpCodes.Ldc_I4, id);
 			processor.Add(CilOpCodes.Ret);
@@ -36,7 +35,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void AddClassNameOverride(this TypeDefinition type, string className)
 		{
-			PropertyDefinition property = type.AddGetterProperty(nameof(UnityObjectBase.AssetClassName), PropertyOverrideAttributes, SharedState.Instance.Importer.String);
+			PropertyDefinition property = type.AddGetterProperty(nameof(UnityObjectBase.ClassName), PropertyOverrideAttributes, SharedState.Instance.Importer.String);
 			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 			processor.Add(CilOpCodes.Ldstr, className);
 			processor.Add(CilOpCodes.Ret);

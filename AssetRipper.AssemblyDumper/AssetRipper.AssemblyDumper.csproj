@@ -12,8 +12,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\AssetRipper\AssetRipper.Assets\AssetRipper.Assets.csproj" />
+		<ProjectReference Include="..\..\AssetRipper\AssetRipper.IO.Endian\AssetRipper.IO.Endian.csproj" />
+		<ProjectReference Include="..\..\AssetRipper\AssetRipper.IO.Files\AssetRipper.IO.Files.csproj" />
+		<ProjectReference Include="..\..\AssetRipper\AssetRipper.Numerics\AssetRipper.Numerics.csproj" />
+		<ProjectReference Include="..\..\AssetRipper\AssetRipper.Yaml\AssetRipper.Yaml.csproj" />
 		<ProjectReference Include="..\AssemblyCreationTools\AssemblyCreationTools.csproj" />
-		<ProjectReference Include="..\..\AssetRipper\AssetRipper.Fundamentals\AssetRipper.Fundamentals.csproj" />
 		<ProjectReference Include="..\..\Tpk\Tpk\Tpk.csproj" />
 		<ProjectReference Include="..\AssetRipper.AssemblyDumper.Utils\AssetRipper.AssemblyDumper.Utils.csproj" />
 		<ProjectReference Include="..\AssetRipper.DocExtraction\AssetRipper.DocExtraction.csproj" />

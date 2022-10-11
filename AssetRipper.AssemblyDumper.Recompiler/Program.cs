@@ -10,7 +10,7 @@ internal class Program
 	private static bool GeneratePackageOnBuild = false;
 	private static bool GenerateDocumentationFile = false;
 	private static bool IsTrimmable = false;
-	private const string FundamentalsProjectPath = @"E:\repos\AssetRipper\AssetRipper.Fundamentals\AssetRipper.Fundamentals.csproj";
+	private const string AssetRipperProjectPath = @"E:\repos\AssetRipper";
 	private static string CsProjContent = $"""
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -44,7 +44,8 @@ internal class Program
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="{FundamentalsProjectPath}" />
+		<ProjectReference Include="{AssetRipperProjectPath}\AssetRipper.Assets\AssetRipper.Assets.csproj" />
+		<ProjectReference Include="{AssetRipperProjectPath}\AssetRipper.Numerics\AssetRipper.Numerics.csproj" />
 	</ItemGroup>
 
 </Project>

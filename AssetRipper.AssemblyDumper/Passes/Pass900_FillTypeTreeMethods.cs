@@ -1,6 +1,6 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.Core;
-using AssetRipper.Core.Parser.Files.SerializedFiles.Parser.TypeTree;
+using AssetRipper.Assets;
+using AssetRipper.IO.Files.SerializedFiles.Parser.TypeTrees;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

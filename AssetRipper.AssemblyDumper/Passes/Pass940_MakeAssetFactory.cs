@@ -1,7 +1,7 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
-using AssetRipper.Core.Interfaces;
-using AssetRipper.Core.Parser.Asset;
+using AssetRipper.Assets;
+using AssetRipper.Assets.Metadata;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -79,8 +79,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					if (isAssetInfo)
 					{
-						processor.Add(CilOpCodes.Ldarg_1);
-						IMethodDefOrRef propertyRef = SharedState.Instance.Importer.ImportMethod<AssetInfo>(m => m.Name == $"get_{nameof(AssetInfo.ClassNumber)}");
+						processor.Add(CilOpCodes.Ldarga, processor.Owner.Owner.Parameters[1]);
+						IMethodDefOrRef propertyRef = SharedState.Instance.Importer.ImportMethod<AssetInfo>(m => m.Name == $"get_{nameof(AssetInfo.ClassID)}");
 						processor.Add(CilOpCodes.Call, propertyRef);
 					}
 					else

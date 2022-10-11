@@ -100,10 +100,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			public IEnumerator<PropertyDefinition> GetEnumerator()
 			{
-				yield return GetProperty("X_");
-				yield return GetProperty("Y_");
-				yield return GetProperty("Z_");
-				yield return GetProperty("W_");
+				yield return GetProperty("X");
+				yield return GetProperty("Y");
+				yield return GetProperty("Z");
+				yield return GetProperty("W");
 			}
 			protected abstract PropertyDefinition GetProperty(string propertyName);
 			IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

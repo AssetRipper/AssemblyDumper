@@ -2,7 +2,11 @@
 using AssetRipper.AssemblyCreationTools.Attributes;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyDumper.Utils;
+using AssetRipper.Assets;
 using AssetRipper.DocExtraction.DataStructures;
+using AssetRipper.IO.Files;
+using AssetRipper.Numerics;
+using System.Numerics;
 
 namespace AssetRipper.AssemblyDumper
 {
@@ -51,7 +55,7 @@ namespace AssetRipper.AssemblyDumper
 			UnityVersion[] sourceVersions,
 			Dictionary<int, VersionedList<UniversalClass>> classes,
 			UniversalCommonString commonString)
-			: base(AssemblyName, new Version(0, 0, 0, 0), KnownCorLibs.SystemRuntime_v6_0_0_0)
+			: base(AssemblyName, new Version(0, 0, 0, 0), KnownCorLibs.SystemPrivateCoreLib_v6_0_0_0)
 		{
 			SourceVersions = sourceVersions;
 			CommonString = commonString;
@@ -85,13 +89,16 @@ namespace AssetRipper.AssemblyDumper
 
 		private void AddReferenceModules()
 		{
-			AddReferenceModuleContainingType(typeof(Core.UnityObjectBase));
+			AddReferenceModuleContainingType(typeof(UnityObjectBase));
 			AddReferenceModuleContainingType(typeof(Yaml.YamlNode));
 			AddReferenceModuleContainingType(typeof(IO.Endian.EndianReader));
 			AddReferenceModuleContainingType(typeof(UnityVersion));
-			//AddReferenceModuleContainingType(typeof(object));
-			Importer.AddReferenceModule(ModuleDefinition.FromFile(@"E:\repos\AssemblyDumper\Libraries\System.Collections.dll"));
-			Importer.AddReferenceModule(ModuleDefinition.FromFile(@"E:\repos\AssemblyDumper\Libraries\System.Runtime.dll"));
+			AddReferenceModuleContainingType(typeof(UnityGUID));
+			AddReferenceModuleContainingType(typeof(Color32));
+			AddReferenceModuleContainingType(typeof(Vector3));
+			AddReferenceModuleContainingType(typeof(object));
+			//Importer.AddReferenceModule(ModuleDefinition.FromFile(@"E:\repos\AssemblyDumper\Libraries\System.Collections.dll"));
+			//Importer.AddReferenceModule(ModuleDefinition.FromFile(@"E:\repos\AssemblyDumper\Libraries\System.Runtime.dll"));
 			AddReferenceModuleContainingType(typeof(Program));
 		}
 

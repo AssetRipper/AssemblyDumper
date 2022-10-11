@@ -1,5 +1,5 @@
 ﻿using AssetRipper.AssemblyDumper.Utils;
-using AssetRipper.Core.Parser.Files.SerializedFiles.Parser;
+using AssetRipper.IO.Files.SerializedFiles;
 using AssetRipper.Tpk.Shared;
 using AssetRipper.Tpk.TypeTrees;
 

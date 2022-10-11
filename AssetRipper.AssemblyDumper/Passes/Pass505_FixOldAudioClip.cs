@@ -1,7 +1,7 @@
 ﻿using AsmResolver.DotNet.Cloning;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
-using AssetRipper.Core;
+using AssetRipper.Assets;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

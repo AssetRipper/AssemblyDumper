@@ -1,5 +1,5 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.Core.Classes.Misc;
+using AssetRipper.IO.Files;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -53,10 +53,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			FieldDefinition data2 = guidType.Fields.Single(field => field.Name == "m_Data_2_");
 			FieldDefinition data3 = guidType.Fields.Single(field => field.Name == "m_Data_3_");
 
-			IMethodDefOrRef getData0 = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == "get_Data0");
-			IMethodDefOrRef getData1 = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == "get_Data1");
-			IMethodDefOrRef getData2 = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == "get_Data2");
-			IMethodDefOrRef getData3 = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == "get_Data3");
+			IMethodDefOrRef getData0 = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == $"get_{nameof(UnityGUID.Data0)}");
+			IMethodDefOrRef getData1 = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == $"get_{nameof(UnityGUID.Data1)}");
+			IMethodDefOrRef getData2 = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == $"get_{nameof(UnityGUID.Data2)}");
+			IMethodDefOrRef getData3 = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == $"get_{nameof(UnityGUID.Data3)}");
 
 			MethodDefinition explicitMethod = guidType.AddMethod("op_Explicit", ConversionAttributes, guidType.ToTypeSignature());
 			Parameter parameter = explicitMethod.AddParameter(commonGuidType.ToTypeSignature(), "value");
