@@ -1,4 +1,5 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AsmResolver.DotNet.Cloning;
+using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using System.Collections;
 using System.Text;
@@ -11,9 +12,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private const string CopyValuesName = "CopyValues";
 		private static readonly HashSet<string> processedClasses = new();
 		private static readonly HashSet<string> skippedClasses = new();
+		private static MethodDefinition? duplicateArrayMethod;
 
 		public static void DoPass()
 		{
+			duplicateArrayMethod = InjectHelper().GetMethodByName(nameof(ArrayDuplicationHelper.DuplicateArray));
+
 			foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
 			{
 				ProcessGroup(group);
@@ -103,12 +107,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 								processor.Add(CilOpCodes.Call, setMethod);
 							}
 							break;
-						case SzArrayTypeSignature:
+						case SzArrayTypeSignature arrayType:
 							{
 								MethodDefinition setMethod = classProperty.Definition.SetMethod ?? throw new Exception("Set method can't be null");
 								processor.Add(CilOpCodes.Ldarg_0);
 								processor.Add(CilOpCodes.Ldarg_1);
 								processor.Add(CilOpCodes.Callvirt, baseGetMethod);
+								processor.Add(CilOpCodes.Call, duplicateArrayMethod!.MakeGenericInstanceMethod(arrayType.BaseType));
 								processor.Add(CilOpCodes.Call, setMethod);
 							}
 							break;
@@ -248,6 +253,19 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				return group.InterfaceProperties.Select(i => i.Definition).Single(property => property.Name == propertyName);
 			}
+		}
+
+		private static TypeDefinition InjectHelper()
+		{
+			MemberCloner cloner = new MemberCloner(SharedState.Instance.Module);
+			cloner.Include(SharedState.Instance.Importer.LookupType(typeof(ArrayDuplicationHelper))!, true);
+			MemberCloneResult result = cloner.Clone();
+			foreach (TypeDefinition type in result.ClonedTopLevelTypes)
+			{
+				type.Namespace = SharedState.HelpersNamespace;
+				SharedState.Instance.Module.TopLevelTypes.Add(type);
+			}
+			return result.ClonedTopLevelTypes.Single(t => t.Name == nameof(ArrayDuplicationHelper));
 		}
 	}
 }
