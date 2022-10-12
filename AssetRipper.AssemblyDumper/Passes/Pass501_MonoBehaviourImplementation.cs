@@ -22,12 +22,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 			const string propertyName = "Structure";
 			const string fieldName = "m_" + propertyName;
 
-			group.Interface.AddFullProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType);
+			group.Interface.AddFullProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType)
+				.AddNullableAttributesForMaybeNull();
 
 			foreach (GeneratedClassInstance instance in group.Instances)
 			{
 				FieldDefinition structureField = instance.Type.AddStructureField(fieldName, propertyType);
-				instance.Type.ImplementFullProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, null, structureField);
+				instance.Type.ImplementFullProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, null, structureField)
+					.AddNullableAttributesForMaybeNull();
+				structureField.AddNullableAttributesForMaybeNull();
+
 				instance.Type.FixExportMethods(structureField, monoBehaviourHelperType);
 			}
 		}

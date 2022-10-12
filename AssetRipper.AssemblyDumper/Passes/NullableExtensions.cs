@@ -8,10 +8,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		internal static void AddNullableAttributesForMaybeNull(this PropertyDefinition property)
 		{
-			TypeSignature propertyTypeSignature = property.Signature!.ReturnType;
-			if (propertyTypeSignature is SzArrayTypeSignature or GenericInstanceTypeSignature)
+			TypeSignature typeSignature = property.Signature!.ReturnType;
+			if (typeSignature is SzArrayTypeSignature or GenericInstanceTypeSignature)
 			{
-				property.AddNullableAttribute(GetNullableByteArray(propertyTypeSignature));
+				property.AddNullableAttribute(GetNullableByteArray(typeSignature));
 			}
 			else
 			{
@@ -19,6 +19,19 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			property.GetMethod!.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
 			property.SetMethod?.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
+		}
+
+		internal static void AddNullableAttributesForMaybeNull(this FieldDefinition field)
+		{
+			TypeSignature typeSignature = field.Signature!.FieldType;
+			if (typeSignature is SzArrayTypeSignature or GenericInstanceTypeSignature)
+			{
+				field.AddNullableAttribute(GetNullableByteArray(typeSignature));
+			}
+			else
+			{
+				field.AddNullableAttribute(NullableAnnotation.MaybeNull);
+			}
 		}
 
 		internal static CustomAttribute AddNullableAttribute(this IHasCustomAttribute hasCustomAttribute, NullableAnnotation annotation)
