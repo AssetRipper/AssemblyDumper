@@ -23,7 +23,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				return method.Name == nameof(PPtrExtensions.TryGetAsset) && method.Parameters.Count == 2;
 			});
-			IMethodDefOrRef getSerializedFileMethod = SharedState.Instance.Importer.ImportMethod(typeof(UnityObjectBase), method =>
+			IMethodDefOrRef pptrSetAssetMethod = SharedState.Instance.Importer.ImportMethod(typeof(PPtrExtensions), method =>
+			{
+				return method.Name == nameof(PPtrExtensions.SetAsset) && method.Parameters.Count == 3;
+			});
+			IMethodDefOrRef getCollectionMethod = SharedState.Instance.Importer.ImportMethod(typeof(UnityObjectBase), method =>
 			{
 				return method.Name == $"get_{nameof(UnityObjectBase.Collection)}";
 			});
@@ -39,7 +43,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 						if (originalPropertySignature.IsPPtr(out TypeDefinition? pptrType, out TypeDefinition? parameterType))
 						{
 							MethodSpecification tryGetAssetMethodInstance = pptrTryGetAssetMethod.MakeGenericInstanceMethod(parameterType.ToTypeSignature());
-							interfaceProperty.SpecialDefinition = interfaceProperty.Group.Interface.AddGetterProperty(
+							MethodSpecification setAssetMethodInstance = pptrSetAssetMethod.MakeGenericInstanceMethod(parameterType.ToTypeSignature());
+							interfaceProperty.SpecialDefinition = interfaceProperty.Group.Interface.AddFullProperty(
 								pptrPropertyName,
 								InterfaceUtils.InterfacePropertyDeclaration,
 								parameterType.ToTypeSignature());
@@ -47,26 +52,43 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 							foreach (ClassProperty classProperty in interfaceProperty.Implementations)
 							{
-								classProperty.SpecialDefinition = classProperty.Class.Type.AddGetterProperty(
+								classProperty.SpecialDefinition = classProperty.Class.Type.AddFullProperty(
 									pptrPropertyName,
 									InterfaceUtils.InterfacePropertyImplementation,
 									parameterType.ToTypeSignature());
 								classProperty.SpecialDefinition.AddNullableAttributesForMaybeNull();
 
-								CilInstructionCollection processor = classProperty.SpecialDefinition.GetMethod!.GetProcessor();
-								if (classProperty.BackingField is null)
+								//Get method
 								{
-									processor.Add(CilOpCodes.Ldnull);
+									CilInstructionCollection processor = classProperty.SpecialDefinition.GetMethod!.GetProcessor();
+									if (classProperty.BackingField is null)
+									{
+										processor.Add(CilOpCodes.Ldnull);
+									}
+									else
+									{
+										processor.Add(CilOpCodes.Ldarg_0);
+										processor.Add(CilOpCodes.Call, classProperty.Definition.GetMethod!);
+										processor.Add(CilOpCodes.Ldarg_0);
+										processor.Add(CilOpCodes.Callvirt, getCollectionMethod);
+										processor.Add(CilOpCodes.Call, tryGetAssetMethodInstance);
+									}
+									processor.Add(CilOpCodes.Ret);
 								}
-								else
+								//Set method
 								{
-									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Call, classProperty.Definition.GetMethod!);
-									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Callvirt, getSerializedFileMethod);
-									processor.Add(CilOpCodes.Call, tryGetAssetMethodInstance);
+									CilInstructionCollection processor = classProperty.SpecialDefinition.SetMethod!.GetProcessor();
+									if (classProperty.BackingField is not null)
+									{
+										processor.Add(CilOpCodes.Ldarg_0);
+										processor.Add(CilOpCodes.Call, classProperty.Definition.GetMethod!);
+										processor.Add(CilOpCodes.Ldarg_0);
+										processor.Add(CilOpCodes.Callvirt, getCollectionMethod);
+										processor.Add(CilOpCodes.Ldarg_1);
+										processor.Add(CilOpCodes.Call, setAssetMethodInstance);
+									}
+									processor.Add(CilOpCodes.Ret);
 								}
-								processor.Add(CilOpCodes.Ret);
 							}
 						}
 						else if (originalPropertySignature.IsPPtrList(out pptrType, out parameterType))
