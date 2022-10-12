@@ -7,6 +7,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
+			InjectedDocumenter.AddDocumentation();
+
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
 				InterfaceDocumenter.AddInterfaceDocumentation(group);
