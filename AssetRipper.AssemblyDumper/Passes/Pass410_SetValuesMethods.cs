@@ -86,6 +86,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 				CilInstructionCollection processor = method.GetProcessor();
 				foreach (ClassProperty classProperty in instance.Properties)
 				{
+					if (classProperty.IsAbsent)
+					{
+						continue;
+					}
+
 					MethodDefinition baseGetMethod = classProperty.Base.Definition.GetMethod ?? throw new Exception("Interface get method can't be null");
 					switch (classProperty.Definition.Signature?.ReturnType)
 					{
