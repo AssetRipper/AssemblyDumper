@@ -10,6 +10,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		private const string SetValuesName = "SetValues";
 		private const string CopyValuesName = "CopyValues";
+		private const string DeepCloneName = "DeepClone";
 		private static readonly HashSet<string> processedClasses = new();
 		private static readonly HashSet<string> skippedClasses = new();
 		private static MethodDefinition? duplicateArrayMethod;
@@ -39,6 +40,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			else if (group.InterfaceProperties.Count == 0)
 			{
 				group.ImplementCopyValuesMethod();
+				group.ImplementDeepCloneMethod();
 				processedClasses.Add(group.Name);
 				return true;
 			}
@@ -46,12 +48,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				group.ImplementSetValuesMethod();
 				group.ImplementCopyValuesMethod();
+				group.ImplementDeepCloneMethod();
 				processedClasses.Add(group.Name);
 				return true;
 			}
 			else if (group.InterfaceProperties.Select(i => i.Definition).All(prop => prop.IsArrayOrPrimitiveOrProcessedType()))
 			{
 				group.ImplementCopyValuesMethod();
+				group.ImplementDeepCloneMethod();
 				processedClasses.Add(group.Name);
 				return true;
 			}
@@ -134,6 +138,22 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				processor.Add(CilOpCodes.Ret);
 				processor.OptimizeMacros();
+			}
+		}
+
+		private static void ImplementDeepCloneMethod(this SubclassGroup group)
+		{
+			group.Interface.AddMethod(DeepCloneName, InterfaceUtils.InterfaceMethodDeclaration, group.Interface.ToTypeSignature());
+			
+			foreach (GeneratedClassInstance instance in group.Instances)
+			{
+				MethodDefinition method = instance.Type.AddMethod(DeepCloneName, InterfaceUtils.InterfaceMethodImplementation, group.Interface.ToTypeSignature());
+				CilInstructionCollection processor = method.GetProcessor();
+				processor.Add(CilOpCodes.Newobj, instance.Type.GetDefaultConstructor());
+				processor.Add(CilOpCodes.Dup);
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Callvirt, instance.Type.GetMethodByName(CopyValuesName));
+				processor.Add(CilOpCodes.Ret);
 			}
 		}
 
