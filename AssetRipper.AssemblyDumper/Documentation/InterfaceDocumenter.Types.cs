@@ -8,6 +8,19 @@
 			{
 				DocumentationHandler.AddTypeDefinitionLine(group.Interface, $"Interface for the {string.Join(", ", classGroup.Names)} classes.");
 				DocumentationHandler.AddTypeDefinitionLine(group.Interface, $"Type ID: {classGroup.ID}");
+				if (group.Types.All(t => t.IsAbstract))
+				{
+					DocumentationHandler.AddTypeDefinitionLine(group.Interface, "Abstract");
+				}
+				else if (group.Types.Any(t => t.IsAbstract))
+				{
+					string rangeString = group.Instances
+						.Where(i => i.Type.IsAbstract)
+						.Select(i => i.VersionRange)
+						.GetUnionedRanges()
+						.GetString();
+					DocumentationHandler.AddTypeDefinitionLine(group.Interface, $"Abstract: {rangeString}");
+				}
 			}
 			else
 			{
