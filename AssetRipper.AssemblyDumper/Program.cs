@@ -215,6 +215,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass506_FixUnityConnectSettings.DoPass();
 			}
+			using (new TimingCookie("Pass 507: Inject Properties"))
+			{
+				Pass507_InjectedProperties.DoPass();
+			}
 			using (new TimingCookie("Pass 520: Custom Field Initializers"))
 			{
 				Pass520_CustomFieldInitializers.DoPass();
