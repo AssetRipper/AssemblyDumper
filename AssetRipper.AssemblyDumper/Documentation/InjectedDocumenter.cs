@@ -42,32 +42,71 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			foreach ((int id, Dictionary<string, string> documentationDictionary) in classSummaries)
 			{
 				ClassGroup group = SharedState.Instance.ClassGroups[id];
-				AddDocumentationToType(group.Interface, documentationDictionary);
-				foreach (TypeDefinition type in group.Types)
+				AddDocumentationToGroup(group, documentationDictionary);
+				foreach (GeneratedClassInstance instance in group.Instances)
 				{
-					AddDocumentationToType(type, documentationDictionary);
+					AddDocumentationToInstance(instance, documentationDictionary);
 				}
 			}
 			foreach ((string subClass, Dictionary<string, string> documentationDictionary) in subClassSummaries)
 			{
 				SubclassGroup group = SharedState.Instance.SubclassGroups[subClass];
-				AddDocumentationToType(group.Interface, documentationDictionary);
-				foreach (TypeDefinition type in group.Types)
+				AddDocumentationToGroup(group, documentationDictionary);
+				foreach (GeneratedClassInstance instance in group.Instances)
 				{
-					AddDocumentationToType(type, documentationDictionary);
+					AddDocumentationToInstance(instance, documentationDictionary);
+				}
+				
+			}
+		}
+
+		private static void AddDocumentationToInstance(GeneratedClassInstance instance, Dictionary<string, string> documentationDictionary)
+		{
+			TypeDefinition type = instance.Type;
+			foreach ((string propertyName, string summary) in documentationDictionary)
+			{
+				ClassProperty? classProperty = instance.Properties.FirstOrDefault(p => p.Definition.Name == propertyName);
+				if (classProperty is not null)
+				{
+					DocumentationHandler.AddPropertyDefinitionLine(classProperty.Definition, summary);
+					if (classProperty.SpecialDefinition is not null)
+					{
+						DocumentationHandler.AddPropertyDefinitionLine(classProperty.SpecialDefinition, summary);
+					}
+					if (classProperty.BackingField is not null)
+					{
+						DocumentationHandler.AddFieldDefinitionLine(classProperty.BackingField, summary);
+					}
+				}
+				else
+				{
+					PropertyDefinition property = type.Properties.First(p => p.Name == propertyName);
+					DocumentationHandler.AddPropertyDefinitionLine(property, summary);
+					if (type.TryGetFieldByName($"m_{propertyName}", out FieldDefinition? field))
+					{
+						DocumentationHandler.AddFieldDefinitionLine(field, summary);
+					}
 				}
 			}
 		}
 
-		private static void AddDocumentationToType(TypeDefinition type, Dictionary<string, string> documentationDictionary)
+		private static void AddDocumentationToGroup(ClassGroupBase group, Dictionary<string, string> documentationDictionary)
 		{
 			foreach ((string propertyName, string summary) in documentationDictionary)
 			{
-				PropertyDefinition property = type.Properties.First(p => p.Name == propertyName);
-				DocumentationHandler.AddPropertyDefinitionLine(property, summary);
-				if (type.TryGetFieldByName($"m_{propertyName}", out FieldDefinition? field))
+				InterfaceProperty? classProperty = group.InterfaceProperties.FirstOrDefault(p => p.Definition.Name == propertyName);
+				if (classProperty is not null)
 				{
-					DocumentationHandler.AddFieldDefinitionLine(field, summary);
+					DocumentationHandler.AddPropertyDefinitionLine(classProperty.Definition, summary);
+					if (classProperty.SpecialDefinition is not null)
+					{
+						DocumentationHandler.AddPropertyDefinitionLine(classProperty.SpecialDefinition, summary);
+					}
+				}
+				else
+				{
+					PropertyDefinition property = group.Interface.Properties.First(p => p.Name == propertyName);
+					DocumentationHandler.AddPropertyDefinitionLine(property, summary);
 				}
 			}
 		}
