@@ -6,7 +6,7 @@
 		{
 			foreach ((FieldDefinition field, ClassGroup group) in Passes.Pass556_CreateClassIDTypeEnum.FieldGroupDictionary)
 			{
-				DocumentationHandler.AddFieldDefinitionLine(field, $"<see cref=\"{XmlUtils.GetStringReference(group.Interface)}\"/>");
+				DocumentationHandler.AddFieldDefinitionLine(field, SeeXmlTagGenerator.MakeCRef(group.Interface));
 			}
 		}
 	}
