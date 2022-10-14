@@ -20,6 +20,7 @@ namespace AssetRipper.AssemblyDumper
 		public const string InterfacesNamespace = RootNamespace + ".Interfaces";
 		public const string HelpersNamespace = RootNamespace + ".Helpers";
 		public const string MarkerInterfacesNamespace = RootNamespace + ".MarkerInterfaces";
+		public const string NativeEnumsNamespace = RootNamespace + ".NativeEnums";
 		public const string SubclassesNamespace = RootNamespace + ".Subclasses";
 
 		public static string GetClassNamespace(int id) => $"{ClassesNamespace}.ClassID_{id}";

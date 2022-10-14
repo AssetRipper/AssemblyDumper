@@ -79,6 +79,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass040_AddEnums.DoPass();
 			}
+			using (new TimingCookie("Pass 041: Add Native Enum Types"))
+			{
+				Pass041_NativeEnums.DoPass();
+			}
 			using (new TimingCookie("Pass 045: Marker Interfaces"))
 			{
 				Pass045_AddMarkerInterfaces.DoPass();
