@@ -339,10 +339,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				node.TypeName = "TierGraphicsSettingsEditor";
 			}
-			else if (node.TypeName == "BuildTargetShaderSettings")//before 5.5
+			else if (node.TypeName == "BuildTargetShaderSettings")
 			{
-				node.TypeName = "TierSettings";
-				node.RenameSubNode("m_ShaderSettings", "m_Settings");
+				//This class was changed in 5.5 to TierSettings, so we rename it for consistency.
+				//Starting in 2022.2.0b10, a similiar class with this name was added,
+				//but it conflicts with TierSettings, hence this rename is meant to only apply on the old versions.
+				if (node.TryRenameSubNode("m_ShaderSettings", "m_Settings"))
+				{
+					node.TypeName = "TierSettings";
+				}
 			}
 			else if (node.TypeName == "BuildTargetSettings")
 			{
