@@ -23,7 +23,7 @@ public sealed class DocumentationFile
 
 	public static DocumentationFile FromFile(string path)
 	{
-		using FileStream fileStream = File.Create(path);
+		using FileStream fileStream = File.OpenRead(path);
 		return JsonSerializer.Deserialize(fileStream, JsonSourceGenerationContext.Default.DocumentationFile)
 			?? throw new Exception("Failed to deserialize json");
 	}
