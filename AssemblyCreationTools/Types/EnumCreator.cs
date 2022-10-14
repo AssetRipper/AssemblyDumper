@@ -43,15 +43,16 @@
 			typeDefinition.Fields.Add(fieldDef);
 		}
 
-		private static void AddEnumField(this TypeDefinition typeDefinition, string name, long value, EnumUnderlyingType underlyingType)
+		public static FieldDefinition AddEnumField(this TypeDefinition typeDefinition, string name, long value, EnumUnderlyingType underlyingType)
 		{
 			FieldSignature fieldSignature = new FieldSignature(typeDefinition.ToTypeSignature());
 			FieldDefinition fieldDef = new FieldDefinition(name, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal | FieldAttributes.HasDefault, fieldSignature);
 			fieldDef.Constant = FromValue(value, underlyingType);
 			typeDefinition.Fields.Add(fieldDef);
+			return fieldDef;
 		}
 
-		private static TypeDefinition CreateEmptyEnum(AssemblyBuilder builder, string? @namespace, string name, EnumUnderlyingType underlyingType)
+		public static TypeDefinition CreateEmptyEnum(AssemblyBuilder builder, string? @namespace, string name, EnumUnderlyingType underlyingType)
 		{
 			ITypeDefOrRef enumReference = builder.Importer.ImportType(typeof(Enum));
 			TypeDefinition definition = new TypeDefinition(@namespace, name, TypeAttributes.Public | TypeAttributes.Sealed, enumReference);
