@@ -15,6 +15,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			List<KeyValuePair<string, long>> alphabeticalList = nameDictionary.ToList();
 			alphabeticalList.Sort((a, b) => a.Key.CompareTo(b.Key));
 			TypeDefinition alphabeticalEnum = EnumCreator.CreateFromDictionary(SharedState.Instance, SharedState.RootNamespace, "ClassIDTypeAlphabetical", alphabeticalList);
+			alphabeticalEnum.IsPublic = false;
 
 			foreach (FieldDefinition field in ClassIdTypeDefintion.Fields)
 			{
