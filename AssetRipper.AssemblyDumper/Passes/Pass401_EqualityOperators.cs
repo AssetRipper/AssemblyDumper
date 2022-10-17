@@ -14,7 +14,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
-					instance.Type.AddDefaultEqualityOperators(SharedState.Instance.Importer, out _, out _);
+					instance.Type.AddDefaultEqualityOperators(
+						SharedState.Instance.Importer,
+						out MethodDefinition equalityMethod,
+						out MethodDefinition inequalityMethod);
+
+					equalityMethod.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
+					inequalityMethod.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
 				}
 			}
 		}

@@ -32,6 +32,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Virtual,
 				SharedState.Instance.Importer.Boolean);
 			method.AddParameter(type.ToTypeSignature(), "other");
+			method.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
 
 			CilInstructionLabel returnFalseLabel = new();
 			CilInstructionCollection processor = method.GetProcessor();
@@ -82,6 +83,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Virtual,
 				SharedState.Instance.Importer.Boolean);
 			method.AddParameter(@interface.ToTypeSignature(), "other");
+			method.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
 
 			CilInstructionLabel returnFalseLabel = new();
 			CilInstructionCollection processor = method.GetProcessor();
@@ -133,6 +135,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual,
 				SharedState.Instance.Importer.Boolean);
 			method.AddParameter(SharedState.Instance.Importer.Object, "other");
+			method.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
 
 			CilInstructionCollection processor = method.GetProcessor();
 			processor.Add(CilOpCodes.Ldarg_0);
