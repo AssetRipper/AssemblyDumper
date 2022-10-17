@@ -48,6 +48,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 				MethodDefinition? fetchDependenciesDef = type.AddMethod(nameof(UnityAssetBase.FetchDependencies), OverrideMethodAttributes, enumerablePPtrsRef);
 				fetchDependenciesDef.AddParameter(dependencyContextRef, "context");
+
+				type.AddMethod(nameof(UnityAssetBase.Reset), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
 			}
 		}
 	}
