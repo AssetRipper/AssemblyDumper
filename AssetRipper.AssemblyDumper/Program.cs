@@ -131,6 +131,14 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass103_FillDependencyMethods.DoPass();
 			}
+			using (new TimingCookie("Pass 104: Reset Methods"))
+			{
+				Pass104_ResetMethods.DoPass();
+			}
+			using (new TimingCookie("Pass 105: CopyValues Methods"))
+			{
+				Pass105_CopyValuesMethods.DoPass();
+			}
 			using (new TimingCookie("Pass 110: Class Name and ID Overrides"))
 			{
 				Pass110_ClassNameAndIdOverrides.DoPass();

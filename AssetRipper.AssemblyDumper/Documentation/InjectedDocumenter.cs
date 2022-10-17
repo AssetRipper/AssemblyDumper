@@ -21,7 +21,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 				},
 				{ 4 , new()
 					{
-						{ "RootOrder_C4" , $"The index of this {SeeXmlTagGenerator.MakeCRefForClassInterface(4)} in its father's children." },
+						{ "RootOrder_C4" , $"The index of this {SeeXmlTagGenerator.MakeCRefForClassInterface(4)} in its father's children. If a transform has no father, its root order should be 0." },
 					}
 				},
 			};

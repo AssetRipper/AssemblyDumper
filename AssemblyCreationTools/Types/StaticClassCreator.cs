@@ -14,6 +14,10 @@
 			MethodAttributes.RuntimeSpecialName |
 			MethodAttributes.SpecialName |
 			MethodAttributes.Static;
+		public const MethodAttributes StaticMethodAttributes =
+			MethodAttributes.Public |
+			MethodAttributes.HideBySig |
+			MethodAttributes.Static;
 
 		public static TypeDefinition CreateEmptyStaticClass(ModuleDefinition module, string? @namespace, string? name)
 		{
