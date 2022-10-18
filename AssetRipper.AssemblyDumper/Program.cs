@@ -231,6 +231,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass507_InjectedProperties.DoPass();
 			}
+			using (new TimingCookie("Pass 508: Lazy SceneObjectIdentifier"))
+			{
+				Pass508_LazySceneObjectIdentifier.DoPass();
+			}
 			using (new TimingCookie("Pass 520: Custom Field Initializers"))
 			{
 				Pass520_CustomFieldInitializers.DoPass();

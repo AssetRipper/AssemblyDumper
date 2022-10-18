@@ -7,7 +7,10 @@ namespace AssetRipper.AssemblyDumper.Documentation
 	{
 		public static void AddDocumentation()
 		{
-			Dictionary<int, Dictionary<string, string>> classSummaries = new()
+			Dictionary<int, string> classTypeSummaries = new()
+			{
+			};
+			Dictionary<int, Dictionary<string, string>> classPropertySummaries = new()
 			{
 				{ 1032 , new()
 					{
@@ -25,8 +28,20 @@ namespace AssetRipper.AssemblyDumper.Documentation
 					}
 				},
 			};
-			Dictionary<string, Dictionary<string, string>> subClassSummaries = new()
+			Dictionary<string, string> subClassTypeSummaries = new()
 			{
+				{ "SceneObjectIdentifier" , $"A subset of {SeeXmlTagGenerator.MakeHRef(@"https://docs.unity3d.com/ScriptReference/GlobalObjectId.html", "GlobalObjectId")}." },
+			};
+			Dictionary<string, Dictionary<string, string>> subClassPropertySummaries = new()
+			{
+				{ "SceneObjectIdentifier" , new()
+					{
+						{ "TargetObject" , $"The local file ID of the object." },
+						{ "TargetPrefab" , "The prefab instance id of the object. For normal game objects, this prefab id is 0." },
+						{ Pass508_LazySceneObjectIdentifier.TargetObjectName , "An object in the scene to be referenced. If not null, it will replace TargetObject during Yaml export." },
+						{ Pass508_LazySceneObjectIdentifier.TargetPrefabName , "A prefab instance to be referenced. If not null, it will replace TargetPrefab during Yaml export." },
+					}
+				},
 				{ "SubMesh" , new()
 					{
 						{ "FirstByte" , "Offset in the index buffer." },
@@ -34,12 +49,25 @@ namespace AssetRipper.AssemblyDumper.Documentation
 					}
 				},
 			};
-			AddDocumentationForDictionaries(classSummaries, subClassSummaries);
+			AddDocumentationForDictionaries(classTypeSummaries, classPropertySummaries, subClassTypeSummaries, subClassPropertySummaries);
 		}
 
-		private static void AddDocumentationForDictionaries(Dictionary<int, Dictionary<string, string>> classSummaries, Dictionary<string, Dictionary<string, string>> subClassSummaries)
+		private static void AddDocumentationForDictionaries(
+			Dictionary<int, string> classTypeSummaries,
+			Dictionary<int, Dictionary<string, string>> classPropertySummaries,
+			Dictionary<string, string> subClassTypeSummaries,
+			Dictionary<string, Dictionary<string, string>> subClassPropertySummaries)
 		{
-			foreach ((int id, Dictionary<string, string> documentationDictionary) in classSummaries)
+			foreach ((int id, string summary) in classTypeSummaries)
+			{
+				ClassGroup group = SharedState.Instance.ClassGroups[id];
+				DocumentationHandler.AddTypeDefinitionLine(group.Interface, summary);
+				foreach (TypeDefinition type in group.Types)
+				{
+					DocumentationHandler.AddTypeDefinitionLine(type, summary);
+				}
+			}
+			foreach ((int id, Dictionary<string, string> documentationDictionary) in classPropertySummaries)
 			{
 				ClassGroup group = SharedState.Instance.ClassGroups[id];
 				AddDocumentationToGroup(group, documentationDictionary);
@@ -48,7 +76,16 @@ namespace AssetRipper.AssemblyDumper.Documentation
 					AddDocumentationToInstance(instance, documentationDictionary);
 				}
 			}
-			foreach ((string subClass, Dictionary<string, string> documentationDictionary) in subClassSummaries)
+			foreach ((string subClass, string summary) in subClassTypeSummaries)
+			{
+				SubclassGroup group = SharedState.Instance.SubclassGroups[subClass];
+				DocumentationHandler.AddTypeDefinitionLine(group.Interface, summary);
+				foreach (TypeDefinition type in group.Types)
+				{
+					DocumentationHandler.AddTypeDefinitionLine(type, summary);
+				}
+			}
+			foreach ((string subClass, Dictionary<string, string> documentationDictionary) in subClassPropertySummaries)
 			{
 				SubclassGroup group = SharedState.Instance.SubclassGroups[subClass];
 				AddDocumentationToGroup(group, documentationDictionary);
@@ -56,7 +93,6 @@ namespace AssetRipper.AssemblyDumper.Documentation
 				{
 					AddDocumentationToInstance(instance, documentationDictionary);
 				}
-				
 			}
 		}
 

@@ -21,5 +21,15 @@
 		{
 			return MakeCRef(SharedState.Instance.SubclassGroups[name].Interface);
 		}
+
+		public static string MakeHRef(string link)
+		{
+			return $"<see href=\"{link}\"/>";
+		}
+
+		public static string MakeHRef(string link, string displayText)
+		{
+			return $"<see href=\"{link}\">{displayText}</see>";
+		}
 	}
 }
