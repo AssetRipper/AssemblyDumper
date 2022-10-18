@@ -12,7 +12,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	internal static partial class Pass105_CopyValuesMethods
 	{
-		private const string CopyValuesName = "CopyValues";
+		private const string CopyValuesName = nameof(IUnityAssetBase.CopyValues);
 		private const string DeepCloneName = "DeepClone";
 		private static readonly Dictionary<TypeSignatureStruct, (IMethodDescriptor, CopyMethodType)> singleTypeDictionary = new();
 		private static readonly Dictionary<(TypeSignatureStruct, TypeSignatureStruct), (IMethodDescriptor, CopyMethodType)> doubleTypeDictionary = new();
@@ -74,7 +74,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
 			{
-				bool needsConverter = group.Interface.GetMethodByName(CopyValuesName).Parameters.Count == 2;
+				bool needsConverter = GetPrimaryCopyValuesMethod(group.Interface).Parameters.Count == 2;
 				{
 					MethodDefinition method = group.Interface.AddMethod(DeepCloneName, InterfaceUtils.InterfaceMethodDeclaration, group.Interface.ToTypeSignature());
 					if (needsConverter)
@@ -84,7 +84,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				foreach (TypeDefinition type in group.Types)
 				{
-					MethodDefinition copyValuesMethod = type.GetMethodByName(CopyValuesName);
+					MethodDefinition copyValuesMethod = GetPrimaryCopyValuesMethod(type);
 					MethodDefinition method = type.AddMethod(DeepCloneName, InterfaceUtils.InterfaceMethodImplementation, group.Interface.ToTypeSignature());
 					CilInstructionCollection processor = method.GetProcessor();
 					processor.Add(CilOpCodes.Newobj, type.GetDefaultConstructor());
@@ -101,12 +101,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 
 
-			IMethodDefOrRef objectGetCollection = SharedState.Instance.Importer.ImportMethod<UnityObjectBase>(m => m.Name == $"get_{nameof(UnityObjectBase.Collection)}");
-			IMethodDefOrRef interfaceGetCollection = SharedState.Instance.Importer.ImportMethod<IUnityObjectBase>(m => m.Name == $"get_{nameof(IUnityObjectBase.Collection)}");
-			IMethodDefOrRef pptrConverterConstructor = ConstructorUtils.ImportConstructor<PPtrConverter>(SharedState.Instance.Importer, 2);
+			IMethodDefOrRef pptrConverterConstructor = SharedState.Instance.Importer.ImportMethod<PPtrConverter>(m =>
+			{
+				return m.IsConstructor && m.Parameters.Count == 2 && m.Parameters[0].ParameterType.Name == nameof(IUnityObjectBase);
+			});
 			foreach (ClassGroup group in SharedState.Instance.ClassGroups.Values)
 			{
-				if (group.Interface.GetMethodByName(CopyValuesName).Parameters.Count == 2)//Has converter
+				if (GetPrimaryCopyValuesMethod(group.Interface).Parameters.Count == 2)//Has converter
 				{
 					{
 						MethodDefinition method = group.Interface.AddMethod(CopyValuesName, InterfaceUtils.InterfaceMethodDeclaration, SharedState.Instance.Importer.Void);
@@ -114,17 +115,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 					}
 					foreach (TypeDefinition type in group.Types)
 					{
-						MethodDefinition originalCopyValuesMethod = type.GetMethodByName(CopyValuesName);
+						MethodDefinition originalCopyValuesMethod = GetPrimaryCopyValuesMethod(type);
 						MethodDefinition method = type.AddMethod(CopyValuesName, InterfaceUtils.InterfaceMethodImplementation, SharedState.Instance.Importer.Void);
 						method.AddParameter(group.Interface.ToTypeSignature(), "source");
 						CilInstructionCollection processor = method.GetProcessor();
 
 						processor.Add(CilOpCodes.Ldarg_0);
 						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Callvirt, objectGetCollection);
 						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Callvirt, interfaceGetCollection);
+						processor.Add(CilOpCodes.Ldarg_0);
 						processor.Add(CilOpCodes.Newobj, pptrConverterConstructor);
 						processor.Add(CilOpCodes.Call, originalCopyValuesMethod);
 
@@ -133,9 +132,74 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 			}
 
+			TypeSignature unityAssetBaseInterfaceRef = SharedState.Instance.Importer.ImportTypeSignature<IUnityAssetBase>();
+			Dictionary<TypeDefinition, MethodDefinition> overridenMethods = new();
+			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
+			{
+				foreach (TypeDefinition type in group.Types)
+				{
+					MethodDefinition copyValuesMethod = type.AddMethod(
+						nameof(UnityAssetBase.CopyValues),
+						Pass099_CreateEmptyMethods.OverrideMethodAttributes,
+						SharedState.Instance.Importer.Void);
+					copyValuesMethod.AddParameter(unityAssetBaseInterfaceRef, "source");
+					copyValuesMethod.AddParameter(pptrConverterType!.ToTypeSignature(), "converter");
+					copyValuesMethod.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
+					overridenMethods.Add(type, copyValuesMethod);
+				}
+			}
+			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
+			{
+				foreach (GeneratedClassInstance instance in group.Instances)
+				{
+					MethodDefinition primaryMethod = GetPrimaryCopyValuesMethod(instance.Type);
+					MethodDefinition thisMethod = overridenMethods[instance.Type];
+					MethodDefinition? baseMethod = instance.Base is null ? null : overridenMethods[instance.Base.Type];
+					CilInstructionCollection processor = thisMethod.GetProcessor();
+					CilInstructionLabel returnLabel = new();
+					CilInstructionLabel isNullLabel = new();
+
+					CilLocalVariable castedArgumentLocal = processor.AddLocalVariable(group.Interface.ToTypeSignature());
+					processor.Add(CilOpCodes.Ldarg_1);
+					processor.Add(CilOpCodes.Isinst, group.Interface);
+					processor.Add(CilOpCodes.Stloc, castedArgumentLocal);
+
+					processor.Add(CilOpCodes.Ldloc, castedArgumentLocal);
+					processor.Add(CilOpCodes.Ldnull);
+					processor.Add(CilOpCodes.Cgt_Un);
+					processor.Add(CilOpCodes.Brfalse, isNullLabel);
+
+					processor.Add(CilOpCodes.Ldarg_0);
+					processor.Add(CilOpCodes.Ldloc, castedArgumentLocal);
+					if (primaryMethod.Parameters.Count == 2)
+					{
+						processor.Add(CilOpCodes.Ldarg_2);//Converter is needed
+					}
+					processor.Add(CilOpCodes.Callvirt, primaryMethod);
+					processor.Add(CilOpCodes.Br, returnLabel);
+
+					isNullLabel.Instruction = processor.Add(CilOpCodes.Nop);
+					if (baseMethod is null)
+					{
+						processor.Add(CilOpCodes.Ldarg_0);
+						processor.Add(CilOpCodes.Callvirt, instance.Type.GetMethodByName(nameof(IUnityAssetBase.Reset)));
+					}
+					else
+					{
+						processor.Add(CilOpCodes.Ldarg_0);
+						processor.Add(CilOpCodes.Ldarg_1);
+						processor.Add(CilOpCodes.Ldarg_2);
+						processor.Add(CilOpCodes.Call, baseMethod);
+					}
+
+					returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+				}
+			}
+
 			singleTypeDictionary.Clear();
 			doubleTypeDictionary.Clear();
 			processedGroups.Clear();
+			overridenMethods.Clear();
 		}
 
 		[MemberNotNull(nameof(duplicateArrayMethod))]
@@ -572,6 +636,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 				default:
 					throw new NotSupportedException();
 			}
+		}
+
+		private static MethodDefinition GetPrimaryCopyValuesMethod(this TypeDefinition type)
+		{
+			return (MethodDefinition)singleTypeDictionary[type.ToTypeSignature()].Item1;
 		}
 		
 		private static IMethodDefOrRef MakeDictionaryGetCountMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)

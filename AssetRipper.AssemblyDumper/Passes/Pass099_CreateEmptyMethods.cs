@@ -11,7 +11,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass099_CreateEmptyMethods
 	{
-		private const MethodAttributes OverrideMethodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.ReuseSlot | MethodAttributes.HideBySig;
+		public const MethodAttributes OverrideMethodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.ReuseSlot | MethodAttributes.HideBySig;
 
 		public static void DoPass()
 		{

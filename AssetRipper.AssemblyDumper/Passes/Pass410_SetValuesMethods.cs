@@ -8,8 +8,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 	internal static class Pass410_SetValuesMethods
 	{
 		private const string SetValuesName = "SetValues";
-		private static readonly HashSet<string> processedClasses = new();
-		private static readonly HashSet<string> skippedClasses = new();
 
 		public static void DoPass()
 		{
@@ -17,8 +15,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				ProcessGroup(group);
 			}
-			processedClasses.Clear();
-			skippedClasses.Clear();
 		}
 
 		private static void ProcessGroup(SubclassGroup group)
@@ -26,7 +22,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			if (group.InterfaceProperties.Select(i => i.Definition).All(prop => prop.IsArrayOrPrimitive()))
 			{
 				group.ImplementSetValuesMethod();
-				processedClasses.Add(group.Name);
 			}
 		}
 
