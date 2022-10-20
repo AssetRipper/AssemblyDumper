@@ -108,5 +108,17 @@
 					}
 			}
 		}
+
+		public static string MakeUniqueName(TypeSignature type)
+		{
+			return type switch
+			{
+				CorLibTypeSignature or TypeDefOrRefSignature => type.Name,
+				SzArrayTypeSignature arrayType => $"Array{MakeUniqueName(arrayType.BaseType)}",
+				GenericInstanceTypeSignature genericType => $"{genericType.GenericType.Name?.ToString()[..^2]}_{string.Join('_', genericType.TypeArguments.Select(t => MakeUniqueName(t)))}",
+				_ => throw new NotSupportedException(),
+			}
+			?? throw new NullReferenceException();
+		}
 	}
 }

@@ -13,6 +13,7 @@ namespace AssetRipper.AssemblyDumper
 		public abstract string Namespace { get; }
 		public abstract int ID { get; }
 		public abstract bool UniformlyNamed { get; }
+		public virtual bool IsPPtr => false;
 
 		protected ClassGroupBase(TypeDefinition @interface)
 		{

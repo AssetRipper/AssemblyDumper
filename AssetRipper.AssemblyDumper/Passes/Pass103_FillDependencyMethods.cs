@@ -1,7 +1,11 @@
-﻿using AssetRipper.AssemblyCreationTools;
+﻿using AsmResolver.DotNet.Cloning;
+using AssetRipper.AssemblyCreationTools;
+using AssetRipper.AssemblyCreationTools.Attributes;
 using AssetRipper.AssemblyCreationTools.Methods;
+using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Export.Dependencies;
+using AssetRipper.Assets.Generics;
 using AssetRipper.Assets.Metadata;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -9,333 +13,437 @@ namespace AssetRipper.AssemblyDumper.Passes
 	public static class Pass103_FillDependencyMethods
 	{
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-		private static ITypeDefOrRef commonPPtrTypeRef;
-		private static ITypeDefOrRef unityObjectBaseInterfaceRef;
 		private static GenericInstanceTypeSignature unityObjectBasePPtrRef;
-		private static GenericInstanceTypeSignature unityObjectBasePPtrListType;
-		private static IMethodDefOrRef unityObjectBasePPtrListConstructor;
-		public static IMethodDefOrRef unityObjectBasePPtrListAddRange; // needed for monobehaviour pass
-		private static IMethodDefOrRef emptyArray;
 		private static MethodSpecification emptyArrayMethod;
-		private static ITypeDefOrRef dependencyContextRef;
-		private static IMethodDefOrRef fetchDependenciesFromDependent;
-		private static IMethodDefOrRef fetchDependenciesFromArray;
-		private static IMethodDefOrRef fetchDependenciesFromArrayArray;
+		private static GenericInstanceTypeSignature returnType;
+		private static TypeSignature fieldNameRef;
+		private static IMethodDefOrRef fieldNameConstructor;
+		private static TypeDefinition helperType;
+		private static MethodDefinition fromSingleMethod;
+		private static MethodDefinition appendPPtrMethod;
+
+		private static ITypeDefOrRef accessPairBase;
+		private static IMethodDefOrRef accessPairBaseGetKey;
+		private static IMethodDefOrRef accessPairBaseGetValue;
+
+		private static ITypeDefOrRef accessListBase;
+		private static IMethodDefOrRef accessListBaseGetCount;
+		private static IMethodDefOrRef accessListBaseGetItem;
+
+		private static ITypeDefOrRef accessDictionaryBase;
+		private static IMethodDefOrRef accessDictionaryBaseGetCount;
+		private static IMethodDefOrRef accessDictionaryBaseGetPair;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-		private readonly static List<TypeDefinition> processedTypes = new List<TypeDefinition>();
-		private readonly static List<TypeDefinition> nonDependentTypes = new List<TypeDefinition>();
+		private readonly static HashSet<ClassGroupBase> processedGroups = new();
+		private readonly static HashSet<TypeSignatureStruct> nonDependentTypes = new();
+		private readonly static Dictionary<TypeSignatureStruct, MethodDefinition> methodDictionary = new();
 
 		private readonly static bool throwNotSupported = true;
 
 		private static void InitializeStaticFields()
 		{
-			commonPPtrTypeRef = SharedState.Instance.Importer.ImportType(typeof(PPtr<>));
-			unityObjectBaseInterfaceRef = SharedState.Instance.Importer.ImportType<IUnityObjectBase>();
+			helperType = InjectHelper();
+
+			ITypeDefOrRef commonPPtrTypeRef = SharedState.Instance.Importer.ImportType(typeof(PPtr<>));
+			ITypeDefOrRef unityObjectBaseInterfaceRef = SharedState.Instance.Importer.ImportType<IUnityObjectBase>();
 			unityObjectBasePPtrRef = commonPPtrTypeRef.MakeGenericInstanceType(unityObjectBaseInterfaceRef.ToTypeSignature());
-			unityObjectBasePPtrListType = SharedState.Instance.Importer.ImportType(typeof(List<>)).MakeGenericInstanceType(unityObjectBasePPtrRef);
-			unityObjectBasePPtrListConstructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, unityObjectBasePPtrListType, 0);
-			MethodDefinition addRangeMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == nameof(List<int>.AddRange));
-			unityObjectBasePPtrListAddRange = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, unityObjectBasePPtrListType, addRangeMethodDefinition);
 
-			emptyArray = SharedState.Instance.Importer.ImportMethod<Array>(method => method.Name == "Empty");
-			emptyArrayMethod = MethodUtils.MakeGenericInstanceMethod(SharedState.Instance.Importer, emptyArray, unityObjectBasePPtrRef);
+			ITypeDefOrRef ienumerableRef = SharedState.Instance.Importer.ImportType(typeof(IEnumerable<>));
+			ITypeDefOrRef valueTupleRef = SharedState.Instance.Importer.ImportType(typeof(ValueTuple<,>));
+			fieldNameRef = SharedState.Instance.Importer.ImportType<FieldName>().ToTypeSignature();
+			GenericInstanceTypeSignature tupleGenericInstance = valueTupleRef.MakeGenericInstanceType(fieldNameRef, unityObjectBasePPtrRef);
+			returnType = ienumerableRef.MakeGenericInstanceType(tupleGenericInstance);
 
-			dependencyContextRef = SharedState.Instance.Importer.ImportType<DependencyContext>();
-			fetchDependenciesFromDependent = SharedState.Instance.Importer.ImportMethod<DependencyContext>(m => m.Name == nameof(DependencyContext.FetchDependenciesFromDependent));
-			fetchDependenciesFromArray = SharedState.Instance.Importer.ImportMethod<DependencyContext>(m => m.Name == nameof(DependencyContext.FetchDependenciesFromArray));
-			fetchDependenciesFromArrayArray = SharedState.Instance.Importer.ImportMethod<DependencyContext>(m => m.Name == nameof(DependencyContext.FetchDependenciesFromArrayArray));
+			fieldNameConstructor = ConstructorUtils.ImportConstructor<FieldName>(SharedState.Instance.Importer, 2);
+
+			IMethodDefOrRef emptyArray = SharedState.Instance.Importer.ImportMethod(typeof(Enumerable), method => method.Name == nameof(Enumerable.Empty));
+			emptyArrayMethod = MethodUtils.MakeGenericInstanceMethod(SharedState.Instance.Importer, emptyArray, tupleGenericInstance);
+
+			accessPairBase = SharedState.Instance.Importer.ImportType(typeof(AccessPairBase<,>));
+			accessPairBaseGetKey = SharedState.Instance.Importer.ImportMethod(typeof(AccessPairBase<,>), m => m.Name == $"get_{nameof(AccessPairBase<int, int>.Key)}");
+			accessPairBaseGetValue = SharedState.Instance.Importer.ImportMethod(typeof(AccessPairBase<,>), m => m.Name == $"get_{nameof(AccessPairBase<int, int>.Value)}");
+
+			accessListBase = SharedState.Instance.Importer.ImportType(typeof(AccessListBase<>));
+			accessListBaseGetCount = SharedState.Instance.Importer.ImportMethod(typeof(AccessListBase<>), m => m.Name == $"get_{nameof(AccessListBase<int>.Count)}");
+			accessListBaseGetItem = SharedState.Instance.Importer.ImportMethod(typeof(AccessListBase<>), m => m.Name == "get_Item");
+
+			accessDictionaryBase = SharedState.Instance.Importer.ImportType(typeof(AccessDictionaryBase<,>));
+			accessDictionaryBaseGetCount = SharedState.Instance.Importer.ImportMethod(typeof(AccessDictionaryBase<,>), m => m.Name == $"get_{nameof(AccessDictionaryBase<int, int>.Count)}");
+			accessDictionaryBaseGetPair = SharedState.Instance.Importer.ImportMethod(typeof(AccessDictionaryBase<,>), m => m.Name == nameof(AccessDictionaryBase<int, int>.GetPair));
+		}
+
+		[MemberNotNull(nameof(fromSingleMethod))]
+		[MemberNotNull(nameof(appendPPtrMethod))]
+		private static TypeDefinition InjectHelper()
+		{
+			MemberCloner cloner = new MemberCloner(SharedState.Instance.Module);
+			cloner.Include(SharedState.Instance.Importer.LookupType(typeof(FetchDependenciesHelper))!, true);
+			MemberCloneResult result = cloner.Clone();
+			foreach (TypeDefinition type in result.ClonedTopLevelTypes)
+			{
+				type.Namespace = SharedState.HelpersNamespace;
+				SharedState.Instance.Module.TopLevelTypes.Add(type);
+			}
+			TypeDefinition clonedType = result.ClonedTopLevelTypes.Single();
+			fromSingleMethod = clonedType.GetMethodByName(nameof(FetchDependenciesHelper.FromSingle));
+			appendPPtrMethod = clonedType.GetMethodByName(nameof(FetchDependenciesHelper.AppendPPtr));
+			return clonedType;
 		}
 
 		public static void DoPass()
 		{
 			InitializeStaticFields();
 
-			foreach (TypeDefinition type in SharedState.Instance.AllNonInterfaceTypes)
+			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
-				type.ProcessType();
+				EnsureGroupProcessed(group);
 			}
 		}
 
-		private static void ProcessType(this TypeDefinition type)
+		private static void EnsureGroupProcessed(ClassGroupBase group)
 		{
-			if (processedTypes.Contains(type))
+			if (!processedGroups.Add(group))
 			{
 				return;
 			}
 
-			if (throwNotSupported)
+			foreach (GeneratedClassInstance instance in group.Instances)
 			{
-				type.FillNotSupported();
-			}
-			else if (type.IsPPtrType())
-			{
-				type.FillPPtrType();
-			}
-			else
-			{
-				type.FillNormalType();
-			}
-			processedTypes.Add(type);
-		}
-
-		private static void ReplaceWithReturnEmptyArray(this CilInstructionCollection processor)
-		{
-			processor.Clear();
-			processor.Add(CilOpCodes.Call, emptyArrayMethod);
-			processor.Add(CilOpCodes.Ret);
-		}
-
-		private static MethodDefinition GetDependencyMethod(this TypeDefinition type)
-		{
-			return type.Methods.Single(x => x.Name == nameof(IUnityAssetBase.FetchDependencies));
-		}
-
-		private static bool IsPPtrType(this TypeDefinition type)
-		{
-			return type.Name!.ToString().StartsWith("PPtr_");
-		}
-
-		private static void FillNotSupported(this TypeDefinition type)
-		{
-			MethodDefinition? dependencyMethod = type.GetDependencyMethod();
-			CilInstructionCollection processor = dependencyMethod.CilMethodBody!.Instructions;
-			processor.AddNotSupportedException();
-		}
-
-		private static void FillPPtrType(this TypeDefinition type)
-		{
-			MethodDefinition? dependencyMethod = type.GetDependencyMethod();
-			CilInstructionCollection processor = dependencyMethod.CilMethodBody!.Instructions;
-
-			processor.Add(CilOpCodes.Ldc_I4_1);
-			processor.Add(CilOpCodes.Newarr, unityObjectBasePPtrRef.ToTypeDefOrRef());
-
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldc_I4_0);
-			processor.Add(CilOpCodes.Ldarg_0);
-			MethodDefinition conversionMethod = PPtrUtils.GetExplicitConversion<IUnityObjectBase>(type);
-			processor.Add(CilOpCodes.Call, conversionMethod);
-			processor.Add(CilOpCodes.Stelem, unityObjectBasePPtrRef.ToTypeDefOrRef());
-			processor.Add(CilOpCodes.Ret);
-		}
-
-		private static bool IsPrimitiveType(this TypeSignature type)
-		{
-			return type.IsValueType || type.FullName == "System.String";
-		}
-
-		private static void MaybeProcessType(this TypeDefinition type)
-		{
-			if (!processedTypes.Contains(type))
-			{
-				type.ProcessType();
-			}
-		}
-
-		private static bool AddFetchDependenciesFromNormalField(this CilInstructionCollection processor, FieldDefinition field, CilLocalVariable listVariable)
-		{
-			TypeSignature fieldType = field.Signature!.FieldType;
-			if (fieldType.IsPrimitiveType())
-			{
-				return false;
-			}
-			else if (fieldType is GenericInstanceTypeSignature genericInstanceType)
-			{
-				processor.AddFetchDependenciesFromField(field, fieldType, listVariable, 0);
-			}
-			else if (fieldType.ToTypeDefOrRef() is TypeDefinition fieldTypeDef)
-			{
-				fieldTypeDef.MaybeProcessType();
-				if (nonDependentTypes.Contains(fieldTypeDef))
+				MethodDefinition method = instance.Type.AddMethod(nameof(UnityAssetBase.FetchDependencies), Pass099_CreateEmptyMethods.OverrideMethodAttributes, returnType);
+				method.AddParameter(fieldNameRef, "parent", out ParameterDefinition parameterDefinition);
+				parameterDefinition.AddNullableAttribute(NullableAnnotation.MaybeNull);
+				CilInstructionCollection processor = method.GetProcessor();
+				if (group.IsPPtr)
 				{
-					return false;
-				}
-
-				processor.AddFetchDependenciesFromField(field, fieldType, listVariable, 0);
-			}
-			else
-			{
-				throw new NotSupportedException($"{fieldType.Name} {field.DeclaringType!.Name}.{field.Name}");
-			}
-			return true;
-		}
-
-		private static bool AddFetchDependenciesFromArrayField(this CilInstructionCollection processor, FieldDefinition field, CilLocalVariable listVariable)
-		{
-			TypeSignature fieldType = field.Signature!.FieldType;
-			if (fieldType is not SzArrayTypeSignature arrayType)
-			{
-				throw new ArgumentException(nameof(field));
-			}
-
-			TypeSignature genericTypeParameter = arrayType.BaseType;
-			TypeSignature elementType = arrayType.BaseType;
-
-			if (elementType.IsPrimitiveType())
-			{
-				return false;
-			}
-			else if (elementType is GenericInstanceTypeSignature genericInstanceType)
-			{
-				processor.AddFetchDependenciesFromField(field, genericTypeParameter, listVariable, 1);
-			}
-			else if (elementType.ToTypeDefOrRef() is TypeDefinition fieldTypeDef)
-			{
-				fieldTypeDef.MaybeProcessType();
-				if (nonDependentTypes.Contains(fieldTypeDef))
-				{
-					return false;
-				}
-
-				processor.AddFetchDependenciesFromField(field, genericTypeParameter, listVariable, 1);
-			}
-			else
-			{
-				throw new NotSupportedException($"{fieldType.Name} {field.DeclaringType!.Name}.{field.Name}");
-			}
-			return true;
-		}
-
-		private static bool AddFetchDependenciesFromArrayArrayField(this CilInstructionCollection processor, FieldDefinition field, CilLocalVariable listVariable)
-		{
-			TypeSignature fieldType = field.Signature!.FieldType;
-			if (fieldType is not SzArrayTypeSignature arrayType)
-			{
-				throw new ArgumentException(nameof(field));
-			}
-
-			if (arrayType.BaseType is not SzArrayTypeSignature subArrayType)
-			{
-				throw new ArgumentException(nameof(field));
-			}
-
-			TypeSignature genericTypeParameter = subArrayType;
-			TypeSignature elementType = subArrayType.BaseType;
-
-			if (elementType.IsPrimitiveType())
-			{
-				return false;
-			}
-			else if (elementType is GenericInstanceTypeSignature genericInstanceType)
-			{
-				processor.AddFetchDependenciesFromField(field, genericTypeParameter, listVariable, 2);
-			}
-			else if (elementType.ToTypeDefOrRef() is TypeDefinition fieldTypeDef)
-			{
-				fieldTypeDef.MaybeProcessType();
-				if (nonDependentTypes.Contains(fieldTypeDef))
-				{
-					return false;
-				}
-
-				processor.AddFetchDependenciesFromField(field, genericTypeParameter, listVariable, 2);
-			}
-			else
-			{
-				throw new NotSupportedException($"{fieldType.Name} {field.DeclaringType!.Name}.{field.Name}");
-			}
-			return true;
-		}
-
-		private static bool AddFetchDependenciesFromField(this CilInstructionCollection processor, FieldDefinition field, CilLocalVariable listVariable)
-		{
-			TypeSignature fieldType = field.Signature!.FieldType;
-
-			if (fieldType is SzArrayTypeSignature arrayType)
-			{
-				if (arrayType.BaseType is SzArrayTypeSignature)
-				{
-					return processor.AddFetchDependenciesFromArrayArrayField(field, listVariable);
+					processor.Add(CilOpCodes.Ldstr, "PPtr");
+					processor.Add(CilOpCodes.Ldarg_1);
+					processor.Add(CilOpCodes.Newobj, fieldNameConstructor);
+					processor.Add(CilOpCodes.Ldarg_0);
+					processor.Add(CilOpCodes.Call, fromSingleMethod);
 				}
 				else
 				{
-					return processor.AddFetchDependenciesFromArrayField(field, listVariable);
+					processor.Add(CilOpCodes.Call, emptyArrayMethod);
+					if (GetOrMakeMethod(instance.Type.ToTypeSignature(), out MethodDefinition? appendMethod))
+					{
+						//enumerable is already loaded
+						processor.Add(CilOpCodes.Ldarg_1);
+						processor.Add(CilOpCodes.Ldarg_0);
+						processor.Add(CilOpCodes.Call, appendMethod);
+					}
 				}
+				processor.Add(CilOpCodes.Ret);
+			}
+		}
+
+		private static bool GetOrMakeMethod(TypeSignature typeSignature, [NotNullWhen(true)] out MethodDefinition? method)
+		{
+			if (nonDependentTypes.Contains(typeSignature))
+			{
+				method = null;
+				return false;
+			}
+			else if (methodDictionary.TryGetValue(typeSignature, out method))
+			{
+				return true;
+			}
+			else if (typeSignature is TypeDefOrRefSignature typeDefOrRefSignature)
+			{
+				TypeDefinition type = (TypeDefinition)typeDefOrRefSignature.Type;
+
+				if (type.Name!.ToString().StartsWith("PPtr_", StringComparison.Ordinal))
+				{
+					method = appendPPtrMethod;
+					return true;
+				}
+
+				GeneratedClassInstance instance = SharedState.Instance.TypesToGroups[type].Instances.Single(i => i.Type == type);
+
+				List<(string, FieldDefinition, MethodDefinition)> usableFields = new();
+
+				foreach (ClassProperty classProperty in instance.Properties)
+				{
+					if (classProperty.BackingField is not null
+						&& GetOrMakeMethod(classProperty.BackingField.Signature!.FieldType, out MethodDefinition? appendMethod))
+					{
+						string originalName = classProperty.OriginalFieldName ?? throw new NullReferenceException();
+						usableFields.Add((originalName, classProperty.BackingField, appendMethod));
+					}
+				}
+
+				if (usableFields.Count == 0)
+				{
+					nonDependentTypes.Add(typeSignature);
+					method = null;
+					return false;
+				}
+
+				method = helperType.AddMethod($"Append_{UniqueNameFactory.MakeUniqueName(typeDefOrRefSignature)}", StaticClassCreator.StaticMethodAttributes, returnType);
+				method.AddParameter(returnType, "enumerable");
+				method.AddParameter(fieldNameRef, "parent", out ParameterDefinition parameterDefinition);
+				parameterDefinition.AddNullableAttribute(NullableAnnotation.MaybeNull);
+				method.AddParameter(typeDefOrRefSignature, "item");
+				method.AddExtensionAttribute(SharedState.Instance.Importer);
+
+				CilInstructionCollection processor = method.GetProcessor();
+				processor.Add(CilOpCodes.Ldarg_0);
+
+				foreach ((string originalName, FieldDefinition field, MethodDefinition appendMethod) in usableFields)
+				{
+					//enumerable is already loaded
+					processor.Add(CilOpCodes.Ldstr, originalName);
+					processor.Add(CilOpCodes.Ldarg_1);
+					processor.Add(CilOpCodes.Newobj, fieldNameConstructor);
+					processor.Add(CilOpCodes.Ldarg_2);
+					processor.Add(CilOpCodes.Ldfld, field);
+					processor.Add(CilOpCodes.Call, appendMethod);
+				}
+
+				processor.Add(CilOpCodes.Ret);
+
+				methodDictionary.Add(typeDefOrRefSignature, method);
+				return true;
+			}
+			else if (typeSignature is CorLibTypeSignature or SzArrayTypeSignature)
+			{
+				nonDependentTypes.Add(typeSignature);
+				method = null;
+				return false;
+			}
+
+			GenericInstanceTypeSignature genericType = (GenericInstanceTypeSignature)typeSignature;
+			MethodDefinition?[] typeArgumentMethods = new MethodDefinition?[genericType.TypeArguments.Count];
+			bool anyTypeArgumentsHavePPtrs = false;
+			for (int i = 0; i < typeArgumentMethods.Length; i++)
+			{
+				if (GetOrMakeMethod(genericType.TypeArguments[i], out MethodDefinition? typeArgumentMethod))
+				{
+					anyTypeArgumentsHavePPtrs = true;
+					typeArgumentMethods[i] = typeArgumentMethod;
+				}
+			}
+
+			if (!anyTypeArgumentsHavePPtrs)
+			{
+				nonDependentTypes.Add(genericType);
+				method = null;
+				return false;
 			}
 			else
 			{
-				return processor.AddFetchDependenciesFromNormalField(field, listVariable);
+				method = helperType.AddMethod($"Append_{UniqueNameFactory.MakeUniqueName(genericType)}", StaticClassCreator.StaticMethodAttributes, returnType);
+				method.AddParameter(returnType, "enumerable");
+				method.AddParameter(fieldNameRef, "fieldName");
+				method.AddParameter(genericType, "item");
+				method.AddExtensionAttribute(SharedState.Instance.Importer);
+
+				CilInstructionCollection processor = method.GetProcessor();
+
+				switch (genericType.GenericType.Name?.ToString())
+				{
+					case $"{nameof(AssetPair<int, int>)}`2" or $"{nameof(AccessPairBase<int, int>)}`2":
+						processor.FillProcessorForPair(genericType);
+						break;
+					case $"{nameof(AssetDictionary<int, int>)}`2":
+						processor.FillProcessorForDictionary(genericType);
+						break;
+					case $"{nameof(AssetList<int>)}`1":
+						processor.FillProcessorForList(genericType);
+						break;
+					default:
+						throw new NotSupportedException();
+				}
+
+				methodDictionary.Add(genericType, method);
+				return true;
 			}
 		}
 
-		private static void AddFetchDependenciesFromField(this CilInstructionCollection processor, FieldDefinition field, TypeSignature genericTypeParameter, CilLocalVariable listVariable, int depth)
+		private static void FillProcessorForList(this CilInstructionCollection processor, GenericInstanceTypeSignature listType)
 		{
-			MethodSpecification? fetchMethod = depth switch
+			TypeSignature elementType = listType.TypeArguments[0];
+
+			if (!GetOrMakeMethod(elementType, out MethodDefinition? appendMethod))
 			{
-				0 => fetchDependenciesFromDependent.MakeGenericInstanceMethod(genericTypeParameter),
-				1 => fetchDependenciesFromArray.MakeGenericInstanceMethod(genericTypeParameter),
-				2 => fetchDependenciesFromArrayArray.MakeGenericInstanceMethod(genericTypeParameter),
-				_ => throw new ArgumentOutOfRangeException(nameof(depth)),
-			};
-			processor.Add(CilOpCodes.Ldloc, listVariable);
-			processor.Add(CilOpCodes.Ldarg_1);
+				throw new InvalidOperationException();
+			}
+
+			CilLocalVariable enumerableLocal = processor.AddLocalVariable(returnType);
 			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, field);
-			processor.Add(CilOpCodes.Ldstr, field.Name!);
-			processor.Add(CilOpCodes.Call, fetchMethod);
-			processor.Add(CilOpCodes.Call, unityObjectBasePPtrListAddRange);
+			processor.Add(CilOpCodes.Stloc, enumerableLocal);
+
+			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			processor.Add(CilOpCodes.Ldarg_2);
+			processor.Add(CilOpCodes.Callvirt, MakeListGetCountMethod(elementType));
+			processor.Add(CilOpCodes.Stloc, countLocal);
+
+			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			processor.Add(CilOpCodes.Ldc_I4_0);
+			processor.Add(CilOpCodes.Stloc, iLocal);
+
+			CilInstructionLabel conditionLabel = new();
+			processor.Add(CilOpCodes.Br, conditionLabel);
+
+			CilInstructionLabel forStartLabel = new();
+			forStartLabel.Instruction = processor.Add(CilOpCodes.Nop);
+
+			processor.Add(CilOpCodes.Ldloc, enumerableLocal);
+			processor.Add(CilOpCodes.Ldarg_1);
+			processor.Add(CilOpCodes.Ldarg_2);
+			processor.Add(CilOpCodes.Ldloc, iLocal);
+			processor.Add(CilOpCodes.Callvirt, MakeListGetItemMethod(elementType));
+			processor.Add(CilOpCodes.Call, appendMethod);
+			processor.Add(CilOpCodes.Stloc, enumerableLocal);
+
+			processor.Add(CilOpCodes.Ldloc, iLocal);
+			processor.Add(CilOpCodes.Ldc_I4_1);
+			processor.Add(CilOpCodes.Add);
+			processor.Add(CilOpCodes.Stloc, iLocal);
+
+			conditionLabel.Instruction = processor.Add(CilOpCodes.Nop);
+			processor.Add(CilOpCodes.Ldloc, iLocal);
+			processor.Add(CilOpCodes.Ldloc, countLocal);
+			processor.Add(CilOpCodes.Clt);
+			processor.Add(CilOpCodes.Brtrue, forStartLabel);
+
+			processor.Add(CilOpCodes.Ldloc, enumerableLocal);
+
+			processor.Add(CilOpCodes.Ret);
 		}
 
-		private static void FillNormalType(this TypeDefinition type)
+		private static void FillProcessorForPair(this CilInstructionCollection processor, GenericInstanceTypeSignature pairType)
 		{
-			MethodDefinition dependencyMethod = type.GetDependencyMethod();
-			CilInstructionCollection processor = dependencyMethod.CilMethodBody!.Instructions;
-			dependencyMethod.CilMethodBody.InitializeLocals = true;
+			TypeSignature keyType = pairType.TypeArguments[0];
+			TypeSignature valueType = pairType.TypeArguments[1];
 
-			processor.Add(CilOpCodes.Newobj, unityObjectBasePPtrListConstructor);
+			processor.Add(CilOpCodes.Ldarg_0);
 
-			CilLocalVariable list = new CilLocalVariable(unityObjectBasePPtrListType);
-			processor.Owner.LocalVariables.Add(list);
-			processor.Add(CilOpCodes.Stloc, list);
-
-			int count = 0;
-
-			if (type.BaseType is TypeDefinition baseType)
+			if (GetOrMakeMethod(keyType, out MethodDefinition? keyAppendMethod))
 			{
-				baseType.MaybeProcessType();
-
-				if (!nonDependentTypes.Contains(baseType))
-				{
-					MethodDefinition baseDependencyMethod = baseType.GetDependencyMethod();
-					processor.Add(CilOpCodes.Ldloc, list);
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Call, baseDependencyMethod);
-					processor.Add(CilOpCodes.Call, unityObjectBasePPtrListAddRange);
-					count++;
-				}
+				//enumerable is already loaded
+				processor.Add(CilOpCodes.Ldstr, "Key");
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.Add(CilOpCodes.Newobj, fieldNameConstructor);
+				processor.Add(CilOpCodes.Ldarg_2);
+				processor.Add(CilOpCodes.Callvirt, MakePairGetKeyMethod(keyType, valueType));
+				processor.Add(CilOpCodes.Call, keyAppendMethod);
 			}
 
-			foreach (FieldDefinition field in type.Fields)
+			if (GetOrMakeMethod(valueType, out MethodDefinition? valueAppendMethod))
 			{
-				bool increaseCount = processor.AddFetchDependenciesFromField(field, list);
-				if (increaseCount)
-				{
-					count++;
-				}
+				//enumerable is already loaded
+				processor.Add(CilOpCodes.Ldstr, "Value");
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.Add(CilOpCodes.Newobj, fieldNameConstructor);
+				processor.Add(CilOpCodes.Ldarg_2);
+				processor.Add(CilOpCodes.Callvirt, MakePairGetValueMethod(keyType, valueType));
+				processor.Add(CilOpCodes.Call, valueAppendMethod);
 			}
 
-			processor.Add(CilOpCodes.Ldloc, list);
 			processor.Add(CilOpCodes.Ret);
+		}
 
-			if (count == 1)
+		private static void FillProcessorForDictionary(this CilInstructionCollection processor, GenericInstanceTypeSignature dictionaryType)
+		{
+			TypeSignature keyType = dictionaryType.TypeArguments[0];
+			TypeSignature valueType = dictionaryType.TypeArguments[1];
+			TypeSignature pairType = accessPairBase.MakeGenericInstanceType(keyType, valueType);
+
+			if (!GetOrMakeMethod(pairType, out MethodDefinition? appendMethod))
 			{
-				processor.Owner.LocalVariables.Clear();
-				processor.Owner.InitializeLocals = false;
-				processor.RemoveAt(0);//New list object
-				processor.RemoveAt(0);//Store list object
-				processor.RemoveAt(0);//Load list object
-				processor.Pop();//return
-				processor.Pop();//load list object
-				processor.Pop();//call add range
-				processor.Add(CilOpCodes.Ret);
+				throw new InvalidOperationException();
 			}
-			else if (count == 0)
-			{
-				processor.ReplaceWithReturnEmptyArray();
-				nonDependentTypes.Add(type);
-			}
+
+			CilLocalVariable enumerableLocal = processor.AddLocalVariable(returnType);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Stloc, enumerableLocal);
+
+			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			processor.Add(CilOpCodes.Ldarg_2);
+			processor.Add(CilOpCodes.Callvirt, MakeDictionaryGetCountMethod(keyType, valueType));
+			processor.Add(CilOpCodes.Stloc, countLocal);
+
+			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			processor.Add(CilOpCodes.Ldc_I4_0);
+			processor.Add(CilOpCodes.Stloc, iLocal);
+
+			CilInstructionLabel conditionLabel = new();
+			processor.Add(CilOpCodes.Br, conditionLabel);
+
+			CilInstructionLabel forStartLabel = new();
+			forStartLabel.Instruction = processor.Add(CilOpCodes.Nop);
+
+			processor.Add(CilOpCodes.Ldloc, enumerableLocal);
+			processor.Add(CilOpCodes.Ldarg_1);
+			processor.Add(CilOpCodes.Ldarg_2);
+			processor.Add(CilOpCodes.Ldloc, iLocal);
+			processor.Add(CilOpCodes.Callvirt, MakeDictionaryGetPairMethod(keyType, valueType));
+			processor.Add(CilOpCodes.Call, appendMethod);
+			processor.Add(CilOpCodes.Stloc, enumerableLocal);
+
+			processor.Add(CilOpCodes.Ldloc, iLocal);
+			processor.Add(CilOpCodes.Ldc_I4_1);
+			processor.Add(CilOpCodes.Add);
+			processor.Add(CilOpCodes.Stloc, iLocal);
+
+			conditionLabel.Instruction = processor.Add(CilOpCodes.Nop);
+			processor.Add(CilOpCodes.Ldloc, iLocal);
+			processor.Add(CilOpCodes.Ldloc, countLocal);
+			processor.Add(CilOpCodes.Clt);
+			processor.Add(CilOpCodes.Brtrue, forStartLabel);
+
+			processor.Add(CilOpCodes.Ldloc, enumerableLocal);
+
+			processor.Add(CilOpCodes.Ret);
+		}
+
+		private static IMethodDefOrRef MakeDictionaryGetCountMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
+		{
+			return MethodUtils.MakeMethodOnGenericType(
+				SharedState.Instance.Importer,
+				accessDictionaryBase!.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
+				accessDictionaryBaseGetCount!);
+		}
+
+		private static IMethodDefOrRef MakeDictionaryGetPairMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
+		{
+			return MethodUtils.MakeMethodOnGenericType(
+				SharedState.Instance.Importer,
+				accessDictionaryBase!.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
+				accessDictionaryBaseGetPair!);
+		}
+
+		private static IMethodDefOrRef MakeListGetCountMethod(TypeSignature elementTypeSignature)
+		{
+			return MethodUtils.MakeMethodOnGenericType(
+				SharedState.Instance.Importer,
+				accessListBase!.MakeGenericInstanceType(elementTypeSignature),
+				accessListBaseGetCount!);
+		}
+
+		private static IMethodDefOrRef MakeListGetItemMethod(TypeSignature elementTypeSignature)
+		{
+			return MethodUtils.MakeMethodOnGenericType(
+				SharedState.Instance.Importer,
+				accessListBase!.MakeGenericInstanceType(elementTypeSignature),
+				accessListBaseGetItem!);
+		}
+
+		private static IMethodDefOrRef MakePairGetKeyMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
+		{
+			return MethodUtils.MakeMethodOnGenericType(
+				SharedState.Instance.Importer,
+				accessPairBase!.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
+				accessPairBaseGetKey!);
+		}
+
+		private static IMethodDefOrRef MakePairGetValueMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
+		{
+			return MethodUtils.MakeMethodOnGenericType(
+				SharedState.Instance.Importer,
+				accessPairBase!.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
+				accessPairBaseGetValue!);
 		}
 	}
 }

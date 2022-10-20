@@ -18,9 +18,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			TypeSignature commonPPtrTypeRef = SharedState.Instance.Importer.ImportTypeSignature(typeof(PPtr<>));
 			TypeSignature unityObjectBaseInterfaceRef = SharedState.Instance.Importer.ImportTypeSignature<IUnityObjectBase>();
 			GenericInstanceTypeSignature unityObjectBasePPtrRef = commonPPtrTypeRef.MakeGenericInstanceType(unityObjectBaseInterfaceRef);
-			TypeSignature ienumerableTypeRef = SharedState.Instance.Importer.ImportTypeSignature(typeof(IEnumerable<>));
-			GenericInstanceTypeSignature enumerablePPtrsRef = ienumerableTypeRef.MakeGenericInstanceType(unityObjectBasePPtrRef);
-			TypeSignature dependencyContextRef = SharedState.Instance.Importer.ImportTypeSignature<DependencyContext>();
 			TypeSignature assetReaderRef = SharedState.Instance.Importer.ImportTypeSignature<AssetReader>();
 			TypeSignature assetWriterRef = SharedState.Instance.Importer.ImportTypeSignature<AssetWriter>();
 			TypeSignature exportContainerInterfaceRef = SharedState.Instance.Importer.ImportTypeSignature<IExportContainer>();
@@ -45,9 +42,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 				MethodDefinition? editorYamlDef = type.AddMethod(nameof(UnityAssetBase.ExportYamlEditor), OverrideMethodAttributes, yamlNodeRef);
 				editorYamlDef.AddParameter(exportContainerInterfaceRef, "container");
-
-				MethodDefinition? fetchDependenciesDef = type.AddMethod(nameof(UnityAssetBase.FetchDependencies), OverrideMethodAttributes, enumerablePPtrsRef);
-				fetchDependenciesDef.AddParameter(dependencyContextRef, "context");
 
 				type.AddMethod(nameof(UnityAssetBase.Reset), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
 			}

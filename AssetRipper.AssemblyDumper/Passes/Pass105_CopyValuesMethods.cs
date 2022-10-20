@@ -739,21 +739,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 				accessPairBaseSetValue!);
 		}
 
-		private static string MakeUniqueName(TypeSignature type)
-		{
-			return type switch
-			{
-				CorLibTypeSignature or TypeDefOrRefSignature => type.Name,
-				SzArrayTypeSignature arrayType => $"Array{MakeUniqueName(arrayType.BaseType)}",
-				GenericInstanceTypeSignature genericType => $"{genericType.GenericType.Name?.ToString()[..^2]}_{string.Join('_', genericType.TypeArguments.Select(t => MakeUniqueName(t)))}",
-				_ => throw new NotSupportedException(),
-			}
-			?? throw new NullReferenceException();
-		}
-
 		private static string MakeUniqueCopyValuesName(TypeSignature target, TypeSignature source)
 		{
-			return $"{CopyValuesName}__{MakeUniqueName(target)}__{MakeUniqueName(source)}";
+			return $"{CopyValuesName}__{UniqueNameFactory.MakeUniqueName(target)}__{UniqueNameFactory.MakeUniqueName(source)}";
 		}
 
 		private static IMethodDescriptor MakeDuplicateArrayMethod(SzArrayTypeSignature arrayTypeSignature)

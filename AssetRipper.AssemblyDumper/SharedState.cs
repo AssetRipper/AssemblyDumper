@@ -97,10 +97,11 @@ namespace AssetRipper.AssemblyDumper
 			AddReferenceModuleContainingType(typeof(UnityGUID));
 			AddReferenceModuleContainingType(typeof(Color32));
 			AddReferenceModuleContainingType(typeof(Vector3));
+			AddReferenceModuleContainingType(typeof(Enumerable));
 			AddReferenceModuleContainingType(typeof(object));
 			//Importer.AddReferenceModule(ModuleDefinition.FromFile(@"E:\repos\AssemblyDumper\Libraries\System.Collections.dll"));
 			//Importer.AddReferenceModule(ModuleDefinition.FromFile(@"E:\repos\AssemblyDumper\Libraries\System.Runtime.dll"));
-			AddReferenceModuleContainingType(typeof(Program));
+			AddReferenceModuleContainingType(typeof(Program));//needed for member cloning
 		}
 
 		private void AddReferenceModuleContainingType(Type type)

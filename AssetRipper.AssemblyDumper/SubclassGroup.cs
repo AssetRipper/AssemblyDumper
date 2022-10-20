@@ -10,6 +10,8 @@
 
 		public override bool UniformlyNamed => true;
 
+		public override bool IsPPtr => Name.StartsWith("PPtr_", StringComparison.Ordinal);
+
 		public SubclassGroup(string name, TypeDefinition @interface) : base(@interface)
 		{
 			Name = name;
