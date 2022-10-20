@@ -72,7 +72,12 @@
 
 		public static Parameter AddParameter(this MethodDefinition method, TypeSignature parameterSignature, string parameterName)
 		{
-			ParameterDefinition parameterDefinition = new ParameterDefinition((ushort)(method.Signature!.ParameterTypes.Count + 1), parameterName, default);
+			return method.AddParameter(parameterSignature, parameterName, out _);
+		}
+
+		public static Parameter AddParameter(this MethodDefinition method, TypeSignature parameterSignature, string parameterName, out ParameterDefinition parameterDefinition)
+		{
+			parameterDefinition = new ParameterDefinition((ushort)(method.Signature!.ParameterTypes.Count + 1), parameterName, default);
 			method.Signature.ParameterTypes.Add(parameterSignature);
 			method.ParameterDefinitions.Add(parameterDefinition);
 
