@@ -8,7 +8,7 @@ namespace AssetRipper.AssemblyCreationTools
 		private readonly Dictionary<Type, ITypeDefOrRef> cachedTypeReferences = new();
 		private readonly Dictionary<Type, TypeSignature> cachedTypeSignatureReferences = new();
 		private readonly Dictionary<Type, TypeDefinition> cachedTypeDefinitions = new();
-		private readonly List<ModuleDefinition> referenceModules = new();
+		private readonly HashSet<ModuleDefinition> referenceModules = new();
 
 		public ReferenceImporter UnderlyingImporter { get; }
 		public ModuleDefinition TargetModule => UnderlyingImporter.TargetModule;
@@ -127,11 +127,11 @@ namespace AssetRipper.AssemblyCreationTools
 			return result;
 		}
 
-		private static bool TryGetTypeDefinitionMatch(List<ModuleDefinition> modules, string fullName, [NotNullWhen(true)] out TypeDefinition? type)
+		private static bool TryGetTypeDefinitionMatch(IEnumerable<ModuleDefinition> modules, string fullName, [NotNullWhen(true)] out TypeDefinition? type)
 		{
-			for (int i = 0; i < modules.Count; i++)
+			foreach (ModuleDefinition module in modules)
 			{
-				if (TryGetTypeDefinitionMatch(modules[i], fullName, out type))
+				if (TryGetTypeDefinitionMatch(module, fullName, out type))
 				{
 					return true;
 				}
