@@ -84,7 +84,16 @@ namespace AssetRipper.AssemblyDumper.Documentation
 		public static void AddPropertyDefinitionLine(ClassProperty property, string line)
 		{
 			AddPropertyDefinitionLine((PropertyBase)property, line);
-			if (property.BackingField is not null && property.BackingField.DeclaringType == property.Class.Type)
+			if (property.HasBackingFieldInDeclaringType)
+			{
+				AddFieldDefinitionLine(property.BackingField, line);
+			}
+		}
+
+		public static void AddPropertyDefinitionLineNotSpecial(ClassProperty property, string line)
+		{
+			AddPropertyDefinitionLine(property.Definition, line);
+			if (property.HasBackingFieldInDeclaringType)
 			{
 				AddFieldDefinitionLine(property.BackingField, line);
 			}

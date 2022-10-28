@@ -13,5 +13,14 @@ namespace AssetRipper.AssemblyDumper
 		public PropertyDefinition? SpecialDefinition { get; set; }
 		public DataMemberHistory? History { get; set; }
 		public MethodDefinition? HasMethod { get; set; }
+		[MemberNotNullWhen(true, nameof(SpecialDefinition))]
+		public bool HasEnumVariant
+		{
+			get
+			{
+				return SpecialDefinition?.Signature?.ReturnType.ToTypeDefOrRef() is TypeDefinition typeDefinition
+					&& typeDefinition.IsEnum;
+			}
+		}
 	}
 }

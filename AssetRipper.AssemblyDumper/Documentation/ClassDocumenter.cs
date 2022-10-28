@@ -79,6 +79,15 @@ namespace AssetRipper.AssemblyDumper.Documentation
 
 			DocumentationHandler.AddPropertyDefinitionLine(classProperty, $"Ascii Crc: {CrcUtils.CalculateDigestAscii(mainNode.OriginalName)}");
 
+			if (classProperty.HasEnumVariant)
+			{
+				DocumentationHandler.AddPropertyDefinitionLineNotSpecial(classProperty, "Enum variant available.");
+			}
+			else if (classProperty.SpecialDefinition is not null)
+			{
+				DocumentationHandler.AddPropertyDefinitionLineNotSpecial(classProperty, "PPtr variant available.");
+			}
+
 			DocumentationHandler.AddPropertyDefinitionLine(classProperty, releaseNode is null ? "Editor Only" : $"Release Flags: {GetMetaFlagString(releaseNode.MetaFlag)}");
 			DocumentationHandler.AddPropertyDefinitionLine(classProperty, editorNode is null ? "Release Only" : $"Editor Flags: {GetMetaFlagString(editorNode.MetaFlag)}");
 		}
@@ -129,7 +138,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 						VersionedListDocumenter.AddList(classProperty.SpecialDefinition, obsoleteMessageSubList, "Obsolete Message: ");
 					}
 
-					if (classProperty.BackingField is not null && classProperty.BackingField.DeclaringType == classProperty.Class.Type)
+					if (classProperty.HasBackingFieldInDeclaringType)
 					{
 						VersionedListDocumenter.AddSet(classProperty.BackingField, nativeNameSubList, "Native Name: ");
 						VersionedListDocumenter.AddList(classProperty.BackingField, managedTypeSubList, "Managed Type: ");

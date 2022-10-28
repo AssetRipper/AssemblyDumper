@@ -23,5 +23,13 @@
 		public GeneratedClassInstance Class { get; }
 		public bool IsAbsent => BackingField is null;
 		public bool IsPresent => !IsAbsent;
+		[MemberNotNullWhen(true, nameof(BackingField))]
+		public bool HasBackingFieldInDeclaringType
+		{
+			get
+			{
+				return BackingField is not null && BackingField.DeclaringType == Class.Type;
+			}
+		}
 	}
 }
