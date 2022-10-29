@@ -87,6 +87,16 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 			return builder.AddSingleStringAttribute<TargetFrameworkAttribute>(builder.Module.OriginalTargetRuntime.ToString());
 		}
 
+		/// <summary>
+		/// <see cref="TargetFrameworkAttribute"/>
+		/// </summary>
+		public static CustomAttribute AddTargetFrameworkAttribute(this AssemblyBuilder builder, string displayName)
+		{
+			CustomAttribute attribute = builder.AddTargetFrameworkAttribute();
+			attribute.AddNamedArgument(builder.Importer.String, nameof(TargetFrameworkAttribute.FrameworkDisplayName), builder.Importer.String, displayName);
+			return attribute;
+		}
+
 		private static CustomAttribute AddSingleStringAttribute<T>(this AssemblyBuilder builder, string parameterValue) where T : Attribute
 		{
 			IMethodDefOrRef constructor = builder.Importer.ImportConstructor<T>(1);

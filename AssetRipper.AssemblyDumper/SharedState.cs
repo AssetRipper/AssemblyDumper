@@ -86,6 +86,7 @@ namespace AssetRipper.AssemblyDumper
 			UniversalCommonString commonString)
 		{
 			_instance = new SharedState(sourceVersions, classes, commonString);
+			_instance.AddTargetFrameworkAttribute(".NET 6.0");
 		}
 
 		private void AddReferenceModules()
