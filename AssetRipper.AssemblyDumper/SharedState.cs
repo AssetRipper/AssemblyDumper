@@ -2,11 +2,8 @@
 using AssetRipper.AssemblyCreationTools.Attributes;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyDumper.Utils;
-using AssetRipper.Assets;
 using AssetRipper.DocExtraction.DataStructures;
-using AssetRipper.IO.Files;
-using AssetRipper.Numerics;
-using System.Numerics;
+using System.IO;
 
 namespace AssetRipper.AssemblyDumper
 {
@@ -56,7 +53,7 @@ namespace AssetRipper.AssemblyDumper
 			UnityVersion[] sourceVersions,
 			Dictionary<int, VersionedList<UniversalClass>> classes,
 			UniversalCommonString commonString)
-			: base(AssemblyName, new Version(0, 0, 0, 0), KnownCorLibs.SystemPrivateCoreLib_v6_0_0_0)
+			: base(AssemblyName, new Version(0, 0, 0, 0), KnownCorLibs.SystemRuntime_v6_0_0_0)
 		{
 			SourceVersions = sourceVersions;
 			CommonString = commonString;
@@ -91,23 +88,34 @@ namespace AssetRipper.AssemblyDumper
 
 		private void AddReferenceModules()
 		{
-			AddReferenceModuleContainingType(typeof(UnityObjectBase));
-			AddReferenceModuleContainingType(typeof(Yaml.YamlNode));
-			AddReferenceModuleContainingType(typeof(IO.Endian.EndianReader));
-			AddReferenceModuleContainingType(typeof(UnityVersion));
-			AddReferenceModuleContainingType(typeof(UnityGUID));
-			AddReferenceModuleContainingType(typeof(Color32));
-			AddReferenceModuleContainingType(typeof(Vector3));
-			AddReferenceModuleContainingType(typeof(Enumerable));
-			AddReferenceModuleContainingType(typeof(object));
-			//Importer.AddReferenceModule(ModuleDefinition.FromFile(@"E:\repos\AssemblyDumper\Libraries\System.Collections.dll"));
-			//Importer.AddReferenceModule(ModuleDefinition.FromFile(@"E:\repos\AssemblyDumper\Libraries\System.Runtime.dll"));
-			AddReferenceModuleContainingType(typeof(Program));//needed for member cloning
+			AddLocalReferenceModule("AssetRipper.Assets");
+			AddLocalReferenceModule("AssetRipper.Yaml");
+			AddLocalReferenceModule("AssetRipper.IO.Endian");
+			AddLocalReferenceModule("AssetRipper.VersionUtilities");
+			AddLocalReferenceModule("AssetRipper.IO.Files");
+			AddLocalReferenceModule("AssetRipper.Numerics");
+			AddSystemReferenceModule("System.Runtime");
+			AddSystemReferenceModule("System.Numerics.Vectors");
+			AddSystemReferenceModule("System.Linq");
+			AddSystemReferenceModule("System.Collections");
+			AddLocalReferenceModule("AssetRipper.AssemblyDumper");//needed for member cloning
 		}
 
-		private void AddReferenceModuleContainingType(Type type)
+		private void AddLocalReferenceModule(string name)
 		{
-			string path = type.Assembly.Location;
+			string path = Path.Combine(AppContext.BaseDirectory, $"{name}.dll"); ;
+			AddReferenceModule(path);
+		}
+
+		private void AddSystemReferenceModule(string name)
+		{
+			const string referenceDirectory = @"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\6.0.10\ref\net6.0\";
+			string path = $"{referenceDirectory}{name}.dll";
+			AddReferenceModule(path);
+		}
+
+		private void AddReferenceModule(string path)
+		{
 			ModuleDefinition module = ModuleDefinition.FromFile(path);
 			Importer.AddReferenceModule(module);
 		}

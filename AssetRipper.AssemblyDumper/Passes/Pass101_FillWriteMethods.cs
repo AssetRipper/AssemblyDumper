@@ -644,13 +644,26 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static IMethodDescriptor ImportPrimitiveWriteMethod(ElementType elementType)
 		{
-			return SharedState.Instance.Importer.ImportMethod<BinaryWriter>(m =>
+			if (elementType is ElementType.Boolean or ElementType.U1 or ElementType.I1)
 			{
-				return m.Name == nameof(BinaryWriter.Write)
-					&& m.Parameters.Count == 1
-					&& m.Parameters[0].ParameterType is CorLibTypeSignature corLibTypeSignature
-					&& corLibTypeSignature.ElementType == elementType;
-			});
+				return SharedState.Instance.Importer.ImportMethod<BinaryWriter>(m =>
+				{
+					return m.Name == nameof(BinaryWriter.Write)
+						&& m.Parameters.Count == 1
+						&& m.Parameters[0].ParameterType is CorLibTypeSignature corLibTypeSignature
+						&& corLibTypeSignature.ElementType == elementType;
+				});
+			}
+			else
+			{
+				return SharedState.Instance.Importer.ImportMethod<EndianWriter>(m =>
+				{
+					return m.Name == nameof(BinaryWriter.Write)
+						&& m.Parameters.Count == 1
+						&& m.Parameters[0].ParameterType is CorLibTypeSignature corLibTypeSignature
+						&& corLibTypeSignature.ElementType == elementType;
+				});
+			}
 		}
 
 		private static MethodDefinition NewWriteMethod(string uniqueName, TypeSignature parameter)
