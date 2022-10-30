@@ -4,6 +4,9 @@ using AssetRipper.AssemblyCreationTools.Methods;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
+	/// <summary>
+	/// <see href="https://github.com/dotnet/roslyn/blob/main/docs/features/nullable-metadata.md"/>
+	/// </summary>
 	internal static class NullableExtensions
 	{
 		internal static void AddNullableAttributesForMaybeNull(this PropertyDefinition property)

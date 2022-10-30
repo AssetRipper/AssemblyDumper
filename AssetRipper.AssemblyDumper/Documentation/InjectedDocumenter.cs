@@ -19,7 +19,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 				},
 				{ 28 , new()
 					{
-						{ Pass507_InjectedProperties.TerrainDataName , "The terrain data that references this texture." },
+						{ Pass507_InjectedProperties.SpriteInformationName , "The sprites and atlases that reference this texture." },
 					}
 				},
 				{ 4 , new()
