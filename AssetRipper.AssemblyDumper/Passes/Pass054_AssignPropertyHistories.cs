@@ -10,12 +10,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
-					if (instance.History is null)
+					ComplexTypeHistory? history = TryGetHistoryInThisOrBase(instance);
+					if (history is null)
 					{
 						continue;
 					}
 
-					IReadOnlyDictionary<string, DataMemberHistory> members = instance.History.GetAllMembers(instance.VersionRange.Start, SharedState.Instance.HistoryFile);
+					IReadOnlyDictionary<string, DataMemberHistory> members = history.GetAllMembers(instance.VersionRange.Start, SharedState.Instance.HistoryFile);
 					foreach (ClassProperty classProperty in instance.Properties)
 					{
 						SetHistory(classProperty, members);
@@ -26,6 +27,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 					interfaceProperty.History = interfaceProperty.DetermineHistoryFromImplementations();
 				}
 			}
+		}
+
+		private static ComplexTypeHistory? TryGetHistoryInThisOrBase(GeneratedClassInstance instance)
+		{
+			GeneratedClassInstance? current = instance;
+			while (current is not null)
+			{
+				if (current.History is not null)
+				{
+					return current.History;
+				}
+				current = current.Base;
+			}
+			return null;
 		}
 
 		private static void SetHistory(ClassProperty classProperty, IReadOnlyDictionary<string, DataMemberHistory> dictionary)
