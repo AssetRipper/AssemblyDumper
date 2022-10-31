@@ -8,6 +8,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
+			ThrowIfStringCountIsWrong();
 			TypeDefinition newTypeDef = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.RootNamespace, "CommonString");
 
 			GenericInstanceTypeSignature uintStringDictionary = SharedState.Instance.Importer.ImportType(typeof(Dictionary<,>))
@@ -32,6 +33,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ret);
 
 			processor.OptimizeMacros();
+		}
+
+		private static void ThrowIfStringCountIsWrong()
+		{
+			int count = SharedState.Instance.CommonString.Strings.Count;
+			if (count != 109)
+			{
+				throw new Exception($"The size of Common String has changed! {count}");
+			}
 		}
 	}
 }
