@@ -210,5 +210,10 @@ namespace AssetRipper.AssemblyDumper.Utils
 		public IEnumerable<UnityVersion> Keys => _list.Select(x => x.Key);
 
 		public IEnumerable<T?> Values => _list.Select(x => x.Value);
+
+		public override string ToString()
+		{
+			return $"{nameof(Count)} = {Count}";
+		}
 	}
 }

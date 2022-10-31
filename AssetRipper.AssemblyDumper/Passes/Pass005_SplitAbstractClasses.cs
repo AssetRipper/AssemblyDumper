@@ -1,6 +1,4 @@
-﻿//#define SPLIT_ABSTRACT
-
-using AssetRipper.AssemblyDumper.Utils;
+﻿using AssetRipper.AssemblyDumper.Utils;
 using RangeClassList = System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<AssetRipper.AssemblyDumper.Utils.Range<AssetRipper.VersionUtilities.UnityVersion>, AssetRipper.AssemblyDumper.UniversalClass>>;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -13,10 +11,21 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-#if SPLIT_ABSTRACT
+			/*HashSet<int> abstractIds = GetAbstractClassIds();
+			foreach (int abstractId in abstractIds.OrderBy(i => i))
+			{
+				VersionedList<UniversalClass> list = SharedState.Instance.ClassInformation[abstractId];
+				if (list.All(c => c.Value?.IsAbstract ?? true))
+				{
+					Console.WriteLine($"\t{abstractId} abstract");
+				}
+				else
+				{
+					Console.WriteLine($"\t{abstractId} abstract sometimes");
+				}
+			}*/
 			AssignInheritance();
 			DoOtherStuff();
-#endif
 		}
 
 		private static void DoOtherStuff()
@@ -139,10 +148,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void UpdateWithSectionData(this VersionedList<UniversalClass> versionedList, List<Section> sectionList)
 		{
-			if (sectionList[0].Class.TypeID == 183)
-			{
-
-			}
 			List<KeyValuePair<UnityVersion, UniversalClass?>> originalList = versionedList.ToList();
 			versionedList.Clear();
 			int i = 0, j = 0;
@@ -158,11 +163,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					UnityVersion originalEnd = i == originalList.Count - 1 ? UnityVersion.MaxVersion : originalList[i + 1].Key;
 					Section currentSection = sectionList[j];
-					//if (currentSection.Range.End <= originalStart)
-					//{
-					//	j++;
-					//}
-					//else 
 					if (originalEnd <= currentSection.Range.Start)
 					{
 						i++;
@@ -222,6 +222,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 					}
 				}
 
+				if (!useField)
+				{
+					continue;
+				}
+
 				Dictionary<Section, (UniversalNode?, UniversalNode?)> nodeDictionary = new();
 				foreach (Section section in sections)
 				{
@@ -254,7 +259,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						{
 							if (derivedClass.EditorRootNode is not null
 								&& derivedClass.EditorRootNode.TryGetSubNodeByName(fieldName, out UniversalNode? derivedNode)
-								&& !UniversalNodeComparer.Equals(releaseNode, derivedNode, false))
+								&& !UniversalNodeComparer.Equals(editorNode, derivedNode, false))
 							{
 								useField = false;
 								break;
@@ -300,7 +305,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				else if (originalRange.Start <= currentStart && currentEnd <= originalRange.End)
 				{
-					sections.Add(Section.Create(rangeClassList[i].Value, originalRange, derivedRangeDictionary));
+					sections.Add(Section.Create(rangeClassList[i].Value, new UnityVersionRange(currentStart, currentEnd), derivedRangeDictionary));
 					j++;
 				}
 				else
@@ -526,6 +531,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				proportion = (float)sum / DerivedClasses.Count;
 				return sum > 0;
+			}
+
+			public override string ToString()
+			{
+				return $"{Class.Name} {Range}";
 			}
 		}
 	}
