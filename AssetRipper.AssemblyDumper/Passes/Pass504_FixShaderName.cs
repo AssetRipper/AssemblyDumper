@@ -19,9 +19,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void FixShaderTypeDefinition(this TypeDefinition type)
 		{
-			FieldDefinition? nameField = type.TryGetFieldByName("m_Name");
+			FieldDefinition nameField = type.GetFieldByName("m_Name", true);
 			FieldDefinition? parsedFormField = type.TryGetFieldByName("m_ParsedForm");
-			if (nameField is null || parsedFormField is null)
+			if (parsedFormField is null)
 			{
 				return;
 			}
