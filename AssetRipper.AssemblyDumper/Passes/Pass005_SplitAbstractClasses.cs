@@ -7,11 +7,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		private static readonly HashSet<int> processedClasses = new();
 		private const int MaxRunCount = 1000;
-		private const float MinimumProportion = 0.5f;
+		private const float MinimumProportion = 0.7f;
 
 		public static void DoPass()
 		{
-			/*HashSet<int> abstractIds = GetAbstractClassIds();
+			//ListAbstractClassIds();
+			AssignInheritance();
+			DoOtherStuff();
+		}
+
+		private static void ListAbstractClassIds()
+		{
+			HashSet<int> abstractIds = GetAbstractClassIds();
 			foreach (int abstractId in abstractIds.OrderBy(i => i))
 			{
 				VersionedList<UniversalClass> list = SharedState.Instance.ClassInformation[abstractId];
@@ -23,9 +30,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					Console.WriteLine($"\t{abstractId} abstract sometimes");
 				}
-			}*/
-			AssignInheritance();
-			DoOtherStuff();
+			}
 		}
 
 		private static void DoOtherStuff()
@@ -212,21 +217,24 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			foreach (string fieldName in rangeClassList.GetAllFieldNames())
 			{
-				bool useField = true;
+				int count = 0;
+				double proportionSum = 0;
 				foreach (Section section in sections)
 				{
-					if (section.HasField(fieldName, out float proportion) && proportion < MinimumProportion)
+					if (section.HasField(fieldName, out float proportion))
 					{
-						useField = false;
-						break;
+						count++;
+						proportionSum += proportion;
 					}
 				}
 
-				if (!useField)
+				float averageProportion = (float)(proportionSum / count);
+				if (averageProportion <= MinimumProportion)
 				{
 					continue;
 				}
 
+				bool useField = true;
 				Dictionary<Section, (UniversalNode?, UniversalNode?)> nodeDictionary = new();
 				foreach (Section section in sections)
 				{
