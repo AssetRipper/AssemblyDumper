@@ -8,12 +8,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
+				HashSet<GeneratedClassInstance> instancesWithHistoriesNotFromBase = new();
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
-					ComplexTypeHistory? history = TryGetHistoryInThisOrBase(instance);
+					ComplexTypeHistory? history = TryGetHistoryInThisOrBase(instance, out bool usedBaseClass);
 					if (history is null)
 					{
 						continue;
+					}
+
+					if (!usedBaseClass)
+					{
+						instancesWithHistoriesNotFromBase.Add(instance);
 					}
 
 					IReadOnlyDictionary<string, DataMemberHistory> members = history.GetAllMembers(instance.VersionRange.Start, SharedState.Instance.HistoryFile);
@@ -24,14 +30,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				foreach (InterfaceProperty interfaceProperty in group.InterfaceProperties)
 				{
-					interfaceProperty.History = interfaceProperty.DetermineHistoryFromImplementations();
+					interfaceProperty.History = interfaceProperty.DetermineHistoryFromImplementations(instancesWithHistoriesNotFromBase);
 				}
 			}
 		}
 
-		private static ComplexTypeHistory? TryGetHistoryInThisOrBase(GeneratedClassInstance instance)
+		private static ComplexTypeHistory? TryGetHistoryInThisOrBase(GeneratedClassInstance instance, out bool usedBaseClass)
 		{
-			GeneratedClassInstance? current = instance;
+			if (instance.History is not null)
+			{
+				usedBaseClass = false;
+				return instance.History;
+			}
+			usedBaseClass = true;
+			GeneratedClassInstance? current = instance.Base;
 			while (current is not null)
 			{
 				if (current.History is not null)
@@ -106,10 +118,24 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return false;
 		}
 
-		private static DataMemberHistory? DetermineHistoryFromImplementations(this InterfaceProperty interfaceProperty)
+		private static DataMemberHistory? DetermineHistoryFromImplementations(this InterfaceProperty interfaceProperty, HashSet<GeneratedClassInstance> instancesWithHistoriesNotFromBase)
 		{
-			DataMemberHistory? history = null;
-			foreach (ClassProperty classProperty in interfaceProperty.Implementations)
+			IEnumerable<ClassProperty> enumerable = instancesWithHistoriesNotFromBase.SelectMany(i => i.Properties).Where(c => c.Base == interfaceProperty);
+			return TryGetUniqueHistory(enumerable, out DataMemberHistory? history) || TryGetUniqueHistory(interfaceProperty.Implementations, out history)
+				? history
+				: null;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="properties"></param>
+		/// <param name="history">This will be null if there are conflicts or all the options are null.</param>
+		/// <returns>True if a unique, possibly null, history has been decided.</returns>
+		private static bool TryGetUniqueHistory(IEnumerable<ClassProperty> properties, out DataMemberHistory? history)
+		{
+			history = null;
+			foreach (ClassProperty classProperty in properties)
 			{
 				if (history is null)
 				{
@@ -120,10 +146,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				else if (history != classProperty.History)
 				{
-					return null;
+					history = null;
+					return true;
 				}
 			}
-			return history;
+			return history is not null;
 		}
 	}
 }
