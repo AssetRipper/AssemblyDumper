@@ -537,7 +537,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			//Check size of count
 			processor.Add(CilOpCodes.Ldloc, countLocal);
-			processor.Add(CilOpCodes.Ldc_I4, MaxArraySize);
+			processor.Add(CilOpCodes.Ldc_I4, MaxArraySize * MaxArraySize);//Different from max array size because textures and meshes are usually larger
 			processor.Add(CilOpCodes.Bgt, readAsListInstruction);
 
 			//Read into array (because that's more efficient)
