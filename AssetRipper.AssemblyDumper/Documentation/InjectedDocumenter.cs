@@ -10,21 +10,21 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			Dictionary<int, string> classTypeSummaries = new()
 			{
 			};
-			Dictionary<int, Dictionary<string, string>> classPropertySummaries = new()
+			Dictionary<int, List<(string, string)>> classPropertySummaries = new()
 			{
 				{ 1032 , new()
 					{
-						{ Pass507_InjectedProperties.TargetSceneName , "The scene this asset references." },
+						( Pass507_InjectedProperties.TargetSceneName , "The scene this asset references." ),
 					}
 				},
 				{ 28 , new()
 					{
-						{ Pass507_InjectedProperties.SpriteInformationName , "The sprites and atlases that reference this texture." },
+						( Pass507_InjectedProperties.SpriteInformationName , "The sprites and atlases that reference this texture." ),
 					}
 				},
 				{ 4 , new()
 					{
-						{ "RootOrder_C4" , $"The index of this {SeeXmlTagGenerator.MakeCRefForClassInterface(4)} in its father's children. If a transform has no father, its root order should be 0." },
+						( "RootOrder_C4" , $"The index of this {SeeXmlTagGenerator.MakeCRefForClassInterface(4)} in its father's children. If a transform has no father, its root order should be 0." ),
 					}
 				},
 			};
@@ -32,20 +32,30 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			{
 				{ "SceneObjectIdentifier" , $"A subset of {SeeXmlTagGenerator.MakeHRef(@"https://docs.unity3d.com/ScriptReference/GlobalObjectId.html", "GlobalObjectId")}." },
 			};
-			Dictionary<string, Dictionary<string, string>> subClassPropertySummaries = new()
+			Dictionary<string, List<(string, string)>> subClassPropertySummaries = new()
 			{
 				{ "SceneObjectIdentifier" , new()
 					{
-						{ "TargetObject" , $"The local file ID of the object." },
-						{ "TargetPrefab" , "The prefab instance id of the object. For normal game objects, this prefab id is 0." },
-						{ Pass508_LazySceneObjectIdentifier.TargetObjectName , "An object in the scene to be referenced. If not null, it will replace TargetObject during Yaml export." },
-						{ Pass508_LazySceneObjectIdentifier.TargetPrefabName , "A prefab instance to be referenced. If not null, it will replace TargetPrefab during Yaml export." },
+						( "TargetObject" , $"The local file ID of the object." ),
+						( "TargetPrefab" , "The prefab instance id of the object. For normal game objects, this prefab id is 0." ),
+						( Pass508_LazySceneObjectIdentifier.TargetObjectName , "An object in the scene to be referenced. If not null, it will replace TargetObject during Yaml export." ),
+						( Pass508_LazySceneObjectIdentifier.TargetPrefabName , "A prefab instance to be referenced. If not null, it will replace TargetPrefab during Yaml export." ),
+					}
+				},
+				{ "SpriteRenderData" , new()
+					{
+						( "TextureRect" , "Actual sprite rectangle inside atlas texture (or in original texture for non atlas sprite)." ),
+						( "TextureRect" , "It is a retangle of cropped image if tight mode is used. Otherwise, its size matches the original size." ),
+						( "TextureRectOffset" , $"Offset of actual (cropped) sprite rectangle relative to {SeeXmlTagGenerator.MakeCRefForClassInterfaceProperty(213, "Rect_C213")}." ),
+						( "TextureRectOffset" , "Unity crops rectangle to save atlas space if tight mode is used." ),
+						( "TextureRectOffset" , "The final atlas image is a cropped version of a rectangle that the developer specified in the original texture." ),
+						( "TextureRectOffset" , $"In other words, this value shows how much Unity cropped the {SeeXmlTagGenerator.MakeCRefForClassInterfaceProperty(213, "Rect_C213")} from the bottom-left corner." ),
 					}
 				},
 				{ "SubMesh" , new()
 					{
-						{ "FirstByte" , "Offset in the index buffer." },
-						{ "FirstVertex" , "Offset in the vertex list." },
+						( "FirstByte" , "Offset in the index buffer." ),
+						( "FirstVertex" , "Offset in the vertex list." ),
 					}
 				},
 			};
@@ -54,9 +64,9 @@ namespace AssetRipper.AssemblyDumper.Documentation
 
 		private static void AddDocumentationForDictionaries(
 			Dictionary<int, string> classTypeSummaries,
-			Dictionary<int, Dictionary<string, string>> classPropertySummaries,
+			Dictionary<int, List<(string, string)>> classPropertySummaries,
 			Dictionary<string, string> subClassTypeSummaries,
-			Dictionary<string, Dictionary<string, string>> subClassPropertySummaries)
+			Dictionary<string, List<(string, string)>> subClassPropertySummaries)
 		{
 			foreach ((int id, string summary) in classTypeSummaries)
 			{
@@ -67,7 +77,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 					DocumentationHandler.AddTypeDefinitionLine(type, summary);
 				}
 			}
-			foreach ((int id, Dictionary<string, string> documentationDictionary) in classPropertySummaries)
+			foreach ((int id, List<(string, string)> documentationDictionary) in classPropertySummaries)
 			{
 				ClassGroup group = SharedState.Instance.ClassGroups[id];
 				AddDocumentationToGroup(group, documentationDictionary);
@@ -85,7 +95,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 					DocumentationHandler.AddTypeDefinitionLine(type, summary);
 				}
 			}
-			foreach ((string subClass, Dictionary<string, string> documentationDictionary) in subClassPropertySummaries)
+			foreach ((string subClass, List<(string, string)> documentationDictionary) in subClassPropertySummaries)
 			{
 				SubclassGroup group = SharedState.Instance.SubclassGroups[subClass];
 				AddDocumentationToGroup(group, documentationDictionary);
@@ -96,7 +106,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			}
 		}
 
-		private static void AddDocumentationToInstance(GeneratedClassInstance instance, Dictionary<string, string> documentationDictionary)
+		private static void AddDocumentationToInstance(GeneratedClassInstance instance, List<(string, string)> documentationDictionary)
 		{
 			TypeDefinition type = instance.Type;
 			foreach ((string propertyName, string summary) in documentationDictionary)
@@ -126,7 +136,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			}
 		}
 
-		private static void AddDocumentationToGroup(ClassGroupBase group, Dictionary<string, string> documentationDictionary)
+		private static void AddDocumentationToGroup(ClassGroupBase group, List<(string, string)> documentationDictionary)
 		{
 			foreach ((string propertyName, string summary) in documentationDictionary)
 			{

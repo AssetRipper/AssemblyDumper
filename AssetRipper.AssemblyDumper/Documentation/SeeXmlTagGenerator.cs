@@ -12,9 +12,19 @@
 			return MakeCRef(XmlUtils.GetStringReference(type));
 		}
 
+		public static string MakeCRef(PropertyDefinition property)
+		{
+			return MakeCRef(XmlUtils.GetStringReference(property));
+		}
+
 		public static string MakeCRefForClassInterface(int classID)
 		{
 			return MakeCRef(SharedState.Instance.ClassGroups[classID].Interface);
+		}
+
+		public static string MakeCRefForClassInterfaceProperty(int classID, string propertyName)
+		{
+			return MakeCRef(SharedState.Instance.ClassGroups[classID].Interface.Properties.First(p => p.Name == propertyName));
 		}
 
 		public static string MakeCRefForSubclassInterface(string name)
