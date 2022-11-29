@@ -12,7 +12,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static TypeSignature? unityVersionType;
 		private static TypeDefinition? abstractClassException;
 		private static MethodDefinition? abstractClassExceptionConstructor;
-		private static IMethodDefOrRef? unityVersionIsLessMethod;
+		private static IMethodDefOrRef? unityVersionIsGreaterEqualMethod;
 		private static IMethodDefOrRef? makeDummyAssetInfo;
 
 		public static void DoPass()
@@ -28,8 +28,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 				"Abstract class could not be created");
 			abstractClassExceptionConstructor = abstractClassException.GetDefaultConstructor();
 
-			unityVersionIsLessMethod = SharedState.Instance.Importer.ImportMethod<UnityVersion>(m =>
-				m.Name == nameof(UnityVersion.IsLess) && m.Parameters.Count == 5);
+			unityVersionIsGreaterEqualMethod = SharedState.Instance.Importer.ImportMethod<UnityVersion>(m =>
+				m.Name == nameof(UnityVersion.IsGreaterEqual) && m.Parameters.Count == 5);
 			makeDummyAssetInfo = SharedState.Instance.Importer.ImportMethod<AssetInfo>(method =>
 				method.Name == nameof(AssetInfo.MakeDummyAssetInfo)
 				&& method.Parameters.Count == 1);
@@ -281,7 +281,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ret);
 		}
 
-		private static void AddIsLessThanVersion(this CilInstructionCollection processor, UnityVersion versionToCompareWith)
+		private static void AddIsGreaterOrEqualToVersion(this CilInstructionCollection processor, UnityVersion versionToCompareWith)
 		{
 			Parameter versionParameter = processor.Owner.Owner.Parameters[0];
 			processor.Add(CilOpCodes.Ldarga, versionParameter);
@@ -290,24 +290,21 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.Build);
 			processor.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.Type);
 			processor.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.TypeNumber);
-			processor.Add(CilOpCodes.Call, unityVersionIsLessMethod!);
+			processor.Add(CilOpCodes.Call, unityVersionIsGreaterEqualMethod!);
 		}
 
 		private static void FillNormalCreationMethod(this CilInstructionCollection processor, ClassGroupBase group, bool hasInfo)
 		{
-			int count = group.Instances.Count;
-
-			CilInstructionLabel[] nopInstructions = Enumerable.Range(0, count - 1).Select(i => new CilInstructionLabel()).ToArray();
-
-			for (int i = 0; i < count - 1; i++)
+			for (int i = group.Instances.Count - 1; i > 0; i--)
 			{
-				UnityVersion endVersion = group.Instances[i + 1].VersionRange.Start;
-				processor.AddIsLessThanVersion(endVersion);
-				processor.Add(CilOpCodes.Brfalse, nopInstructions[i]);
+				CilInstructionLabel label = new();
+				UnityVersion startVersion = group.Instances[i].VersionRange.Start;
+				processor.AddIsGreaterOrEqualToVersion(startVersion);
+				processor.Add(CilOpCodes.Brfalse, label);
 				processor.AddThrowExceptionOrReturnNewObject(group.Instances[i].Type, hasInfo, true);
-				nopInstructions[i].Instruction = processor.Add(CilOpCodes.Nop);
+				label.Instruction = processor.Add(CilOpCodes.Nop);
 			}
-			processor.AddThrowExceptionOrReturnNewObject(group.Instances[count - 1].Type, hasInfo, true);
+			processor.AddThrowExceptionOrReturnNewObject(group.Instances[0].Type, hasInfo, true);
 			processor.OptimizeMacros();
 		}
 
