@@ -34,11 +34,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 				method.Name == nameof(AssetInfo.MakeDummyAssetInfo)
 				&& method.Parameters.Count == 1);
 
-			Dictionary<UnityVersion, UnityVersion> versionRedirects = MakeVersionRedirectDictionary();
-
 			TypeDefinition factoryDefinition = CreateFactoryDefinition();
 			AddAllClassCreationMethods(
-				versionRedirects,
 				out List<(int, MethodDefinition?, bool)> defaultMethods,
 				out List<(int, MethodDefinition?, bool)> assetInfoMethods);
 			factoryDefinition.AddDefaultCreationMethod(defaultMethods);
@@ -134,7 +131,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 		}
 
 		private static void AddAllClassCreationMethods(
-			Dictionary<UnityVersion, UnityVersion> versionRedirects,
 			out List<(int, MethodDefinition?, bool)> defaultMethods,
 			out List<(int, MethodDefinition?, bool)> assetInfoMethods)
 		{
@@ -143,7 +139,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			foreach (ClassGroup group in SharedState.Instance.ClassGroups.Values.OrderBy(g => g.ID))
 			{
 				group.AddMethodsForGroup(
-					versionRedirects,
 					out MethodDefinition? defaultMethod,
 					out MethodDefinition? assetInfoMethod,
 					out bool usesVersion);
@@ -152,13 +147,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
 			{
-				group.AddMethodsForGroup(versionRedirects, out _, out _, out _);
+				group.AddMethodsForGroup(out _, out _, out _);
 			}
 		}
 
 		private static void AddMethodsForGroup(
 			this ClassGroupBase group,
-			Dictionary<UnityVersion, UnityVersion> versionRedirects,
 			out MethodDefinition? defaultMethod,
 			out MethodDefinition? assetInfoMethod,
 			out bool usesVersion)
@@ -186,12 +180,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 				TypeDefinition factoryClass = group.MakeFactoryClass();
 				if (group.ID >= 0)
 				{
-					assetInfoMethod = ImplementNormalCreationMethod(group, factoryClass, versionRedirects, true);
+					assetInfoMethod = ImplementNormalCreationMethod(group, factoryClass, true);
 					defaultMethod = ImplementNormalCreationMethod(group, factoryClass, assetInfoMethod);
 				}
 				else
 				{
-					defaultMethod = ImplementNormalCreationMethod(group, factoryClass, versionRedirects, false);
+					defaultMethod = ImplementNormalCreationMethod(group, factoryClass, false);
 				}
 			}
 		}
@@ -210,8 +204,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static MethodDefinition ImplementNormalCreationMethod(ClassGroupBase group, TypeDefinition factoryClass,
-			Dictionary<UnityVersion, UnityVersion> versionRedirects, bool hasInfo)
+		private static MethodDefinition ImplementNormalCreationMethod(ClassGroupBase group, TypeDefinition factoryClass, bool hasInfo)
 		{
 			MethodDefinition method = factoryClass.AddMethod("CreateAsset",
 				MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
@@ -222,12 +215,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				method.AddParameter(assetInfoType!, "info");
 			}
-			processor.FillNormalCreationMethod(versionRedirects, group, hasInfo);
+			processor.FillNormalCreationMethod(group, hasInfo);
 			return method;
 		}
 
-		private static MethodDefinition ImplementNormalCreationMethod(ClassGroupBase group, TypeDefinition factoryClass,
-			MethodDefinition assetInfoMethod)
+		private static MethodDefinition ImplementNormalCreationMethod(ClassGroupBase group, TypeDefinition factoryClass, MethodDefinition assetInfoMethod)
 		{
 			MethodDefinition method = factoryClass.AddMethod("CreateAsset",
 				MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
@@ -301,8 +293,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Call, unityVersionIsLessMethod!);
 		}
 
-		private static void FillNormalCreationMethod(this CilInstructionCollection processor,
-			Dictionary<UnityVersion, UnityVersion> versionRedirects, ClassGroupBase group, bool hasInfo)
+		private static void FillNormalCreationMethod(this CilInstructionCollection processor, ClassGroupBase group, bool hasInfo)
 		{
 			int count = group.Instances.Count;
 
@@ -311,10 +302,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			for (int i = 0; i < count - 1; i++)
 			{
 				UnityVersion endVersion = group.Instances[i + 1].VersionRange.Start;
-				if (versionRedirects.TryGetValue(endVersion, out UnityVersion redirectedVersion))
-				{
-					endVersion = redirectedVersion;
-				}
 				processor.AddIsLessThanVersion(endVersion);
 				processor.Add(CilOpCodes.Brfalse, nopInstructions[i]);
 				processor.AddThrowExceptionOrReturnNewObject(group.Instances[i].Type, hasInfo, true);
@@ -327,25 +314,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static MethodDefinition GetAssetInfoConstructor(this TypeDefinition typeDefinition)
 		{
 			return typeDefinition.Methods.Where(x => x.IsConstructor && x.Parameters.Count == 1 && x.Parameters[0].ParameterType.Name == nameof(AssetInfo)).Single();
-		}
-
-		private static Dictionary<UnityVersion, UnityVersion> MakeVersionRedirectDictionary()
-		{
-			Dictionary<UnityVersion, UnityVersion> result = new();
-			ushort major = default;
-			ushort minor = default;
-			ushort build = default;
-			foreach (UnityVersion version in SharedState.Instance.SourceVersions)
-			{
-				if (version.Major != major || version.Minor != minor || version.Build != build)
-				{
-					major = version.Major;
-					minor = version.Minor;
-					build = version.Build;
-					result.Add(version, new UnityVersion(major, minor, build));
-				}
-			}
-			return result;
 		}
 
 		private static TypeDefinition MakeFactoryClass(this ClassGroupBase group)
