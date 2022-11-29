@@ -14,7 +14,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					continue;
 				}
 
-				string parameterTypeName = name.Substring(5, name.LastIndexOf('_') - 5);
+				string parameterTypeName = name.Substring(5);
 				if (!MapsToMultipleIds(parameterTypeName))
 				{
 					continue;

@@ -133,7 +133,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void InjectGUIStyleState()
 		{
-			VersionedList<UniversalClass> pptrTexture2DList = SharedState.Instance.SubclassInformation["PPtr_Texture2D_"];
+			VersionedList<UniversalClass> pptrTexture2DList = SharedState.Instance.SubclassInformation["PPtr_Texture2D"];
 			VersionedList<UniversalClass> colorList = SharedState.Instance.SubclassInformation["ColorRGBAf"];
 			Debug.Assert(pptrTexture2DList.Count == 2);
 			Debug.Assert(colorList.Count == 2);
@@ -188,7 +188,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void InjectGUIStyle()
 		{
 			UnityVersion builtInVersion = new UnityVersion(4, 0, 0);
-			VersionedList<UniversalClass> pptrFontList = SharedState.Instance.SubclassInformation["PPtr_Font_"];
+			VersionedList<UniversalClass> pptrFontList = SharedState.Instance.SubclassInformation["PPtr_Font"];
 			VersionedList<UniversalClass> stateList = SharedState.Instance.SubclassInformation["GUIStyleState"];
 			VersionedList<UniversalClass> stringList = SharedState.Instance.SubclassInformation["Utf8String"];
 			VersionedList<UniversalClass> rectOffsetList = SharedState.Instance.SubclassInformation["RectOffset"];

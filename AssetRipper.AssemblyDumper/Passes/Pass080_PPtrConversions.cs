@@ -139,7 +139,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		internal static bool GetInterfaceParameterTypeDefinition(SubclassGroup pptrGroup, out TypeDefinition type)
 		{
-			string parameterTypeName = pptrGroup.Name.Substring(5, pptrGroup.Name.LastIndexOf('_') - 5);
+			string parameterTypeName = pptrGroup.Name.Substring(5);
 			if (SharedState.Instance.NameToTypeID.TryGetValue(parameterTypeName, out HashSet<int>? idList) && idList.Count == 1)
 			{
 				type = SharedState.Instance.ClassGroups[idList.First()].GetSingularTypeOrInterface();
@@ -154,7 +154,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		internal static TypeDefinition GetInstanceParameterTypeDefinition(GeneratedClassInstance pptrInstance)
 		{
-			string parameterTypeName = pptrInstance.Name.Substring(5, pptrInstance.Name.LastIndexOf('_') - 5);
+			string parameterTypeName = pptrInstance.Name.Substring(5);
 			if (SharedState.Instance.NameToTypeID.TryGetValue(parameterTypeName, out HashSet<int>? list))
 			{
 				List<GeneratedClassInstance> instances = new();

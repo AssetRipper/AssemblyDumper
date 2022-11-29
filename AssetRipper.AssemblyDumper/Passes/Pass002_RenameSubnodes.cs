@@ -273,7 +273,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					UniversalNode typeNode = subnode.SubNodes[0].SubNodes[1].SubNodes[0];
 					string typeName = typeNode.TypeName;
 					node.TypeName = typeName.StartsWith("PPtr_", StringComparison.Ordinal)
-						? $"NameToObjectMap_{typeName.Substring(5, typeName.Length - 6)}"
+						? $"NameToObjectMap_{typeName.Substring(5)}"
 						: throw new NotSupportedException();
 				}
 			}
@@ -379,6 +379,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			else if (node.TypeName.StartsWith("PPtr_", StringComparison.Ordinal))
 			{
+				node.TypeName = node.TypeName[..^1];
 				node.TryRenameSubNode("m_FileID", "m_FileID_");
 				node.TryRenameSubNode("m_PathID", "m_PathID_");
 				if (node.Name == "m_PrefabParentObject")//3.5 - 2018.2
