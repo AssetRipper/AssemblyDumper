@@ -59,7 +59,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					UniversalClass? universalClass = pair.Value;
 					if (universalClass is not null)
 					{
-						string typeName = $"{universalClass.Name}_{pair.Key.ToString(false, true, false)}";
+						string typeName = $"{universalClass.Name}_{pair.Key.ToCleanString('_')}";
 						CreateType(universalClass, pair.Key, endVersion, typeName, universalClass.GetOriginalTypeName(), group);
 					}
 				}

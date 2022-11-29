@@ -9,9 +9,9 @@ namespace AssetRipper.AssemblyDumper.Documentation
 		public static void AppendBreakTag(this StringBuilder sb) => sb.Append("<br />");
 		public static void AppendUnityVersionRange(this StringBuilder sb, Range<UnityVersion> range)
 		{
-			sb.Append(range.Start == UnityVersion.MinVersion || range.Start == SharedState.Instance.MinVersion ? "Min" : range.Start);
+			sb.Append(range.Start == UnityVersion.MinVersion || range.Start == SharedState.Instance.MinVersion ? "Min" : range.Start.ToCleanString('.'));
 			sb.Append(" to ");
-			sb.Append(range.End == UnityVersion.MaxVersion ? "Max" : range.End);
+			sb.Append(range.End == UnityVersion.MaxVersion ? "Max" : range.End.ToCleanString('.'));
 		}
 		public static void AppendUnityVersionRanges(this StringBuilder sb, IReadOnlyList<UnityVersionRange> ranges)
 		{

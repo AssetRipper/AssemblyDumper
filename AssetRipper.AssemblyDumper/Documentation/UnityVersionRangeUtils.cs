@@ -6,10 +6,10 @@
 		{
 			string start = range.Start == UnityVersion.MinVersion || range.Start == SharedState.Instance.MinVersion
 				? "Min"
-				: range.Start.ToString();
+				: range.Start.ToCleanString('.');
 			string end = range.End == UnityVersion.MaxVersion
 				? "Max"
-				: range.End.ToString();
+				: range.End.ToCleanString('.');
 			return $"{start} to {end}";
 		}
 	}

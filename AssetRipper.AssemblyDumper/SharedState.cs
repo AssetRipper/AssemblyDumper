@@ -61,7 +61,7 @@ namespace AssetRipper.AssemblyDumper
 			HistoryFile = HistoryFile.FromFile("consolidated.json");
 
 			//input array is sequentially ordered
-			MinVersion = sourceVersions[0];
+			MinVersion = sourceVersions[0].StripType();
 			MaxVersion = sourceVersions[sourceVersions.Length - 1];
 
 			AddReferenceModules();
