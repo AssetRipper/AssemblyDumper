@@ -156,43 +156,60 @@ namespace AssetRipper.AssemblyDumper.Passes
 					MethodDefinition thisMethod = overridenMethods[instance.Type];
 					MethodDefinition? baseMethod = instance.Base is null ? null : overridenMethods[instance.Base.Type];
 					CilInstructionCollection processor = thisMethod.GetProcessor();
-					CilInstructionLabel returnLabel = new();
-					CilInstructionLabel isNullLabel = new();
 
-					CilLocalVariable castedArgumentLocal = processor.AddLocalVariable(group.Interface.ToTypeSignature());
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Isinst, group.Interface);
-					processor.Add(CilOpCodes.Stloc, castedArgumentLocal);
-
-					processor.Add(CilOpCodes.Ldloc, castedArgumentLocal);
-					processor.Add(CilOpCodes.Ldnull);
-					processor.Add(CilOpCodes.Cgt_Un);
-					processor.Add(CilOpCodes.Brfalse, isNullLabel);
-
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Ldloc, castedArgumentLocal);
-					if (primaryMethod.Parameters.Count == 2)
-					{
-						processor.Add(CilOpCodes.Ldarg_2);//Converter is needed
-					}
-					processor.Add(CilOpCodes.Callvirt, primaryMethod);
-					processor.Add(CilOpCodes.Br, returnLabel);
-
-					isNullLabel.Instruction = processor.Add(CilOpCodes.Nop);
-					if (baseMethod is null)
-					{
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Callvirt, instance.Type.GetMethodByName(nameof(IUnityAssetBase.Reset)));
-					}
-					else
+					if (group is SubclassGroup)//Optimization for subclasses since 2 null checks is unnecessary
 					{
 						processor.Add(CilOpCodes.Ldarg_0);
 						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Ldarg_2);
-						processor.Add(CilOpCodes.Call, baseMethod);
+						processor.Add(CilOpCodes.Isinst, group.Interface);
+						if (primaryMethod.Parameters.Count == 2)
+						{
+							processor.Add(CilOpCodes.Ldarg_2);//Converter is needed
+						}
+						processor.Add(CilOpCodes.Callvirt, primaryMethod);
+						processor.Add(CilOpCodes.Ret);
 					}
+					else
+					{
+						CilInstructionLabel returnLabel = new();
+						CilInstructionLabel isNullLabel = new();
+						CilLocalVariable castedArgumentLocal = processor.AddLocalVariable(group.Interface.ToTypeSignature());
 
-					returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+						processor.Add(CilOpCodes.Ldarg_1);
+						processor.Add(CilOpCodes.Isinst, group.Interface);
+						processor.Add(CilOpCodes.Stloc, castedArgumentLocal);
+
+						processor.Add(CilOpCodes.Ldloc, castedArgumentLocal);
+						processor.Add(CilOpCodes.Ldnull);
+						processor.Add(CilOpCodes.Cgt_Un);
+						processor.Add(CilOpCodes.Brfalse, isNullLabel);
+
+						processor.Add(CilOpCodes.Ldarg_0);
+						processor.Add(CilOpCodes.Ldloc, castedArgumentLocal);
+						if (primaryMethod.Parameters.Count == 2)
+						{
+							processor.Add(CilOpCodes.Ldarg_2);//Converter is needed
+						}
+						processor.Add(CilOpCodes.Callvirt, primaryMethod);
+						processor.Add(CilOpCodes.Br, returnLabel);
+
+						isNullLabel.Instruction = processor.Add(CilOpCodes.Nop);
+
+						if (baseMethod is null)//Object
+						{
+							processor.Add(CilOpCodes.Ldarg_0);
+							processor.Add(CilOpCodes.Callvirt, instance.Type.GetMethodByName(nameof(IUnityAssetBase.Reset)));
+						}
+						else
+						{
+							processor.Add(CilOpCodes.Ldarg_0);
+							processor.Add(CilOpCodes.Ldarg_1);
+							processor.Add(CilOpCodes.Ldarg_2);
+							processor.Add(CilOpCodes.Call, baseMethod);
+						}
+
+						returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+					}
 				}
 			}
 
