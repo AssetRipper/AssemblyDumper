@@ -10,7 +10,7 @@ internal class Program
 	private static bool GeneratePackageOnBuild = false;
 	private static bool GenerateDocumentationFile = false;
 	private static bool IsTrimmable = false;
-	private const string AssetRipperProjectPath = @"E:\repos\AssetRipper";
+	private const string AssetRipperProjectPath = @"C:\Users\Jeremy\source\repos\AssetRipper";
 	private static string CsProjContent = $"""
 <Project Sdk="Microsoft.NET.Sdk">
 

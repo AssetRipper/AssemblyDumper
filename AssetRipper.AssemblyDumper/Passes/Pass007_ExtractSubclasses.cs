@@ -22,6 +22,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			candidateListDictionary.Clear();
 			CheckCompatibility();
+			DoCustomInjections();
 		}
 
 		private static void CheckCompatibility()
