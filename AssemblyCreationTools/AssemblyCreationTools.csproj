@@ -12,7 +12,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="true">
-		<PackageReference Include="AsmResolver.DotNet" Version="4.11.2" />
+		<PackageReference Include="AsmResolver.DotNet" Version="5.0.0" />
 	</ItemGroup>
 
 </Project>
