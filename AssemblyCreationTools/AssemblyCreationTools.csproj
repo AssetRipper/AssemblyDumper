@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net7.0</TargetFramework>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<RootNamespace>AssetRipper.AssemblyCreationTools</RootNamespace>
@@ -12,7 +12,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="true">
-		<PackageReference Include="AsmResolver.DotNet" Version="4.11.2" />
+		<PackageReference Include="AsmResolver.DotNet" Version="5.0.0" />
 	</ItemGroup>
 
 </Project>

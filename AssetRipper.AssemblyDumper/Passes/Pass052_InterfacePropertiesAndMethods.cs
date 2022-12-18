@@ -7,11 +7,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	internal static class Pass052_InterfacePropertiesAndMethods
 	{
-		private static readonly SignatureComparer signatureComparer = new()
-		{
-			AcceptNewerAssemblyVersionNumbers = true,
-			IgnoreAssemblyVersionNumbers = true
-		};
+		private static readonly SignatureComparer signatureComparer = new(SignatureComparisonFlags.VersionAgnostic);
 
 		public static void DoPass()
 		{

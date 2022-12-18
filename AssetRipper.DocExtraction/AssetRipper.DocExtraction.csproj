@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net7.0</TargetFramework>
 		<LangVersion>Latest</LangVersion>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AsmResolver.DotNet" Version="4.11.2" />
+		<PackageReference Include="AsmResolver.DotNet" Version="5.0.0" />
 		<PackageReference Include="AssetRipper.VersionUtilities" Version="1.2.1" />
 	</ItemGroup>
 

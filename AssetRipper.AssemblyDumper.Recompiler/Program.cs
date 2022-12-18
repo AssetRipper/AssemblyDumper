@@ -1,4 +1,5 @@
-﻿using ICSharpCode.Decompiler.CSharp;
+﻿using ICSharpCode.Decompiler;
+using ICSharpCode.Decompiler.CSharp;
 using ICSharpCode.Decompiler.CSharp.ProjectDecompiler;
 using ICSharpCode.Decompiler.Metadata;
 using System.Diagnostics;
@@ -15,7 +16,7 @@ internal class Program
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net7.0</TargetFramework>
 		<DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
 		<Nullable>enable</Nullable>
 		<IsTrimmable>{IsTrimmable}</IsTrimmable>
@@ -58,9 +59,9 @@ internal class Program
 		//string outputDirectory = "Output";
 		string outputDirectory = args[1];
 		ClearOrCreateDirectory(outputDirectory);
-		UniversalAssemblyResolver resolver = new UniversalAssemblyResolver(assemblyPath, true, ".NETCoreApp, Version=6.0");
+		UniversalAssemblyResolver resolver = new UniversalAssemblyResolver(assemblyPath, true, ".NETCoreApp, Version=7.0");
 		WholeProjectDecompiler decompiler = new WholeProjectDecompiler(resolver);
-		decompiler.Settings.SetLanguageVersion(LanguageVersion.CSharp10_0);
+		decompiler.Settings.SetLanguageVersion(LanguageVersion.CSharp11_0);
 		decompiler.Settings.UseSdkStyleProjectFormat = true;
 		decompiler.Settings.UseNestedDirectoriesForNamespaces = true;
 		decompiler.ProgressIndicator = new ProgressIndicator();
@@ -96,13 +97,11 @@ internal class Program
 	private sealed class ProgressIndicator : IProgress<DecompilationProgress>
 	{
 		private readonly object lockObject = new();
-		private int completed = 0;
 		public void Report(DecompilationProgress value)
 		{
 			lock(lockObject)
 			{
-				completed++;
-				Console.WriteLine($"{completed}/{value.TotalNumberOfFiles} File: {value.Status}");
+				Console.WriteLine($"{value.UnitsCompleted}/{value.TotalUnits} File: {value.Status}");
 			}
 		}
 	}

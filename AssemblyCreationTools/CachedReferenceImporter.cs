@@ -144,7 +144,7 @@ namespace AssetRipper.AssemblyCreationTools
 		{
 			for (int i = 0; i < module.TopLevelTypes.Count; i++)
 			{
-				if (module.TopLevelTypes[i].GetTypeFullName() == fullName)
+				if (module.TopLevelTypes[i].FullName == fullName)
 				{
 					type = module.TopLevelTypes[i];
 					return true;
@@ -165,7 +165,7 @@ namespace AssetRipper.AssemblyCreationTools
 		{
 			for (int i = 0; i < parent.NestedTypes.Count; i++)
 			{
-				if (parent.NestedTypes[i].GetTypeFullName() == fullName)
+				if (parent.NestedTypes[i].FullName == fullName)
 				{
 					type = parent.NestedTypes[i];
 					return true;

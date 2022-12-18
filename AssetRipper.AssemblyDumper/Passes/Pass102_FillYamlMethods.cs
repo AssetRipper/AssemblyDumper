@@ -61,11 +61,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static readonly Dictionary<string, IMethodDescriptor> methodDictionary = new();
 
-		private static readonly SignatureComparer signatureComparer = new()
-		{
-			AcceptNewerAssemblyVersionNumbers = true,
-			IgnoreAssemblyVersionNumbers = true
-		};
+		private static readonly SignatureComparer signatureComparer = new(SignatureComparisonFlags.VersionAgnostic);
 		private static CilInstructionLabel DummyInstructionLabel { get; } = new CilInstructionLabel();
 
 		private static bool emittingRelease = true;
