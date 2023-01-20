@@ -30,9 +30,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.AssemblyDumper.Tests", "AssetRipper.AssemblyDumper.Tests\AssetRipper.AssemblyDumper.Tests.csproj", "{5F5A18B7-6EAD-42BC-A786-9E32E9C1FC70}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.IO.Endian", "..\AssetRipper\AssetRipper.IO.Endian\AssetRipper.IO.Endian.csproj", "{83993E1C-4CBF-4129-962D-38DCC3D83A88}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.IO.Endian", "..\AssetRipper\Source\AssetRipper.IO.Endian\AssetRipper.IO.Endian.csproj", "{83993E1C-4CBF-4129-962D-38DCC3D83A88}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.Yaml", "..\AssetRipper\AssetRipper.Yaml\AssetRipper.Yaml.csproj", "{38B2E3CF-780F-47FA-8C88-4BAD6DB55108}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.Yaml", "..\AssetRipper\Source\AssetRipper.Yaml\AssetRipper.Yaml.csproj", "{38B2E3CF-780F-47FA-8C88-4BAD6DB55108}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.DocExtraction", "AssetRipper.DocExtraction\AssetRipper.DocExtraction.csproj", "{1C2DF3A7-94FC-4040-A8E3-33E97DBE0369}"
 EndProject
@@ -42,11 +42,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.AssemblyDumper.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.AssemblyDumper.Recompiler", "AssetRipper.AssemblyDumper.Recompiler\AssetRipper.AssemblyDumper.Recompiler.csproj", "{F3A24EFD-FE70-4179-8FA0-DC48D8AE6522}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.Assets", "..\AssetRipper\AssetRipper.Assets\AssetRipper.Assets.csproj", "{002CDA91-A6DD-48CE-9C97-C433BB4DAB39}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.Assets", "..\AssetRipper\Source\AssetRipper.Assets\AssetRipper.Assets.csproj", "{002CDA91-A6DD-48CE-9C97-C433BB4DAB39}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.IO.Files", "..\AssetRipper\AssetRipper.IO.Files\AssetRipper.IO.Files.csproj", "{7AA82E00-DE13-47E8-A263-BE28E8171ED7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.IO.Files", "..\AssetRipper\Source\AssetRipper.IO.Files\AssetRipper.IO.Files.csproj", "{7AA82E00-DE13-47E8-A263-BE28E8171ED7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.Numerics", "..\AssetRipper\AssetRipper.Numerics\AssetRipper.Numerics.csproj", "{E4CDB120-28B8-491F-A22F-6595BCEF0707}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.Numerics", "..\AssetRipper\Source\AssetRipper.Numerics\AssetRipper.Numerics.csproj", "{E4CDB120-28B8-491F-A22F-6595BCEF0707}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
