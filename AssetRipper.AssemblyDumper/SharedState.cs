@@ -53,7 +53,7 @@ namespace AssetRipper.AssemblyDumper
 			UnityVersion[] sourceVersions,
 			Dictionary<int, VersionedList<UniversalClass>> classes,
 			UniversalCommonString commonString)
-			: base(AssemblyName, new Version(0, 0, 0, 0), KnownCorLibs.SystemRuntime_v6_0_0_0)
+			: base(AssemblyName, new Version(0, 0, 0, 0), KnownCorLibs.SystemRuntime_v7_0_0_0)
 		{
 			SourceVersions = sourceVersions;
 			CommonString = commonString;
@@ -109,7 +109,7 @@ namespace AssetRipper.AssemblyDumper
 
 		private void AddSystemReferenceModule(string name)
 		{
-			const string referenceDirectory = @"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\6.0.10\ref\net6.0\";
+			const string referenceDirectory = @"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\7.0.1\ref\net7.0\";
 			string path = $"{referenceDirectory}{name}.dll";
 			AddReferenceModule(path);
 		}
