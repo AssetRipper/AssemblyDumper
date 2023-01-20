@@ -22,5 +22,9 @@ namespace AssetRipper.AssemblyDumper
 					&& typeDefinition.IsEnum;
 			}
 		}
+		/// <summary>
+		/// The <see cref="PropertyDefinition.Name"/> for <see cref="Definition"/>.
+		/// </summary>
+		public string? Name => Definition.Name;
 	}
 }

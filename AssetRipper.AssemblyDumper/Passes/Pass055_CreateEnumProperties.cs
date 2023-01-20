@@ -13,45 +13,137 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				foreach (InterfaceProperty interfaceProperty in group.InterfaceProperties)
 				{
-					if (interfaceProperty.History is not null && interfaceProperty.History.TypeFullName.Count == 1)
+					if (interfaceProperty.TryGetEnumFullName(out string? fullName) && Pass040_AddEnums.EnumDictionary.TryGetValue(fullName, out (TypeDefinition, EnumHistory) tuple))
 					{
-						string fullName = interfaceProperty.History.TypeFullName[0].Value.ToString();
-						if (Pass040_AddEnums.EnumDictionary.TryGetValue(fullName, out (TypeDefinition, EnumHistory) tuple))
-						{
-							(TypeDefinition type, EnumHistory enumHistory) = tuple;
-							ElementType enumElementType = ((CorLibTypeSignature)type.GetFieldByName("value__").Signature!.FieldType).ElementType;
-							string propertyName = $"{interfaceProperty.Definition.Name}E";
-
-							interfaceProperty.SpecialDefinition = group.Interface.AddFullProperty(
-								propertyName,
-								InterfaceUtils.InterfacePropertyDeclaration,
-								type.ToTypeSignature());
-
-							foreach (ClassProperty classProperty in interfaceProperty.Implementations)
-							{
-								if (classProperty.BackingField?.Signature?.FieldType is CorLibTypeSignature fieldTypeSignature
-									&& fieldTypeSignature.ElementType.IsFixedSizeInteger())
-								{
-									classProperty.SpecialDefinition = classProperty.Class.Type.AddFullProperty(
-										propertyName,
-										InterfaceUtils.InterfacePropertyImplementation,
-										type.ToTypeSignature());
-									classProperty.SpecialDefinition.GetMethod!.GetProcessor().FillGetter(classProperty.BackingField, fieldTypeSignature.ElementType, enumElementType);
-									classProperty.SpecialDefinition.SetMethod!.GetProcessor().FillSetter(classProperty.BackingField, fieldTypeSignature.ElementType, enumElementType);
-								}
-								else
-								{
-									classProperty.SpecialDefinition = classProperty.Class.Type.ImplementFullProperty(
-										propertyName,
-										InterfaceUtils.InterfacePropertyImplementation,
-										type.ToTypeSignature(),
-										null);
-								}
-							}
-						}
+						CreateEnumProperty(group, interfaceProperty, tuple.Item1);
 					}
 				}
 			}
+		}
+
+		private static void CreateEnumProperty(ClassGroupBase group, InterfaceProperty interfaceProperty, TypeDefinition enumType)
+		{
+			ElementType enumElementType = ((CorLibTypeSignature)enumType.GetFieldByName("value__").Signature!.FieldType).ElementType;
+			string propertyName = $"{interfaceProperty.Definition.Name}E";
+
+			interfaceProperty.SpecialDefinition = group.Interface.AddFullProperty(
+				propertyName,
+				InterfaceUtils.InterfacePropertyDeclaration,
+				enumType.ToTypeSignature());
+
+			foreach (ClassProperty classProperty in interfaceProperty.Implementations)
+			{
+				if (classProperty.BackingField?.Signature?.FieldType is CorLibTypeSignature fieldTypeSignature
+					&& fieldTypeSignature.ElementType.IsFixedSizeInteger())
+				{
+					classProperty.SpecialDefinition = classProperty.Class.Type.AddFullProperty(
+						propertyName,
+						InterfaceUtils.InterfacePropertyImplementation,
+						enumType.ToTypeSignature());
+					classProperty.SpecialDefinition.GetMethod!.GetProcessor().FillGetter(classProperty.BackingField, fieldTypeSignature.ElementType, enumElementType);
+					classProperty.SpecialDefinition.SetMethod!.GetProcessor().FillSetter(classProperty.BackingField, fieldTypeSignature.ElementType, enumElementType);
+				}
+				else
+				{
+					classProperty.SpecialDefinition = classProperty.Class.Type.ImplementFullProperty(
+						propertyName,
+						InterfaceUtils.InterfacePropertyImplementation,
+						enumType.ToTypeSignature(),
+						null);
+				}
+			}
+		}
+
+		private static bool TryGetEnumFullName(this InterfaceProperty interfaceProperty, [NotNullWhen(true)] out string? fullName)
+		{
+			if (interfaceProperty.TryGetOverridenEnumFullName(out string? overriden))
+			{
+				fullName = overriden;
+			}
+			else if (interfaceProperty.History is not null && interfaceProperty.History.TypeFullName.Count == 1)
+			{
+				fullName = interfaceProperty.History.TypeFullName[0].Value.ToString();
+			}
+			else
+			{
+				fullName = null;
+			}
+			return fullName is not null;
+		}
+
+		private static bool TryGetOverridenEnumFullName(this InterfaceProperty interfaceProperty, out string? fullName)
+		{
+			if (interfaceProperty.Group switch { _ => false })
+			{
+				fullName = null;
+				return true;
+			}
+
+			fullName = interfaceProperty.Group switch
+			{
+				ClassGroup classGroup => classGroup.ID switch
+				{
+					1 when interfaceProperty.Name is "StaticEditorFlags_C1" => "UnityEditor.StaticEditorFlags",
+					117 => interfaceProperty.Name switch
+					{
+						"ColorSpace_C117" => "UnityEngine.ColorSpace",
+						"Dimension_C117" => "UnityEngine.Rendering.TextureDimension",
+						"LightmapFormat_C117" => "UnityEditor.TextureUsageMode",
+						_ => null,
+					},
+					187 when interfaceProperty.Name is "ColorSpace_C187" => "UnityEngine.ColorSpace",
+					1006 => interfaceProperty.Name switch
+					{
+						"Alignment_C1006" => "UnityEngine.SpriteAlignment",
+						"AlphaUsage_C1006" => "UnityEditor.TextureImporterAlphaSource",
+						"SpriteMeshType_C1006" => "UnityEngine.SpriteMeshType",
+						_ => null,
+					},
+					_ => null,
+				},
+				SubclassGroup subclassGroup => subclassGroup.Name switch
+				{
+					"SubMesh" when interfaceProperty.Name is "Topology" or "IsTriStrip" => "UnityEngine.MeshTopology",
+					"TextureImporterBumpMapSettings" when interfaceProperty.Name is "NormalMapFilter" => "UnityEditor.TextureImporterNormalFilter",
+					"TextureImporterMipMapSettings" when interfaceProperty.Name is "MipMapMode" => "UnityEditor.TextureImporterMipFilter",
+					"TextureSettings" => interfaceProperty.Name switch
+					{
+						"FilterMode" => "UnityEngine.FilterMode",
+						"TextureCompression" => "UnityEditor.TextureImporterCompression",
+						_ => null,
+					},
+					"TierGraphicsSettings" => interfaceProperty.Name switch
+					{
+						"HdrMode" => "UnityEngine.Rendering.CameraHDRMode",
+						"RealtimeGICPUUsage" => "UnityEngine.Rendering.RealtimeGICPUUsage",
+						"RenderingPath" => "UnityEngine.RenderingPath",
+						_ => null,
+					},
+					"TierGraphicsSettingsEditor" => interfaceProperty.Name switch
+					{
+						"HdrMode" => "UnityEngine.Rendering.CameraHDRMode",
+						"RealtimeGICPUUsage" => "UnityEngine.Rendering.RealtimeGICPUUsage",
+						"RenderingPath" => "UnityEngine.RenderingPath",
+						"StandardShaderQuality" => "UnityEditor.Rendering.ShaderQuality",
+						_ => null,
+					},
+					"TierSettings" when interfaceProperty.Name is "Tier" => "UnityEngine.Rendering.GraphicsTier",
+					"TransitionConstant" when interfaceProperty.Name is "InterruptionSource" => "UnityEditor.Animations.TransitionInterruptionSource",
+					"UVModule" => interfaceProperty.Name switch
+					{
+						"AnimationType" => "UnityEngine.ParticleSystemAnimationType",
+						"Mode" => "UnityEngine.ParticleSystemAnimationMode",
+						"RowMode" => "UnityEngine.ParticleSystemAnimationRowMode",
+						"TimeMode" => "UnityEngine.ParticleSystemAnimationTimeMode",
+						_ => null,
+					},
+					"ValueConstant" when interfaceProperty.Name is "Type" => "UnityEngine.AnimatorControllerParameterType",
+					"VariantInfo" when interfaceProperty.Name is "PassType" => "UnityEngine.Rendering.PassType",
+					_ => null,
+				},
+				_ => throw new(),
+			};
+			return fullName is not null;
 		}
 
 		private static CilInstruction? AddConversion(this CilInstructionCollection processor, ElementType from, ElementType to)
