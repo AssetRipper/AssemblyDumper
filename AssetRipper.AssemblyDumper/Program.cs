@@ -255,10 +255,6 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass558_TypeCache.DoPass();
 			}
-			using (new TimingCookie("Pass 900: Fill Type Tree Methods"))
-			{
-				Pass900_FillTypeTreeMethods.DoPass();
-			}
 			using (new TimingCookie("Pass 920: Interface Inheritance"))
 			{
 				Pass920_InterfaceInheritance.DoPass();
