@@ -18,6 +18,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private const string BumpMapOriginalName = "bumpmap";
 		private const string BumpMapStartFieldName = "m_ConvertToNormalMap";
 		private const string BumpMapEndFieldName = "m_NormalMapFilter";
+		private const string BumpMapEndFieldName2 = "m_FlipGreenChannel";//Introduced in 2022.1.0
 
 		private const int TextureImporterTypeId = 1006;
 
@@ -49,7 +50,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 
 			int bumpMapStartIndex = rootNode.GetSubnodeIndex(BumpMapStartFieldName);
-			int bumpMapEndIndex = rootNode.GetSubnodeIndex(BumpMapEndFieldName);
+			int bumpMapEndIndex = Math.Max(rootNode.GetSubnodeIndex(BumpMapEndFieldName), rootNode.TryGetSubnodeIndex(BumpMapEndFieldName2));
 			if (bumpMapStartIndex <= mipMapsEndIndex)
 			{
 				throw new Exception("BumpMap start later than MipMaps end");
@@ -107,6 +108,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			int result = parent.SubNodes.FindIndex(n => n.Name == subnodeName);
 			return result >= 0 ? result : throw new Exception($"{subnodeName} not found");
+		}
+
+		private static int TryGetSubnodeIndex(this UniversalNode parent, string subnodeName)
+		{
+			return parent.SubNodes.FindIndex(n => n.Name == subnodeName);
 		}
 	}
 }
