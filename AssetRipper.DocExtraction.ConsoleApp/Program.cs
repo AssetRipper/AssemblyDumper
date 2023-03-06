@@ -1,13 +1,9 @@
-﻿using AssetRipper.AssemblyDumper.Utils;
-using AssetRipper.DocExtraction.DataStructures;
+﻿using AssetRipper.DocExtraction.DataStructures;
 using AssetRipper.DocExtraction.MetaData;
 using AssetRipper.VersionUtilities;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace AssetRipper.DocExtraction.ConsoleApp;
 
@@ -17,8 +13,8 @@ internal static class Program
 	{
 		Stopwatch stopwatch = Stopwatch.StartNew();
 
-		//ExtractAndSaveIndividually(@"F:\TypeTreeDumps\UnityInstallations", @"E:\UnityDocumentation");
-		ExtractAndSaveConsolidated(@"F:\TypeTreeDumps\UnityInstallations", @"consolidated.json");
+		//ExtractAndSaveIndividually(@"G:\TypeTreeDumps\UnityInstallations", @"E:\UnityDocumentation");
+		ExtractAndSaveConsolidated(@"G:\TypeTreeDumps\UnityInstallations", @"consolidated.json");
 		
 		stopwatch.Stop();
 		Console.WriteLine($"Finished in {stopwatch.ElapsedMilliseconds} ms");

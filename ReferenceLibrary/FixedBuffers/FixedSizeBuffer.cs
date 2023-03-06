@@ -8,7 +8,7 @@
 		public void Test()
 		{
 			byteBuffer[2] = 3;
-			byteBuffer[129] = 3;
+			byteBuffer[130] = 3;
 		}
 	}
 }

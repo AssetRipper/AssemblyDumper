@@ -8,11 +8,11 @@ namespace AssetRipper.AssemblyDumper.Recompiler;
 
 internal class Program
 {
-	private static bool GeneratePackageOnBuild = false;
-	private static bool GenerateDocumentationFile = false;
-	private static bool IsTrimmable = false;
-	private const string AssetRipperProjectPath = @"C:\Users\Jeremy\source\repos\AssetRipper";
-	private static string CsProjContent = $"""
+	private const bool GeneratePackageOnBuild = false;
+	private const bool GenerateDocumentationFile = false;
+	private const bool IsTrimmable = false;
+	private const string AssetRipperProjectPath = @"E:\repos\AssetRipper";
+	private readonly static string CsProjContent = $"""
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
@@ -23,7 +23,7 @@ internal class Program
 		<RootNamespace>AssetRipper</RootNamespace>
 
 		<AssemblyName>AssetRipper.SourceGenerated</AssemblyName>
-		<Copyright>Copyright © 2022</Copyright>
+		<Copyright>Copyright © 2023</Copyright>
 		<Authors>ds5678</Authors>
 		<Company>AssetRipper</Company>
 		<Version>0.0.0.0</Version>
@@ -35,7 +35,7 @@ internal class Program
 		<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
 		<RepositoryType>git</RepositoryType>
 		<PackageProjectUrl>https://github.com/AssetRipper/AssetRipper</PackageProjectUrl>
-		<Copyright>Copyright (c) 2022 ds5678</Copyright>
+		<Copyright>Copyright (c) 2023 ds5678</Copyright>
 		<Description>Managed library for handling Unity versions</Description>
 		<GeneratePackageOnBuild>{GeneratePackageOnBuild}</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>{GenerateDocumentationFile}</GenerateDocumentationFile>
@@ -45,8 +45,8 @@ internal class Program
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="{AssetRipperProjectPath}\AssetRipper.Assets\AssetRipper.Assets.csproj" />
-		<ProjectReference Include="{AssetRipperProjectPath}\AssetRipper.Numerics\AssetRipper.Numerics.csproj" />
+		<ProjectReference Include="{AssetRipperProjectPath}\Source\AssetRipper.Assets\AssetRipper.Assets.csproj" />
+		<ProjectReference Include="{AssetRipperProjectPath}\Source\AssetRipper.Numerics\AssetRipper.Numerics.csproj" />
 	</ItemGroup>
 
 </Project>
@@ -54,9 +54,7 @@ internal class Program
 	static void Main(string[] args)
 	{
 		Stopwatch stopwatch = Stopwatch.StartNew();
-		//string assemblyPath = @"E:\repos\AssemblyDumper\AssetRipper.AssemblyDumper\bin\Debug\net6.0\AssetRipper.SourceGenerated.dll";
 		string assemblyPath = args[0];
-		//string outputDirectory = "Output";
 		string outputDirectory = args[1];
 		ClearOrCreateDirectory(outputDirectory);
 		UniversalAssemblyResolver resolver = new UniversalAssemblyResolver(assemblyPath, true, ".NETCoreApp, Version=7.0");
@@ -74,8 +72,6 @@ internal class Program
 
 	private static void DeleteBadFilesAndDirectories(string outputDirectory)
 	{
-		Directory.Delete(Path.Combine(outputDirectory, "Microsoft"), true);
-		Directory.Delete(Path.Combine(outputDirectory, "System"), true);
 		Directory.Delete(Path.Combine(outputDirectory, "Properties"), true);
 		File.Delete(Path.Combine(outputDirectory, "AssetRipper.SourceGenerated.csproj"));
 	}

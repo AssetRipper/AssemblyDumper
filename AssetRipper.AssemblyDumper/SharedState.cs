@@ -49,6 +49,26 @@ namespace AssetRipper.AssemblyDumper
 		public MethodDefinition NullableAttributeConstructorByteArray { get; }
 		public MethodDefinition NullableContextAttributeConstructor { get; }
 
+		private static readonly string referenceDirectory;
+
+		static SharedState()
+		{
+			referenceDirectory = "";
+			for (int i = 50; i >= 0; i--)
+			{
+				string path = @$"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\7.0.{i}\ref\net7.0\";
+				if (Directory.Exists(path))
+				{
+					referenceDirectory = path;
+					break;
+				}
+			}
+			if (referenceDirectory.Length == 0)
+			{
+				throw new InvalidOperationException(".NET reference directory could not be found");
+			}
+		}
+
 		private SharedState(
 			UnityVersion[] sourceVersions,
 			Dictionary<int, VersionedList<UniversalClass>> classes,
@@ -109,7 +129,6 @@ namespace AssetRipper.AssemblyDumper
 
 		private void AddSystemReferenceModule(string name)
 		{
-			const string referenceDirectory = @"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\7.0.1\ref\net7.0\";
 			string path = $"{referenceDirectory}{name}.dll";
 			AddReferenceModule(path);
 		}
