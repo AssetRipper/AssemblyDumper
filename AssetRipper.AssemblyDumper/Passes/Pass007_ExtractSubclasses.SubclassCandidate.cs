@@ -1,4 +1,5 @@
 ﻿using AssetRipper.AssemblyDumper.Utils;
+using System.Diagnostics;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -9,7 +10,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			public readonly UniversalNode? ReleaseNode;
 			public readonly UniversalNode? EditorNode;
 			public readonly string Name;
-			public readonly UnityVersionRange VersionRange;
+			public readonly DiscontinuousRange<UnityVersion> VersionRange;
 			public readonly UniversalNode[] NodesToBeAltered;
 
 			public SubclassCandidate(UniversalNode? releaseNode, UniversalNode? editorNode, Range<UnityVersion> versionRange) : this()
@@ -37,11 +38,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 			}
 
-			private SubclassCandidate(UniversalNode? releaseNode, UniversalNode? editorNode, string name, Range<UnityVersion> versionRange, UniversalNode[] nodesToBeAltered)
+			private SubclassCandidate(UniversalNode? releaseNode, UniversalNode? editorNode, string name, DiscontinuousRange<UnityVersion> versionRange, UniversalNode[] nodesToBeAltered)
 			{
 				if (releaseNode is null && editorNode is null)
 				{
-					throw new Exception("Release and editor can't both be null");
+					throw new ArgumentException("Release and editor can't both be null");
 				}
 
 				ReleaseNode = releaseNode;
@@ -62,7 +63,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			public bool CanMerge(SubclassCandidate candidate)
 			{
 				return Name == candidate.Name &&
-					VersionRange.CanUnion(candidate.VersionRange) &&
 					UniversalNodeComparer.Equals(ReleaseNode, candidate.ReleaseNode, true) &&
 					UniversalNodeComparer.Equals(EditorNode, candidate.EditorNode, true);
 			}
@@ -70,7 +70,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			public bool CanMergeRelaxed(SubclassCandidate candidate)
 			{
 				return Name == candidate.Name &&
-					VersionRange.CanUnion(candidate.VersionRange) &&
 					(candidate.ReleaseNode is null || ReleaseNode is null || UniversalNodeComparer.Equals(ReleaseNode, candidate.ReleaseNode, true)) &&
 					(candidate.EditorNode is null || EditorNode is null || UniversalNodeComparer.Equals(EditorNode, candidate.EditorNode, true));
 			}
@@ -80,8 +79,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 				UniversalNode[] nodes = new UniversalNode[NodesToBeAltered.Length + candidate.NodesToBeAltered.Length];
 				Array.Copy(NodesToBeAltered, nodes, NodesToBeAltered.Length);
 				Array.Copy(candidate.NodesToBeAltered, 0, nodes, NodesToBeAltered.Length, candidate.NodesToBeAltered.Length);
-				UnityVersionRange range = VersionRange.MakeUnion(candidate.VersionRange);
+				DiscontinuousRange<UnityVersion> range = VersionRange.Union(candidate.VersionRange);
 				return new SubclassCandidate(ReleaseNode ?? candidate.ReleaseNode, EditorNode ?? candidate.EditorNode, Name, range, nodes);
+			}
+
+			internal UniversalClass ToUniversalClass()
+			{
+				return new UniversalClass(ReleaseNode?.ShallowCloneAsRootNode(), EditorNode?.ShallowCloneAsRootNode());
+			}
+
+			public override string ToString()
+			{
+				return $"{Name} ({VersionRange})";
 			}
 		}
 
@@ -90,7 +99,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			List<SubclassCandidate> consolidatedCandidates = ProcessList(unprocessedList);
 			if (consolidatedCandidates.Count == 0)
 			{
-				throw new Exception("Candidate ount can't be zero");
+				throw new Exception("Candidate count can't be zero");
 			}
 			else if (consolidatedCandidates.Count == 1)
 			{
@@ -98,11 +107,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 				SubclassCandidate candidate = consolidatedCandidates[0];
 				VersionedList<UniversalClass> classList = new();
 				SharedState.Instance.SubclassInformation.Add(candidate.Name, classList);
-				UniversalClass newClass = new UniversalClass(candidate.ReleaseNode?.ShallowCloneAsRootNode(), candidate.EditorNode?.ShallowCloneAsRootNode());
-				classList.Add(candidate.VersionRange.Start, newClass);
-				if (candidate.VersionRange.End != UnityVersion.MaxVersion)
+				DiscontinuousRange<UnityVersion> versionRange = candidate.VersionRange;
+				classList.Add(versionRange[0].Start, candidate.ToUniversalClass());
+				UnityVersion end = versionRange[versionRange.Count - 1].End;
+				if (end != UnityVersion.MaxVersion)
 				{
-					classList.Add(candidate.VersionRange.End, null);
+					classList.Add(end, null);
 				}
 			}
 			else if (AnyIntersections(consolidatedCandidates))
@@ -119,11 +129,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 					{
 						node.TypeName = typeName;
 					}
-					UniversalClass newClass = new UniversalClass(candidate.ReleaseNode?.ShallowCloneAsRootNode(), candidate.EditorNode?.ShallowCloneAsRootNode());
-					classList.Add(candidate.VersionRange.Start, newClass);
-					if (candidate.VersionRange.End != UnityVersion.MaxVersion)
+					DiscontinuousRange<UnityVersion> versionRange = candidate.VersionRange;
+					classList.Add(versionRange[0].Start, candidate.ToUniversalClass());
+					UnityVersion end = versionRange[versionRange.Count - 1].End;
+					if (end != UnityVersion.MaxVersion)
 					{
-						classList.Add(candidate.VersionRange.End, null);
+						classList.Add(end, null);
 					}
 					else if (candidate.Name.StartsWith("PPtr"))
 					{
@@ -136,20 +147,72 @@ namespace AssetRipper.AssemblyDumper.Passes
 				//Use _3_4_0f5 naming
 				VersionedList<UniversalClass> classList = new();
 				SharedState.Instance.SubclassInformation.Add(consolidatedCandidates[0].Name, classList);
-				SubclassCandidate[] candidates = consolidatedCandidates.OrderBy(c => c.VersionRange.Start).ToArray();
-				for (int i = 0; i < candidates.Length; i++)
+
+				HashSet<UnityVersion> startSet = new();
+				HashSet<UnityVersion> combinedSet = new();
+				foreach (SubclassCandidate candidate in consolidatedCandidates)
 				{
-					SubclassCandidate candidate = candidates[i];
-					UniversalClass newClass = new UniversalClass(candidate.ReleaseNode?.ShallowCloneAsRootNode(), candidate.EditorNode?.ShallowCloneAsRootNode());
-					classList.Add(candidate.VersionRange.Start, newClass);
-					if (i + 1 < candidates.Length && candidate.VersionRange.End != candidates[i + 1].VersionRange.Start)
+					foreach (UnityVersionRange range in candidate.VersionRange)
 					{
-						classList.Add(candidate.VersionRange.End, null);
+						startSet.Add(range.Start);
+						combinedSet.Add(range.Start);
+						combinedSet.Add(range.End);
 					}
 				}
-				if (candidates[candidates.Length - 1].VersionRange.End != UnityVersion.MaxVersion)
+
+				List<(UnityVersion, SubclassCandidate?)> orderedVersions = new(combinedSet.Count);
+				foreach (UnityVersion version in combinedSet.Order())
 				{
-					classList.Add(candidates[candidates.Length - 1].VersionRange.End, null);
+					if (startSet.Contains(version))
+					{
+						SubclassCandidate? candidate = consolidatedCandidates.First(c => c.VersionRange.Contains(version));
+						orderedVersions.Add((version, candidate));
+					}
+					else if (version != UnityVersion.MaxVersion)
+					{
+						orderedVersions.Add((version, null));
+					}
+				}
+				SubclassCandidate? previousCandidate = default;//Always not null
+				for (int i = 0; i < orderedVersions.Count;i++)
+				{
+					(UnityVersion version, SubclassCandidate? candidate) = orderedVersions[i];
+					bool shouldAdd;
+					if (i == 0)
+					{
+						//This is the first candidate.
+						Debug.Assert(previousCandidate is null);
+						shouldAdd = true;
+						previousCandidate = candidate;
+					}
+					else if (candidate is null)
+					{
+						Debug.Assert(previousCandidate is not null);
+						if (i < orderedVersions.Count - 1)
+						{
+							//This is null and not the end. Therefore, it's between two not null candidates.
+							//If those candidates are the same, we don't add this.
+							//The array is used for an efficient reference equality comparison.
+							shouldAdd = orderedVersions[i + 1].Item2?.NodesToBeAltered != previousCandidate?.NodesToBeAltered;
+						}
+						else
+						{
+							//This is the last version.
+							shouldAdd = true;
+						}
+					}
+					else
+					{
+						//We only add if this candidate is different from the previous one.
+						//The array is used for an efficient reference equality comparison.
+						Debug.Assert(previousCandidate is not null);
+						shouldAdd = candidate?.NodesToBeAltered != previousCandidate?.NodesToBeAltered;
+						previousCandidate = candidate;
+					}
+					if (shouldAdd)
+					{
+						classList.Add(version, candidate?.ToUniversalClass());
+					}
 				}
 			}
 		}
@@ -267,7 +330,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 					SubclassCandidate releaseCandidate = releaseList[0];
 					SubclassCandidate editorCandidate = editorList[0];
 					if (releaseCandidate.Name == editorCandidate.Name
-						&& releaseCandidate.VersionRange.CanUnion(editorCandidate.VersionRange)
 						&& AreCompatible(releaseCandidate.ReleaseNode!, editorCandidate.EditorNode!, true))
 					{
 						SubclassCandidate mergedCandidate = releaseCandidate.Merge(editorCandidate);
