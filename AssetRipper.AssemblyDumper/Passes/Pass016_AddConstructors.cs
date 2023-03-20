@@ -43,10 +43,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 
 			TypeDefinition type = instance.Type;
-			type.AddEmptyDefaultConstructor();
 			if (instance.ID >= 0)
 			{
 				type.AddAssetInfoConstructor();
+			}
+			else
+			{
+				type.AddEmptyDefaultConstructor();
 			}
 			processed.Add(instance);
 		}

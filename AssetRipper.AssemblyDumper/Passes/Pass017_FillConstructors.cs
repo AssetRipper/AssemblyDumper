@@ -5,21 +5,17 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass017_FillConstructors
 	{
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+#nullable disable
 		private static IMethodDefOrRef emptyArray;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+#nullable enable
 		public static void DoPass()
 		{
 			emptyArray = SharedState.Instance.Importer.ImportMethod<Array>(method => method.Name == nameof(Array.Empty));
-			IMethodDefOrRef makeDummyAssetInfo = SharedState.Instance.Importer.ImportMethod<AssetInfo>(method =>
-				method.Name == nameof(AssetInfo.MakeDummyAssetInfo)
-				&& method.Parameters.Count == 1);
 			foreach ((int id, ClassGroup classGroup) in SharedState.Instance.ClassGroups)
 			{
 				foreach (TypeDefinition type in classGroup.Types)
 				{
 					MethodDefinition assetInfoConstructor = type.GetAssetInfoConstructor();
-					type.FillClassDefaultConstructor(id, assetInfoConstructor, makeDummyAssetInfo);
 					type.FillClassAssetInfoConstructor(assetInfoConstructor);
 				}
 			}
@@ -70,19 +66,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Call, baseConstructor);
 			processor.AddFieldAssignments(type);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
-		}
-
-		private static void FillClassDefaultConstructor(this TypeDefinition type, int id, MethodDefinition assetInfoConstructor, IMethodDefOrRef makeDummyAssetInfo)
-		{
-			MethodDefinition constructor = type.GetDefaultConstructor();
-			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
-			processor.Clear();
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldc_I4, id);
-			processor.Add(CilOpCodes.Call, makeDummyAssetInfo);
-			processor.Add(CilOpCodes.Call, assetInfoConstructor);
 			processor.Add(CilOpCodes.Ret);
 			processor.OptimizeMacros();
 		}

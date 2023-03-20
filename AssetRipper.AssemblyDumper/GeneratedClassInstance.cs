@@ -42,6 +42,8 @@ namespace AssetRipper.AssemblyDumper
 			return ID == id || (Base?.InheritsFromType(id) ?? false);
 		}
 
+		public bool InheritsFromAssetImporter() => InheritsFromType(1003);//The id for AssetImporter
+
 		public void InitializeHistory(HistoryFile historyFile)
 		{
 			if (ID < 0)

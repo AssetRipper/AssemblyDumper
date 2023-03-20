@@ -1,24 +1,33 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Assets;
+using AssetRipper.Assets.Collections;
 using AssetRipper.Assets.Metadata;
+using System.Linq;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass940_MakeAssetFactory
 	{
-		private static TypeSignature? iunityObjectBase;
-		private static TypeSignature? assetInfoType;
-		private static TypeSignature? unityVersionType;
-		private static TypeDefinition? abstractClassException;
-		private static MethodDefinition? abstractClassExceptionConstructor;
-		private static IMethodDefOrRef? unityVersionIsGreaterEqualMethod;
-		private static IMethodDefOrRef? makeDummyAssetInfo;
+#nullable disable
+		private static TypeSignature iunityObjectBase;
+		private static TypeSignature assetInfoType;
+		private static TypeSignature assetCollectionType;
+		private static TypeSignature unityVersionType;
+		private static TypeDefinition abstractClassException;
+		private static MethodDefinition abstractClassExceptionConstructor;
+		private static IMethodDefOrRef unityVersionIsGreaterEqualMethod;
+		private static IMethodDefOrRef assetInfoConstructor;
+#nullable enable
+		private static HashSet<int> importerClassIDs = new();
 
 		public static void DoPass()
 		{
+			FindImporterGroups();
+
 			iunityObjectBase = SharedState.Instance.Importer.ImportTypeSignature<IUnityObjectBase>();
 			assetInfoType = SharedState.Instance.Importer.ImportTypeSignature<AssetInfo>();
+			assetCollectionType = SharedState.Instance.Importer.ImportTypeSignature<AssetCollection>();
 			unityVersionType = SharedState.Instance.Importer.ImportTypeSignature<UnityVersion>();
 
 			abstractClassException = ExceptionCreator.CreateSimpleException(
@@ -30,15 +39,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			unityVersionIsGreaterEqualMethod = SharedState.Instance.Importer.ImportMethod<UnityVersion>(m =>
 				m.Name == nameof(UnityVersion.IsGreaterEqual) && m.Parameters.Count == 5);
-			makeDummyAssetInfo = SharedState.Instance.Importer.ImportMethod<AssetInfo>(method =>
-				method.Name == nameof(AssetInfo.MakeDummyAssetInfo)
-				&& method.Parameters.Count == 1);
+			assetInfoConstructor = SharedState.Instance.Importer.ImportMethod<AssetInfo>(method =>
+				method.Name == ".ctor"
+				&& method.Parameters.Count == 3);
 
 			TypeDefinition factoryDefinition = CreateFactoryDefinition();
-			AddAllClassCreationMethods(
-				out List<(int, MethodDefinition?, bool)> defaultMethods,
-				out List<(int, MethodDefinition?, bool)> assetInfoMethods);
-			factoryDefinition.AddDefaultCreationMethod(defaultMethods);
+			AddAllClassCreationMethods(out List<(int, MethodDefinition?, bool)> assetInfoMethods);
 			factoryDefinition.AddAssetInfoCreationMethod(assetInfoMethods);
 		}
 
@@ -49,47 +55,22 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static MethodDefinition AddAssetInfoCreationMethod(this TypeDefinition factoryDefinition, List<(int, MethodDefinition?, bool)> constructors)
 		{
-			MethodDefinition method = factoryDefinition.AddMethod("CreateAsset", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static, iunityObjectBase!);
-			method.AddParameter(unityVersionType!, "version");
-			method.AddParameter(assetInfoType!, "info");
-			method.GetProcessor().EmitIdSwitchStatement(constructors, true, true);
+			MethodDefinition method = factoryDefinition.AddMethod("CreateAsset", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static, iunityObjectBase);
+			method.AddParameter(unityVersionType, "version");
+			method.AddParameter(assetInfoType, "info");
+			method.GetProcessor().EmitIdSwitchStatement(constructors);
 			return method;
 		}
 
-		private static MethodDefinition AddDefaultCreationMethod(this TypeDefinition factoryDefinition, List<(int, MethodDefinition?, bool)> constructors)
-		{
-			MethodDefinition method = factoryDefinition.AddMethod("CreateAsset", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static, iunityObjectBase!);
-			method.AddParameter(unityVersionType!, "version");
-			method.AddParameter(SharedState.Instance.Importer.Int32, "id");
-			method.GetProcessor().EmitIdSwitchStatement(constructors, false, false);
-			return method;
-		}
-
-		private static void EmitIdSwitchStatement(this CilInstructionCollection processor, List<(int, MethodDefinition?, bool)> constructors, bool usesInfo, bool isAssetInfo)
+		private static void EmitIdSwitchStatement(this CilInstructionCollection processor, List<(int, MethodDefinition?, bool)> constructors)
 		{
 			int count = constructors.Count;
 
-			CilLocalVariable? switchCondition = new CilLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable switchCondition = new CilLocalVariable(SharedState.Instance.Importer.Int32);
 			processor.Owner.LocalVariables.Add(switchCondition);
-			{
-				if (usesInfo)
-				{
-					if (isAssetInfo)
-					{
-						processor.Add(CilOpCodes.Ldarga, processor.Owner.Owner.Parameters[1]);
-						IMethodDefOrRef propertyRef = SharedState.Instance.Importer.ImportMethod<AssetInfo>(m => m.Name == $"get_{nameof(AssetInfo.ClassID)}");
-						processor.Add(CilOpCodes.Call, propertyRef);
-					}
-					else
-					{
-						processor.Add(CilOpCodes.Ldarg_2);
-					}
-				}
-				else
-				{
-					processor.Add(CilOpCodes.Ldarg_1);
-				}
-			}
+			processor.Add(CilOpCodes.Ldarga, processor.Owner.Owner.Parameters[1]);
+			IMethodDefOrRef propertyRef = SharedState.Instance.Importer.ImportMethod<AssetInfo>(m => m.Name == $"get_{nameof(AssetInfo.ClassID)}");
+			processor.Add(CilOpCodes.Call, propertyRef);
 			processor.Add(CilOpCodes.Stloc, switchCondition);
 
 			CilInstructionLabel[] nopInstructions = Enumerable.Range(0, count).Select(i => new CilInstructionLabel()).ToArray();
@@ -104,23 +85,21 @@ namespace AssetRipper.AssemblyDumper.Passes
 			for (int i = 0; i < count; i++)
 			{
 				nopInstructions[i].Instruction = processor.Add(CilOpCodes.Nop);
-				if (constructors[i].Item2 is null)
+				(int, MethodDefinition?, bool) tuple = constructors[i];
+				if (tuple.Item2 is null)
 				{
 					processor.AddThrowAbstractClassException();
 				}
 				else
 				{
-					if (constructors[i].Item3)//uses version
+					if (tuple.Item3)//uses version
 					{
 						processor.Add(CilOpCodes.Ldarg_0);
 					}
 
-					if (usesInfo)
-					{
-						processor.Add(CilOpCodes.Ldarg_1);
-					}
+					processor.Add(CilOpCodes.Ldarg_1);
 
-					processor.Add(CilOpCodes.Call, constructors[i].Item2!);
+					processor.Add(CilOpCodes.Call, tuple.Item2);
 					processor.Add(CilOpCodes.Ret);
 				}
 			}
@@ -130,105 +109,118 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.OptimizeMacros();
 		}
 
-		private static void AddAllClassCreationMethods(
-			out List<(int, MethodDefinition?, bool)> defaultMethods,
-			out List<(int, MethodDefinition?, bool)> assetInfoMethods)
+		private static void AddAllClassCreationMethods(out List<(int, MethodDefinition?, bool)> assetInfoMethods)
 		{
-			defaultMethods = new();
 			assetInfoMethods = new();
 			foreach (ClassGroup group in SharedState.Instance.ClassGroups.Values.OrderBy(g => g.ID))
 			{
 				group.AddMethodsForGroup(
-					out MethodDefinition? defaultMethod,
 					out MethodDefinition? assetInfoMethod,
 					out bool usesVersion);
-				defaultMethods.Add((group.ID, defaultMethod, usesVersion));
 				assetInfoMethods.Add((group.ID, assetInfoMethod, usesVersion));
 			}
 			foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
 			{
-				group.AddMethodsForGroup(out _, out _, out _);
+				group.AddMethodsForGroup(out _, out _);
 			}
 		}
 
 		private static void AddMethodsForGroup(
 			this ClassGroupBase group,
-			out MethodDefinition? defaultMethod,
 			out MethodDefinition? assetInfoMethod,
 			out bool usesVersion)
 		{
-			assetInfoMethod = null;
-
 			if (group.IsAbstractGroup())
 			{
 				usesVersion = false;
-				defaultMethod = null;
+				assetInfoMethod = null;
 			}
 			else if (group.Instances.Count == 1)
 			{
 				usesVersion = false;
 				TypeDefinition factoryClass = group.MakeFactoryClass();
-				defaultMethod = ImplementSingleCreationMethod(group, factoryClass, false);
-				if (group.ID >= 0)
+				if (group.ID < 0)
 				{
-					assetInfoMethod = ImplementSingleCreationMethod(group, factoryClass, true);
+					assetInfoMethod = null;
+				}
+				else
+				{
+					assetInfoMethod = ImplementSingleCreationMethod(group, factoryClass);
+					MaybeImplementImporterCreationMethod(group, assetInfoMethod, usesVersion, factoryClass);
 				}
 			}
 			else
 			{
 				usesVersion = true;
 				TypeDefinition factoryClass = group.MakeFactoryClass();
-				if (group.ID >= 0)
+				if (group.ID < 0)
 				{
-					assetInfoMethod = ImplementNormalCreationMethod(group, factoryClass, true);
-					defaultMethod = ImplementNormalCreationMethod(group, factoryClass, assetInfoMethod);
+					assetInfoMethod = null;
 				}
 				else
 				{
-					defaultMethod = ImplementNormalCreationMethod(group, factoryClass, false);
+					assetInfoMethod = ImplementNormalCreationMethod(group, factoryClass);
+					MaybeImplementImporterCreationMethod(group, assetInfoMethod, usesVersion, factoryClass);
+				}
+			}
+
+			static void MaybeImplementImporterCreationMethod(ClassGroupBase group, MethodDefinition assetInfoMethod, bool usesVersion, TypeDefinition factoryClass)
+			{
+				if (importerClassIDs.Contains(group.ID))
+				{
+					ImplementImporterCreationMethod(group, factoryClass, assetInfoMethod, usesVersion);
 				}
 			}
 		}
 
-		private static MethodDefinition ImplementSingleCreationMethod(ClassGroupBase group, TypeDefinition factoryClass, bool hasInfo)
+		private static MethodDefinition ImplementSingleCreationMethod(ClassGroupBase group, TypeDefinition factoryClass)
 		{
 			MethodDefinition method = factoryClass.AddMethod("CreateAsset",
 				MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
 				group.GetSingularTypeOrInterface().ToTypeSignature());
 			CilInstructionCollection processor = method.GetProcessor();
-			if (hasInfo)
-			{
-				method.AddParameter(assetInfoType!, "info");
-			}
-			processor.AddReturnNewConstructedObject(group.Instances[0].Type, hasInfo, false);
+			method.AddParameter(assetInfoType, "info");
+			processor.AddReturnNewConstructedObject(group.Instances[0].Type, false);
 			return method;
 		}
 
-		private static MethodDefinition ImplementNormalCreationMethod(ClassGroupBase group, TypeDefinition factoryClass, bool hasInfo)
+		private static MethodDefinition ImplementNormalCreationMethod(ClassGroupBase group, TypeDefinition factoryClass)
 		{
 			MethodDefinition method = factoryClass.AddMethod("CreateAsset",
 				MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
 				group.GetSingularTypeOrInterface().ToTypeSignature());
-			method.AddParameter(unityVersionType!, "version");
+			method.AddParameter(unityVersionType, "version");
 			CilInstructionCollection processor = method.GetProcessor();
-			if (hasInfo)
-			{
-				method.AddParameter(assetInfoType!, "info");
-			}
-			processor.FillNormalCreationMethod(group, hasInfo);
+			method.AddParameter(assetInfoType, "info");
+			processor.FillNormalCreationMethod(group);
 			return method;
 		}
 
-		private static MethodDefinition ImplementNormalCreationMethod(ClassGroupBase group, TypeDefinition factoryClass, MethodDefinition assetInfoMethod)
+		private static MethodDefinition ImplementImporterCreationMethod(ClassGroupBase group, TypeDefinition factoryClass, MethodDefinition assetInfoMethod, bool hasVersion)
 		{
 			MethodDefinition method = factoryClass.AddMethod("CreateAsset",
 				MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
 				group.GetSingularTypeOrInterface().ToTypeSignature());
-			method.AddParameter(unityVersionType!, "version");
 			CilInstructionCollection processor = method.GetProcessor();
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldc_I4, group.ID);
-			processor.Add(CilOpCodes.Call, makeDummyAssetInfo!);
+
+			if (hasVersion)
+			{
+				method.AddParameter(unityVersionType, "version");
+				method.AddParameter(assetCollectionType, "collection");
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldarg_1);
+			}
+			else
+			{
+				method.AddParameter(assetCollectionType, "collection");
+				processor.Add(CilOpCodes.Ldarg_0);
+			}
+
+			processor.Add(CilOpCodes.Ldc_I4_0);//PathID
+			processor.Add(CilOpCodes.Conv_I8);
+			processor.Add(CilOpCodes.Ldc_I4, group.ID);//ClassID
+			processor.Add(CilOpCodes.Newobj, assetInfoConstructor);
+
 			processor.Add(CilOpCodes.Call, assetInfoMethod);
 			processor.Add(CilOpCodes.Ret);
 			processor.OptimizeMacros();
@@ -240,7 +232,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return group.Types.All(t => t.IsAbstract);
 		}
 
-		private static void AddThrowExceptionOrReturnNewObject(this CilInstructionCollection processor, TypeDefinition objectType, bool hasInfo, bool hasVersion)
+		private static void AddThrowExceptionOrReturnNewObject(this CilInstructionCollection processor, TypeDefinition objectType)
 		{
 			if (objectType.IsAbstract)
 			{
@@ -248,36 +240,27 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			else
 			{
-				processor.AddReturnNewConstructedObject(objectType, hasInfo, hasVersion);
+				processor.AddReturnNewConstructedObject(objectType, true);
 			}
 		}
 
 		private static void AddThrowAbstractClassException(this CilInstructionCollection processor)
 		{
-			processor.Add(CilOpCodes.Newobj, abstractClassExceptionConstructor!);
+			processor.Add(CilOpCodes.Newobj, abstractClassExceptionConstructor);
 			processor.Add(CilOpCodes.Throw);
 		}
 
-		private static void AddReturnNewConstructedObject(this CilInstructionCollection processor, TypeDefinition objectType, bool hasInfo, bool hasVersion)
+		private static void AddReturnNewConstructedObject(this CilInstructionCollection processor, TypeDefinition objectType, bool hasVersion)
 		{
-			MethodDefinition constructor;
-			if (hasInfo)
+			if (hasVersion)
 			{
-				constructor = objectType.GetAssetInfoConstructor();
-				if (hasVersion)
-				{
-					processor.Add(CilOpCodes.Ldarg_1);//version is always the first argument
-				}
-				else
-				{
-					processor.Add(CilOpCodes.Ldarg_0);
-				}
+				processor.Add(CilOpCodes.Ldarg_1);//version is always the first argument
 			}
 			else
 			{
-				constructor = objectType.GetDefaultConstructor();
+				processor.Add(CilOpCodes.Ldarg_0);
 			}
-			processor.Add(CilOpCodes.Newobj, constructor);
+			processor.Add(CilOpCodes.Newobj, objectType.GetAssetInfoConstructor());
 			processor.Add(CilOpCodes.Ret);
 		}
 
@@ -290,10 +273,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.Build);
 			processor.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.Type);
 			processor.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.TypeNumber);
-			processor.Add(CilOpCodes.Call, unityVersionIsGreaterEqualMethod!);
+			processor.Add(CilOpCodes.Call, unityVersionIsGreaterEqualMethod);
 		}
 
-		private static void FillNormalCreationMethod(this CilInstructionCollection processor, ClassGroupBase group, bool hasInfo)
+		private static void FillNormalCreationMethod(this CilInstructionCollection processor, ClassGroupBase group)
 		{
 			for (int i = group.Instances.Count - 1; i > 0; i--)
 			{
@@ -301,10 +284,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 				UnityVersion startVersion = group.Instances[i].VersionRange.Start;
 				processor.AddIsGreaterOrEqualToVersion(startVersion);
 				processor.Add(CilOpCodes.Brfalse, label);
-				processor.AddThrowExceptionOrReturnNewObject(group.Instances[i].Type, hasInfo, true);
+				processor.AddThrowExceptionOrReturnNewObject(group.Instances[i].Type);
 				label.Instruction = processor.Add(CilOpCodes.Nop);
 			}
-			processor.AddThrowExceptionOrReturnNewObject(group.Instances[0].Type, hasInfo, true);
+			processor.AddThrowExceptionOrReturnNewObject(group.Instances[0].Type);
 			processor.OptimizeMacros();
 		}
 
@@ -316,6 +299,17 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static TypeDefinition MakeFactoryClass(this ClassGroupBase group)
 		{
 			return StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, group.Namespace, $"{group.Name}Factory");
+		}
+
+		private static void FindImporterGroups()
+		{
+			foreach ((int id, ClassGroup group) in SharedState.Instance.ClassGroups)
+			{
+				if (group.Instances.Any(i => i.InheritsFromAssetImporter()))
+				{
+					importerClassIDs.Add(id);
+				}
+			}
 		}
 	}
 }
