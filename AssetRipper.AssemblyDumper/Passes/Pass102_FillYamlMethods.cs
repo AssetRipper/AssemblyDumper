@@ -116,7 +116,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
-					bool isImporter = instance.InheritsFromType(1003);//The id for AssetImporter
+					bool isImporter = instance.InheritsFromAssetImporter();
 					instance.FillEditorMethod(isImporter);
 				}
 			}
@@ -128,7 +128,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
-					bool isImporter = instance.InheritsFromType(1003);//The id for AssetImporter
+					bool isImporter = instance.InheritsFromAssetImporter();
 					instance.FillReleaseMethod(isImporter);
 				}
 			}

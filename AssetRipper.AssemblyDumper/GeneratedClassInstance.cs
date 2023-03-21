@@ -5,9 +5,9 @@ namespace AssetRipper.AssemblyDumper
 {
 	internal sealed class GeneratedClassInstance
 	{
-		public string Name { get; set; }
-		public int ID { get; set; }
-		public UniversalClass Class { get; set; }
+		public string Name => Class.Name;
+		public int ID => Group.ID;
+		public UniversalClass Class { get; }
 		public TypeDefinition Type { get; set; }
 		public Range<UnityVersion> VersionRange { get; set; }
 		public GeneratedClassInstance? Base { get; set; }
@@ -18,8 +18,6 @@ namespace AssetRipper.AssemblyDumper
 
 		public GeneratedClassInstance(ClassGroupBase group, UniversalClass @class, TypeDefinition type, UnityVersion startVersion, UnityVersion endVersion)
 		{
-			Name = @class.Name;
-			ID = @class.TypeID;
 			Class = @class;
 			Type = type;
 			VersionRange = new Range<UnityVersion>(startVersion, endVersion);
