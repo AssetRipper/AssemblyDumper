@@ -82,7 +82,7 @@
 
 		private static void AddFieldForNode(this TypeDefinition type, UniversalNode mainNode, TypeSignature fieldType)
 		{
-			FieldDefinition fieldDefinition = new FieldDefinition(mainNode.Name, FieldAttributes.Public, new FieldSignature(fieldType));
+			FieldDefinition fieldDefinition = new FieldDefinition(mainNode.Name, FieldAttributes.FamilyOrAssembly, new FieldSignature(fieldType));
 			type.Fields.Add(fieldDefinition);
 		}
 
