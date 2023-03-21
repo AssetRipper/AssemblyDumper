@@ -94,29 +94,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				PropertyDefinition interfaceProperty = classProperty.Base.Definition;
 				PropertyDefinition instanceProperty = classProperty.Definition;
-				if (instanceProperty.Signature!.ReturnType is CorLibTypeSignature corLibTypeSignature && corLibTypeSignature.IsValueType)
-				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Call, instanceProperty.GetMethod!);
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Callvirt, interfaceProperty.GetMethod!);
-					processor.Add(CilOpCodes.Bne_Un, returnFalseLabel);
-				}
-				else
-				{
-					EqualityMethods.MakeEqualityComparerGenericMethods(
-						instanceProperty.Signature!.ReturnType,
-						SharedState.Instance.Importer,
-						out IMethodDefOrRef defaultReference,
-						out IMethodDefOrRef equalsReference);
-					processor.Add(CilOpCodes.Call, defaultReference);
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Call, instanceProperty.GetMethod!);
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Callvirt, interfaceProperty.GetMethod!);
-					processor.Add(CilOpCodes.Callvirt, equalsReference);
-					processor.Add(CilOpCodes.Brfalse, returnFalseLabel);
-				}
+				classProperty.GetEqualityComparer(out IMethodDefOrRef defaultReference, out IMethodDefOrRef equalsReference);
+
+				processor.Add(CilOpCodes.Call, defaultReference);
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Call, instanceProperty.GetMethod!);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.Add(CilOpCodes.Callvirt, interfaceProperty.GetMethod!);
+				processor.Add(CilOpCodes.Callvirt, equalsReference);
+				processor.Add(CilOpCodes.Brfalse, returnFalseLabel);
 			}
 
 			processor.Add(CilOpCodes.Ldc_I4_1);

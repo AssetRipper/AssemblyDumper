@@ -5,7 +5,7 @@
 		public ClassProperty(PropertyDefinition definition, FieldDefinition? backingField, InterfaceProperty @base, GeneratedClassInstance @class) : base(definition)
 		{
 			BackingField = backingField;
-			if (backingField?.Name is not null)
+			if (!IsInjected && backingField?.Name is not null)
 			{
 				UniversalNode node = @class.Class.ReleaseRootNode?.TryGetSubNodeByName(backingField.Name)
 					?? @class.Class.EditorRootNode?.TryGetSubNodeByName(backingField.Name)
@@ -18,11 +18,19 @@
 		}
 
 		public string? OriginalFieldName { get; }
+
 		public FieldDefinition? BackingField { get; }
+
 		public InterfaceProperty Base { get; }
+
 		public GeneratedClassInstance Class { get; }
+
+		[MemberNotNullWhen(false, nameof(BackingField))]
 		public bool IsAbsent => BackingField is null;
+
+		[MemberNotNullWhen(true, nameof(BackingField))]
 		public bool IsPresent => !IsAbsent;
+
 		[MemberNotNullWhen(true, nameof(BackingField))]
 		public bool HasBackingFieldInDeclaringType
 		{

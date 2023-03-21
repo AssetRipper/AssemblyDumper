@@ -14,9 +14,13 @@ namespace AssetRipper.AssemblyDumper
 		}
 
 		public DiscontinuousRange<UnityVersion> PresentRange { get; private set; }
+
 		public DiscontinuousRange<UnityVersion> AbsentRange { get; private set; }
+
 		public IReadOnlyList<ClassProperty> Implementations => implementations;
+
 		public ClassGroupBase Group { get; }
+
 		public bool IsAnyImplemplementationAbsent => Implementations.Any(p => p.IsAbsent);
 
 		internal void AddImplementation(ClassProperty implementation)
