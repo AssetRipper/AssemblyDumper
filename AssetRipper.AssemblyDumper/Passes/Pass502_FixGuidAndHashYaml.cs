@@ -1,4 +1,6 @@
 ﻿using AsmResolver.DotNet.Cloning;
+using AssetRipper.AssemblyCreationTools;
+using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Assets;
 using AssetRipper.IO.Files;
@@ -12,8 +14,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			foreach (TypeDefinition guidType in SharedState.Instance.SubclassGroups["GUID"].Types)
 			{
-				guidType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlRelease)).FixGuidYaml();
-				guidType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlEditor)).FixGuidYaml();
+				MethodDefinition toStringMethod = guidType.AddGuidToStringOverride();
+				guidType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlRelease)).FixGuidYaml(toStringMethod);
+				guidType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlEditor)).FixGuidYaml(toStringMethod);
 			}
 			InjectHelper(out TypeDefinition helperType);
 			foreach (TypeDefinition hashType in SharedState.Instance.SubclassGroups["Hash128"].Types)
@@ -22,14 +25,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 				MethodDefinition editorMethod = hashType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlEditor));
 				releaseMethod.FixHashYaml(helperType);
 				editorMethod.FixHashYaml(helperType);
+				hashType.AddHashToStringOverride(helperType);
 			}
 		}
 
-		private static void FixGuidYaml(this MethodDefinition method)
+		private static void FixGuidYaml(this MethodDefinition method, MethodDefinition toStringMethod)
 		{
-			MethodDefinition conversionMethod = method.DeclaringType!.Methods.Single(m => m.Name == "op_Implicit");
-			ITypeDefOrRef commonRef = SharedState.Instance.Importer.ImportType<UnityGUID>();
-			IMethodDefOrRef toStringMethod = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == nameof(UnityGUID.ToString));
 			IMethodDefOrRef scalarNodeConstructor = SharedState.Instance.Importer.ImportMethod<YamlScalarNode>(m => 
 			{
 				return m.IsConstructor
@@ -38,36 +39,32 @@ namespace AssetRipper.AssemblyDumper.Passes
 					&& signature.ElementType == ElementType.String;
 			});
 			method.CilMethodBody!.LocalVariables.Clear();
-			CilLocalVariable local = new CilLocalVariable(commonRef.ToTypeSignature());
-			method.CilMethodBody.LocalVariables.Add(local);
 			CilInstructionCollection processor = method.CilMethodBody.Instructions;
 			processor.Clear();
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Call, toStringMethod);
+			processor.Add(CilOpCodes.Newobj, scalarNodeConstructor);
+			processor.Add(CilOpCodes.Ret);
+		}
+
+		private static MethodDefinition AddGuidToStringOverride(this TypeDefinition type)
+		{
+			MethodDefinition method = type.AddMethod(nameof(object.ToString), MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual, type.Module!.CorLibTypeFactory.String);
+			MethodDefinition conversionMethod = type.Methods.Single(m => m.Name == "op_Implicit");
+			ITypeDefOrRef commonRef = SharedState.Instance.Importer.ImportType<UnityGUID>();
+			IMethodDefOrRef toStringMethod = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == nameof(UnityGUID.ToString));
+
+			CilInstructionCollection processor = method.GetProcessor();
+			CilLocalVariable local = processor.AddLocalVariable(commonRef.ToTypeSignature());
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Call, conversionMethod);
 			processor.Add(CilOpCodes.Stloc, local);
 			processor.Add(CilOpCodes.Ldloca, local);
 			processor.Add(CilOpCodes.Call, toStringMethod);
-			processor.Add(CilOpCodes.Newobj, scalarNodeConstructor);
 			processor.Add(CilOpCodes.Ret);
 			processor.OptimizeMacros();
-		}
 
-		private static void FixHashYaml<T>(this MethodDefinition method)
-		{
-			MethodDefinition conversionMethod = method.DeclaringType!.Methods.Single(m => m.Name == "op_Explicit");
-			ITypeDefOrRef commonRef = SharedState.Instance.Importer.ImportType<T>();
-			IMethodDefOrRef exportMethod = SharedState.Instance.Importer.ImportMethod<T>(m => m.Name == nameof(UnityAssetBase.ExportYaml));
-			method.CilMethodBody!.LocalVariables.Clear();
-			CilLocalVariable local = new CilLocalVariable(commonRef.ToTypeSignature());
-			method.CilMethodBody.LocalVariables.Add(local);
-			CilInstructionCollection processor = method.CilMethodBody.Instructions;
-			processor.Clear();
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, conversionMethod);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.Add(CilOpCodes.Call, exportMethod);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			return method;
 		}
 
 		private static void FixHashYaml(this MethodDefinition method, TypeDefinition helperType)
@@ -77,16 +74,35 @@ namespace AssetRipper.AssemblyDumper.Passes
 			method.CilMethodBody!.LocalVariables.Clear();
 			CilInstructionCollection processor = method.CilMethodBody.Instructions;
 			processor.Clear();
+			processor.AddLoadAllHashFields(type);
+			processor.Add(CilOpCodes.Ldarg_1);
+			processor.Add(CilOpCodes.Call, exportMethod);
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
+		}
+
+		private static MethodDefinition AddHashToStringOverride(this TypeDefinition type, TypeDefinition helperType)
+		{
+			MethodDefinition method = type.AddMethod(nameof(object.ToString), MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual, type.Module!.CorLibTypeFactory.String);
+			IMethodDefOrRef helperMethod = helperType.Methods.Single(m => m.Name == nameof(HashHelper.ToString));
+
+			CilInstructionCollection processor = method.GetProcessor();
+			processor.AddLoadAllHashFields(type);
+			processor.Add(CilOpCodes.Call, helperMethod);
+			processor.Add(CilOpCodes.Ret);
+			processor.OptimizeMacros();
+
+			return method;
+		}
+
+		private static void AddLoadAllHashFields(this CilInstructionCollection processor, TypeDefinition type)
+		{
 			for (int i = 0; i < 16; i++)
 			{
 				FieldDefinition field = type.GetFieldByName(GetHashFieldName(i));
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Ldfld, field);
 			}
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.Add(CilOpCodes.Call, exportMethod);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
 		}
 
 		private static string GetHashFieldName(int i)
