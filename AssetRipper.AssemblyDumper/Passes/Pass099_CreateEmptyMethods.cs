@@ -5,6 +5,7 @@ using AssetRipper.Assets.Export.Dependencies;
 using AssetRipper.Assets.IO.Reading;
 using AssetRipper.Assets.IO.Writing;
 using AssetRipper.Assets.Metadata;
+using AssetRipper.IO.Endian;
 using AssetRipper.Yaml;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -18,7 +19,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			TypeSignature commonPPtrTypeRef = SharedState.Instance.Importer.ImportTypeSignature(typeof(PPtr<>));
 			TypeSignature unityObjectBaseInterfaceRef = SharedState.Instance.Importer.ImportTypeSignature<IUnityObjectBase>();
 			GenericInstanceTypeSignature unityObjectBasePPtrRef = commonPPtrTypeRef.MakeGenericInstanceType(unityObjectBaseInterfaceRef);
-			TypeSignature assetReaderRef = SharedState.Instance.Importer.ImportTypeSignature<AssetReader>();
+			TypeSignature refEndianSpanReaderRef = SharedState.Instance.Importer.ImportTypeSignature(typeof(EndianSpanReader)).MakeByReferenceType();
 			TypeSignature assetWriterRef = SharedState.Instance.Importer.ImportTypeSignature<AssetWriter>();
 			TypeSignature exportContainerInterfaceRef = SharedState.Instance.Importer.ImportTypeSignature<IExportContainer>();
 			TypeSignature yamlNodeRef = SharedState.Instance.Importer.ImportTypeSignature<YamlNode>();
@@ -26,10 +27,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			foreach (TypeDefinition type in SharedState.Instance.AllNonInterfaceTypes)
 			{
 				MethodDefinition? releaseReadDef = type.AddMethod(nameof(UnityAssetBase.ReadRelease), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
-				releaseReadDef.AddParameter(assetReaderRef, "reader");
+				releaseReadDef.AddParameter(refEndianSpanReaderRef, "reader");
 
 				MethodDefinition? editorReadDef = type.AddMethod(nameof(UnityAssetBase.ReadEditor), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
-				editorReadDef.AddParameter(assetReaderRef, "reader");
+				editorReadDef.AddParameter(refEndianSpanReaderRef, "reader");
 
 				MethodDefinition? releaseWriteDef = type.AddMethod(nameof(UnityAssetBase.WriteRelease), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
 				releaseWriteDef.AddParameter(assetWriterRef, "writer");
