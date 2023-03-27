@@ -170,6 +170,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 							.MakeGenericInstanceType(commonKeyType, commonValueType);
 					}
 				}
+				//Pair only used by Sprite and it's AssetPair<GUID, long>
 			}
 			return accessTypeSignature != null;
 		}
@@ -311,6 +312,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					processor.Add(CilOpCodes.Ret);
 					return property;
 				}
+				//Pair only used by Sprite and it's AssetPair<GUID, long>
 				else
 				{
 					return declaringType.ImplementGetterProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, propertyType, field);
