@@ -3,7 +3,7 @@ dotnet build -c Debug
 
 cd ./AssetRipper.AssemblyDumper/bin/Debug/net7.0/
 
-AssetRipper.AssemblyDumper.exe
+AssetRipper.AssemblyDumper.exe --include-player-settings
 
 cd ../../../../
 

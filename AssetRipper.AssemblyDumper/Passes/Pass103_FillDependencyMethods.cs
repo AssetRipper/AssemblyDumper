@@ -39,8 +39,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private readonly static HashSet<TypeSignatureStruct> nonDependentTypes = new();
 		private readonly static Dictionary<TypeSignatureStruct, MethodDefinition> methodDictionary = new();
 
-		private readonly static bool throwNotSupported = true;
-
 		private static void InitializeStaticFields()
 		{
 			helperType = InjectHelper();

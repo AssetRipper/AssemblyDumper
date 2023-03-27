@@ -4,8 +4,9 @@ namespace AssetRipper.AssemblyDumper
 {
 	public static class Program
 	{
-		public static void Main()
+		public static void Main(string[] args)
 		{
+			Pass052_InterfacePropertiesAndMethods.SkipPlayerSettings = !args.Contains("--include-player-settings");
 			RunGeneration();
 		}
 

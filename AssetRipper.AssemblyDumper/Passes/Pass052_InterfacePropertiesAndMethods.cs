@@ -9,12 +9,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		private static readonly SignatureComparer signatureComparer = new(SignatureComparisonFlags.VersionAgnostic);
 
+		/// <summary>
+		/// If true, PlayerSettings (class id 129) will not have properties generated.
+		/// This speeds up development iteration times.
+		/// However, production builds still need these properties.
+		/// </summary>
+		public static bool SkipPlayerSettings { get; set; }
+
 		public static void DoPass()
 		{
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
-				//129 is PlayerSettings. It accounts for far too much of the assembly already
-				if (group.ID != 129)
+				if (group.ID != 129 || !SkipPlayerSettings)
 				{
 					group.ImplementProperties();
 				}
