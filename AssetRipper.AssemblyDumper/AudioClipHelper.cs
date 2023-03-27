@@ -1,5 +1,5 @@
 ﻿using AssetRipper.Assets;
-using AssetRipper.Assets.IO.Reading;
+using AssetRipper.IO.Endian;
 using AssetRipper.IO.Files.Extensions;
 using AssetRipper.IO.Files.ResourceFiles;
 
@@ -9,21 +9,22 @@ namespace AssetRipper.AssemblyDumper
 {
 	internal static class AudioClipHelper
 	{
-		internal static byte[] ReadOldByteArray(this UnityObjectBase audioClip, AssetReader reader, int m_Stream)
+		internal static byte[] ReadOldByteArray(this UnityObjectBase audioClip, ref EndianSpanReader reader, int m_Stream)
 		{
 			return m_Stream == 2 //AudioClipLoadType.Streaming
-				? ReadStreamedByteArray(audioClip, reader)
-				: ReadAlignedByteArray(reader);
+				? ReadStreamedByteArray(audioClip, ref reader)
+				: ReadAlignedByteArray(ref reader);
 		}
 
-		private static byte[] ReadAlignedByteArray(AssetReader reader)
+		private static byte[] ReadAlignedByteArray(ref EndianSpanReader reader)
 		{
-			byte[] result = reader.ReadByteArray(allowAlignment: false);
-			reader.AlignStream();
+			int count = reader.ReadInt32();
+			byte[] result = reader.ReadBytesExact(count);
+			reader.Align();
 			return result;
 		}
 
-		private static byte[] ReadStreamedByteArray(UnityObjectBase audioClip, AssetReader reader)
+		private static byte[] ReadStreamedByteArray(UnityObjectBase audioClip, ref EndianSpanReader reader)
 		{
 			uint size = reader.ReadUInt32();
 			uint offset = reader.ReadUInt32();

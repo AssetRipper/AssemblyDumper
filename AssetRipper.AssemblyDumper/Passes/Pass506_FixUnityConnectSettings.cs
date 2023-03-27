@@ -1,5 +1,6 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.Assets;
+using AssetRipper.IO.Endian;
 using System.IO;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -50,16 +51,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Brtrue, returnLabel));
 			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Ceq));
 
-			IMethodDefOrRef getStream = SharedState.Instance.Importer.ImportMethod<BinaryReader>(m => m.Name == $"get_{nameof(BinaryReader.BaseStream)}");
-			IMethodDefOrRef getLength = SharedState.Instance.Importer.ImportMethod<Stream>(m => m.Name == $"get_{nameof(Stream.Length)}");
-			IMethodDefOrRef getPosition = SharedState.Instance.Importer.ImportMethod<Stream>(m => m.Name == $"get_{nameof(Stream.Position)}");
+			IMethodDefOrRef getLength = SharedState.Instance.Importer.ImportMethod(typeof(EndianSpanReader), m => m.Name == $"get_{nameof(EndianSpanReader.Length)}");
+			IMethodDefOrRef getPosition = SharedState.Instance.Importer.ImportMethod(typeof(EndianSpanReader), m => m.Name == $"get_{nameof(EndianSpanReader.Position)}");
 
-			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Callvirt, getLength));
-			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Callvirt, getStream));
+			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Call, getLength));
 			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Ldarg_1));
 
-			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Callvirt, getPosition));
-			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Callvirt, getStream));
+			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Call, getPosition));
 			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Ldarg_1));
 
 			processor.OptimizeMacros();

@@ -1,8 +1,6 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Export;
-using AssetRipper.Assets.Export.Dependencies;
-using AssetRipper.Assets.IO.Reading;
 using AssetRipper.Assets.IO.Writing;
 using AssetRipper.Assets.Metadata;
 using AssetRipper.IO.Endian;

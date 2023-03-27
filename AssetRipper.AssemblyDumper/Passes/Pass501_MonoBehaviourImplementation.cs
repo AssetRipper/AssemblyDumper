@@ -3,7 +3,6 @@ using AssetRipper.AssemblyCreationTools;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Assets;
-using AssetRipper.Assets.IO.Reading;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -41,24 +40,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			FieldDefinition result = new FieldDefinition(fieldName, FieldAttributes.Private, fieldType);
 			type.Fields.Add(result);
 			return result;
-		}
-
-		private static void FixReadMethods(this TypeDefinition type, MethodDefinition readStructureMethod)
-		{
-			MethodDefinition readRelease = type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ReadRelease));
-			readRelease.AddReadStructure(readStructureMethod);
-			MethodDefinition readEditor = type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ReadEditor));
-			readEditor.AddReadStructure(readStructureMethod);
-		}
-
-		private static void AddReadStructure(this MethodDefinition method, MethodDefinition readStructureMethod)
-		{
-			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
-			processor.Pop();//Remove the return
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.Add(CilOpCodes.Call, readStructureMethod);
-			processor.Add(CilOpCodes.Ret);
 		}
 
 		private static void FixExportMethods(this TypeDefinition type, FieldDefinition field, TypeDefinition monoBehaviourHelperType)
