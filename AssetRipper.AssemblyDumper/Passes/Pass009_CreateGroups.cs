@@ -48,7 +48,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				UniversalClass universalClass = pair.Value!;
 				string typeName = universalClass.Name;
 				UnityVersion endVersion = loadedClasses.Count == 2 && loadedClasses[1].Value == null ? loadedClasses[1].Key : UnityVersion.MaxVersion;
-				CreateType(universalClass, pair.Key, endVersion, typeName, universalClass.GetOriginalTypeName(), group);
+				CreateType(universalClass, pair.Key, endVersion, typeName, group);
 			}
 			else
 			{
@@ -60,14 +60,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 					if (universalClass is not null)
 					{
 						string typeName = $"{universalClass.Name}_{pair.Key.ToCleanString('_')}";
-						CreateType(universalClass, pair.Key, endVersion, typeName, universalClass.GetOriginalTypeName(), group);
+						CreateType(universalClass, pair.Key, endVersion, typeName, group);
 					}
 				}
 			}
 			group.InitializeHistory(SharedState.Instance.HistoryFile);
 		}
 
-		private static void CreateType(UniversalClass universalClass, UnityVersion startVersion, UnityVersion endVersion, string typeName, string originalTypeName, ClassGroupBase group)
+		private static void CreateType(UniversalClass universalClass, UnityVersion startVersion, UnityVersion endVersion, string typeName, ClassGroupBase group)
 		{
 			TypeDefinition type = new TypeDefinition(group.Namespace, typeName, TypeAttributes.Public | TypeAttributes.BeforeFieldInit);
 			SharedState.Instance.Module.TopLevelTypes.Add(type);
