@@ -7,6 +7,8 @@ namespace AssetRipper.AssemblyDumper
 {
 	internal static class TpkProcessor
 	{
+		private static UnityVersion MinimumVersion { get; } = new UnityVersion(3, 5, 0);
+
 		public static void IntitializeSharedState(string tpkPath)
 		{
 			TpkTypeTreeBlob blob = ReadTpkFile(tpkPath);
@@ -16,30 +18,43 @@ namespace AssetRipper.AssemblyDumper
 			{
 				int id = classInfo.ID;
 
-				if (IsUnacceptable(id))
+				if (IsUnacceptable(id) || HasNoDataAfterMinimumVersion(classInfo))
 				{
 					continue;
 				}
 
 				VersionedList<UniversalClass> classList = new();
 				classes.Add(id, classList);
-				foreach (var pair in classInfo.Classes)
+				for (int i = 0; i < classInfo.Classes.Count; i++)
 				{
+					KeyValuePair<UnityVersion, TpkUnityClass?> pair = classInfo.Classes[i];
 					UnityVersion version = versionRedirectDictionary[pair.Key];
-					if (pair.Value is not null)
+					if (version == MinimumVersion && i < classInfo.Classes.Count - 1 && versionRedirectDictionary[classInfo.Classes[i + 1].Key] == MinimumVersion)
+					{
+						//Skip. This TpkUnityClass conflicts with the next one because they're both redirected to the minimum version.
+					}
+					else if (pair.Value is not null)
 					{
 						UniversalClass universalClass = UniversalClass.FromTpkUnityClass(pair.Value, id, blob.StringBuffer, blob.NodeBuffer);
 						classList.Add(version, universalClass);
 					}
-					else
+					else if (classList.Count is not 0)
 					{
 						classList.Add(version, null);
 					}
 				}
 			}
 			UniversalCommonString commonString = UniversalCommonString.FromBlob(blob);
-			UnityVersion[] usedVersions = blob.Versions.ToArray();
+			UnityVersion[] usedVersions = blob.Versions.Where(v => v >= MinimumVersion).ToArray();
 			SharedState.Initialize(usedVersions, classes, commonString);
+
+			static bool IsUnacceptable(int typeId) => typeId >= 100000 && typeId <= 100011;
+
+			static bool HasNoDataAfterMinimumVersion(TpkClassInformation info)
+			{
+				KeyValuePair<UnityVersion, TpkUnityClass?> lastPair = info.Classes[info.Classes.Count - 1];
+				return lastPair.Key < MinimumVersion && lastPair.Value is null;
+			}
 		}
 
 		private static TpkTypeTreeBlob ReadTpkFile(string path)
@@ -50,20 +65,19 @@ namespace AssetRipper.AssemblyDumper
 				: throw new NotSupportedException($"Blob cannot be type {blob.GetType()}");
 		}
 
-		private static bool IsUnacceptable(int typeId)
-		{
-			return typeId >= 100000 && typeId <= 100011;
-		}
-
 		private static Dictionary<UnityVersion, UnityVersion> MakeVersionRedirectDictionary(List<UnityVersion> list)
 		{
 			Dictionary<UnityVersion, UnityVersion> dict = new();
-			Debug.Assert(list.Count > 0);
+
+			UnityVersion first = list.First(v => v >= MinimumVersion);
+			dict.Add(first, first.StripType());
+
+			int firstIndex = list.IndexOf(first);
+			for (int i = 0; i < firstIndex; i++)
 			{
-				UnityVersion first = list[0];
-				dict.Add(first, first.StripType());
+				dict.Add(list[i], MinimumVersion);
 			}
-			for (int i = 1; i < list.Count; i++)
+			for (int i = firstIndex + 1; i < list.Count; i++)
 			{
 				UnityVersion previous = list[i - 1];
 				UnityVersion current = list[i];

@@ -449,10 +449,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				visualEffectResourceInfosNode.Name = "m_Settings";
 			}
-			else if (node.TypeName == "DataTemplate")
-			{
-				node.TryRenameSubNode("m_IsDataTemplate", "m_IsPrefabAsset");
-			}
 			else if (node.IsPrefab(out UniversalNode? parentPrefabNode, out UniversalNode? isPrefabParentNode))
 			{
 				parentPrefabNode.Name = "m_SourcePrefab";

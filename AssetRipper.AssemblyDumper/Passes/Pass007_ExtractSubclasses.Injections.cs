@@ -136,53 +136,43 @@ namespace AssetRipper.AssemblyDumper.Passes
 			VersionedList<UniversalClass> pptrTexture2DList = SharedState.Instance.SubclassInformation["PPtr_Texture2D"];
 			VersionedList<UniversalClass> colorList = SharedState.Instance.SubclassInformation["ColorRGBAf"];
 			Debug.Assert(pptrTexture2DList.Count == 2);
-			Debug.Assert(colorList.Count == 2);
+			Debug.Assert(colorList.Count == 1);
 
 			const string ClassName = "GUIStyleState";
 			VersionedList<UniversalClass> classList = new();
 			SharedState.Instance.SubclassInformation.Add(ClassName, classList);
 
-			(UnityVersion versionC1, UniversalClass? colorClass1) = colorList[0];
+			(UnityVersion versionC, UniversalClass? colorClass) = colorList[0];
 			(UnityVersion versionP1, UniversalClass? pptrClass1) = pptrTexture2DList[0];
-			Debug.Assert(versionC1 == versionP1);
-			Debug.Assert(versionC1 == SharedState.Instance.MinVersion);
-
-			(UnityVersion versionC2, UniversalClass? colorClass2) = colorList[1];
 			(UnityVersion versionP2, UniversalClass? pptrClass2) = pptrTexture2DList[1];
-			Debug.Assert(versionC2 < versionP2);
+			Debug.Assert(versionC == SharedState.Instance.MinVersion);
+			Debug.Assert(versionC == versionP1);
+			Debug.Assert(versionC < versionP2);
 
 			UniversalNode releaseRoot1 = CreateRootNode(ClassName);
 			releaseRoot1.SubNodes.Add(pptrClass1!.ReleaseRootNode!.DeepCloneAndChangeName("m_Background"));
-			releaseRoot1.SubNodes.Add(colorClass1!.ReleaseRootNode!.DeepCloneAndChangeName("m_TextColor"));
+			releaseRoot1.SubNodes.Add(colorClass!.ReleaseRootNode!.DeepCloneAndChangeName("m_TextColor"));
 			UniversalNode editorRoot1 = CreateRootNode(ClassName);
 			editorRoot1.SubNodes.Add(pptrClass1!.EditorRootNode!.DeepCloneAndChangeName("m_Background"));
-			editorRoot1.SubNodes.Add(colorClass1!.EditorRootNode!.DeepCloneAndChangeName("m_TextColor"));
-			classList.Add(versionC1, new UniversalClass(releaseRoot1, editorRoot1));
+			editorRoot1.SubNodes.Add(colorClass!.EditorRootNode!.DeepCloneAndChangeName("m_TextColor"));
+			classList.Add(versionC, new UniversalClass(releaseRoot1, editorRoot1));
 
 			UniversalNode releaseRoot2 = CreateRootNode(ClassName);
-			releaseRoot2.SubNodes.Add(pptrClass1!.ReleaseRootNode!.DeepCloneAndChangeName("m_Background"));
-			releaseRoot2.SubNodes.Add(colorClass2!.ReleaseRootNode!.DeepCloneAndChangeName("m_TextColor"));
+			releaseRoot2.SubNodes.Add(pptrClass2!.ReleaseRootNode!.DeepCloneAndChangeName("m_Background"));
+			releaseRoot2.SubNodes.Add(colorClass!.ReleaseRootNode!.DeepCloneAndChangeName("m_TextColor"));
 			UniversalNode editorRoot2 = CreateRootNode(ClassName);
-			editorRoot2.SubNodes.Add(pptrClass1!.EditorRootNode!.DeepCloneAndChangeName("m_Background"));
-			editorRoot2.SubNodes.Add(colorClass2!.EditorRootNode!.DeepCloneAndChangeName("m_TextColor"));
-			classList.Add(versionC2, new UniversalClass(releaseRoot2, editorRoot2));
+			editorRoot2.SubNodes.Add(pptrClass2!.EditorRootNode!.DeepCloneAndChangeName("m_Background"));
+			editorRoot2.SubNodes.Add(colorClass!.EditorRootNode!.DeepCloneAndChangeName("m_TextColor"));
+			classList.Add(versionP2, new UniversalClass(releaseRoot2, editorRoot2));
 
 			UniversalNode releaseRoot3 = CreateRootNode(ClassName);
 			releaseRoot3.SubNodes.Add(pptrClass2!.ReleaseRootNode!.DeepCloneAndChangeName("m_Background"));
-			releaseRoot3.SubNodes.Add(colorClass2!.ReleaseRootNode!.DeepCloneAndChangeName("m_TextColor"));
+			releaseRoot3.SubNodes.Add(colorClass!.ReleaseRootNode!.DeepCloneAndChangeName("m_TextColor"));
 			UniversalNode editorRoot3 = CreateRootNode(ClassName);
 			editorRoot3.SubNodes.Add(pptrClass2!.EditorRootNode!.DeepCloneAndChangeName("m_Background"));
-			editorRoot3.SubNodes.Add(colorClass2!.EditorRootNode!.DeepCloneAndChangeName("m_TextColor"));
-			classList.Add(versionP2, new UniversalClass(releaseRoot3, editorRoot3));
-
-			UniversalNode releaseRoot4 = CreateRootNode(ClassName);
-			releaseRoot4.SubNodes.Add(pptrClass2!.ReleaseRootNode!.DeepCloneAndChangeName("m_Background"));
-			releaseRoot4.SubNodes.Add(colorClass2!.ReleaseRootNode!.DeepCloneAndChangeName("m_TextColor"));
-			UniversalNode editorRoot4 = CreateRootNode(ClassName);
-			editorRoot4.SubNodes.Add(pptrClass2!.EditorRootNode!.DeepCloneAndChangeName("m_Background"));
-			editorRoot4.SubNodes.Add(CreateArrayNode("m_ScaledBackgrounds", pptrClass2!.EditorRootNode!.DeepClone(), false));
-			editorRoot4.SubNodes.Add(colorClass2!.EditorRootNode!.DeepCloneAndChangeName("m_TextColor"));
-			classList.Add(new UnityVersion(5, 4, 0), new UniversalClass(releaseRoot4, editorRoot4));
+			editorRoot3.SubNodes.Add(CreateArrayNode("m_ScaledBackgrounds", pptrClass2!.EditorRootNode!.DeepClone(), false));
+			editorRoot3.SubNodes.Add(colorClass!.EditorRootNode!.DeepCloneAndChangeName("m_TextColor"));
+			classList.Add(new UnityVersion(5, 4, 0), new UniversalClass(releaseRoot3, editorRoot3));
 		}
 
 		private static void InjectGUIStyle()
@@ -194,7 +184,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			VersionedList<UniversalClass> rectOffsetList = SharedState.Instance.SubclassInformation["RectOffset"];
 			VersionedList<UniversalClass> vectorList = SharedState.Instance.SubclassInformation["Vector2f"];
 			Debug.Assert(pptrFontList.Count == 2);
-			Debug.Assert(stateList.Count == 4);
+			Debug.Assert(stateList.Count == 3);
 
 			const string ClassName = "GUIStyle";
 			VersionedList<UniversalClass> classList = new();
@@ -204,23 +194,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 			UnityVersion versionP1 = pptrFontList[0].Key;
 			Debug.Assert(versionS1 == versionP1);
 			Debug.Assert(versionS1 == SharedState.Instance.MinVersion);
-
-			UnityVersion versionS2 = stateList[1].Key;
-			Debug.Assert(versionS2 < builtInVersion);
+			Debug.Assert(versionS1 < builtInVersion);
 
 			UnityVersion versionP2 = pptrFontList[1].Key;
+			UnityVersion versionS2 = stateList[1].Key;
 			UnityVersion versionS3 = stateList[2].Key;
-			UnityVersion versionS4 = stateList[3].Key;
-			Debug.Assert(versionS3 == versionP2);
-			Debug.Assert(versionS3 > builtInVersion);
+			Debug.Assert(versionS2 == versionP2);
+			Debug.Assert(versionS2 > builtInVersion);
 
 			List<UnityVersion> versions = new()
 			{
 				versionS1,
-				versionS2,
 				builtInVersion,
+				versionS2,
 				versionS3,
-				versionS4,
 			};
 
 			foreach (UnityVersion version in versions)
