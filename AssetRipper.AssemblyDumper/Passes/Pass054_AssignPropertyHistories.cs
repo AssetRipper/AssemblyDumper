@@ -92,13 +92,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static bool HistoryIsApplicable(DataMemberHistory history, string originalName)
 		{
-			string historyNameNormalized = Pass002_RenameSubnodes.GetValidFieldName(history.Name).ToLowerInvariant();
+			string historyNameNormalized = ValidNameGenerator.GetValidFieldName(history.Name).ToLowerInvariant();
 			string fieldName = originalName.ToLowerInvariant();
 			return historyNameNormalized == fieldName;
 		}
 		private static bool HistoryIsApplicable(DataMemberHistory history, FieldDefinition field)
 		{
-			string historyNameNormalized = Pass002_RenameSubnodes.GetValidFieldName(history.Name).ToLowerInvariant();
+			string historyNameNormalized = ValidNameGenerator.GetValidFieldName(history.Name).ToLowerInvariant();
 			string fieldName = field.Name!.ToString().ToLowerInvariant();
 			if (historyNameNormalized == fieldName)
 			{
@@ -110,7 +110,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 				}
 				else if (fieldName == nativeName.ToLowerInvariant()
-					|| fieldName == Pass002_RenameSubnodes.GetValidFieldName(nativeName).ToLowerInvariant())
+					|| fieldName == ValidNameGenerator.GetValidFieldName(nativeName).ToLowerInvariant())
 				{
 					return true;
 				}

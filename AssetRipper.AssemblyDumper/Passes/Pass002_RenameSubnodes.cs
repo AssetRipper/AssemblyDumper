@@ -72,10 +72,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 		/// <param name="node"></param>
 		private static void FixNamesRecursively(this UniversalNode node)
 		{
-			node.Name = GetValidFieldName(node.Name!);
+			node.Name = ValidNameGenerator.GetValidFieldName(node.Name);
 			if (node.NodeType == NodeType.Type) //don't rename special type names like long long, map, or Array
 			{
-				node.TypeName = GetValidTypeName(node.TypeName!);
+				node.TypeName = ValidNameGenerator.GetValidTypeName(node.TypeName);
 			}
 			if (node.SubNodes != null)
 			{
@@ -222,7 +222,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				if (node.TryGetSubNodeByName("m_Data", out UniversalNode? subnode))
 				{
-					string elementType = subnode.TypeName.ReplaceBadCharacters();
+					string elementType = subnode.TypeName;
 					node.TypeName = $"{TilemapRefCountedDataName}_{elementType}";
 				}
 			}
@@ -677,7 +677,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			List<UniversalNode> subnodes = node.SubNodes;
 			if (node.TypeName == VFXEntryExposedName && subnodes.Any(n => n.Name == "m_Value"))
 			{
-				elementType = subnodes.Single(n => n.Name == "m_Value").TypeName!.ReplaceBadCharacters();
+				elementType = subnodes.Single(n => n.Name == "m_Value").TypeName;
 				return true;
 			}
 
@@ -690,7 +690,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			List<UniversalNode> subnodes = node.SubNodes;
 			if (node.TypeName == VFXEntryExpressionValueName && subnodes.Any(n => n.Name == "m_Value"))
 			{
-				elementType = subnodes.Single(n => n.Name == "m_Value").TypeName!.ReplaceBadCharacters();
+				elementType = subnodes.Single(n => n.Name == "m_Value").TypeName;
 				return true;
 			}
 
