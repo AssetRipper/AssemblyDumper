@@ -26,6 +26,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static readonly Dictionary<string, string> ClassNameReplacement = new()
 		{
+			{ "AvatarBodyMask" , "AvatarMask" },
 			{ "LightmapSnapshot" , "LightingDataAsset" },
 			{ "RenderManager" , "GraphicsSettings" },
 			{ "State" , "AnimatorState" },
