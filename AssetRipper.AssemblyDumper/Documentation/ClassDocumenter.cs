@@ -29,9 +29,9 @@ namespace AssetRipper.AssemblyDumper.Documentation
 				DocumentationHandler.AddTypeDefinitionLine(instance.Type, $"Type ID: {instance.ID}");
 			}
 
-			if (instance.Type.Name != instance.Class.GetOriginalTypeName())
+			if (instance.Type.Name != instance.Class.OriginalName)
 			{
-				DocumentationHandler.AddTypeDefinitionLine(instance.Type, $"Original Name: \"{instance.Class.GetOriginalTypeName().EscapeXml()}\"");
+				DocumentationHandler.AddTypeDefinitionLine(instance.Type, $"Original Name: \"{instance.Class.OriginalName.EscapeXml()}\"");
 			}
 
 			DocumentationHandler.AddTypeDefinitionLine(instance.Type, $"Serialized Version: {instance.GetSerializedVersion()}");

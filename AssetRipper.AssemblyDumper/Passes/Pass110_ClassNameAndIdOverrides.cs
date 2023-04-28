@@ -18,19 +18,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
-					//instance.Type.AddClassIdOverride(id);
-					instance.Type.AddClassNameOverride(instance.Name);
+					instance.Type.AddClassNameOverride(instance.Class.OriginalName);
 				}
 			}
-		}
-
-		private static void AddClassIdOverride(this TypeDefinition type, int id)
-		{
-			PropertyDefinition property = type.AddGetterProperty(nameof(UnityObjectBase.ClassID), PropertyOverrideAttributes, SharedState.Instance.Importer.Int32);
-			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldc_I4, id);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
 		}
 
 		private static void AddClassNameOverride(this TypeDefinition type, string className)

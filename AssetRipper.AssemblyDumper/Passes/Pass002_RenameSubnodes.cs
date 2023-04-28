@@ -1,11 +1,9 @@
 ﻿using AssetRipper.AssemblyDumper.Utils;
-using System.Text.RegularExpressions;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass002_RenameSubnodes
 	{
-		private static readonly Regex badCharactersRegex = new Regex(@"[<>\[\]\s&\(\):\.]", RegexOptions.Compiled);
 		public const string GuidName = "GUID";
 		public const string Utf8StringName = "Utf8String";
 		public const string NestedStringName = "NestedString";
@@ -26,15 +24,50 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private const string Vector4FloatName = "Vector4Float";
 		private const string Vector3FloatName = "Vector3Float";
 
+		private static readonly Dictionary<string, string> ClassNameReplacement = new()
+		{
+			{ "LightmapSnapshot" , "LightingDataAsset" },
+			{ "RenderManager" , "GraphicsSettings" },
+			{ "State" , "AnimatorState" },
+			{ "StateMachine" , "AnimatorStateMachine" },
+			{ "Transition" , "AnimatorStateTransition" },
+		};
+		private static readonly Dictionary<string, string> PPtrNameReplacement = new();
+		private static readonly Dictionary<string, string> TypeNameReplacement = new()
+		{
+			{ "AlbedoSwatchInfo" , "AlbedoSwitchInfo" },
+			{ "PlatformShaderSettings" , "TierGraphicsSettingsEditor" },//before 5.5
+			{ "BoneInfluence" , "BoneWeights4" },
+			{ "IntPoint" , "Vector2Long" },
+			{ "Int2_storage" , "Vector2Int" },
+			{ "Int3_storage" , "Vector3Int" },
+			{ "Float3" , Vector3FloatName },
+			{ "Float4" , Vector4FloatName },
+			{ "Fixed_bitset" , "FixedBitset" },
+			{ "GradientNEW" , "Gradient" },
+		};
+
+		private static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> enumerable) where T : notnull
+		{
+			foreach (T? item in enumerable)
+			{
+				if (item is not null)
+				{
+					yield return item;
+				}
+			}
+		}
+
 		public static void DoPass()
 		{
+			InitializePPtrNameReplacementDictionary();
 			foreach (VersionedList<UniversalClass> classList in SharedState.Instance.ClassInformation.Values)
 			{
 				foreach (UniversalClass? unityClass in classList.Values)
 				{
 					if (unityClass is not null)
 					{
-						unityClass.CorrectInheritedTypeNames();
+						unityClass.CorrectTypeNames();
 						unityClass.EditorRootNode?.FixNamesRecursively();
 						unityClass.ReleaseRootNode?.FixNamesRecursively();
 						unityClass.EditorRootNode?.DoSecondaryRenamingRecursively(true);
@@ -44,24 +77,41 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 		}
 
+		private static void InitializePPtrNameReplacementDictionary()
+		{
+			PPtrNameReplacement.Clear();
+			foreach (string className in SharedState.Instance.ClassInformation.Values.SelectMany(list => list.Values).WhereNotNull().Select(@class => @class.Name).Distinct())
+			{
+				string replacementClass = ClassNameReplacement.GetValueOrDefault(className, className);
+				PPtrNameReplacement.Add($"PPtr_{className}_", $"PPtr_{replacementClass}");
+			}
+		}
+
 		/// <summary>
 		/// Corrects the root nodes of classes to have the correct Type Name.<br/>
-		/// For example, Behaviour uses Component as its type name in the root nodes
+		/// For example, Behaviour uses Component as its type name in the root nodes.<br/>
+		/// In addition, this also applies any renaming from <see cref="ClassNameReplacement"/>.
 		/// </summary>
 		/// <param name="unityClass"></param>
-		private static void CorrectInheritedTypeNames(this UniversalClass unityClass)
+		private static void CorrectTypeNames(this UniversalClass unityClass)
 		{
+			if (ClassNameReplacement.TryGetValue(unityClass.Name, out string? replacementName))
+			{
+				unityClass.Name = replacementName;
+			}
+			if (unityClass.BaseString is not null && ClassNameReplacement.TryGetValue(unityClass.BaseString, out string? replacementBaseName))
+			{
+				unityClass.BaseString = replacementBaseName;
+			}
 			if (unityClass.EditorRootNode != null && unityClass.EditorRootNode.TypeName != unityClass.Name)
 			{
-				//Console.WriteLine($"Correcting editor type name from {unityClass.EditorRootNode.TypeName} to {unityClass.Name}");
 				unityClass.EditorRootNode.TypeName = unityClass.Name;
-				unityClass.EditorRootNode.OriginalTypeName = unityClass.Name;
+				unityClass.EditorRootNode.OriginalTypeName = unityClass.OriginalName;
 			}
 			if (unityClass.ReleaseRootNode != null && unityClass.ReleaseRootNode.TypeName != unityClass.Name)
 			{
-				//Console.WriteLine($"Correcting release type name from {unityClass.ReleaseRootNode.TypeName} to {unityClass.Name}");
 				unityClass.ReleaseRootNode.TypeName = unityClass.Name;
-				unityClass.ReleaseRootNode.OriginalTypeName = unityClass.Name;
+				unityClass.ReleaseRootNode.OriginalTypeName = unityClass.OriginalName;
 			}
 		}
 
@@ -81,67 +131,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				foreach (UniversalNode subnode in node.SubNodes)
 				{
-					subnode?.FixNamesRecursively();
+					subnode.FixNamesRecursively();
 				}
 			}
 		}
 
-		/// <summary>
-		/// Fixes the string to be a valid field name
-		/// </summary>
-		/// <param name="originalName"></param>
-		/// <returns>A new string with the valid content</returns>
-		public static string GetValidFieldName(string originalName)
-		{
-			if (string.IsNullOrWhiteSpace(originalName))
-			{
-				throw new ArgumentException("Nodes cannot have a null or whitespace name", nameof(originalName));
-			}
-			string result = originalName.ReplaceBadCharacters();
-			if (char.IsDigit(result[0]) || !result.StartsWith("m_", StringComparison.Ordinal))
-			{
-				result = "m_" + result;
-			}
-			if (char.IsLower(result[2]))
-			{
-				string remaining = result.Length > 3 ? result.Substring(3) : "";
-				result = $"m_{char.ToUpperInvariant(result[2])}{remaining}";
-			}
-			return result;
-		}
-
-		/// <summary>
-		/// Fixes the string to be a valid type name
-		/// </summary>
-		/// <param name="originalName"></param>
-		/// <returns>A new string with the valid content</returns>
-		private static string GetValidTypeName(string originalName)
-		{
-			if (string.IsNullOrWhiteSpace(originalName))
-			{
-				throw new ArgumentException("Nodes cannot have a null or whitespace type name", nameof(originalName));
-			}
-			string result = originalName.ReplaceBadCharacters();
-			if (char.IsDigit(result[0]))
-			{
-				result = "_" + result;
-			}
-			if (char.IsLower(result[0]) && result.Length > 1)
-			{
-				result = char.ToUpperInvariant(result[0]) + result.Substring(1);
-			}
-			return result;
-		}
-
-		private static string ReplaceBadCharacters(this string str) => badCharactersRegex.Replace(str, "_");
-
 		private static void DoSecondaryRenamingRecursively(this UniversalNode node, bool isEditor)
 		{
-			if (node == null)
-			{
-				return;
-			}
-
 			if (node.SubNodes != null)
 			{
 				foreach (UniversalNode subnode in node.SubNodes)
@@ -158,6 +154,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			if (node.TypeName == "string")
 			{
 				ChangeStringToUtf8String(node);
+			}
+			else if (TypeNameReplacement.TryGetValue(node.TypeName, out string? replacementTypeName))
+			{
+				node.TypeName = replacementTypeName;
 			}
 			else if (node.TypeName == OffsetPtrName)
 			{
@@ -326,18 +326,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 					? "PlatformSettingsData_Plugin"
 					: "PlatformSettingsData_Editor";
 			}
-			else if (node.TypeName == "AlbedoSwatchInfo")
-			{
-				node.TypeName = "AlbedoSwitchInfo";
-			}
-			else if (node.TypeName == "GraphicsSettings" || node.TypeName == "RenderManager")//id 30
+			else if (node.TypeName == "GraphicsSettings")
 			{
 				node.TryRenameSubNode("m_BuildTargetShaderSettings", "m_TierSettings");//before 5.5
 				node.TryRenameSubNode("m_AlbedoSwatchInfos", "m_AlbedoSwitchInfos");//Unity spelling is great
 			}
-			else if (node.TypeName == "PlatformShaderSettings")//before 5.5
+			else if (node.TypeName == "LightmapSettings")
 			{
-				node.TypeName = "TierGraphicsSettingsEditor";
+				node.TryRenameSubNode("m_LightmapSnapshot", "m_LightingDataAsset");
 			}
 			else if (node.TypeName == "BuildTargetShaderSettings")
 			{
@@ -369,17 +365,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 				node.RenameSubNode("m_ExtensionName", isEditor ? "m_ExtensionNameNode_Editor" : "m_ExtensionNameNode_Release");
 				node.RenameSubNode("m_PropertyName", isEditor ? "m_PropertyNameNode_Editor" : "m_PropertyNameNode_Release");
 			}
-			else if (node.TypeName == "BoneInfluence")
+			else if (PPtrNameReplacement.TryGetValue(node.TypeName, out string? replacementPPtrName))
 			{
-				node.TypeName = "BoneWeights4";
-			}
-			else if (node.TypeName == "FileSize" && node.SubNodes.Count == 0)//StreamedResource.m_Offset 2020.1+
-			{
-				node.TypeName = "UInt64";
-			}
-			else if (node.TypeName.StartsWith("PPtr_", StringComparison.Ordinal))
-			{
-				node.TypeName = node.TypeName[..^1];
+				node.TypeName = replacementPPtrName;
 				node.TryRenameSubNode("m_FileID", "m_FileID_");
 				node.TryRenameSubNode("m_PathID", "m_PathID_");
 				if (node.Name == "m_PrefabParentObject")//3.5 - 2018.2
@@ -390,30 +378,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					node.Name = "m_PrefabAsset";
 				}*/
-			}
-			else if (node.TypeName == "IntPoint")
-			{
-				node.TypeName = "Vector2Long";
-			}
-			else if (node.TypeName == "Int2_storage")
-			{
-				node.TypeName = "Vector2Int";
-			}
-			else if (node.TypeName == "Int3_storage")
-			{
-				node.TypeName = "Vector3Int";
-			}
-			else if (node.TypeName == "Float3")
-			{
-				node.TypeName = Vector3FloatName;
-			}
-			else if (node.TypeName == "Float4")
-			{
-				node.TypeName = Vector4FloatName;
-			}
-			else if (node.TypeName == "Fixed_bitset")
-			{
-				node.TypeName = "FixedBitset";
 			}
 			else if (node.Name == "m_Image_data")
 			{
@@ -590,10 +554,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					node.TypeName = "GradientOld";
 				}
-			}
-			else if (node.TypeName == "GradientNEW")
-			{
-				node.TypeName = "Gradient";
 			}
 			else if (node.TypeName == "HumanLayerConstant" || node.TypeName == "LayerConstant")
 			{

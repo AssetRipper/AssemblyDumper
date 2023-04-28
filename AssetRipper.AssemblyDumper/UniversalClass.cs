@@ -6,12 +6,14 @@ namespace AssetRipper.AssemblyDumper
 {
 	internal sealed class UniversalClass : IDeepCloneable<UniversalClass>
 	{
-		private string name = "";
-
 		/// <summary>
-		/// The name of the class not including the namespace
+		/// The name of the class not including the namespace.
 		/// </summary>
-		public string Name { get => name; set => name = value ?? ""; }
+		public string Name { get; set; } = "";
+		/// <summary>
+		/// The original name of the class not including the namespace.
+		/// </summary>
+		public string OriginalName { get; set; } = "";
 		/// <summary>
 		/// The unique number used to identify the class. Negative value indicates that the class doesn't have a type id
 		/// </summary>
@@ -64,16 +66,12 @@ namespace AssetRipper.AssemblyDumper
 		/// </summary>
 		public UniversalClass(UniversalNode? releaseRootNode, UniversalNode? editorRootNode)
 		{
-			if (releaseRootNode == null && editorRootNode == null)
-			{
-				throw new ArgumentException("Both root nodes cannot be null");
-			}
-
 			ReleaseRootNode = releaseRootNode;
 			EditorRootNode = editorRootNode;
-			UniversalNode? mainRootNode = releaseRootNode ?? editorRootNode;
+			UniversalNode mainRootNode = releaseRootNode ?? editorRootNode ?? throw new ArgumentException("Both root nodes cannot be null");
 
-			Name = mainRootNode!.TypeName;
+			Name = mainRootNode.TypeName;
+			OriginalName = mainRootNode.OriginalTypeName;
 			TypeID = -1;
 			IsAbstract = false;
 			IsEditorOnly = releaseRootNode == null;
@@ -83,59 +81,31 @@ namespace AssetRipper.AssemblyDumper
 
 		public static UniversalClass FromTpkUnityClass(TpkUnityClass tpkClass, int typeId, TpkStringBuffer stringBuffer, TpkUnityNodeBuffer nodeBuffer)
 		{
-			UniversalClass result = new UniversalClass();
-			result.Name = stringBuffer[tpkClass.Name];
-			result.TypeID = typeId;
-			result.BaseString = stringBuffer[tpkClass.Base];
-			result.IsAbstract = tpkClass.Flags.IsAbstract();
-			result.IsEditorOnly = tpkClass.Flags.IsEditorOnly();
-			result.IsReleaseOnly = tpkClass.Flags.IsReleaseOnly();
-			result.IsStripped = tpkClass.Flags.IsStripped();
-			if (tpkClass.Flags.HasEditorRootNode())
+			string name = stringBuffer[tpkClass.Name];
+			return new()
 			{
-				result.EditorRootNode = UniversalNode.FromTpkUnityNode(nodeBuffer[tpkClass.EditorRootNode], stringBuffer, nodeBuffer);
-			}
-			if (tpkClass.Flags.HasReleaseRootNode())
-			{
-				result.ReleaseRootNode = UniversalNode.FromTpkUnityNode(nodeBuffer[tpkClass.ReleaseRootNode], stringBuffer, nodeBuffer);
-			}
-			return result;
-		}
-
-		/// <summary>
-		/// Gets the original name of the type and asserts compatible naming
-		/// </summary>
-		/// <param name="originalTypeName">The original name of the type before any changes were applied</param>
-		/// <returns>True if the original name is different from the current name</returns>
-		public string GetOriginalTypeName()
-		{
-			if (ReleaseRootNode == null && EditorRootNode == null)
-			{
-				return Name;
-			}
-			else if (ReleaseRootNode == null)
-			{
-				Assertions.AssertEquality(Name, EditorRootNode!.TypeName);
-				return EditorRootNode.OriginalTypeName;
-			}
-			else if (EditorRootNode == null)
-			{
-				Assertions.AssertEquality(Name, ReleaseRootNode.TypeName);
-				return ReleaseRootNode.OriginalTypeName;
-			}
-			else
-			{
-				Assertions.AssertEquality(Name, ReleaseRootNode.TypeName);
-				Assertions.AssertEquality(Name, EditorRootNode.TypeName);
-				Assertions.AssertEquality(ReleaseRootNode.OriginalTypeName, EditorRootNode.OriginalTypeName);
-				return ReleaseRootNode.OriginalTypeName;
-			}
+				Name = name,
+				OriginalName = name,
+				TypeID = typeId,
+				BaseString = stringBuffer[tpkClass.Base],
+				IsAbstract = tpkClass.Flags.IsAbstract(),
+				IsEditorOnly = tpkClass.Flags.IsEditorOnly(),
+				IsReleaseOnly = tpkClass.Flags.IsReleaseOnly(),
+				IsStripped = tpkClass.Flags.IsStripped(),
+				EditorRootNode = tpkClass.Flags.HasEditorRootNode()
+					? UniversalNode.FromTpkUnityNode(nodeBuffer[tpkClass.EditorRootNode], stringBuffer, nodeBuffer)
+					: null,
+				ReleaseRootNode = tpkClass.Flags.HasReleaseRootNode()
+					? UniversalNode.FromTpkUnityNode(nodeBuffer[tpkClass.ReleaseRootNode], stringBuffer, nodeBuffer)
+					: null
+			};
 		}
 
 		public UniversalClass DeepClone()
 		{
 			UniversalClass newClass = new();
 			newClass.Name = Name;
+			newClass.OriginalName = OriginalName;
 			newClass.TypeID = TypeID;
 			newClass.BaseString = BaseString;
 			newClass.BaseClass = BaseClass;

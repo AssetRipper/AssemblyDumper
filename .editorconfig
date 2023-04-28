@@ -4,7 +4,7 @@ root = true
 # Tabs
 [*]
 indent_style = tab
-end_of_line = crlf
+end_of_line = lf
 csharp_indent_labels = one_less_than_current
 csharp_using_directive_placement = outside_namespace:silent
 csharp_prefer_simple_using_statement = true:suggestion
@@ -20,6 +20,8 @@ csharp_style_expression_bodied_lambdas = true:silent
 csharp_style_expression_bodied_local_functions = false:silent
 csharp_style_throw_expression = true:suggestion
 csharp_style_prefer_null_check_over_type_check = true:suggestion
+csharp_style_prefer_method_group_conversion = true:silent
+csharp_style_prefer_top_level_statements = false:silent
 
 [*.{cs,vb}]
 #### Naming styles ####

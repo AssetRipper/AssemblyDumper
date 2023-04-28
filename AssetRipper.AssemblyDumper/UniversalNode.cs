@@ -60,7 +60,7 @@ namespace AssetRipper.AssemblyDumper
 						"int" or "SInt32" or "Type*" => NodeType.Int32,
 						"uint" or "UInt32" or "unsigned int" => NodeType.UInt32,
 						"SInt64" or "long long" => NodeType.Int64,
-						"UInt64" or "FileSize" or "unsigned long long" => NodeType.UInt64,
+						"UInt64" or "FileSize" or "unsigned long long" => NodeType.UInt64,//FileSize is used in StreamedResource.m_Offset 2020.1+
 						"float" => NodeType.Single,
 						"double" => NodeType.Double,
 						_ => NodeType.Type,
