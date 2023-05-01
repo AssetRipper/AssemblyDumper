@@ -9,6 +9,7 @@ namespace AssetRipper.DocExtraction.ConsoleApp;
 
 internal static class Program
 {
+	private static readonly UnityVersion MinimumUnityVersion = new UnityVersion(3, 5);
 	static void Main(string[] args)
 	{
 		Stopwatch stopwatch = Stopwatch.StartNew();
@@ -123,7 +124,7 @@ internal static class Program
 		foreach (string versionFolder in Directory.GetDirectories(inputDirectory))
 		{
 			UnityVersion unityVersion = UnityVersion.Parse(Path.GetFileName(versionFolder));
-			if (unityVersion.IsLess(3))
+			if (unityVersion < MinimumUnityVersion)
 			{
 				continue;
 			}
