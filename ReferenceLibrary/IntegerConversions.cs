@@ -41,5 +41,10 @@
 			get => (long)u8;
 			set => u8 = (ulong)value;
 		}
+
+		public static uint UncheckedCast(int value) => unchecked((uint)value);
+		public static int UncheckedCast(uint value) => unchecked((int)value);
+		public static uint CheckedCast(int value) => (uint)value;
+		public static int CheckedCast(uint value) => (int)value;
 	}
 }
