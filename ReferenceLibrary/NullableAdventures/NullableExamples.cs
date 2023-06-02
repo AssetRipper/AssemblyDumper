@@ -28,6 +28,19 @@ namespace ReferenceLibrary.NullableAdventures
 			}
 		}
 		private static byte[] backerField = Array.Empty<byte>();
+
+		private static string? _test;
+		public static string Test
+		{
+			get
+			{
+				if (_test is null)
+				{
+					System.Threading.Interlocked.Exchange(ref _test, "");
+				}
+				return _test;
+			}
+		}
 	}
 
 	public interface IBaseType

@@ -1,7 +1,9 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyCreationTools.Fields;
+using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Assets.Generics;
 using System.Text;
+using System.Threading;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -274,55 +276,82 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				return declaringType.ImplementFullProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, propertyType, field);
 			}
-			else if (field is null)
+			else if (field is null || propertyType is TypeDefOrRefSignature)
 			{
 				return declaringType.ImplementGetterProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, propertyType, field);
 			}
+			else if (propertyType is GenericInstanceTypeSignature genericPropertyType)
+			{
+				IMethodDefOrRef constructor;
+				switch (genericPropertyType.GenericType.Name?.Value)
+				{
+					case "AccessListBase`1":
+						{
+							GenericInstanceTypeSignature fieldType = field.Signature?.FieldType as GenericInstanceTypeSignature ?? throw new();
+							TypeSignature underlyingType = fieldType.TypeArguments.Single();
+							TypeSignature baseType = genericPropertyType.TypeArguments.Single();
+							GenericInstanceTypeSignature accessListSignature = SharedState.Instance.Importer
+								.ImportTypeSignature(typeof(AccessList<,>))
+								.MakeGenericInstanceType(underlyingType, baseType);
+							constructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, accessListSignature, 1);
+						}
+						break;
+					case "AccessDictionaryBase`2":
+						{
+							GenericInstanceTypeSignature fieldType = field.Signature?.FieldType as GenericInstanceTypeSignature ?? throw new();
+							TypeSignature keyNormalType = fieldType.TypeArguments[0];
+							TypeSignature valueNormalType = fieldType.TypeArguments[1];
+							TypeSignature keyBaseType = genericPropertyType.TypeArguments[0];
+							TypeSignature valueBaseType = genericPropertyType.TypeArguments[1];
+							GenericInstanceTypeSignature accessDictionarySignature = SharedState.Instance.Importer
+								.ImportTypeSignature(typeof(AccessDictionary<,,,>))
+								.MakeGenericInstanceType(keyNormalType, valueNormalType, keyBaseType, valueBaseType);
+							constructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, accessDictionarySignature, 1);
+						}
+						break;
+					case "AccessPairBase`2":
+						//Pair only used by Sprite and it's AssetPair<GUID, long>
+						throw new NotSupportedException("AccessPair not supported.");
+					default:
+						//Handles AssetList, AssetDictionary, and AssetPair
+						return declaringType.ImplementGetterProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, propertyType, field);
+				}
+				PropertyDefinition property = declaringType.AddGetterProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, propertyType);
+				FieldDefinition cacheField = declaringType
+					.AddField(propertyType, $"_{propertyName}_k__BackingField", visibility:FieldVisibility.Private)
+					.AddNullableAttributesForMaybeNull();
+				CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
+
+				CilInstructionLabel afterAssignmentLabel = new();
+
+				//if accessValue is null
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldfld, cacheField);
+				processor.Add(CilOpCodes.Ldnull);
+				processor.Add(CilOpCodes.Ceq);
+				processor.Add(CilOpCodes.Brfalse_S, afterAssignmentLabel);
+
+				//Interlocked.Exchange(ref accessValue, new(referenceValue));
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldflda, cacheField);
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldfld, field);
+				processor.Add(CilOpCodes.Newobj, constructor);
+				processor.Add(CilOpCodes.Call, SharedState.Instance.Importer
+					.ImportMethod(typeof(Interlocked), m => m.Name == nameof(Interlocked.Exchange) && m.GenericParameters.Count == 1)
+					.MakeGenericInstanceMethod(propertyType));
+				processor.Add(CilOpCodes.Pop);
+
+				//return accessValue
+				afterAssignmentLabel.Instruction = processor.Add(CilOpCodes.Nop);
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldfld, cacheField);
+				processor.Add(CilOpCodes.Ret);
+				return property;
+			}
 			else
 			{
-				if (propertyType is GenericInstanceTypeSignature accessListBaseSignature && accessListBaseSignature.GenericType.Name == "AccessListBase`1")
-				{
-					GenericInstanceTypeSignature fieldType = field.Signature?.FieldType as GenericInstanceTypeSignature ?? throw new Exception();
-					TypeSignature underlyingType = fieldType.TypeArguments.Single();
-					TypeSignature baseType = accessListBaseSignature.TypeArguments.Single();
-					GenericInstanceTypeSignature accessListSignature = SharedState.Instance.Importer
-						.ImportTypeSignature(typeof(AccessList<,>))
-						.MakeGenericInstanceType(underlyingType, baseType);
-					IMethodDefOrRef constructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, accessListSignature, 1);
-
-					PropertyDefinition property = declaringType.AddGetterProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, propertyType);
-					CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Ldfld, field);
-					processor.Add(CilOpCodes.Newobj, constructor);
-					processor.Add(CilOpCodes.Ret);
-					return property;
-				}
-				else if (propertyType is GenericInstanceTypeSignature accessDictionaryBaseSignature && accessDictionaryBaseSignature.GenericType.Name == "AccessDictionaryBase`2")
-				{
-					GenericInstanceTypeSignature fieldType = field.Signature?.FieldType as GenericInstanceTypeSignature ?? throw new Exception();
-					TypeSignature keyNormalType = fieldType.TypeArguments[0];
-					TypeSignature valueNormalType = fieldType.TypeArguments[1];
-					TypeSignature keyBaseType = accessDictionaryBaseSignature.TypeArguments[0];
-					TypeSignature valueBaseType = accessDictionaryBaseSignature.TypeArguments[1];
-					GenericInstanceTypeSignature accessDictionarySignature = SharedState.Instance.Importer
-						.ImportTypeSignature(typeof(AccessDictionary<,,,>))
-						.MakeGenericInstanceType(keyNormalType, valueNormalType, keyBaseType, valueBaseType);
-					IMethodDefOrRef constructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, accessDictionarySignature, 1);
-
-					PropertyDefinition property = declaringType.AddGetterProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, propertyType);
-					CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Ldfld, field);
-					processor.Add(CilOpCodes.Newobj, constructor);
-					processor.Add(CilOpCodes.Ret);
-					return property;
-				}
-				//Pair only used by Sprite and it's AssetPair<GUID, long>
-				else
-				{
-					return declaringType.ImplementGetterProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, propertyType, field);
-				}
+				throw new NotSupportedException();
 			}
 		}
 
