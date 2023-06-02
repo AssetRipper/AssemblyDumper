@@ -19,7 +19,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void SceneAssetTargetScene()
 		{
 			ClassGroup group = SharedState.Instance.ClassGroups[1032]; //SceneAsset
-			TypeSignature propertyType = SharedState.Instance.Importer.ImportType<AssetCollection>().ToTypeSignature();
+			TypeSignature propertyType = SharedState.Instance.Importer.ImportType<SceneDefinition>().ToTypeSignature();
 			PropertyInjector.InjectFullProperty(group, propertyType, TargetSceneName, true);
 		}
 
