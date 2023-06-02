@@ -1,4 +1,5 @@
-﻿using AssetRipper.AssemblyCreationTools.Fields;
+﻿using AssetRipper.AssemblyCreationTools.Attributes;
+using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 
@@ -10,6 +11,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			TypeDefinition newTypeDef = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.RootNamespace, "SourceVersions");
 
+			GenericInstanceTypeSignature readOnlySet = SharedState.Instance.Importer.ImportType(typeof(IReadOnlySet<>))
+				.MakeGenericInstanceType(SharedState.Instance.Importer.ImportTypeSignature<UnityVersion>());
 			GenericInstanceTypeSignature unityVersionHashSet = SharedState.Instance.Importer.ImportType(typeof(HashSet<>))
 				.MakeGenericInstanceType(SharedState.Instance.Importer.ImportTypeSignature<UnityVersion>());
 			IMethodDefOrRef hashsetConstructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, unityVersionHashSet, 0);
@@ -20,8 +23,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			IMethodDefOrRef unityVersionConstructor = SharedState.Instance.Importer.ImportConstructor<UnityVersion>(5);
 
-			FieldDefinition field = newTypeDef.AddField(unityVersionHashSet, "versions", true);
+			const string propertyName = "Versions";
+			FieldDefinition field = newTypeDef.AddField(readOnlySet, $"<{propertyName}>k__BackingField", true, FieldVisibility.Private);
 			field.Attributes |= FieldAttributes.InitOnly;
+			field.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 
 			MethodDefinition staticConstructor = newTypeDef.AddEmptyConstructor(true);
 			CilInstructionCollection processor = staticConstructor.GetProcessor();
@@ -42,6 +47,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ret);
 
 			processor.OptimizeMacros();
+
+			newTypeDef.ImplementGetterProperty(
+					propertyName,
+					MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.SpecialName,
+					readOnlySet,
+					field)
+				.GetMethod!.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 
 			Console.WriteLine($"\t{SharedState.Instance.SourceVersions.Length} source versions.");
 		}
