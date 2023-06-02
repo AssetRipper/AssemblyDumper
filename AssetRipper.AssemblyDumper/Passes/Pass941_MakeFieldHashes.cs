@@ -42,6 +42,11 @@ internal static class Pass941_MakeFieldHashes
 			CilInstructionCollection processor = method.GetProcessor();
 			processor.EmitIdSwitchStatement(dictionaries, nullHelperMethod);
 		}
+
+		foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
+		{
+			MakeListForGroup(group);
+		}
 	}
 
 	private static void EmitIdSwitchStatement(this CilInstructionCollection processor, List<(int, FieldDefinition)> dictionaries, MethodDefinition nullHelperMethod)
@@ -99,7 +104,7 @@ internal static class Pass941_MakeFieldHashes
 		return nullHelperMethod;
 	}
 
-	private static FieldDefinition MakeDictionaryForGroup(ClassGroup group, Dictionary<uint, string> hashes)
+	private static FieldDefinition MakeDictionaryForGroup(ClassGroupBase group, Dictionary<uint, string> hashes)
 	{
 		TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, group.Namespace, $"{group.Name}FieldHashes");
 		type.IsPublic = false;
@@ -112,7 +117,7 @@ internal static class Pass941_MakeFieldHashes
 		FieldDefinition field = type.AddField(uintStringDictionary, "dictionary", true);
 		field.Attributes |= FieldAttributes.InitOnly;
 
-		MethodDefinition? staticConstructor = type.AddEmptyConstructor(true);
+		MethodDefinition staticConstructor = type.AddEmptyConstructor(true);
 		CilInstructionCollection processor = staticConstructor.GetProcessor();
 		processor.Add(CilOpCodes.Newobj, dictionaryConstructor);
 		foreach ((uint hash, string str) in hashes)
@@ -129,7 +134,43 @@ internal static class Pass941_MakeFieldHashes
 		return field;
 	}
 
-	private static IOrderedEnumerable<string> GetOrderedFieldPaths(this ClassGroup group)
+	private static void MakeListForGroup(ClassGroupBase group)
+	{
+		TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, group.Namespace, $"{group.Name}FieldPaths");
+
+		GenericInstanceTypeSignature readonlyStringList = SharedState.Instance.Importer.ImportType(typeof(IReadOnlyList<>))
+			.MakeGenericInstanceType(SharedState.Instance.Importer.String);
+		GenericInstanceTypeSignature stringList = SharedState.Instance.Importer.ImportType(typeof(List<>))
+			.MakeGenericInstanceType(SharedState.Instance.Importer.String);
+		IMethodDefOrRef listConstructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, stringList, 0);
+		IMethodDefOrRef addMethod = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, stringList, SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == "Add"));
+
+		const string propertyName = "Paths";
+		FieldDefinition field = type.AddField(readonlyStringList, $"<{propertyName}>k__BackingField", true, FieldVisibility.Private);
+		field.Attributes |= FieldAttributes.InitOnly;
+		field.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
+
+		MethodDefinition staticConstructor = type.AddEmptyConstructor(true);
+		CilInstructionCollection processor = staticConstructor.GetProcessor();
+		processor.Add(CilOpCodes.Newobj, listConstructor);
+		foreach (string str in group.GetOrderedFieldPaths())
+		{
+			processor.Add(CilOpCodes.Dup);
+			processor.Add(CilOpCodes.Ldstr, str);
+			processor.Add(CilOpCodes.Call, addMethod);
+		}
+		processor.Add(CilOpCodes.Stsfld, field);
+		processor.Add(CilOpCodes.Ret);
+
+		type.ImplementGetterProperty(
+				propertyName,
+				MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.SpecialName,
+				readonlyStringList,
+				field)
+			.GetMethod!.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
+	}
+
+	private static IOrderedEnumerable<string> GetOrderedFieldPaths(this ClassGroupBase group)
 	{
 		return group
 			.Classes
@@ -163,7 +204,11 @@ internal static class Pass941_MakeFieldHashes
 			NodeType childType = child.NodeType;
 			if (childType is NodeType.Type)
 			{
-				if (IsNotPPtr(child))
+				if (child.TypeName is Pass002_RenameSubnodes.Utf8StringName)
+				{
+					result.Add(child.OriginalName);
+				}
+				else if (IsNotPPtr(child))
 				{
 					nodeStack.Push((child, 0, child.OriginalName));
 				}

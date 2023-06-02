@@ -1,5 +1,4 @@
 ﻿using AssetRipper.AssemblyDumper.Utils;
-using AssetRipper.Assets.Utils;
 using AssetRipper.DocExtraction.MetaData;
 using AssetRipper.IO.Files.SerializedFiles;
 
@@ -76,8 +75,6 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			{
 				DocumentationHandler.AddPropertyDefinitionLine(classProperty, $"Original type: \"{XmlUtils.EscapeXmlInvalidCharacters(mainNode.OriginalTypeName)}\"");
 			}
-
-			DocumentationHandler.AddPropertyDefinitionLine(classProperty, $"Ascii Crc: {CrcUtils.CalculateDigestAscii(mainNode.OriginalName)}");
 
 			if (classProperty.HasEnumVariant)
 			{
