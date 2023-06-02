@@ -264,6 +264,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass940_MakeAssetFactory.DoPass();
 			}
+			using (new TimingCookie("Pass 941: Make Field Hashes"))
+			{
+				Pass941_MakeFieldHashes.DoPass();
+			}
 			using (new TimingCookie("Pass 998: Write Assembly"))
 			{
 				Pass998_SaveAssembly.DoPass();
