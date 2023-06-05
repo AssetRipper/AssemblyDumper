@@ -9,6 +9,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void DoCustomInjections()
 		{
 			InjectLayerMask();
+			InjectRectInt();
 			InjectRectOffset();
 			InjectAABBInt();
 			InjectGUIStyleState();
@@ -42,6 +43,41 @@ namespace AssetRipper.AssemblyDumper.Passes
 					MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
 				});
 				return rootNode;
+			}
+		}
+
+		private static void InjectRectInt()
+		{
+			const string ClassName = "RectInt";
+			VersionedList<UniversalClass> classList = new();
+			SharedState.Instance.SubclassInformation.Add(ClassName, classList);
+			UniversalNode releaseNode = MakeRootNode();
+			UniversalNode editorNode = MakeRootNode();
+			UniversalClass @class = new UniversalClass(releaseNode, editorNode);
+			classList.Add(SharedState.Instance.MinVersion, @class);
+
+			static UniversalNode MakeRootNode()
+			{
+				UniversalNode rootNode = CreateRootNode(ClassName);
+				//These node names might not be correct.
+				//They are based on the Rectf node names.
+				rootNode.SubNodes.Add(MakeInt32Node("m_X", "x"));
+				rootNode.SubNodes.Add(MakeInt32Node("m_Y", "y"));
+				rootNode.SubNodes.Add(MakeInt32Node("m_Width", "width"));
+				rootNode.SubNodes.Add(MakeInt32Node("m_Height", "height"));
+				return rootNode;
+			}
+
+			static UniversalNode MakeInt32Node(string name, string originalName)
+			{
+				return new()
+				{
+					Name = name,
+					OriginalName = originalName,
+					TypeName = "SInt32",
+					Version = 1,
+					MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
+				};
 			}
 		}
 
