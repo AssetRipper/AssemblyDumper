@@ -3,7 +3,6 @@ using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Assets.Generics;
 using System.Text;
-using System.Threading;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -331,16 +330,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 				processor.Add(CilOpCodes.Ceq);
 				processor.Add(CilOpCodes.Brfalse_S, afterAssignmentLabel);
 
-				//Interlocked.Exchange(ref accessValue, new(referenceValue));
+				//accessValue = new(referenceValue);
 				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldflda, cacheField);
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Ldfld, field);
 				processor.Add(CilOpCodes.Newobj, constructor);
-				processor.Add(CilOpCodes.Call, SharedState.Instance.Importer
-					.ImportMethod(typeof(Interlocked), m => m.Name == nameof(Interlocked.Exchange) && m.GenericParameters.Count == 1)
-					.MakeGenericInstanceMethod(propertyType));
-				processor.Add(CilOpCodes.Pop);
+				processor.Add(CilOpCodes.Stfld, cacheField);
 
 				//return accessValue
 				afterAssignmentLabel.Instruction = processor.Add(CilOpCodes.Nop);
