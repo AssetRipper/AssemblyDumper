@@ -7,6 +7,11 @@
 			return $"<see cref=\"{interior}\"/>";
 		}
 
+		public static string MakeCRef(Type type)
+		{
+			return MakeCRef(XmlUtils.GetStringReference(type));
+		}
+
 		public static string MakeCRef(TypeDefinition type)
 		{
 			return MakeCRef(XmlUtils.GetStringReference(type));

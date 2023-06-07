@@ -42,6 +42,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 						enumType.ToTypeSignature());
 					classProperty.SpecialDefinition.GetMethod!.GetProcessor().FillGetter(classProperty.BackingField, fieldTypeSignature.ElementType, enumElementType);
 					classProperty.SpecialDefinition.SetMethod!.GetProcessor().FillSetter(classProperty.BackingField, fieldTypeSignature.ElementType, enumElementType);
+					if (classProperty.Class.Type.IsAbstract)
+					{
+						classProperty.SpecialDefinition.AddDebuggerBrowsableNeverAttribute();//Properties in base classes are redundant in the debugger.
+					}
 				}
 				else
 				{
@@ -50,6 +54,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						InterfaceUtils.InterfacePropertyImplementation,
 						enumType.ToTypeSignature(),
 						null);
+					classProperty.SpecialDefinition.AddDebuggerBrowsableNeverAttribute();//Dummy properties should not be visible in the debugger.
 				}
 			}
 		}

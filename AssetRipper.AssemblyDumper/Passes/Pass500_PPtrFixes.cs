@@ -1,10 +1,11 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
+using AssetRipper.AssemblyDumper.Documentation;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Metadata;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
-	public static class Pass500_FixPPtrYaml
+	public static class Pass500_PPtrFixes
 	{
 		public static void DoPass()
 		{
@@ -15,8 +16,23 @@ namespace AssetRipper.AssemblyDumper.Passes
 					foreach (GeneratedClassInstance instance in group.Instances)
 					{
 						TypeDefinition parameterType = Pass080_PPtrConversions.PPtrsToParameters[instance.Type];
-						int parameterClassID = SharedState.Instance.TypesToGroups[parameterType].ID;
-						FixYaml(instance.Type, parameterType, parameterClassID);
+
+						//Yaml
+						{
+							int parameterClassID = SharedState.Instance.TypesToGroups[parameterType].ID;
+							FixYaml(instance.Type, parameterType, parameterClassID);
+						}
+
+						//DebuggerDisplay
+						{
+							string parameterTypeName = group.Name.Substring("PPtr_".Length);
+							instance.Type.AddDebuggerDisplayAttribute($"{parameterTypeName} FileID: {{FileID}} PathID: {{PathID}}");
+						}
+
+						//Documentation
+						{
+							DocumentationHandler.AddTypeDefinitionLine(instance.Type, $"{SeeXmlTagGenerator.MakeCRef(typeof(PPtr))} for {SeeXmlTagGenerator.MakeCRef(parameterType)}");
+						}
 					}
 				}
 			}

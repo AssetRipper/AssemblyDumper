@@ -84,6 +84,7 @@
 		{
 			FieldDefinition fieldDefinition = new FieldDefinition(mainNode.Name, FieldAttributes.Assembly, new FieldSignature(fieldType));
 			type.Fields.Add(fieldDefinition);
+			fieldDefinition.AddDebuggerBrowsableNeverAttribute();
 		}
 
 		private static bool IsFieldInBaseType(UniversalClass unityClass, string fieldName)

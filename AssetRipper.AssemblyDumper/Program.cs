@@ -202,7 +202,7 @@ namespace AssetRipper.AssemblyDumper
 			}
 			using (new TimingCookie("Pass 500: Fixing PPtr Yaml"))
 			{
-				Pass500_FixPPtrYaml.DoPass();
+				Pass500_PPtrFixes.DoPass();
 			}
 			using (new TimingCookie("Pass 501: Fixing MonoBehaviour"))
 			{

@@ -46,19 +46,25 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					TypeDefinition type = instance.Type;
 					FieldDefinition? field = type.TryGetFieldByName(fieldName, true);
+					PropertyDefinition property;
+					ClassProperty classProperty;
 					if (hasConflictingTypes || missingOnSomeVersions)
 					{
 						TypeSignature? fieldType = field?.Signature?.FieldType;
 						bool presentAndMatchesType = fieldType is not null && instance.Class.ContainsField(fieldName) &&
 							(!hasConflictingTypes || signatureComparer.Equals(fieldType, propertyTypeSignature));
 
-						PropertyDefinition property = presentAndMatchesType
-							? type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, field)
-							: type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, null);
+						if (presentAndMatchesType)
+						{
+							property = type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, field);
+							classProperty = new ClassProperty(property, field, interfaceProperty, instance);
+						}
+						else
+						{
+							property = type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, null);
+							classProperty = new ClassProperty(property, null, interfaceProperty, instance);
+						}
 
-						ClassProperty classProperty = presentAndMatchesType
-							? new ClassProperty(property, field, interfaceProperty, instance)
-							: new ClassProperty(property, null, interfaceProperty, instance);
 						instance.Properties.Add(classProperty);
 
 						if (!isValueType && presentAndMatchesType && propertyTypeSignature is SzArrayTypeSignature && field is not null)
@@ -68,11 +74,30 @@ namespace AssetRipper.AssemblyDumper.Passes
 					}
 					else
 					{
-						PropertyDefinition property = type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, field);
-						ClassProperty classProperty = new ClassProperty(property, field, interfaceProperty, instance);
+						property = type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, field);
+						classProperty = new ClassProperty(property, field, interfaceProperty, instance);
 						instance.Properties.Add(classProperty);
 					}
+
+					if (type.IsAbstract)
+					{
+						property.AddDebuggerBrowsableNeverAttribute();//Properties in base classes are redundant in the debugger.
+					}
+					else if (classProperty.IsAbsent)
+					{
+						property.AddDebuggerBrowsableNeverAttribute();//Dummy properties should not be visible in the debugger.
+					}
+					else if (IsAssetListOrAccessListBase(propertyTypeSignature))
+					{
+						property.AddDebuggerBrowsableRootHiddenAttribute();//AssetList and AccessListBase properties should only show their contents in the debugger.
+					}
 				}
+			}
+			static bool IsAssetListOrAccessListBase(TypeSignature typeSignature)
+			{
+				return typeSignature is GenericInstanceTypeSignature genericInstanceTypeSignature
+					&& (genericInstanceTypeSignature.GenericType.Name == $"{nameof(AssetList<int>)}`1"
+					|| genericInstanceTypeSignature.GenericType.Name == $"{nameof(AccessListBase<int>)}`1");
 			}
 		}
 
@@ -319,6 +344,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				FieldDefinition cacheField = declaringType
 					.AddField(propertyType, $"_{propertyName}_k__BackingField", visibility:FieldVisibility.Private)
 					.AddNullableAttributesForMaybeNull();
+				cacheField.AddDebuggerBrowsableNeverAttribute();
 				CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 
 				CilInstructionLabel afterAssignmentLabel = new();

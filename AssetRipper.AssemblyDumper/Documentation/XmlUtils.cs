@@ -16,6 +16,11 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			return System.Security.SecurityElement.Escape(originalString);
 		}
 
+		internal static string GetStringReference(Type type)
+		{
+			return $"T:{type.FullName}";
+		}
+
 		internal static string GetStringReference(TypeDefinition type)
 		{
 			return $"T:{type.FullName}";

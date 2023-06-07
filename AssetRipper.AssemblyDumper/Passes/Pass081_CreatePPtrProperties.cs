@@ -89,6 +89,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 									}
 									processor.Add(CilOpCodes.Ret);
 								}
+								//Debugger attribute
+								if (classProperty.Class.Type.IsAbstract)
+								{
+									classProperty.SpecialDefinition.AddDebuggerBrowsableNeverAttribute();//Properties in base classes are redundant in the debugger.
+								}
+								else if (classProperty.BackingField is null)
+								{
+									classProperty.SpecialDefinition.AddDebuggerBrowsableNeverAttribute();//The property will always be null.
+								}
 							}
 						}
 						else if (originalPropertySignature.IsPPtrList(out pptrType, out parameterType))
@@ -109,19 +118,35 @@ namespace AssetRipper.AssemblyDumper.Passes
 									InterfaceUtils.InterfacePropertyImplementation,
 									propertySignature);
 
-								CilInstructionCollection processor = classProperty.SpecialDefinition.GetMethod!.GetProcessor();
-								if (classProperty.BackingField is null)
+								//Get method
 								{
-									processor.Add(CilOpCodes.Call, emptyMethod);
+									CilInstructionCollection processor = classProperty.SpecialDefinition.GetMethod!.GetProcessor();
+									if (classProperty.BackingField is null)
+									{
+										processor.Add(CilOpCodes.Call, emptyMethod);
+									}
+									else
+									{
+										processor.Add(CilOpCodes.Ldarg_0);
+										processor.Add(CilOpCodes.Call, classProperty.Definition.GetMethod!);
+										processor.Add(CilOpCodes.Ldarg_0);
+										processor.Add(CilOpCodes.Newobj, constructor);
+									}
+									processor.Add(CilOpCodes.Ret);
+								}
+								//Debugger attribute
+								if (classProperty.Class.Type.IsAbstract)
+								{
+									classProperty.SpecialDefinition.AddDebuggerBrowsableNeverAttribute();//Properties in base classes are redundant in the debugger.
+								}
+								else if (classProperty.BackingField is null)
+								{
+									classProperty.SpecialDefinition.AddDebuggerBrowsableNeverAttribute();//The list will always be empty.
 								}
 								else
 								{
-									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Call, classProperty.Definition.GetMethod!);
-									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Newobj, constructor);
+									classProperty.SpecialDefinition.AddDebuggerBrowsableRootHiddenAttribute();//Only show the list contents.
 								}
-								processor.Add(CilOpCodes.Ret);
 							}
 						}
 					}
