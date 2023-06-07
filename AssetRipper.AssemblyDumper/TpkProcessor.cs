@@ -85,6 +85,10 @@ namespace AssetRipper.AssemblyDumper
 				{
 					dict.Add(current, current.StripType());
 				}
+				else if (current.Type != previous.Type)
+				{
+					dict.Add(current, current.StripTypeNumber());
+				}
 				else
 				{
 					dict.Add(current, current);

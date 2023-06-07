@@ -9,6 +9,11 @@ namespace AssetRipper.AssemblyDumper
 			return new UnityVersion(version.Major, version.Minor, version.Build);
 		}
 
+		public static UnityVersion StripTypeNumber(this UnityVersion version)
+		{
+			return new UnityVersion(version.Major, version.Minor, version.Build, version.Type);
+		}
+
 		public static string ToCleanString(this UnityVersion version, char separator)
 		{
 			if (version.Type == UnityVersionType.Alpha && version.TypeNumber == 0)
