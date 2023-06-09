@@ -17,11 +17,6 @@ namespace AssetRipper.AssemblyDumper.Documentation
 						( Pass507_InjectedProperties.TargetSceneName , "The scene this asset references." ),
 					}
 				},
-				{ 28 , new()
-					{
-						( Pass507_InjectedProperties.SpriteInformationName , "The sprites and atlases that reference this texture." ),
-					}
-				},
 				{ 4 , new()
 					{
 						( "RootOrder_C4" , $"The index of this {SeeXmlTagGenerator.MakeCRefForClassInterface(4)} in its father's children. If a transform has no father, its root order should be 0." ),
