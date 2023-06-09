@@ -2,6 +2,7 @@
 using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
+using AssetRipper.AssemblyDumper.Documentation;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -55,7 +56,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 					field)
 				.GetMethod!.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 
-			Console.WriteLine($"\t{SharedState.Instance.SourceVersions.Length} source versions.");
+			int numberOfVersions = SharedState.Instance.SourceVersions.Length;
+			DocumentationHandler.AddTypeDefinitionLine(newTypeDef, "Type Trees are used in the AssetRipper source generation.");
+			DocumentationHandler.AddTypeDefinitionLine(newTypeDef, $"This data is sourced from {numberOfVersions} versions of Unity.");
+			DocumentationHandler.AddTypeDefinitionLine(newTypeDef, $"See: {SeeXmlTagGenerator.MakeHRef(@"https://github.com/AssetRipper/TypeTreeDumps")}");
+
+			Console.WriteLine($"\t{numberOfVersions} source versions.");
 		}
 	}
 }
