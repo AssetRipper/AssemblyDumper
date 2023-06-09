@@ -168,10 +168,6 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass206_BoneWeights4ExplicitConversions.DoPass();
 			}
-			using (new TimingCookie("Pass 250: TextAsset FileExtension Property"))
-			{
-				Pass250_TextAssetFileExtension.DoPass();
-			}
 			using (new TimingCookie("Pass 300: Has Name Interface"))
 			{
 				Pass300_HasNameInterface.DoPass();
@@ -179,10 +175,6 @@ namespace AssetRipper.AssemblyDumper
 			using (new TimingCookie("Pass 301: Has Hide Flags Interface"))
 			{
 				Pass301_HasHideFlagsInterface.DoPass();
-			}
-			using (new TimingCookie("Pass 302: Has Enabled Interface"))
-			{
-				Pass302_HasEnabledInterface.DoPass();
 			}
 			using (new TimingCookie("Pass 400: IEquatable Interface"))
 			{
