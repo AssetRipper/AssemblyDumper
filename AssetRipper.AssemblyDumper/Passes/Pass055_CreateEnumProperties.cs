@@ -61,19 +61,32 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static bool TryGetEnumFullName(this InterfaceProperty interfaceProperty, [NotNullWhen(true)] out string? fullName)
 		{
+			interfaceProperty.TryGetEnumFullNameFromHistory(out string? metadata);
 			if (interfaceProperty.TryGetOverridenEnumFullName(out string? overriden))
 			{
-				fullName = overriden;
+				fullName = metadata != overriden
+					? overriden
+					: throw new Exception($"{interfaceProperty.Group.Name}.{interfaceProperty.Name} did not need to be overriden.");
 			}
-			else if (interfaceProperty.History is not null && interfaceProperty.History.TypeFullName.Count == 1)
+			else
+			{
+				fullName = metadata;
+			}
+			return fullName is not null;
+		}
+
+		private static bool TryGetEnumFullNameFromHistory(this InterfaceProperty interfaceProperty, [NotNullWhen(true)] out string? fullName)
+		{
+			if (interfaceProperty.History is not null && interfaceProperty.History.TypeFullName.Count == 1)
 			{
 				fullName = interfaceProperty.History.TypeFullName[0].Value.ToString();
+				return true;
 			}
 			else
 			{
 				fullName = null;
+				return false;
 			}
-			return fullName is not null;
 		}
 
 		private static bool TryGetOverridenEnumFullName(this InterfaceProperty interfaceProperty, out string? fullName)
@@ -88,11 +101,25 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				ClassGroup classGroup => classGroup.ID switch
 				{
-					1 when interfaceProperty.Name is "StaticEditorFlags_C1" => "UnityEditor.StaticEditorFlags",
+					1 => interfaceProperty.Name switch
+					{
+						"StaticEditorFlags_C1" => "UnityEditor.StaticEditorFlags",
+						_ => null,
+					},
+					11 => interfaceProperty.Name switch
+					{
+						"Default_Speaker_Mode_C11" => "UnityEngine.AudioSpeakerMode",
+						_ => null,
+					},
 					28 => interfaceProperty.Name switch
 					{
 						"ColorSpace_C28" => "UnityEngine.ColorSpace",
 						"LightmapFormat_C28" => "UnityEditor.TextureUsageMode",
+						_ => null,
+					},
+					83 => interfaceProperty.Name switch
+					{
+						"CompressionFormat_C83" => "UnityEngine.AudioCompressionFormat",
 						_ => null,
 					},
 					117 => interfaceProperty.Name switch
@@ -115,6 +142,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 						"UsageMode_C188" => "UnityEditor.TextureUsageMode",
 						_ => null,
 					},
+					206 => interfaceProperty.Name switch
+					{
+						"BlendType_C206_Int32" => "UnityEditor.Animations.BlendTreeType",
+						"BlendType_C206_UInt32" => "UnityEditor.Animations.BlendTreeType",
+						_ => null,
+					},
 					1006 => interfaceProperty.Name switch
 					{
 						"Alignment_C1006" => "UnityEngine.SpriteAlignment",
@@ -126,9 +159,43 @@ namespace AssetRipper.AssemblyDumper.Passes
 				},
 				SubclassGroup subclassGroup => subclassGroup.Name switch
 				{
-					"SubMesh" when interfaceProperty.Name is "Topology" or "IsTriStrip" => "UnityEngine.MeshTopology",
-					"TextureImporterBumpMapSettings" when interfaceProperty.Name is "NormalMapFilter" => "UnityEditor.TextureImporterNormalFilter",
-					"TextureImporterMipMapSettings" when interfaceProperty.Name is "MipMapMode" => "UnityEditor.TextureImporterMipFilter",
+					"AnimationCurve_Single" or "AnimationCurve_Vector3f" or "AnimationCurve_Quaternionf" => interfaceProperty.Name switch
+					{
+						"PreInfinity" => "Injected.CurveLoopTypes",
+						"PostInfinity" => "Injected.CurveLoopTypes",
+						"RotationOrder" => "UnityEngine.RotationOrder",
+						_ => null,
+					},
+					"BlendTreeNodeConstant" => interfaceProperty.Name switch
+					{
+						"BlendType" => "UnityEditor.Animations.BlendTreeType",
+						_ => null,
+					},
+					"ConditionConstant" => interfaceProperty.Name switch
+					{
+						"ConditionMode" => "UnityEditor.Animations.AnimatorConditionMode",
+						_ => null,
+					},
+					"Keyframe_Single" or "Keyframe_Vector3f" or "Keyframe_Quaternionf" => interfaceProperty.Name switch
+					{
+						"WeightedMode" => "UnityEngine.WeightedMode",
+						_ => null,
+					},
+					"SubMesh" => interfaceProperty.Name switch
+					{
+						"Topology" or "IsTriStrip" => "UnityEngine.MeshTopology",
+						_ => null,
+					},
+					"TextureImporterBumpMapSettings" => interfaceProperty.Name switch
+					{
+						"NormalMapFilter" => "UnityEditor.TextureImporterNormalFilter",
+						_ => null,
+					},
+					"TextureImporterMipMapSettings" => interfaceProperty.Name switch
+					{
+						"MipMapMode" => "UnityEditor.TextureImporterMipFilter",
+						_ => null,
+					},
 					"TextureSettings" => interfaceProperty.Name switch
 					{
 						"FilterMode" => "UnityEngine.FilterMode",
@@ -150,8 +217,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 						"StandardShaderQuality" => "UnityEditor.Rendering.ShaderQuality",
 						_ => null,
 					},
-					"TierSettings" when interfaceProperty.Name is "Tier" => "UnityEngine.Rendering.GraphicsTier",
-					"TransitionConstant" when interfaceProperty.Name is "InterruptionSource" => "UnityEditor.Animations.TransitionInterruptionSource",
+					"TierSettings" => interfaceProperty.Name switch
+					{
+						"Tier" => "UnityEngine.Rendering.GraphicsTier",
+						_ => null,
+					},
+					"TransitionConstant" => interfaceProperty.Name switch
+					{
+						"InterruptionSource" => "UnityEditor.Animations.TransitionInterruptionSource",
+						_ => null,
+					},
 					"UVModule" => interfaceProperty.Name switch
 					{
 						"AnimationType" => "UnityEngine.ParticleSystemAnimationType",
@@ -160,8 +235,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 						"TimeMode" => "UnityEngine.ParticleSystemAnimationTimeMode",
 						_ => null,
 					},
-					"ValueConstant" when interfaceProperty.Name is "Type" => "UnityEngine.AnimatorControllerParameterType",
-					"VariantInfo" when interfaceProperty.Name is "PassType" => "UnityEngine.Rendering.PassType",
+					"ValueConstant" => interfaceProperty.Name switch
+					{
+						"Type" => "UnityEngine.AnimatorControllerParameterType",
+						_ => null,
+					},
+					"VariantInfo" => interfaceProperty.Name switch
+					{
+						"PassType" => "UnityEngine.Rendering.PassType",
+						_ => null,
+					},
 					_ => null,
 				},
 				_ => throw new(),

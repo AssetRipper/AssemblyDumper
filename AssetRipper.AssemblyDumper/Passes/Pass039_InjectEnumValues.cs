@@ -4,7 +4,23 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	internal static class Pass039_InjectEnumValues
 	{
-		private static readonly Dictionary<string, List<(string, long, string)>> injectedValues = new()
+		private static readonly List<InjectedTypeData> injectedTypes = new()
+		{
+			new()
+			{
+				Name = "CurveLoopTypes",
+				Summary = "Enum for AnimationCurve.PreInfinity and AnimationCurve.PostInfinity",
+				Members = new()
+				{
+					("Constant", 0, ""),
+					("Cycle", 1, ""),
+					("CycleWithOffset", 2, ""),
+					("Oscillate", 3, ""),
+					("Linear", 4, ""),
+				},
+			},
+		};
+		private static readonly Dictionary<string, List<(string, long, string?)>> injectedValues = new()
 		{
 			{ "UnityEngine.TextureFormat",
 				new()
@@ -53,10 +69,34 @@ namespace AssetRipper.AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Dictionary<string, EnumHistory> dictionary = SharedState.Instance.HistoryFile.Enums;
-			foreach ((string fullName, List<(string, long, string)> list) in injectedValues)
+			foreach (InjectedTypeData injectedTypeData in injectedTypes)
+			{
+				EnumHistory history = new();
+				history.Name = injectedTypeData.Name;
+				history.FullName = $"Injected.{injectedTypeData.Name}";
+				history.IsFlagsEnum = injectedTypeData.IsFlags;
+				history.ElementType.Add(UnityVersion.MinVersion, injectedTypeData.ElementType);
+				history.NativeName.Add(UnityVersion.MinVersion, null);
+				history.DocumentationString.Add(UnityVersion.MinVersion, injectedTypeData.Summary);
+				history.ObsoleteMessage.Add(UnityVersion.MinVersion, null);
+				history.Exists.Add(UnityVersion.MinVersion, true);
+				foreach ((string fieldName, long value, string? description) in injectedTypeData.Members)
+				{
+					EnumMemberHistory member = new();
+					member.Name = fieldName;
+					member.NativeName.Add(UnityVersion.MinVersion, null);
+					member.Value.Add(UnityVersion.MinVersion, value);
+					member.DocumentationString.Add(UnityVersion.MinVersion, string.IsNullOrEmpty(description) ? null : description);
+					member.ObsoleteMessage.Add(UnityVersion.MinVersion, null);
+					member.Exists.Add(UnityVersion.MinVersion, true);
+					history.Members.Add(fieldName, member);
+				}
+				dictionary.Add(history.FullName, history);
+			}
+			foreach ((string fullName, List<(string, long, string?)> list) in injectedValues)
 			{
 				EnumHistory history = dictionary[fullName];
-				foreach ((string fieldName, long value, string description) in list)
+				foreach ((string fieldName, long value, string? description) in list)
 				{
 					if (history.Members.ContainsKey(fieldName))
 					{
@@ -89,6 +129,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 					}
 				}
 			}
+		}
+
+		private record class InjectedTypeData
+		{
+			public required string Name { get; init; }
+			public string? Summary { get; init; }
+			public bool IsFlags { get; init; } = false;
+			public ElementType ElementType { get; init; } = ElementType.I4;
+			public required List<(string, long, string?)> Members { get; init; }
 		}
 	}
 }
