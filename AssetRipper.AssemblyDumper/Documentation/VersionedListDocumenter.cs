@@ -139,7 +139,7 @@ internal static class VersionedListDocumenter
 			{
 				foreach ((StringWrapper summary, LinkedList<UnityVersionRange> list) in summaries)
 				{
-					yield return $"{prefix}{list.GetUnionedRanges().GetString()}";
+					yield return $"{prefix}{list.GetUnionedRanges().GetString(SharedState.Instance.MinVersion)}";
 					yield return summary.String ?? "null";
 				}
 			}

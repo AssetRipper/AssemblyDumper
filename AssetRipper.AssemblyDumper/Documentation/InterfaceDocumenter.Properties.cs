@@ -24,7 +24,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 
 				if (interfaceProperty.HasMethod is not null)
 				{
-					string versionString = interfaceProperty.PresentRange.GetString();
+					string versionString = interfaceProperty.PresentRange.GetString(group.MinimumVersion);
 					DocumentationHandler.AddMethodDefinitionLine(interfaceProperty.HasMethod, versionString);
 					AddDocumentationLine(interfaceProperty, versionString);
 				}

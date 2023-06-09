@@ -21,10 +21,10 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			return unionedRanges;
 		}
 
-		public static string GetString(this IReadOnlyList<UnityVersionRange> ranges)
+		public static string GetString(this IReadOnlyList<UnityVersionRange> ranges, UnityVersion minimumVersion)
 		{
 			StringBuilder sb = new();
-			sb.AppendUnityVersionRanges(ranges);
+			sb.AppendUnityVersionRanges(ranges, minimumVersion);
 			return sb.ToString();
 		}
 	}

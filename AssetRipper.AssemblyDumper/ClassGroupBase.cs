@@ -14,6 +14,7 @@ namespace AssetRipper.AssemblyDumper
 		public abstract int ID { get; }
 		public abstract bool UniformlyNamed { get; }
 		public virtual bool IsPPtr => false;
+		public UnityVersion MinimumVersion => Instances[0].VersionRange.Start;
 
 		protected ClassGroupBase(TypeDefinition @interface)
 		{

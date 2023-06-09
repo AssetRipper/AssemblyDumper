@@ -18,7 +18,7 @@
 						.Where(i => i.Type.IsAbstract)
 						.Select(i => i.VersionRange)
 						.GetUnionedRanges()
-						.GetString();
+						.GetString(SharedState.Instance.MinVersion);
 					DocumentationHandler.AddTypeDefinitionLine(group.Interface, $"Abstract: {rangeString}");
 				}
 			}
@@ -43,7 +43,7 @@
 			return group.Instances
 				.Select(instance => instance.VersionRange)
 				.GetUnionedRanges()
-				.GetString();
+				.GetString(SharedState.Instance.MinVersion);
 		}
 
 		private static string GetSerializedVersionString(ClassGroupBase group)

@@ -12,6 +12,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			VersionedListDocumenter.AddSet(type, history.DocumentationString, "Summary: ");
 			VersionedListDocumenter.AddList(type, history.ObsoleteMessage, "Obsolete Message: ");
 
+			UnityVersion minimumVersion = history.Exists[0].Key;
 			foreach ((string memberName, EnumMemberHistory memberHistory) in history.Members)
 			{
 				if (memberHistory.Value.Count == 1)
@@ -19,7 +20,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 					FieldDefinition field = type.GetFieldByName(memberName);
 					VersionedListDocumenter.AddSet(field, memberHistory.DocumentationString, "Summary: ");
 					VersionedListDocumenter.AddList(field, memberHistory.ObsoleteMessage, "Obsolete Message: ");
-					DocumentationHandler.AddFieldDefinitionLine(field, memberHistory.GetVersionRange().GetUnionedRanges().GetString());
+					DocumentationHandler.AddFieldDefinitionLine(field, memberHistory.GetVersionRange().GetUnionedRanges().GetString(minimumVersion));
 				}
 				else
 				{
@@ -33,13 +34,14 @@ namespace AssetRipper.AssemblyDumper.Documentation
 							VersionedListDocumenter.AddSet(field, memberHistory.DocumentationString, "Summary: ");
 							VersionedListDocumenter.AddList(field, memberHistory.ObsoleteMessage, "Obsolete Message: ");
 							DocumentationHandler.AddFieldDefinitionLine(field,
-								GetVersionRange(memberHistory.Exists, memberHistory.Value, value).GetUnionedRanges().GetString());
+								GetVersionRange(memberHistory.Exists, memberHistory.Value, value).GetUnionedRanges().GetString(minimumVersion));
 						}
 					}
 				}
 			}
 
-			DocumentationHandler.AddTypeDefinitionLine(type, history.GetVersionRange().GetUnionedRanges().GetString());
+			//SharedState.Instance.MinVersion isn't used here because enums don't have the version type stripped.
+			DocumentationHandler.AddTypeDefinitionLine(type, history.GetVersionRange().GetUnionedRanges().GetString(SharedState.Instance.SourceVersions[0]));
 		}
 
 		private static string GetEnumFieldName(string name, long value)
