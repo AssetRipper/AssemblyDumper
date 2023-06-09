@@ -89,14 +89,32 @@ namespace AssetRipper.AssemblyDumper.Passes
 				ClassGroup classGroup => classGroup.ID switch
 				{
 					1 when interfaceProperty.Name is "StaticEditorFlags_C1" => "UnityEditor.StaticEditorFlags",
+					28 => interfaceProperty.Name switch
+					{
+						"ColorSpace_C28" => "UnityEngine.ColorSpace",
+						"LightmapFormat_C28" => "UnityEditor.TextureUsageMode",
+						_ => null,
+					},
 					117 => interfaceProperty.Name switch
 					{
 						"ColorSpace_C117" => "UnityEngine.ColorSpace",
 						"Dimension_C117" => "UnityEngine.Rendering.TextureDimension",
 						"LightmapFormat_C117" => "UnityEditor.TextureUsageMode",
+						"UsageMode_C117" => "UnityEditor.TextureUsageMode",
 						_ => null,
 					},
-					187 when interfaceProperty.Name is "ColorSpace_C187" => "UnityEngine.ColorSpace",
+					187 => interfaceProperty.Name switch
+					{
+						"ColorSpace_C187" => "UnityEngine.ColorSpace",
+						"UsageMode_C187" => "UnityEditor.TextureUsageMode",
+						_ => null,
+					},
+					188 => interfaceProperty.Name switch
+					{
+						"ColorSpace_C188" => "UnityEngine.ColorSpace",
+						"UsageMode_C188" => "UnityEditor.TextureUsageMode",
+						_ => null,
+					},
 					1006 => interfaceProperty.Name switch
 					{
 						"Alignment_C1006" => "UnityEngine.SpriteAlignment",
