@@ -87,10 +87,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 					{
 						property.AddDebuggerBrowsableNeverAttribute();//Dummy properties should not be visible in the debugger.
 					}
-					else if (IsAssetListOrAccessListBase(propertyTypeSignature))
-					{
-						property.AddDebuggerBrowsableRootHiddenAttribute();//AssetList and AccessListBase properties should only show their contents in the debugger.
-					}
 				}
 			}
 			static bool IsAssetListOrAccessListBase(TypeSignature typeSignature)

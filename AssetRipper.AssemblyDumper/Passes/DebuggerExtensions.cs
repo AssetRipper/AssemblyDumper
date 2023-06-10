@@ -36,22 +36,6 @@ internal static class DebuggerExtensions
 			(SharedState.Instance.Importer.Int32, (int)DebuggerBrowsableState.Never));
 	}
 
-	public static CustomAttribute AddDebuggerBrowsableRootHiddenAttribute(this FieldDefinition field)
-	{
-		return field.AddDebuggerBrowsableRootHiddenAttributeInternal();
-	}
-
-	public static CustomAttribute AddDebuggerBrowsableRootHiddenAttribute(this PropertyDefinition field)
-	{
-		return field.AddDebuggerBrowsableRootHiddenAttributeInternal();
-	}
-
-	private static CustomAttribute AddDebuggerBrowsableRootHiddenAttributeInternal(this IHasCustomAttribute hasCustomAttribute)
-	{
-		return hasCustomAttribute.AddCustomAttribute(DebuggerBrowsableConstructor,
-			(SharedState.Instance.Importer.Int32, (int)DebuggerBrowsableState.RootHidden));
-	}
-
 	public static CustomAttribute AddDebuggerDisplayAttribute(this TypeDefinition type, string value)
 	{
 		return type.AddCustomAttribute(SharedState.Instance.Importer.ImportConstructor<DebuggerDisplayAttribute>(1),

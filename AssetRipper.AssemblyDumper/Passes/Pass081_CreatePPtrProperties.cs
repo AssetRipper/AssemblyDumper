@@ -143,10 +143,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 								{
 									classProperty.SpecialDefinition.AddDebuggerBrowsableNeverAttribute();//The list will always be empty.
 								}
-								else
-								{
-									classProperty.SpecialDefinition.AddDebuggerBrowsableRootHiddenAttribute();//Only show the list contents.
-								}
 							}
 						}
 					}
