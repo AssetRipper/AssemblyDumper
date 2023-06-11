@@ -99,9 +99,9 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			return instance.Class.EditorRootNode?.SubNodes.SingleOrDefault(n => n.Name == fieldName);
 		}
 
-		private static string GetMetaFlagString(uint flag)
+		private static string GetMetaFlagString(TransferMetaFlags flag)
 		{
-			return string.Join(" | ", ((TransferMetaFlags)flag).Split());
+			return string.Join(" | ", flag.Split());
 		}
 
 		private static void AddDocumentationFromHistory(GeneratedClassInstance instance)

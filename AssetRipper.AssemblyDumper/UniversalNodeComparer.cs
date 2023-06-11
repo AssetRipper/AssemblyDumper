@@ -1,8 +1,12 @@
-﻿namespace AssetRipper.AssemblyDumper
+﻿using AssetRipper.IO.Files.SerializedFiles;
+
+namespace AssetRipper.AssemblyDumper
 {
 	internal class UniversalNodeComparer
 	{
-		private const uint MetaMask = 0x204100;
+		private const TransferMetaFlags MetaMask = TransferMetaFlags.TreatIntegerValueAsBoolean
+			| TransferMetaFlags.AlignBytes
+			| TransferMetaFlags.TransferUsingFlowMappingStyle;
 
 		public static bool Equals(UniversalNode? left, UniversalNode? right, bool root)
 		{

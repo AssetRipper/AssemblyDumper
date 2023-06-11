@@ -204,10 +204,6 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass502_FixGuidAndHashYaml.DoPass();
 			}
-			using (new TimingCookie("Pass 503: Fixing Utf8String"))
-			{
-				Pass503_FixUtf8String.DoPass();
-			}
 			using (new TimingCookie("Pass 504: Fixing Shader Name"))
 			{
 				Pass504_FixShaderName.DoPass();

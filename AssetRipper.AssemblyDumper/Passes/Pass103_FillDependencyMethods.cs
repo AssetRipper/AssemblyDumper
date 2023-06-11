@@ -8,6 +8,7 @@ using AssetRipper.Assets;
 using AssetRipper.Assets.Export.Dependencies;
 using AssetRipper.Assets.Generics;
 using AssetRipper.Assets.Metadata;
+using AssetRipper.Primitives;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -147,6 +148,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				return true;
 			}
+			else if (typeSignature is CorLibTypeSignature or SzArrayTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
+			{
+				nonDependentTypes.Add(typeSignature);
+				method = null;
+				return false;
+			}
 			else if (typeSignature is TypeDefOrRefSignature typeDefOrRefSignature)
 			{
 				TypeDefinition type = (TypeDefinition)typeDefOrRefSignature.Type;
@@ -203,12 +210,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 				methodDictionary.Add(typeDefOrRefSignature, method);
 				return true;
-			}
-			else if (typeSignature is CorLibTypeSignature or SzArrayTypeSignature)
-			{
-				nonDependentTypes.Add(typeSignature);
-				method = null;
-				return false;
 			}
 
 			GenericInstanceTypeSignature genericType = (GenericInstanceTypeSignature)typeSignature;

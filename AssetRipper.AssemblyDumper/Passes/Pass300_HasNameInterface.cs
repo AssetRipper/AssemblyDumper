@@ -1,7 +1,7 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Assets.Interfaces;
-using AssetRipper.Assets.Utils;
+using AssetRipper.Primitives;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -10,11 +10,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private const string Utf8PropertyName = "Name";
 		private const string StringPropertyName = nameof(IHasNameString.NameString);
 
-		private static string Utf8StringName => Pass002_RenameSubnodes.Utf8StringName;
+		private const string Utf8StringName = Pass002_RenameSubnodes.Utf8StringName;
 
 		public static void DoPass()
 		{
-			TypeSignature utf8StringSignature = SharedState.Instance.SubclassGroups[Utf8StringName].Instances.Single().Type.ToTypeSignature();
+			TypeSignature utf8StringSignature = SharedState.Instance.Importer.ImportType<Utf8String>().ToTypeSignature();
 			TypeDefinition hasNameInterface = MakeHasNameInterface(utf8StringSignature);
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
@@ -25,7 +25,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static TypeDefinition MakeHasNameInterface(TypeSignature utf8StringSignature)
 		{
 			TypeDefinition @interface = InterfaceCreator.CreateEmptyInterface(SharedState.Instance.Module, SharedState.InterfacesNamespace, "IHasName");
-			@interface.AddGetterProperty(Utf8PropertyName, InterfaceUtils.InterfacePropertyDeclaration, utf8StringSignature);
+			@interface.AddFullProperty(Utf8PropertyName, InterfaceUtils.InterfacePropertyDeclaration, utf8StringSignature);
 			@interface.AddInterfaceImplementation<IHasNameString>(SharedState.Instance.Importer);
 			return @interface;
 		}
@@ -66,7 +66,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			if (!type.Properties.Any(p => p.Name == Utf8PropertyName))
 			{
-				type.ImplementGetterProperty(Utf8PropertyName, InterfaceUtils.InterfacePropertyImplementation, utf8StringSignature, field);
+				type.ImplementFullProperty(Utf8PropertyName, InterfaceUtils.InterfacePropertyImplementation, utf8StringSignature, field);
 			}
 			if (!type.Properties.Any(p => p.Name == StringPropertyName))
 			{
@@ -78,20 +78,46 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			PropertyDefinition property = type.AddFullProperty(propertyName, methodAttributes, SharedState.Instance.Importer.String);
 
-			IMethodDefOrRef getRef = SharedState.Instance.Importer.ImportMethod<Utf8StringBase>(m => m.Name == $"get_{nameof(Utf8StringBase.String)}");
-			CilInstructionCollection getProcessor = property.GetMethod!.CilMethodBody!.Instructions;
-			getProcessor.Add(CilOpCodes.Ldarg_0);
-			getProcessor.Add(CilOpCodes.Ldfld, field);
-			getProcessor.Add(CilOpCodes.Call, getRef);
-			getProcessor.Add(CilOpCodes.Ret);
+			//Get method
+			{
+				IMethodDefOrRef getRef = SharedState.Instance.Importer.ImportMethod<Utf8String>(m => m.Name == $"get_{nameof(Utf8String.String)}");
 
-			IMethodDefOrRef setRef = SharedState.Instance.Importer.ImportMethod<Utf8StringBase>(m => m.Name == $"set_{nameof(Utf8StringBase.String)}");
-			CilInstructionCollection setProcessor = property.SetMethod!.CilMethodBody!.Instructions;
-			setProcessor.Add(CilOpCodes.Ldarg_0);
-			setProcessor.Add(CilOpCodes.Ldfld, field);
-			setProcessor.Add(CilOpCodes.Ldarg_1);
-			setProcessor.Add(CilOpCodes.Call, setRef);
-			setProcessor.Add(CilOpCodes.Ret);
+				CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldfld, field);
+				processor.Add(CilOpCodes.Call, getRef);
+				processor.Add(CilOpCodes.Ret);
+			}
+
+			//Set method
+			{
+				IMethodDefOrRef equalityMethod = SharedState.Instance.Importer.ImportMethod<Utf8String>(m =>
+				{
+					return m.Name == "op_Inequality" && m.Parameters[1].ParameterType is CorLibTypeSignature { ElementType: ElementType.String };
+				});
+				IMethodDefOrRef constructor = SharedState.Instance.Importer.ImportMethod<Utf8String>(m =>
+				{
+					return m.IsConstructor && m.Parameters.Count is 1 && m.Parameters[0].ParameterType is CorLibTypeSignature { ElementType: ElementType.String };
+				});
+
+				CilInstructionCollection processor = property.SetMethod!.CilMethodBody!.Instructions;
+
+				CilInstructionLabel returnLabel = new();
+
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldfld, field);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.Add(CilOpCodes.Call, equalityMethod);
+				processor.Add(CilOpCodes.Brfalse_S, returnLabel);
+
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.Add(CilOpCodes.Newobj, constructor);
+				processor.Add(CilOpCodes.Stfld, field);
+
+				returnLabel.Instruction = processor.Add(CilOpCodes.Nop);
+				processor.Add(CilOpCodes.Ret);
+			}
 
 			return property;
 		}

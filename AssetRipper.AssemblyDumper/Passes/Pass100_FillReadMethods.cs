@@ -6,6 +6,7 @@ using AssetRipper.AssemblyDumper.InjectedTypes;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Generics;
 using AssetRipper.IO.Endian;
+using AssetRipper.Primitives;
 using System.Diagnostics;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -98,6 +99,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			primitiveReadMethods.Add(ElementType.U8, SharedState.Instance.Importer.ImportMethod(typeof(EndianSpanReader), m => m.Name == nameof(EndianSpanReader.ReadUInt64)));
 			primitiveReadMethods.Add(ElementType.R4, SharedState.Instance.Importer.ImportMethod(typeof(EndianSpanReader), m => m.Name == nameof(EndianSpanReader.ReadSingle)));
 			primitiveReadMethods.Add(ElementType.R8, SharedState.Instance.Importer.ImportMethod(typeof(EndianSpanReader), m => m.Name == nameof(EndianSpanReader.ReadDouble)));
+			primitiveReadMethods.Add(ElementType.String, SharedState.Instance.Importer.ImportMethod(typeof(EndianSpanReader), m => m.Name == nameof(EndianSpanReader.ReadUtf8String)));
 
 			readInt32Method = primitiveReadMethods[ElementType.I4];
 
@@ -818,7 +820,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 		/// </summary>
 		/// <param name="type"></param>
 		/// <returns></returns>
-		private static bool IsArrayOrPrimitive(this TypeSignature type) => type is SzArrayTypeSignature or CorLibTypeSignature;
+		private static bool IsArrayOrPrimitive(this TypeSignature type)
+		{
+			return type is SzArrayTypeSignature or CorLibTypeSignature or TypeDefOrRefSignature { Namespace:"AssetRipper.Primitives", Name:nameof(Utf8String) };
+		}
 
 		private static bool IsTypeDefinition(this TypeSignature type)
 		{
@@ -841,6 +846,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				NodeType.UInt64 => primitiveReadMethods[ElementType.U8],
 				NodeType.Single => primitiveReadMethods[ElementType.R4],
 				NodeType.Double => primitiveReadMethods[ElementType.R8],
+				NodeType.String => primitiveReadMethods[ElementType.String],
 				_ => throw new NotSupportedException(node.TypeName),
 			};
 		}

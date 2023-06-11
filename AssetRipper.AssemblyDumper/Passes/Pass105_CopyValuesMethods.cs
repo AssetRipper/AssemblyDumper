@@ -7,6 +7,7 @@ using AssetRipper.Assets;
 using AssetRipper.Assets.Cloning;
 using AssetRipper.Assets.Generics;
 using AssetRipper.Assets.Metadata;
+using AssetRipper.Primitives;
 using System.Diagnostics;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -36,6 +37,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static IMethodDefOrRef? accessListBaseSetCapacity;
 		private static IMethodDefOrRef? accessListBaseGetItem;
 		private static IMethodDefOrRef? accessListBaseAddNew;
+		private static IMethodDefOrRef? accessListBaseAdd;
 
 		private static ITypeDefOrRef? accessDictionaryBase;
 		private static IMethodDefOrRef? accessDictionaryBaseGetCount;
@@ -60,6 +62,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			accessListBaseSetCapacity = SharedState.Instance.Importer.ImportMethod(typeof(AccessListBase<>), m => m.Name == $"set_{nameof(AccessListBase<int>.Capacity)}");
 			accessListBaseGetItem = SharedState.Instance.Importer.ImportMethod(typeof(AccessListBase<>), m => m.Name == "get_Item");
 			accessListBaseAddNew = SharedState.Instance.Importer.ImportMethod(typeof(AccessListBase<>), m => m.Name == nameof(AccessListBase<int>.AddNew));
+			accessListBaseAdd = SharedState.Instance.Importer.ImportMethod(typeof(AccessListBase<>), m => m.Name == nameof(AccessListBase<int>.Add));
 
 			accessDictionaryBase = SharedState.Instance.Importer.ImportType(typeof(AccessDictionaryBase<,>));
 			accessDictionaryBaseGetCount = SharedState.Instance.Importer.ImportMethod(typeof(AccessDictionaryBase<,>), m => m.Name == $"get_{nameof(AccessDictionaryBase<int, int>.Count)}");
@@ -311,7 +314,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						if (classProperty.BackingField is not null)
 						{
 							TypeSignature fieldTypeSignature = classProperty.BackingField.Signature!.FieldType;
-							if (fieldTypeSignature is CorLibTypeSignature)
+							if (fieldTypeSignature is CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
 							{
 								processor.Add(CilOpCodes.Ldarg_0);
 								processor.Add(CilOpCodes.Ldarg_1);
@@ -524,20 +527,34 @@ namespace AssetRipper.AssemblyDumper.Passes
 									CilInstructionLabel forStartLabel = new();
 									forStartLabel.Instruction = processor.Add(CilOpCodes.Nop);
 
-									//Lists can't contain arrays or primitives
-									(IMethodDescriptor copyMethod, CopyMethodType copyMethodType) = GetOrMakeMethod(targetElementTypeSignature, sourceElementTypeSignature);
-
-									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Callvirt, MakeListAddNewMethod(targetElementTypeSignature));
-									processor.Add(CilOpCodes.Ldarg_1);
-									processor.Add(CilOpCodes.Ldloc, iLocal);
-									processor.Add(CilOpCodes.Callvirt, MakeListGetItemMethod(sourceElementTypeSignature));
-									if (HasConverter(copyMethodType))
+									if (targetElementTypeSignature is CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
 									{
-										processor.Add(CilOpCodes.Ldarg_2);
-										needsConverter = true;
+										processor.Add(CilOpCodes.Ldarg_0);
+										processor.Add(CilOpCodes.Ldarg_1);
+										processor.Add(CilOpCodes.Ldloc, iLocal);
+										processor.Add(CilOpCodes.Callvirt, MakeListGetItemMethod(sourceElementTypeSignature));
+										processor.Add(CilOpCodes.Callvirt, MakeListAddMethod(targetElementTypeSignature));
 									}
-									processor.Add(GetCallOpCode(copyMethodType), copyMethod);
+									else if (targetElementTypeSignature is SzArrayTypeSignature keyArrayTypeSignature)
+									{
+										throw new NotSupportedException();
+									}
+									else
+									{
+										(IMethodDescriptor copyMethod, CopyMethodType copyMethodType) = GetOrMakeMethod(targetElementTypeSignature, sourceElementTypeSignature);
+
+										processor.Add(CilOpCodes.Ldarg_0);
+										processor.Add(CilOpCodes.Callvirt, MakeListAddNewMethod(targetElementTypeSignature));
+										processor.Add(CilOpCodes.Ldarg_1);
+										processor.Add(CilOpCodes.Ldloc, iLocal);
+										processor.Add(CilOpCodes.Callvirt, MakeListGetItemMethod(sourceElementTypeSignature));
+										if (HasConverter(copyMethodType))
+										{
+											processor.Add(CilOpCodes.Ldarg_2);
+											needsConverter = true;
+										}
+										processor.Add(GetCallOpCode(copyMethodType), copyMethod);
+									}
 
 									processor.Add(CilOpCodes.Ldloc, iLocal);
 									processor.Add(CilOpCodes.Ldc_I4_1);
@@ -573,7 +590,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 									processor.Add(CilOpCodes.Cgt_Un);
 									processor.Add(CilOpCodes.Brfalse, returnLabel);
 
-									if (targetKeyTypeSignature is CorLibTypeSignature)
+									if (targetKeyTypeSignature is CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
 									{
 										processor.Add(CilOpCodes.Ldarg_0);
 										processor.Add(CilOpCodes.Ldarg_1);
@@ -603,7 +620,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 										processor.Add(GetCallOpCode(keyCopyMethodType), keyCopyMethod);
 									}
 
-									if (targetValueTypeSignature is CorLibTypeSignature)
+									if (targetValueTypeSignature is CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
 									{
 										processor.Add(CilOpCodes.Ldarg_0);
 										processor.Add(CilOpCodes.Ldarg_1);
@@ -725,6 +742,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 				accessListBaseAddNew!);
 		}
 
+		private static IMethodDefOrRef MakeListAddMethod(TypeSignature elementTypeSignature)
+		{
+			return MethodUtils.MakeMethodOnGenericType(
+				SharedState.Instance.Importer,
+				accessListBase!.MakeGenericInstanceType(elementTypeSignature),
+				accessListBaseAdd!);
+		}
+
 		private static IMethodDefOrRef MakePairGetKeyMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
@@ -767,12 +792,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			TypeSignature elementType = arrayTypeSignature.BaseType;
 			if (elementType is SzArrayTypeSignature nestedArray)
 			{
-				Debug.Assert(nestedArray.BaseType is CorLibTypeSignature);
+				Debug.Assert(nestedArray.BaseType is CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) });
 				return duplicateArrayArrayMethod!.MakeGenericInstanceMethod(nestedArray.BaseType);
 			}
 			else
 			{
-				Debug.Assert(elementType is CorLibTypeSignature);
+				Debug.Assert(elementType is CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) });
 				return duplicateArrayMethod!.MakeGenericInstanceMethod(elementType);
 			}
 		}

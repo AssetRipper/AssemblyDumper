@@ -2,18 +2,18 @@
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Generics;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using AssetRipper.Primitives;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
 	internal static class Pass104_ResetMethods
 	{
+#nullable disable
+		private static IMethodDefOrRef emptyString;
+#nullable enable
 		public static void DoPass()
 		{
+			emptyString = SharedState.Instance.Importer.ImportMethod<Utf8String>(method => method.Name == $"get_{nameof(Utf8String.Empty)}");
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
 				foreach (GeneratedClassInstance instance in group.Instances)
@@ -41,11 +41,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 					}
 					else if (fieldTypeSignature is TypeDefOrRefSignature typeDefOrRefSignature)
 					{
-						TypeDefinition fieldType = (TypeDefinition)typeDefOrRefSignature.Type;
+						if (typeDefOrRefSignature is { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
+						{
+							processor.Add(CilOpCodes.Ldarg_0);
+							processor.Add(CilOpCodes.Call, emptyString);
+							processor.Add(CilOpCodes.Stfld, field);
+						}
+						else
+						{
+							TypeDefinition fieldType = (TypeDefinition)typeDefOrRefSignature.Type;
 
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Ldfld, field);
-						processor.Add(CilOpCodes.Callvirt, fieldType.GetMethodByName(nameof(UnityAssetBase.Reset)));
+							processor.Add(CilOpCodes.Ldarg_0);
+							processor.Add(CilOpCodes.Ldfld, field);
+							processor.Add(CilOpCodes.Callvirt, fieldType.GetMethodByName(nameof(UnityAssetBase.Reset)));
+						}
 					}
 					else if (fieldTypeSignature is SzArrayTypeSignature arrayTypeSignature)
 					{

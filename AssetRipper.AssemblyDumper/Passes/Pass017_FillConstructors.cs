@@ -1,5 +1,6 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.Assets.Metadata;
+using AssetRipper.Primitives;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -7,10 +8,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 #nullable disable
 		private static IMethodDefOrRef emptyArray;
+		private static IMethodDefOrRef emptyString;
 #nullable enable
 		public static void DoPass()
 		{
 			emptyArray = SharedState.Instance.Importer.ImportMethod<Array>(method => method.Name == nameof(Array.Empty));
+			emptyString = SharedState.Instance.Importer.ImportMethod<Utf8String>(method => method.Name == $"get_{nameof(Utf8String.Empty)}");
 			foreach ((int id, ClassGroup classGroup) in SharedState.Instance.ClassGroups)
 			{
 				foreach (TypeDefinition type in classGroup.Types)
@@ -110,6 +113,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					processor.Add(CilOpCodes.Ldarg_0);
 					processor.Add(CilOpCodes.Newobj, typeDef.GetDefaultConstructor());
+					processor.Add(CilOpCodes.Stfld, field);
+				}
+				else if (field.Signature.FieldType is TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
+				{
+					processor.Add(CilOpCodes.Ldarg_0);
+					processor.Add(CilOpCodes.Call, emptyString);
 					processor.Add(CilOpCodes.Stfld, field);
 				}
 				else

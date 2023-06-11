@@ -43,7 +43,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			ITypeDefOrRef unityObjectBaseDefinition = SharedState.Instance.Importer.ImportType<UnityObjectBase>();
 			ITypeDefOrRef unityAssetBaseDefinition = SharedState.Instance.Importer.ImportType<UnityAssetBase>();
-			ITypeDefOrRef utf8StringBaseDefinition = SharedState.Instance.Importer.ImportType<Utf8StringBase>();
 
 			foreach (GeneratedClassInstance instance in group.Instances)
 			{
@@ -54,7 +53,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 					instance.Type.BaseType = name switch
 					{
 						"Object" => unityObjectBaseDefinition,
-						Pass002_RenameSubnodes.Utf8StringName => utf8StringBaseDefinition,
 						_ => unityAssetBaseDefinition,
 					};
 				}

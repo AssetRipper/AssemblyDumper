@@ -1,7 +1,6 @@
 ﻿using AssetRipper.AssemblyCreationTools;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Assets;
-using AssetRipper.Assets.Utils;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -26,8 +25,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				return;
 			}
 
-			TypeDefinition? serializedShaderDefinition = parsedFormField.Signature?.FieldType.ToTypeDefOrRef() as TypeDefinition;
-			if (serializedShaderDefinition is null)
+			if (parsedFormField.Signature?.FieldType.ToTypeDefOrRef() is not TypeDefinition serializedShaderDefinition)
 			{
 				throw new NullReferenceException($"{nameof(serializedShaderDefinition)} is null");
 			}
@@ -38,17 +36,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 				throw new NullReferenceException($"{nameof(parsedFormNameField)} is null");
 			}
 
-			IMethodDefOrRef copyContentMethod = SharedState.Instance.Importer.ImportMethod<Utf8StringBase>(m => m.Name == nameof(Utf8StringBase.CopyIfNullOrEmpty));
-
 			type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ReadRelease))
-				.AddCopyString(copyContentMethod, nameField, parsedFormField, parsedFormNameField);
+				.AddCopyString(nameField, parsedFormField, parsedFormNameField);
 			type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ReadEditor))
-				.AddCopyString(copyContentMethod, nameField, parsedFormField, parsedFormNameField);
+				.AddCopyString(nameField, parsedFormField, parsedFormNameField);
 		}
 
 		private static void AddCopyString(
 			this MethodDefinition method,
-			IMethodDefOrRef copyContentMethod,
 			FieldDefinition nameField,
 			FieldDefinition parsedFormField,
 			FieldDefinition parsedFormNameField)
@@ -56,12 +51,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
 			processor.Pop();//Remove the return
 			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, nameField);
+
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldfld, parsedFormField);
 			processor.Add(CilOpCodes.Ldfld, parsedFormNameField);
-			processor.Add(CilOpCodes.Call, copyContentMethod);
-			processor.Add(CilOpCodes.Pop);
+
+			processor.Add(CilOpCodes.Stfld, nameField);
 			processor.Add(CilOpCodes.Ret);
 		}
 	}

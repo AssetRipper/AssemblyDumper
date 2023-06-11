@@ -89,12 +89,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 					}
 				}
 			}
-			static bool IsAssetListOrAccessListBase(TypeSignature typeSignature)
-			{
-				return typeSignature is GenericInstanceTypeSignature genericInstanceTypeSignature
-					&& (genericInstanceTypeSignature.GenericType.Name == $"{nameof(AssetList<int>)}`1"
-					|| genericInstanceTypeSignature.GenericType.Name == $"{nameof(AccessListBase<int>)}`1");
-			}
 		}
 
 		private static HashSet<string> GetDifferingFieldNames(this ClassGroupBase group)
@@ -287,7 +281,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static bool ShouldUseFullProperty(TypeSignature propertyType)
 		{
-			return propertyType is SzArrayTypeSignature or CorLibTypeSignature || propertyType.IsValueType;
+			return propertyType is SzArrayTypeSignature or CorLibTypeSignature || propertyType.IsUtf8String() || propertyType.IsValueType;
 		}
 
 		private static PropertyDefinition ImplementInterfaceProperty(this TypeDefinition declaringType, string propertyName, TypeSignature propertyType, FieldDefinition? field)

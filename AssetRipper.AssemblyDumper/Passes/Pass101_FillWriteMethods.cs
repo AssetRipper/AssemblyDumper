@@ -6,6 +6,7 @@ using AssetRipper.Assets;
 using AssetRipper.Assets.Generics;
 using AssetRipper.Assets.IO.Writing;
 using AssetRipper.IO.Endian;
+using AssetRipper.Primitives;
 using System.Diagnostics;
 using System.IO;
 
@@ -634,6 +635,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 				NodeType.UInt64 => ImportPrimitiveWriteMethod(ElementType.U8),
 				NodeType.Single => ImportPrimitiveWriteMethod(ElementType.R4),
 				NodeType.Double => ImportPrimitiveWriteMethod(ElementType.R8),
+				NodeType.String => SharedState.Instance.Importer.ImportMethod<EndianWriter>(m =>
+				{
+					return m.Name == nameof(EndianWriter.Write)
+						&& m.Parameters.Count == 1
+						&& m.Parameters[0].ParameterType is TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) };
+				}),
 				_ => throw new NotSupportedException(node.TypeName),
 			};
 		}
@@ -654,7 +661,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				return SharedState.Instance.Importer.ImportMethod<EndianWriter>(m =>
 				{
-					return m.Name == nameof(BinaryWriter.Write)
+					return m.Name == nameof(EndianWriter.Write)
 						&& m.Parameters.Count == 1
 						&& m.Parameters[0].ParameterType is CorLibTypeSignature corLibTypeSignature
 						&& corLibTypeSignature.ElementType == elementType;

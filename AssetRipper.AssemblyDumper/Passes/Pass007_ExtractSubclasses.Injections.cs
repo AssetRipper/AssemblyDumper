@@ -33,14 +33,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 					Name = "Base",
 					TypeName = ClassName,
 					Version = 2,//1 before 2.0.0
-					MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
+					MetaFlag = TransferMetaFlags.NoTransferFlags,
 				};
 				rootNode.SubNodes.Add(new()
 				{
 					Name = "m_Bits",
 					TypeName = "UInt32",//UInt16 before 2.0.0
 					Version = 1,
-					MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
+					MetaFlag = TransferMetaFlags.NoTransferFlags,
 				});
 				return rootNode;
 			}
@@ -76,7 +76,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					OriginalName = originalName,
 					TypeName = "SInt32",
 					Version = 1,
-					MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
+					MetaFlag = TransferMetaFlags.NoTransferFlags,
 				};
 			}
 		}
@@ -108,7 +108,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					Name = nodeName,
 					TypeName = "SInt32",
 					Version = 1,
-					MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
+					MetaFlag = TransferMetaFlags.NoTransferFlags,
 				};
 			}
 		}
@@ -134,7 +134,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 							Name = "Base",
 							TypeName = ClassName,
 							Version = 1,
-							MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
+							MetaFlag = TransferMetaFlags.NoTransferFlags,
 						};
 						UniversalNode centerNode = vectorClass.ReleaseRootNode!.DeepClone();
 						centerNode.Name = centerNode.OriginalName = "m_Center";
@@ -151,7 +151,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 							Name = "Base",
 							TypeName = ClassName,
 							Version = 1,
-							MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
+							MetaFlag = TransferMetaFlags.NoTransferFlags,
 						};
 						UniversalNode centerNode = vectorClass.EditorRootNode!.DeepClone();
 						centerNode.Name = centerNode.OriginalName = "m_Center";
@@ -216,7 +216,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			UnityVersion builtInVersion = new UnityVersion(4, 0, 0);
 			VersionedList<UniversalClass> pptrFontList = SharedState.Instance.SubclassInformation["PPtr_Font"];
 			VersionedList<UniversalClass> stateList = SharedState.Instance.SubclassInformation["GUIStyleState"];
-			VersionedList<UniversalClass> stringList = SharedState.Instance.SubclassInformation["Utf8String"];
+			UniversalNode stringTemplate = SharedState.Instance.ClassInformation[1][^1].Value!.ReleaseRootNode!.GetSubNodeByName("m_Name");
 			VersionedList<UniversalClass> rectOffsetList = SharedState.Instance.SubclassInformation["RectOffset"];
 			VersionedList<UniversalClass> vectorList = SharedState.Instance.SubclassInformation["Vector2f"];
 			Debug.Assert(pptrFontList.Count == 2);
@@ -251,7 +251,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				UniversalNode releaseRoot = CreateRootNode(ClassName);
 				UniversalNode editorRoot = CreateRootNode(ClassName);
 
-				AddSubNode(releaseRoot, editorRoot, stringList, version, "m_Name");
+				AddSubNodeClone(releaseRoot, editorRoot, stringTemplate, "m_Name");
 				AddSubNode(releaseRoot, editorRoot, stateList, version, "m_Normal");
 				AddSubNode(releaseRoot, editorRoot, stateList, version, "m_Hover");
 				AddSubNode(releaseRoot, editorRoot, stateList, version, "m_Active");
@@ -318,6 +318,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 				editorRoot.SubNodes.Add(sourceList.GetItemForVersion(version)!.EditorRootNode!.DeepCloneAndChangeName(name));
 			}
 
+			static void AddSubNodeClone(UniversalNode releaseRoot, UniversalNode editorRoot, UniversalNode sourceNode, string name)
+			{
+				releaseRoot.SubNodes.Add(sourceNode.DeepCloneAndChangeName(name));
+				editorRoot.SubNodes.Add(sourceNode.DeepCloneAndChangeName(name));
+			}
+
 			static void AddInt32SubNode(UniversalNode releaseRoot, UniversalNode editorRoot, string name)
 			{
 				releaseRoot.SubNodes.Add(new()
@@ -325,14 +331,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 					Name = name,
 					TypeName = "SInt32",
 					Version = 1,
-					MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
+					MetaFlag = TransferMetaFlags.NoTransferFlags,
 				});
 				editorRoot.SubNodes.Add(new()
 				{
 					Name = name,
 					TypeName = "SInt32",
 					Version = 1,
-					MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
+					MetaFlag = TransferMetaFlags.NoTransferFlags,
 				});
 			}
 
@@ -343,14 +349,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 					Name = name,
 					TypeName = "float",
 					Version = 1,
-					MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
+					MetaFlag = TransferMetaFlags.NoTransferFlags,
 				});
 				editorRoot.SubNodes.Add(new()
 				{
 					Name = name,
 					TypeName = "float",
 					Version = 1,
-					MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
+					MetaFlag = TransferMetaFlags.NoTransferFlags,
 				});
 			}
 
@@ -361,14 +367,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 					Name = name,
 					TypeName = "bool",
 					Version = 1,
-					MetaFlag = (uint)(align ? TransferMetaFlags.AlignBytes : TransferMetaFlags.NoTransferFlags),
+					MetaFlag = align ? TransferMetaFlags.AlignBytes : TransferMetaFlags.NoTransferFlags,
 				});
 				editorRoot.SubNodes.Add(new()
 				{
 					Name = name,
 					TypeName = "bool",
 					Version = 1,
-					MetaFlag = (uint)(align ? TransferMetaFlags.AlignBytes : TransferMetaFlags.NoTransferFlags),
+					MetaFlag = align ? TransferMetaFlags.AlignBytes : TransferMetaFlags.NoTransferFlags,
 				});
 			}
 		}
@@ -387,7 +393,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				Name = "Base",
 				TypeName = className,
 				Version = version,
-				MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
+				MetaFlag = TransferMetaFlags.NoTransferFlags,
 			};
 		}
 
@@ -398,14 +404,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 				Name = name,
 				TypeName = "Array",
 				Version = 1,
-				MetaFlag = (uint)(align ? TransferMetaFlags.AlignBytes : TransferMetaFlags.NoTransferFlags),
+				MetaFlag = align ? TransferMetaFlags.AlignBytes : TransferMetaFlags.NoTransferFlags,
 			};
 			arrayNode.SubNodes.Add(new()
 			{
 				Name = "size",
 				TypeName = "SInt32",
 				Version = 1,
-				MetaFlag = (uint)TransferMetaFlags.NoTransferFlags,
+				MetaFlag = TransferMetaFlags.NoTransferFlags,
 			});
 			dataNode.Name = "m_Data";
 			dataNode.OriginalName = "data";

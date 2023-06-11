@@ -1,4 +1,5 @@
 ﻿using AssetRipper.AssemblyDumper.Utils;
+using AssetRipper.IO.Files.SerializedFiles;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -610,7 +611,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			UniversalNode subnode = subnodes[0];
 			if (subnode.TypeName == "Array")
 			{
-				subnode.Name = "m_Data";
+				if (subnode.AlignBytes)
+				{
+					node.MetaFlag |= TransferMetaFlags.AlignBytes;
+				}
 			}
 			else if (subnode.TypeName == Utf8StringName)
 			{

@@ -29,7 +29,7 @@ namespace AssetRipper.AssemblyDumper
 			set => originalName = value ?? "";
 		}
 		public short Version { get; set; }
-		public uint MetaFlag { get; set; }
+		public TransferMetaFlags MetaFlag { get; set; }
 		public List<UniversalNode> SubNodes { get => subNodes; set => subNodes = value ?? new(); }
 
 		private string originalTypeName = "";
@@ -38,10 +38,10 @@ namespace AssetRipper.AssemblyDumper
 		private string name = "";
 		private List<UniversalNode> subNodes = new();
 
-		public bool IgnoreInMetaFiles => ((TransferMetaFlags)MetaFlag).IsIgnoreInMetaFiles();
-		public bool AlignBytes => ((TransferMetaFlags)MetaFlag).IsAlignBytes();
-		public bool TreatIntegerAsBoolean => ((TransferMetaFlags)MetaFlag).IsTreatIntegerValueAsBoolean();
-		private bool TreatIntegerAsChar => ((TransferMetaFlags)MetaFlag).IsCharPropertyMask();
+		public bool IgnoreInMetaFiles => MetaFlag.IsIgnoreInMetaFiles();
+		public bool AlignBytes => MetaFlag.IsAlignBytes();
+		public bool TreatIntegerAsBoolean => MetaFlag.IsTreatIntegerValueAsBoolean();
+		private bool TreatIntegerAsChar => MetaFlag.IsCharPropertyMask();
 
 		public NodeType NodeType
 		{
@@ -72,7 +72,7 @@ namespace AssetRipper.AssemblyDumper
 						"map" => NodeType.Map,
 						"pair" => NodeType.Pair,
 						"TypelessData" => NodeType.TypelessData,
-						"string" => NodeType.String,
+						"string" or Passes.Pass002_RenameSubnodes.Utf8StringName => NodeType.String,
 						_ => NodeType.Type,
 					};
 			}
@@ -112,7 +112,7 @@ namespace AssetRipper.AssemblyDumper
 			result.Name = stringBuffer[tpkNode.Name];
 			result.OriginalName = result.Name;
 			result.Version = tpkNode.Version;
-			result.MetaFlag = tpkNode.MetaFlag;
+			result.MetaFlag = (TransferMetaFlags)tpkNode.MetaFlag;
 			result.SubNodes = tpkNode.SubNodes
 				.Select(nodeIndex => FromTpkUnityNode(nodeBuffer[nodeIndex], stringBuffer, nodeBuffer))
 				.ToList();
