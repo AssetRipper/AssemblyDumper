@@ -24,9 +24,13 @@ namespace AssetRipper.AssemblyDumper
 			UniversalNode contentNode = arrayNode.SubNodes![1];
 			TypeSignature elementType = ResolveNode(contentNode, version);
 
-			if (elementType is SzArrayTypeSignature or CorLibTypeSignature)
+			if (elementType is CorLibTypeSignature { ElementType: ElementType.U1 })
 			{
 				return elementType.MakeSzArrayType();
+			}
+			else if (elementType is SzArrayTypeSignature)
+			{
+				throw new NotSupportedException();
 			}
 
 			return SharedState.Instance.Importer.ImportType(typeof(AssetList<>)).MakeGenericInstanceType(elementType);
