@@ -1,6 +1,4 @@
-﻿//#define SPLIT_ABSTRACT
-
-using AssetRipper.Assets;
+﻿using AssetRipper.Assets;
 using AssetRipper.Assets.Utils;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -62,14 +60,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				else
 				{
-#if SPLIT_ABSTRACT
-					GeneratedClassInstance baseInstance = classInstanceDictionary[instance.Class.BaseClass!];
-#else
 					GeneratedClassInstance baseInstance = SharedState.Instance.GetGeneratedInstanceForObjectType(baseTypeName, instance.VersionRange.Start);
 					instance.Type.BaseType = baseInstance.Type;
 					instance.Class.BaseClass = baseInstance.Class;
 					baseInstance.Class.DerivedClasses.Add(instance.Class);
-#endif
 					baseInstance.Derived.Add(instance);
 					instance.Base = baseInstance;
 				}
