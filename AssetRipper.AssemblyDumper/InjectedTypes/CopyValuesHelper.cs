@@ -1,10 +1,11 @@
 ﻿#nullable disable
 
+using AssetRipper;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Cloning;
 using AssetRipper.Assets.Metadata;
 
-namespace AssetRipper.AssemblyDumper
+namespace AssetRipper.AssemblyDumper.InjectedTypes
 {
 	internal static class CopyValuesHelper
 	{

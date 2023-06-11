@@ -2,6 +2,7 @@
 using AssetRipper.AssemblyCreationTools.Attributes;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
+using AssetRipper.AssemblyDumper.InjectedTypes;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Generics;
 using AssetRipper.IO.Endian;
@@ -14,6 +15,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 #nullable disable
 		private static IMethodDefOrRef alignStreamMethod;
 		private static IMethodDefOrRef readInt32Method;
+		private static IMethodDefOrRef readBytesMethod;
 		/// <summary>
 		/// TypeSignature for <see langword="ref"/> <see cref="EndianSpanReader"/>
 		/// </summary>
@@ -101,6 +103,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			alignStreamMethod = SharedState.Instance.Importer.ImportMethod(typeof(EndianSpanReader), m => m.Name == nameof(EndianSpanReader.Align));
 			endianSpanReaderReference = SharedState.Instance.Importer.ImportTypeSignature(typeof(EndianSpanReader)).MakeByReferenceType();
+
+			readBytesMethod = SharedState.Instance.InjectHelperType(typeof(TypelessDataHelper)).Methods.Single();
 
 			assetDictionaryReference = SharedState.Instance.Importer.ImportType(typeof(AssetDictionary<,>));
 			assetListReference = SharedState.Instance.Importer.ImportType(typeof(AssetList<>));
@@ -526,9 +530,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldarg_0);//reader
 			processor.AddCall(readInt32Method);
 			processor.Add(CilOpCodes.Stloc, countLocal);
-
-			IMethodDefOrRef readBytesMethod = SharedState.Instance.Importer.ImportMethod(typeof(EndianSpanReader),
-				m => m.Name == nameof(EndianSpanReader.ReadBytesExact) && m.Signature!.ReturnType is SzArrayTypeSignature);
 
 			processor.Add(CilOpCodes.Ldarg_0);//reader
 			processor.Add(CilOpCodes.Ldloc, countLocal);

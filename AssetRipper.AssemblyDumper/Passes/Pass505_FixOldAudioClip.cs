@@ -1,6 +1,7 @@
 ﻿using AsmResolver.DotNet.Cloning;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
+using AssetRipper.AssemblyDumper.InjectedTypes;
 using AssetRipper.Assets;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -9,7 +10,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
-			InjectHelper(out TypeDefinition helperType);
+			TypeDefinition helperType = SharedState.Instance.InjectHelperType(typeof(AudioClipHelper));
 			MethodDefinition helperMethod = helperType.Methods.Single(m => m.Name == nameof(AudioClipHelper.ReadOldByteArray));
 
 			foreach (GeneratedClassInstance instance in SharedState.Instance.ClassGroups[83].Instances)
@@ -52,16 +53,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stfld, dataField);
 
 			processor.Add(CilOpCodes.Ret);
-		}
-
-		private static void InjectHelper(out TypeDefinition helperType)
-		{
-			MemberCloner cloner = new MemberCloner(SharedState.Instance.Module);
-			cloner.Include(SharedState.Instance.Importer.LookupType(typeof(AudioClipHelper))!, true);
-			MemberCloneResult result = cloner.Clone();
-			helperType = result.ClonedTopLevelTypes.Single();
-			helperType.Namespace = SharedState.HelpersNamespace;
-			SharedState.Instance.Module.TopLevelTypes.Add(helperType);
 		}
 
 		private static bool TryGetStreamField(this GeneratedClassInstance instance, [NotNullWhen(true)] out FieldDefinition? streamField)

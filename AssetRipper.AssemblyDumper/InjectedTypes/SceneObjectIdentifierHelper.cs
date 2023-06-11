@@ -4,7 +4,7 @@ using AssetRipper.Assets.Metadata;
 
 #nullable disable
 
-namespace AssetRipper.AssemblyDumper
+namespace AssetRipper.AssemblyDumper.InjectedTypes
 {
 	internal static class SceneObjectIdentifierHelper
 	{

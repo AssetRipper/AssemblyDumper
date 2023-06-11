@@ -1,4 +1,6 @@
-﻿namespace AssetRipper.AssemblyDumper
+﻿using AssetRipper.Primitives;
+
+namespace AssetRipper.AssemblyDumper
 {
 	public enum NodeType
 	{
@@ -41,7 +43,7 @@
 				NodeType.UInt64 => nameof(UInt64),
 				NodeType.Single => nameof(Single),
 				NodeType.Double => nameof(Double),
-				NodeType.String => nameof(String),
+				NodeType.String => nameof(Utf8String),
 				_ => throw new NotSupportedException(type.ToString()),
 			};
 		}
@@ -80,7 +82,7 @@
 				NodeType.UInt64 => SharedState.Instance.Importer.UInt64,
 				NodeType.Single => SharedState.Instance.Importer.Single,
 				NodeType.Double => SharedState.Instance.Importer.Double,
-				NodeType.String => SharedState.Instance.Importer.String,
+				NodeType.String => SharedState.Instance.Importer.ImportType<Utf8String>().ToTypeSignature(),
 				_ => throw new NotSupportedException(type.ToString()),
 			};
 		}

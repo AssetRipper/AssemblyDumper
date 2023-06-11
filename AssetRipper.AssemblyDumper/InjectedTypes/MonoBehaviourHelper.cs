@@ -5,7 +5,7 @@ using AssetRipper.Yaml;
 
 #nullable disable
 
-namespace AssetRipper.AssemblyDumper
+namespace AssetRipper.AssemblyDumper.InjectedTypes
 {
 	internal static class MonoBehaviourHelper
 	{

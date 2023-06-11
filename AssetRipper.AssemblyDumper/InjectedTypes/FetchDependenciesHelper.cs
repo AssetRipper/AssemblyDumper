@@ -4,7 +4,7 @@ using DependencyEnumerable = System.Collections.Generic.IEnumerable<System.Value
 
 #nullable disable
 
-namespace AssetRipper.AssemblyDumper
+namespace AssetRipper.AssemblyDumper.InjectedTypes
 {
 	internal static class FetchDependenciesHelper
 	{
@@ -12,7 +12,7 @@ namespace AssetRipper.AssemblyDumper
 		{
 			yield return (fieldName, pptr.ToStruct());
 		}
-		
+
 		public static DependencyEnumerable AppendPPtr(this DependencyEnumerable items, FieldName fieldName, IPPtr pptr)
 		{
 			return items.Append((fieldName, pptr.ToStruct()));

@@ -5,7 +5,7 @@ using AssetRipper.IO.Files.ResourceFiles;
 
 #nullable disable
 
-namespace AssetRipper.AssemblyDumper
+namespace AssetRipper.AssemblyDumper.InjectedTypes
 {
 	internal static class AudioClipHelper
 	{
@@ -19,7 +19,7 @@ namespace AssetRipper.AssemblyDumper
 		private static byte[] ReadAlignedByteArray(ref EndianSpanReader reader)
 		{
 			int count = reader.ReadInt32();
-			byte[] result = reader.ReadBytesExact(count);
+			byte[] result = reader.ReadBytesExact(count).ToArray();
 			reader.Align();
 			return result;
 		}

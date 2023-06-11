@@ -3,6 +3,7 @@ using AssetRipper.AssemblyCreationTools;
 using AssetRipper.AssemblyCreationTools.Attributes;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
+using AssetRipper.AssemblyDumper.InjectedTypes;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Export.Dependencies;
 using AssetRipper.Assets.Generics;

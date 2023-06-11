@@ -1,4 +1,5 @@
-﻿using AssetRipper.AssemblyCreationTools;
+﻿using AsmResolver.DotNet.Cloning;
+using AssetRipper.AssemblyCreationTools;
 using AssetRipper.AssemblyCreationTools.Attributes;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyDumper.Utils;
@@ -109,11 +110,12 @@ namespace AssetRipper.AssemblyDumper
 		private void AddReferenceModules()
 		{
 			AddLocalReferenceModule("AssetRipper.Assets");
-			AddLocalReferenceModule("AssetRipper.Yaml");
 			AddLocalReferenceModule("AssetRipper.IO.Endian");
-			AddLocalReferenceModule("AssetRipper.VersionUtilities");
 			AddLocalReferenceModule("AssetRipper.IO.Files");
 			AddLocalReferenceModule("AssetRipper.Numerics");
+			AddLocalReferenceModule("AssetRipper.Primitives");
+			AddLocalReferenceModule("AssetRipper.VersionUtilities");
+			AddLocalReferenceModule("AssetRipper.Yaml");
 			AddSystemReferenceModule("System.Runtime");
 			AddSystemReferenceModule("System.Numerics.Vectors");
 			AddSystemReferenceModule("System.Linq");
@@ -186,6 +188,17 @@ namespace AssetRipper.AssemblyDumper
 			{
 				throw new Exception($"Could not find {typeName} in the name dictionary");
 			}
+		}
+
+		internal TypeDefinition InjectHelperType(Type type)
+		{
+			MemberCloner cloner = new MemberCloner(Module);
+			cloner.Include(Importer.LookupType(type) ?? throw new NullReferenceException(type.FullName), true);
+			MemberCloneResult result = cloner.Clone();
+			TypeDefinition helperType = result.ClonedTopLevelTypes.Single();
+			helperType.Namespace = HelpersNamespace;
+			Module.TopLevelTypes.Add(helperType);
+			return helperType;
 		}
 	}
 }
