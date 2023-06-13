@@ -3,6 +3,7 @@ using AssetRipper.AssemblyCreationTools.Attributes;
 using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
+using AssetRipper.AssemblyDumper.Documentation;
 using AssetRipper.Assets.Utils;
 using System.Diagnostics;
 
@@ -26,6 +27,7 @@ internal static class Pass941_MakeFieldHashes
 
 		{
 			TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.RootNamespace, "FieldHashes");
+			DocumentationHandler.AddTypeDefinitionLine(type, $"CRC32 field path hashes for all source generated classes.");
 			type.AddNullableContextAttribute(NullableAnnotation.NotNull);
 			MethodDefinition nullHelperMethod = MakeNullHelperMethod(type);
 
@@ -104,6 +106,7 @@ internal static class Pass941_MakeFieldHashes
 	private static MethodDefinition MakeMethodForGroup(ClassGroupBase group, Dictionary<uint, string> hashes)
 	{
 		TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, group.Namespace, $"{group.Name}FieldHashes");
+		DocumentationHandler.AddTypeDefinitionLine(type, $"CRC32 field path hashes for {SeeXmlTagGenerator.MakeCRef(group.Interface)} classes.");
 
 		GenericInstanceTypeSignature uintStringDictionary = SharedState.Instance.Importer.ImportType(typeof(Dictionary<,>))
 			.MakeGenericInstanceType(SharedState.Instance.Importer.UInt32, SharedState.Instance.Importer.String);
@@ -155,6 +158,7 @@ internal static class Pass941_MakeFieldHashes
 	private static void MakeFieldPathsTypeForGroup(ClassGroupBase group)
 	{
 		TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, group.Namespace, $"{group.Name}FieldPaths");
+		DocumentationHandler.AddTypeDefinitionLine(type, $"List of field paths for {SeeXmlTagGenerator.MakeCRef(group.Interface)} classes.");
 
 		GenericInstanceTypeSignature readonlyStringList = SharedState.Instance.Importer.ImportType(typeof(IReadOnlyList<>))
 			.MakeGenericInstanceType(SharedState.Instance.Importer.String);
