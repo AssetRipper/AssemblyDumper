@@ -5,16 +5,17 @@ using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Assets.Utils;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 
 namespace AssetRipper.AssemblyDumper.Passes;
 
 internal static class Pass941_MakeFieldHashes
 {
+	private const string MethodName = "TryGetPath";
+
 	public static void DoPass()
 	{
 		Dictionary<int, Dictionary<uint, string>> dict = new();
-		List<(int, FieldDefinition)> dictionaries = new();
+		List<(int, MethodDefinition)> dictionaries = new();
 		foreach (ClassGroup group in SharedState.Instance.ClassGroups.Values.OrderBy(g => g.ID))
 		{
 			Dictionary<uint, string> hashes = group.GetOrderedFieldPaths().ToDictionary(str => CrcUtils.CalculateDigestUTF8(str), str => str);
@@ -30,7 +31,7 @@ internal static class Pass941_MakeFieldHashes
 			type.AddNullableContextAttribute(NullableAnnotation.NotNull);
 			MethodDefinition nullHelperMethod = MakeNullHelperMethod(type);
 
-			MethodDefinition method = type.AddMethod("TryGetPath", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, SharedState.Instance.Importer.Boolean);
+			MethodDefinition method = type.AddMethod(MethodName, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, SharedState.Instance.Importer.Boolean);
 			Parameter idParameter = method.AddParameter(Pass556_CreateClassIDTypeEnum.ClassIdTypeDefintion!.ToTypeSignature(), "classID");
 			Parameter hashParameter = method.AddParameter(SharedState.Instance.Importer.UInt32, "hash");
 			Parameter outParameter = method.AddParameter(SharedState.Instance.Importer.String.MakeByReferenceType(), "path");
@@ -49,11 +50,10 @@ internal static class Pass941_MakeFieldHashes
 		}
 	}
 
-	private static void EmitIdSwitchStatement(this CilInstructionCollection processor, List<(int, FieldDefinition)> dictionaries, MethodDefinition nullHelperMethod)
+	private static void EmitIdSwitchStatement(this CilInstructionCollection processor, List<(int, MethodDefinition)> dictionaries, MethodDefinition nullHelperMethod)
 	{
 		GenericInstanceTypeSignature uintStringDictionary = SharedState.Instance.Importer.ImportType(typeof(Dictionary<,>))
 			.MakeGenericInstanceType(SharedState.Instance.Importer.UInt32, SharedState.Instance.Importer.String);
-		IMethodDefOrRef tryGetValue = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, uintStringDictionary, SharedState.Instance.Importer.LookupMethod(typeof(Dictionary<,>), m => m.Name == "TryGetValue"));
 		int count = dictionaries.Count;
 
 		CilLocalVariable switchCondition = processor.AddLocalVariable(Pass556_CreateClassIDTypeEnum.ClassIdTypeDefintion!.ToTypeSignature());
@@ -74,10 +74,9 @@ internal static class Pass941_MakeFieldHashes
 		{
 			nopInstructions[i].Instruction = processor.Add(CilOpCodes.Nop);
 
-			processor.Add(CilOpCodes.Ldsfld, dictionaries[i].Item2);
 			processor.Add(CilOpCodes.Ldarg_1);//hash
 			processor.Add(CilOpCodes.Ldarg_2);//path
-			processor.Add(CilOpCodes.Callvirt, tryGetValue);
+			processor.Add(CilOpCodes.Call, dictionaries[i].Item2);
 			processor.Add(CilOpCodes.Ret);
 		}
 		defaultNop.Instruction = processor.Add(CilOpCodes.Nop);
@@ -104,34 +103,55 @@ internal static class Pass941_MakeFieldHashes
 		return nullHelperMethod;
 	}
 
-	private static FieldDefinition MakeDictionaryForGroup(ClassGroupBase group, Dictionary<uint, string> hashes)
+	private static MethodDefinition MakeDictionaryForGroup(ClassGroupBase group, Dictionary<uint, string> hashes)
 	{
 		TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, group.Namespace, $"{group.Name}FieldHashes");
-		type.IsPublic = false;
 
 		GenericInstanceTypeSignature uintStringDictionary = SharedState.Instance.Importer.ImportType(typeof(Dictionary<,>))
 			.MakeGenericInstanceType(SharedState.Instance.Importer.UInt32, SharedState.Instance.Importer.String);
 		IMethodDefOrRef dictionaryConstructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, uintStringDictionary, 0);
 		IMethodDefOrRef addMethod = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, uintStringDictionary, SharedState.Instance.Importer.LookupMethod(typeof(Dictionary<,>), m => m.Name == "Add"));
+		IMethodDefOrRef tryGetValue = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, uintStringDictionary, SharedState.Instance.Importer.LookupMethod(typeof(Dictionary<,>), m => m.Name == "TryGetValue"));
 
-		FieldDefinition field = type.AddField(uintStringDictionary, "dictionary", true);
+		FieldDefinition field = type.AddField(uintStringDictionary, "dictionary", true, FieldVisibility.Private);
 		field.Attributes |= FieldAttributes.InitOnly;
 
-		MethodDefinition staticConstructor = type.AddEmptyConstructor(true);
-		CilInstructionCollection processor = staticConstructor.GetProcessor();
-		processor.Add(CilOpCodes.Newobj, dictionaryConstructor);
-		foreach ((uint hash, string str) in hashes)
+		//Static constructor
 		{
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldc_I4, (int)hash);
-			processor.Add(CilOpCodes.Ldstr, str);
-			processor.Add(CilOpCodes.Call, addMethod);
-		}
-		processor.Add(CilOpCodes.Stsfld, field);
-		processor.Add(CilOpCodes.Ret);
+			MethodDefinition staticConstructor = type.AddEmptyConstructor(true);
+			CilInstructionCollection processor = staticConstructor.GetProcessor();
+			processor.Add(CilOpCodes.Newobj, dictionaryConstructor);
+			foreach ((uint hash, string str) in hashes)
+			{
+				processor.Add(CilOpCodes.Dup);
+				processor.Add(CilOpCodes.Ldc_I4, (int)hash);
+				processor.Add(CilOpCodes.Ldstr, str);
+				processor.Add(CilOpCodes.Call, addMethod);
+			}
+			processor.Add(CilOpCodes.Stsfld, field);
+			processor.Add(CilOpCodes.Ret);
 
-		processor.OptimizeMacros();
-		return field;
+			processor.OptimizeMacros();
+		}
+
+		//Method
+		{
+			MethodDefinition method = type.AddMethod(MethodName, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, SharedState.Instance.Importer.Boolean);
+			Parameter hashParameter = method.AddParameter(SharedState.Instance.Importer.UInt32, "hash");
+			Parameter outParameter = method.AddParameter(SharedState.Instance.Importer.String.MakeByReferenceType(), "path");
+			ParameterDefinition outParameterDefinition = outParameter.Definition!;
+			outParameterDefinition.Attributes |= ParameterAttributes.Out;
+			outParameterDefinition.AddNullableAttribute(NullableAnnotation.MaybeNull);
+			outParameterDefinition.AddCustomAttribute(SharedState.Instance.Importer.ImportConstructor<NotNullWhenAttribute>(1), SharedState.Instance.Importer.Boolean, true);
+
+			CilInstructionCollection processor = method.GetProcessor();
+			processor.Add(CilOpCodes.Ldsfld, field);
+			processor.Add(CilOpCodes.Ldarg_0);//hash
+			processor.Add(CilOpCodes.Ldarg_1);//path
+			processor.Add(CilOpCodes.Callvirt, tryGetValue);
+			processor.Add(CilOpCodes.Ret);
+			return method;
+		}
 	}
 
 	private static void MakeListForGroup(ClassGroupBase group)
