@@ -14,16 +14,14 @@ internal static class Pass941_MakeFieldHashes
 
 	public static void DoPass()
 	{
-		Dictionary<int, Dictionary<uint, string>> dict = new();
-		List<(int, MethodDefinition)> dictionaries = new();
-		foreach (ClassGroup group in SharedState.Instance.ClassGroups.Values.OrderBy(g => g.ID))
+		List<(int, MethodDefinition)> groupMethods = new();
+		foreach ((int id, Dictionary<uint, string> hashes) in HashAllFieldPaths())
 		{
-			Dictionary<uint, string> hashes = group.GetOrderedFieldPaths().ToDictionary(str => CrcUtils.CalculateDigestUTF8(str), str => str);
+			ClassGroup group = SharedState.Instance.ClassGroups[id];
 			if (hashes.Count > 0)
 			{
-				dictionaries.Add((group.ID, MakeDictionaryForGroup(group, hashes)));
+				groupMethods.Add((group.ID, MakeMethodForGroup(group, hashes)));
 			}
-			dict.Add(group.ID, hashes);
 		}
 
 		{
@@ -41,20 +39,20 @@ internal static class Pass941_MakeFieldHashes
 			outParameterDefinition.AddCustomAttribute(SharedState.Instance.Importer.ImportConstructor<NotNullWhenAttribute>(1), SharedState.Instance.Importer.Boolean, true);
 
 			CilInstructionCollection processor = method.GetProcessor();
-			processor.EmitIdSwitchStatement(dictionaries, nullHelperMethod);
+			processor.EmitIdSwitchStatement(groupMethods, nullHelperMethod);
 		}
 
 		foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
 		{
-			MakeListForGroup(group);
+			MakeFieldPathsTypeForGroup(group);
 		}
 	}
 
-	private static void EmitIdSwitchStatement(this CilInstructionCollection processor, List<(int, MethodDefinition)> dictionaries, MethodDefinition nullHelperMethod)
+	private static void EmitIdSwitchStatement(this CilInstructionCollection processor, List<(int, MethodDefinition)> groupMethods, MethodDefinition nullHelperMethod)
 	{
 		GenericInstanceTypeSignature uintStringDictionary = SharedState.Instance.Importer.ImportType(typeof(Dictionary<,>))
 			.MakeGenericInstanceType(SharedState.Instance.Importer.UInt32, SharedState.Instance.Importer.String);
-		int count = dictionaries.Count;
+		int count = groupMethods.Count;
 
 		CilLocalVariable switchCondition = processor.AddLocalVariable(Pass556_CreateClassIDTypeEnum.ClassIdTypeDefintion!.ToTypeSignature());
 
@@ -66,7 +64,7 @@ internal static class Pass941_MakeFieldHashes
 		for (int i = 0; i < count; i++)
 		{
 			processor.Add(CilOpCodes.Ldloc, switchCondition);
-			processor.Add(CilOpCodes.Ldc_I4, dictionaries[i].Item1);
+			processor.Add(CilOpCodes.Ldc_I4, groupMethods[i].Item1);
 			processor.Add(CilOpCodes.Beq, nopInstructions[i]);
 		}
 		processor.Add(CilOpCodes.Br, defaultNop);
@@ -76,7 +74,7 @@ internal static class Pass941_MakeFieldHashes
 
 			processor.Add(CilOpCodes.Ldarg_1);//hash
 			processor.Add(CilOpCodes.Ldarg_2);//path
-			processor.Add(CilOpCodes.Call, dictionaries[i].Item2);
+			processor.Add(CilOpCodes.Call, groupMethods[i].Item2);
 			processor.Add(CilOpCodes.Ret);
 		}
 		defaultNop.Instruction = processor.Add(CilOpCodes.Nop);
@@ -103,7 +101,7 @@ internal static class Pass941_MakeFieldHashes
 		return nullHelperMethod;
 	}
 
-	private static MethodDefinition MakeDictionaryForGroup(ClassGroupBase group, Dictionary<uint, string> hashes)
+	private static MethodDefinition MakeMethodForGroup(ClassGroupBase group, Dictionary<uint, string> hashes)
 	{
 		TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, group.Namespace, $"{group.Name}FieldHashes");
 
@@ -154,7 +152,7 @@ internal static class Pass941_MakeFieldHashes
 		}
 	}
 
-	private static void MakeListForGroup(ClassGroupBase group)
+	private static void MakeFieldPathsTypeForGroup(ClassGroupBase group)
 	{
 		TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, group.Namespace, $"{group.Name}FieldPaths");
 
@@ -190,28 +188,74 @@ internal static class Pass941_MakeFieldHashes
 			.GetMethod!.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 	}
 
+	private static List<(int, Dictionary<uint, string>)> HashAllFieldPaths()
+	{
+		Dictionary<GeneratedClassInstance, Dictionary<uint, string>> instanceDictionary = new();
+		HashSet<GeneratedClassInstance> fullyImplemented = new();
+		foreach (GeneratedClassInstance instance in SharedState.Instance.ClassGroups.Values.SelectMany(g => g.Instances))
+		{
+			Dictionary<uint, string> hashes = GetFieldPaths(instance.Class).Distinct().ToDictionary(CrcUtils.CalculateDigestUTF8, str => str);
+			if (!instance.Class.IsAbstract)
+			{
+				fullyImplemented.Add(instance);
+			}
+			instanceDictionary.Add(instance, hashes);
+		}
+		while (fullyImplemented.Count < instanceDictionary.Count)
+		{
+			foreach ((GeneratedClassInstance instance, Dictionary<uint, string> hashes) in instanceDictionary)
+			{
+				if (fullyImplemented.Contains(instance))
+				{
+					continue;
+				}
+				if (instance.Derived.All(fullyImplemented.Contains))
+				{
+					foreach ((uint hash, string path) in instance.Derived.Select(derived => instanceDictionary[derived]).SelectMany(pair => pair))
+					{
+						hashes.TryAdd(hash, path);
+					}
+					fullyImplemented.Add(instance);
+				}
+			}
+		}
+		List<(int, Dictionary<uint, string>)> groupList = new();
+		foreach (ClassGroup group in SharedState.Instance.ClassGroups.Values.OrderBy(g => g.ID))
+		{
+			Dictionary<uint, string> groupHashes = new();
+			foreach ((uint hash, string path) in group.Instances.Select(instance => instanceDictionary[instance]).SelectMany(pair => pair).OrderBy(pair => pair.Value))
+			{
+				groupHashes.TryAdd(hash, path);
+			}
+			groupList.Add((group.ID, groupHashes));
+		}
+		return groupList;
+	}
+
 	private static IOrderedEnumerable<string> GetOrderedFieldPaths(this ClassGroupBase group)
 	{
 		return group
 			.Classes
-			.SelectMany(c =>
-		{
-			if (c.ReleaseRootNode is null)
-			{
-				Debug.Assert(c.EditorRootNode is not null);
-				return GetFieldPaths(c.EditorRootNode);
-			}
-			else if (c.EditorRootNode is null)
-			{
-				return GetFieldPaths(c.ReleaseRootNode);
-			}
-			else
-			{
-				return GetFieldPaths(c.ReleaseRootNode).Concat(GetFieldPaths(c.EditorRootNode));
-			}
-		})
+			.SelectMany(GetFieldPaths)
 			.Distinct()
 			.Order();
+	}
+
+	private static IEnumerable<string> GetFieldPaths(UniversalClass c)
+	{
+		if (c.ReleaseRootNode is null)
+		{
+			Debug.Assert(c.EditorRootNode is not null);
+			return GetFieldPaths(c.EditorRootNode);
+		}
+		else if (c.EditorRootNode is null)
+		{
+			return GetFieldPaths(c.ReleaseRootNode);
+		}
+		else
+		{
+			return GetFieldPaths(c.ReleaseRootNode).Concat(GetFieldPaths(c.EditorRootNode));
+		}
 	}
 
 	private static IEnumerable<string> GetFieldPaths(UniversalNode rootNode)
