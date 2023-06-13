@@ -413,6 +413,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 				node.TypeName = "ComputeShaderVariant";
 				node.TryRenameSubNode("m_Kernels", "m_KernelParents");
 			}
+			else if (node.TypeName == "Shader")
+			{
+				node.TryRenameSubNode("m_SubProgramBlob", "m_CompressedBlob");
+			}
 			else if (node.TypeName == "BuildSettings")
 			{
 				node.TryRenameSubNode("m_Levels", "m_Scenes"); // Earlier than 5.2
