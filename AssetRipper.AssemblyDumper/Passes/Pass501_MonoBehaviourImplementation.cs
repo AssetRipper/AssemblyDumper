@@ -1,5 +1,4 @@
-﻿using AsmResolver.DotNet.Cloning;
-using AssetRipper.AssemblyCreationTools;
+﻿using AssetRipper.AssemblyCreationTools;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.AssemblyDumper.InjectedTypes;
@@ -16,7 +15,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			ClassGroup group = SharedState.Instance.ClassGroups[114];
 
-			InjectHelpers(out TypeDefinition monoBehaviourHelperType);
+			TypeDefinition monoBehaviourHelperType = SharedState.Instance.InjectHelperType(typeof(MonoBehaviourHelper));
 
 			TypeSignature propertyType = SharedState.Instance.Importer.ImportTypeSignature<IUnityAssetBase>();
 			const string propertyName = "Structure";
@@ -65,19 +64,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Call, exportStructureMethod);
 			processor.Add(CilOpCodes.Ldloc_0);//mapping node
 			processor.Add(CilOpCodes.Ret);
-		}
-
-		private static void InjectHelpers(out TypeDefinition monoBehaviourHelperType)
-		{
-			MemberCloner cloner = new MemberCloner(SharedState.Instance.Module);
-			cloner.Include(SharedState.Instance.Importer.LookupType(typeof(MonoBehaviourHelper))!, true);
-			MemberCloneResult result = cloner.Clone();
-			foreach (TypeDefinition type in result.ClonedTopLevelTypes)
-			{
-				type.Namespace = SharedState.HelpersNamespace;
-				SharedState.Instance.Module.TopLevelTypes.Add(type);
-			}
-			monoBehaviourHelperType = result.ClonedTopLevelTypes.Single(t => t.Name == nameof(MonoBehaviourHelper));
 		}
 	}
 }

@@ -1,5 +1,4 @@
-﻿using AsmResolver.DotNet.Cloning;
-using AssetRipper.AssemblyCreationTools;
+﻿using AssetRipper.AssemblyCreationTools;
 using AssetRipper.AssemblyCreationTools.Attributes;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
@@ -77,15 +76,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		[MemberNotNull(nameof(appendPPtrMethod))]
 		private static TypeDefinition InjectHelper()
 		{
-			MemberCloner cloner = new MemberCloner(SharedState.Instance.Module);
-			cloner.Include(SharedState.Instance.Importer.LookupType(typeof(FetchDependenciesHelper))!, true);
-			MemberCloneResult result = cloner.Clone();
-			foreach (TypeDefinition type in result.ClonedTopLevelTypes)
-			{
-				type.Namespace = SharedState.HelpersNamespace;
-				SharedState.Instance.Module.TopLevelTypes.Add(type);
-			}
-			TypeDefinition clonedType = result.ClonedTopLevelTypes.Single();
+			TypeDefinition clonedType = SharedState.Instance.InjectHelperType(typeof(FetchDependenciesHelper));
 			fromSingleMethod = clonedType.GetMethodByName(nameof(FetchDependenciesHelper.FromSingle));
 			appendPPtrMethod = clonedType.GetMethodByName(nameof(FetchDependenciesHelper.AppendPPtr));
 			return clonedType;

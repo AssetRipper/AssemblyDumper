@@ -1,5 +1,4 @@
-﻿using AsmResolver.DotNet.Cloning;
-using AssetRipper.AssemblyCreationTools;
+﻿using AssetRipper.AssemblyCreationTools;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.AssemblyDumper.InjectedTypes;
@@ -15,7 +14,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			TypeSignature unityObjectBase = SharedState.Instance.Importer.ImportType<IUnityObjectBase>().ToTypeSignature();
 
-			MethodDefinition helperMethod = InjectHelper().Methods.Single();
+			MethodDefinition helperMethod = SharedState.Instance.InjectHelperType(typeof(SceneObjectIdentifierHelper)).Methods.Single();
 			SubclassGroup group = SharedState.Instance.SubclassGroups["SceneObjectIdentifier"];
 			PropertyInjector.InjectFullProperty(group, unityObjectBase, TargetObjectName, true);
 			PropertyInjector.InjectFullProperty(group, unityObjectBase, TargetPrefabName, true);
@@ -83,20 +82,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			processor.InsertRange(0, beginningInstructions);
 			processor.InsertRange(processor.Count - 1, endingInstructions);
-		}
-
-		private static TypeDefinition InjectHelper()
-		{
-			MemberCloner cloner = new MemberCloner(SharedState.Instance.Module);
-			cloner.Include(SharedState.Instance.Importer.LookupType(typeof(SceneObjectIdentifierHelper))!, true);
-			MemberCloneResult result = cloner.Clone();
-			foreach (TypeDefinition type in result.ClonedTopLevelTypes)
-			{
-				type.Namespace = SharedState.HelpersNamespace;
-				SharedState.Instance.Module.TopLevelTypes.Add(type);
-			}
-			TypeDefinition clonedType = result.ClonedTopLevelTypes.Single();
-			return clonedType;
 		}
 	}
 }

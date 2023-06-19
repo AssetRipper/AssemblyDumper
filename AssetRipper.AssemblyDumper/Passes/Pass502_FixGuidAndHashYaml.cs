@@ -1,10 +1,8 @@
-﻿using AsmResolver.DotNet.Cloning;
-using AssetRipper.AssemblyCreationTools;
+﻿using AssetRipper.AssemblyCreationTools;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.AssemblyDumper.InjectedTypes;
 using AssetRipper.Assets;
-using AssetRipper.IO.Files;
 using AssetRipper.Primitives;
 using AssetRipper.Yaml;
 
@@ -20,7 +18,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				guidType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlRelease)).FixGuidYaml(toStringMethod);
 				guidType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlEditor)).FixGuidYaml(toStringMethod);
 			}
-			InjectHelper(out TypeDefinition helperType);
+			TypeDefinition helperType = SharedState.Instance.InjectHelperType(typeof(HashHelper));
 			foreach (TypeDefinition hashType in SharedState.Instance.SubclassGroups["Hash128"].Types)
 			{
 				MethodDefinition releaseMethod = hashType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlRelease));
@@ -110,19 +108,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static string GetHashFieldName(int i)
 		{
 			return i < 10 ? $"m_Bytes__{i}" : $"m_Bytes_{i}";
-		}
-
-		private static void InjectHelper(out TypeDefinition helperType)
-		{
-			MemberCloner cloner = new MemberCloner(SharedState.Instance.Module);
-			cloner.Include(SharedState.Instance.Importer.LookupType(typeof(HashHelper))!, true);
-			MemberCloneResult result = cloner.Clone();
-			foreach (TypeDefinition type in result.ClonedTopLevelTypes)
-			{
-				type.Namespace = SharedState.HelpersNamespace;
-				SharedState.Instance.Module.TopLevelTypes.Add(type);
-			}
-			helperType = result.ClonedTopLevelTypes.Single(t => t.Name == nameof(HashHelper));
 		}
 	}
 }
