@@ -16,7 +16,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			foreach (TypeDefinition type in group.Types)
 			{
-				FieldDefinition field = type.AddField(propertySignature, $"m_{propertyName}");
+				FieldDefinition field = type.AddField(propertySignature, $"m_{propertyName}", visibility: FieldVisibility.Internal);
+				field.AddDebuggerBrowsableNeverAttribute();
 				PropertyDefinition property = type.ImplementFullProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, null, field);
 				if (nullable)
 				{
