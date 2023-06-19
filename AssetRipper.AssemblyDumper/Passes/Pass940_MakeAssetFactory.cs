@@ -1,4 +1,5 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyCreationTools;
+using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.AssemblyDumper.Documentation;
 using AssetRipper.Assets;
@@ -9,7 +10,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass940_MakeAssetFactory
 	{
-		private const string MethodName = "CreateAsset";
+		private const string MethodName = "Create";
 		private const MethodAttributes CreateAssetAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static;
 #nullable disable
 		private static TypeSignature iunityObjectBase;
@@ -75,8 +76,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			int count = constructors.Count;
 
-			CilLocalVariable switchCondition = new CilLocalVariable(SharedState.Instance.Importer.Int32);
-			processor.Owner.LocalVariables.Add(switchCondition);
+			CilLocalVariable switchCondition = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
 			processor.Add(CilOpCodes.Ldarga, assetInfoParameter);
 			IMethodDefOrRef propertyRef = SharedState.Instance.Importer.ImportMethod<AssetInfo>(m => m.Name == $"get_{nameof(AssetInfo.ClassID)}");
 			processor.Add(CilOpCodes.Call, propertyRef);
@@ -173,7 +173,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			else if (group.Instances.Count == 1)
 			{
 				usesVersion = false;
-				TypeDefinition factoryClass = group.MakeFactoryClass();
+				TypeDefinition factoryClass = group.GetOrCreateMainClass();
 				MethodDefinition generatedMethod = ImplementSingleCreationMethod(group, factoryClass);
 				if (group.ID < 0)
 				{
@@ -188,7 +188,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			else
 			{
 				usesVersion = true;
-				TypeDefinition factoryClass = group.MakeFactoryClass();
+				TypeDefinition factoryClass = group.GetOrCreateMainClass();
 				MethodDefinition generatedMethod = ImplementNormalCreationMethod(group, factoryClass);
 				if (group.ID < 0)
 				{
@@ -325,11 +325,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static MethodDefinition GetAssetInfoConstructor(this TypeDefinition typeDefinition)
 		{
 			return typeDefinition.Methods.Where(x => x.IsConstructor && x.Parameters.Count == 1 && x.Parameters[0].ParameterType.Name == nameof(AssetInfo)).Single();
-		}
-
-		private static TypeDefinition MakeFactoryClass(this ClassGroupBase group)
-		{
-			return StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, group.Namespace, $"{group.Name}Factory");
 		}
 
 		private static void FindImporterGroups()

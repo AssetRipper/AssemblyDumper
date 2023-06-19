@@ -46,19 +46,20 @@ namespace AssetRipper.AssemblyDumper.Documentation
 
 		internal static string GetStringReference(MethodDefinition method)
 		{
-			return $"M:{method.DeclaringType?.FullName}.{method.Name}{GetParameterString(method.Signature)}";
+			//@ is used instead of & for by-ref parameters.
+			return $"M:{method.DeclaringType?.FullName}.{method.Name}{GetParameterString(method.Signature)}".Replace('&', '@');
+
+			static string GetParameterString(MethodSignature? signature)
+			{
+				return signature is null || signature.ParameterTypes.Count == 0
+					? string.Empty
+					: $"({string.Join(',', signature.ParameterTypes.Select(t => t.FullName))})";
+			}
 		}
 
 		internal static string GetStringReference(string @namespace)
 		{
 			return $"N:{@namespace}";
-		}
-
-		private static string GetParameterString(MethodSignature? signature)
-		{
-			return signature is null || signature.ParameterTypes.Count == 0
-				? string.Empty
-				: $"({string.Join(',', signature.ParameterTypes.Select(t => t.FullName))})";
 		}
 	}
 }

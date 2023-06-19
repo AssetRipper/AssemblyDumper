@@ -105,8 +105,7 @@ internal static class Pass941_MakeFieldHashes
 
 	private static MethodDefinition MakeMethodForGroup(ClassGroupBase group, Dictionary<uint, string> hashes)
 	{
-		TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, group.Namespace, $"{group.Name}FieldHashes");
-		DocumentationHandler.AddTypeDefinitionLine(type, $"CRC32 field path hashes for {SeeXmlTagGenerator.MakeCRef(group.Interface)} classes.");
+		TypeDefinition type = group.GetOrCreateMainClass();
 
 		GenericInstanceTypeSignature uintStringDictionary = SharedState.Instance.Importer.ImportType(typeof(Dictionary<,>))
 			.MakeGenericInstanceType(SharedState.Instance.Importer.UInt32, SharedState.Instance.Importer.String);
@@ -114,13 +113,15 @@ internal static class Pass941_MakeFieldHashes
 		IMethodDefOrRef addMethod = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, uintStringDictionary, SharedState.Instance.Importer.LookupMethod(typeof(Dictionary<,>), m => m.Name == "Add"));
 		IMethodDefOrRef tryGetValue = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, uintStringDictionary, SharedState.Instance.Importer.LookupMethod(typeof(Dictionary<,>), m => m.Name == "TryGetValue"));
 
-		FieldDefinition field = type.AddField(uintStringDictionary, "dictionary", true, FieldVisibility.Private);
+		FieldDefinition field = type.AddField(uintStringDictionary, "s_FieldPathDictionary", true, FieldVisibility.Private);
 		field.Attributes |= FieldAttributes.InitOnly;
+		DocumentationHandler.AddFieldDefinitionLine(field, $"CRC32 field path hashes for {SeeXmlTagGenerator.MakeCRef(group.Interface)} classes.");
 
 		//Static constructor
 		{
-			MethodDefinition staticConstructor = type.AddEmptyConstructor(true);
+			MethodDefinition staticConstructor = type.GetOrCreateStaticConstructor();
 			CilInstructionCollection processor = staticConstructor.GetProcessor();
+			processor.Pop();//The return instruction.
 			processor.Add(CilOpCodes.Newobj, dictionaryConstructor);
 			foreach ((uint hash, string str) in hashes)
 			{
@@ -151,14 +152,16 @@ internal static class Pass941_MakeFieldHashes
 			processor.Add(CilOpCodes.Ldarg_1);//path
 			processor.Add(CilOpCodes.Callvirt, tryGetValue);
 			processor.Add(CilOpCodes.Ret);
+
+			DocumentationHandler.AddMethodDefinitionLine(method, $"Try get field path from a {SeeXmlTagGenerator.MakeCRef(group.Interface)} class for a CRC32 hash.");
+
 			return method;
 		}
 	}
 
 	private static void MakeFieldPathsTypeForGroup(ClassGroupBase group)
 	{
-		TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, group.Namespace, $"{group.Name}FieldPaths");
-		DocumentationHandler.AddTypeDefinitionLine(type, $"List of field paths for {SeeXmlTagGenerator.MakeCRef(group.Interface)} classes.");
+		TypeDefinition type = group.GetOrCreateMainClass();
 
 		GenericInstanceTypeSignature readonlyStringList = SharedState.Instance.Importer.ImportType(typeof(IReadOnlyList<>))
 			.MakeGenericInstanceType(SharedState.Instance.Importer.String);
@@ -167,29 +170,42 @@ internal static class Pass941_MakeFieldHashes
 		IMethodDefOrRef listConstructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, stringList, 0);
 		IMethodDefOrRef addMethod = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, stringList, SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == "Add"));
 
-		const string propertyName = "Paths";
+		const string propertyName = "FieldPaths";//Not currently in use by any subclasses.
 		FieldDefinition field = type.AddField(readonlyStringList, $"<{propertyName}>k__BackingField", true, FieldVisibility.Private);
 		field.Attributes |= FieldAttributes.InitOnly;
 		field.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 
-		MethodDefinition staticConstructor = type.AddEmptyConstructor(true);
+		MethodDefinition staticConstructor = type.GetOrCreateStaticConstructor();
 		CilInstructionCollection processor = staticConstructor.GetProcessor();
-		processor.Add(CilOpCodes.Newobj, listConstructor);
+		processor.Pop();//The return instruction.
+		bool emittedListConstructor = false;
 		foreach (string str in group.GetOrderedFieldPaths())
 		{
+			if (!emittedListConstructor)
+			{
+				processor.Add(CilOpCodes.Newobj, listConstructor);
+				emittedListConstructor = true;
+			}
 			processor.Add(CilOpCodes.Dup);
 			processor.Add(CilOpCodes.Ldstr, str);
 			processor.Add(CilOpCodes.Call, addMethod);
 		}
+		if (!emittedListConstructor)
+		{
+			MethodSpecification emptyStringArray = SharedState.Instance.Importer.ImportMethod<Array>(method => method.Name == nameof(Array.Empty))
+				.MakeGenericInstanceMethod(SharedState.Instance.Importer.String);
+			processor.Add(CilOpCodes.Call, emptyStringArray);
+		}
 		processor.Add(CilOpCodes.Stsfld, field);
 		processor.Add(CilOpCodes.Ret);
 
-		type.ImplementGetterProperty(
+		PropertyDefinition property = type.ImplementGetterProperty(
 				propertyName,
 				MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.SpecialName,
 				readonlyStringList,
-				field)
-			.GetMethod!.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
+				field);
+		property.GetMethod!.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
+		DocumentationHandler.AddPropertyDefinitionLine(property, $"List of field paths for {SeeXmlTagGenerator.MakeCRef(group.Interface)} classes.");
 	}
 
 	private static List<(int, Dictionary<uint, string>)> HashAllFieldPaths()

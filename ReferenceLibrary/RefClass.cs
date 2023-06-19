@@ -5,6 +5,13 @@ namespace ReferenceLibrary
 {
 	public class RefClassInt
 	{
+		/// <summary>
+		/// Test
+		/// </summary>
+		/// <param name="normalVar"></param>
+		/// <param name="inVar"></param>
+		/// <param name="refVar"></param>
+		/// <param name="outVar"></param>
 		public RefClassInt(int normalVar, in int inVar, ref int refVar, out int outVar)
 		{
 			outVar = default;

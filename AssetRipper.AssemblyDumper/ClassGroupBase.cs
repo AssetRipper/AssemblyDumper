@@ -1,9 +1,12 @@
-﻿using AssetRipper.DocExtraction.DataStructures;
+﻿using AssetRipper.AssemblyCreationTools.Types;
+using AssetRipper.DocExtraction.DataStructures;
+using System.Diagnostics;
 
 namespace AssetRipper.AssemblyDumper
 {
 	internal abstract class ClassGroupBase
 	{
+		private TypeDefinition? mainClass;
 		public List<GeneratedClassInstance> Instances { get; } = new();
 		public TypeDefinition Interface { get; }
 		public List<InterfaceProperty> InterfaceProperties { get; } = new();
@@ -15,10 +18,18 @@ namespace AssetRipper.AssemblyDumper
 		public abstract bool UniformlyNamed { get; }
 		public virtual bool IsPPtr => false;
 		public UnityVersion MinimumVersion => Instances[0].VersionRange.Start;
+		public IEnumerable<UniversalClass> Classes => Instances.Select(x => x.Class);
+		public IEnumerable<TypeDefinition> Types => Instances.Select(x => x.Type);
 
 		protected ClassGroupBase(TypeDefinition @interface)
 		{
 			Interface = @interface ?? throw new ArgumentNullException(nameof(@interface));
+		}
+
+		public TypeDefinition GetOrCreateMainClass()
+		{
+			mainClass ??= Instances.Count == 1 ? Instances[0].Type : StaticClassCreator.CreateEmptyStaticClass(Interface.Module!, Namespace, Name);
+			return mainClass;
 		}
 
 		public UniversalClass GetClassForVersion(UnityVersion version)
@@ -33,10 +44,7 @@ namespace AssetRipper.AssemblyDumper
 
 		public GeneratedClassInstance GetInstanceForVersion(UnityVersion version)
 		{
-			if (Instances.Count == 0)
-			{
-				throw new Exception("No classes available");
-			}
+			Debug.Assert(Instances.Count != 0, "No classes available");
 			foreach (GeneratedClassInstance instance in Instances)
 			{
 				if (instance.VersionRange.Contains(version))
@@ -47,15 +55,11 @@ namespace AssetRipper.AssemblyDumper
 			throw new Exception($"No instance found for {version}");
 		}
 
-		public IEnumerable<UniversalClass> Classes => Instances.Select(x => x.Class);
-
-		public IEnumerable<TypeDefinition> Types => Instances.Select(x => x.Type);
-
 		public TypeDefinition GetSingularTypeOrInterface()
 		{
 			return Instances.Count == 1
-				? Instances.First().Type
-				: Interface ?? throw new NullReferenceException("Interface was null");
+				? Instances[0].Type
+				: Interface;
 		}
 
 		public override string ToString() => Name;
