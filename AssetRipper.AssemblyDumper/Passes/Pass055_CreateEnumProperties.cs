@@ -196,6 +196,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 						"MipMapMode" => "UnityEditor.TextureImporterMipFilter",
 						_ => null,
 					},
+					"TextureImporterPlatformSettings" => interfaceProperty.Name switch
+					{
+						"AndroidETC2FallbackOverride" => "UnityEditor.AndroidETC2FallbackOverride",
+						"Format" => "UnityEditor.TextureImporterFormat",
+						"ResizeAlgorithm" => "UnityEditor.TextureResizeAlgorithm",
+						"TextureCompression" => "UnityEditor.TextureImporterCompression",
+						_ => null,
+					},
 					"TextureSettings" => interfaceProperty.Name switch
 					{
 						"FilterMode" => "UnityEngine.FilterMode",
