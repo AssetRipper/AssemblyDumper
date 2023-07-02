@@ -16,14 +16,22 @@ internal static class Pass941_MakeFieldHashes
 	public static void DoPass()
 	{
 		List<(int, MethodDefinition)> groupMethods = new();
-		foreach ((int id, Dictionary<uint, string> hashes) in HashAllFieldPaths())
+		foreach ((ClassGroup group, Dictionary<uint, string> hashes) in HashAllFieldPaths())
 		{
-			ClassGroup group = SharedState.Instance.ClassGroups[id];
 			if (hashes.Count > 0)
 			{
-				groupMethods.Add((group.ID, MakeMethodForGroup(group, hashes)));
+				MethodDefinition method = MakeMethodForGroup(group, hashes);
+				groupMethods.Add((group.ID, method));
+				if (Pass001_MergeMovedGroups.Changes.TryGetValue(group.ID, out IReadOnlyList<int>? aliasIDs))
+				{
+					foreach (int aliasID in aliasIDs)
+					{
+						groupMethods.Add((aliasID, method));
+					}
+				}
 			}
 		}
+		groupMethods.Sort((a, b) => a.Item1.CompareTo(b.Item1));
 
 		{
 			TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.RootNamespace, "FieldHashes");
@@ -208,7 +216,7 @@ internal static class Pass941_MakeFieldHashes
 		DocumentationHandler.AddPropertyDefinitionLine(property, $"List of field paths for {SeeXmlTagGenerator.MakeCRef(group.Interface)} classes.");
 	}
 
-	private static List<(int, Dictionary<uint, string>)> HashAllFieldPaths()
+	private static List<(ClassGroup, Dictionary<uint, string>)> HashAllFieldPaths()
 	{
 		Dictionary<GeneratedClassInstance, Dictionary<uint, string>> instanceDictionary = new();
 		HashSet<GeneratedClassInstance> fullyImplemented = new();
@@ -239,7 +247,7 @@ internal static class Pass941_MakeFieldHashes
 				}
 			}
 		}
-		List<(int, Dictionary<uint, string>)> groupList = new();
+		List<(ClassGroup, Dictionary<uint, string>)> groupList = new();
 		foreach (ClassGroup group in SharedState.Instance.ClassGroups.Values.OrderBy(g => g.ID))
 		{
 			Dictionary<uint, string> groupHashes = new();
@@ -247,7 +255,7 @@ internal static class Pass941_MakeFieldHashes
 			{
 				groupHashes.TryAdd(hash, path);
 			}
-			groupList.Add((group.ID, groupHashes));
+			groupList.Add((group, groupHashes));
 		}
 		return groupList;
 	}

@@ -16,6 +16,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				TpkProcessor.IntitializeSharedState("uncompressed.tpk");
 			}
+			using (new TimingCookie("Pass 001: Merge Moved Groups"))
+			{
+				Pass001_MergeMovedGroups.DoPass();
+			}
 			using (new TimingCookie("Pass 002: Rename Subnodes"))
 			{
 				Pass002_RenameSubnodes.DoPass();

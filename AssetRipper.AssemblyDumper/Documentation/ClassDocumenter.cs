@@ -23,9 +23,9 @@ namespace AssetRipper.AssemblyDumper.Documentation
 
 		private static void AddClassTypeDocumentation(GeneratedClassInstance instance)
 		{
-			if (instance.ID >= 0)
+			if (instance.Group is ClassGroup)
 			{
-				DocumentationHandler.AddTypeDefinitionLine(instance.Type, $"Type ID: {instance.ID}");
+				DocumentationHandler.AddTypeDefinitionLine(instance.Type, $"Type ID: {instance.Class.OriginalTypeID}");
 			}
 
 			if (instance.Type.Name != instance.Class.OriginalName)

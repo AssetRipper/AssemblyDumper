@@ -43,7 +43,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 
 			TypeDefinition type = instance.Type;
-			if (instance.ID >= 0)
+			if (instance.Group is ClassGroup)
 			{
 				type.AddAssetInfoConstructor();
 			}

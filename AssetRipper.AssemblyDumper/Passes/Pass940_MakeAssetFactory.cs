@@ -53,7 +53,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				method.Name == $"get_{nameof(AssetCollection.Version)}");
 
 			TypeDefinition factoryDefinition = CreateFactoryDefinition();
-			AddAllClassCreationMethods(out List<GeneratedMethodInformation> assetInfoMethods);
+			List<GeneratedMethodInformation> assetInfoMethods = AddAllClassCreationMethods();
 			MethodDefinition creationMethod = factoryDefinition.AddAssetInfoCreationMethod(assetInfoMethods);
 			AddMethodWithoutVersionParameter(creationMethod);
 		}
@@ -140,9 +140,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ret);
 		}
 
-		private static void AddAllClassCreationMethods(out List<GeneratedMethodInformation> assetInfoMethods)
+		private static List<GeneratedMethodInformation> AddAllClassCreationMethods()
 		{
-			assetInfoMethods = new();
+			List<GeneratedMethodInformation> assetInfoMethods = new();
 			foreach (ClassGroup group in SharedState.Instance.ClassGroups.Values.OrderBy(g => g.ID))
 			{
 				group.AddMethodsForGroup(
@@ -153,11 +153,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 					AddMethodWithoutVersionParameter(assetInfoMethod);
 				}
 				assetInfoMethods.Add((group.ID, assetInfoMethod, usesVersion));
+				if (Pass001_MergeMovedGroups.Changes.TryGetValue(group.ID, out IReadOnlyList<int>? aliasIDs))
+				{
+					foreach (int aliasID in aliasIDs)
+					{
+						assetInfoMethods.Add((aliasID, assetInfoMethod, usesVersion));
+					}
+				}
 			}
 			foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
 			{
 				group.AddMethodsForGroup(out _, out _);
 			}
+			assetInfoMethods.Sort((a, b) => a.ClassID.CompareTo(b.ClassID));
+			return assetInfoMethods;
 		}
 
 		private static void AddMethodsForGroup(
@@ -175,7 +184,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				usesVersion = false;
 				TypeDefinition factoryClass = group.GetOrCreateMainClass();
 				MethodDefinition generatedMethod = ImplementSingleCreationMethod(group, factoryClass);
-				if (group.ID < 0)
+				if (group is SubclassGroup)
 				{
 					assetInfoMethod = null;
 				}
@@ -190,7 +199,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				usesVersion = true;
 				TypeDefinition factoryClass = group.GetOrCreateMainClass();
 				MethodDefinition generatedMethod = ImplementNormalCreationMethod(group, factoryClass);
-				if (group.ID < 0)
+				if (group is SubclassGroup)
 				{
 					assetInfoMethod = null;
 				}
@@ -214,7 +223,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			MethodDefinition method = factoryClass.AddMethod(MethodName, CreateAssetAttributes, group.GetSingularTypeOrInterface().ToTypeSignature());
 			CilInstructionCollection processor = method.GetProcessor();
-			Parameter? assetInfoParameter = group.ID < 0 ? null : method.AddParameter(assetInfoType, "info");
+			Parameter? assetInfoParameter = group is SubclassGroup ? null : method.AddParameter(assetInfoType, "info");
 			processor.AddReturnNewConstructedObject(group.Instances[0].Type, assetInfoParameter);
 			return method;
 		}
@@ -222,7 +231,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static MethodDefinition ImplementNormalCreationMethod(ClassGroupBase group, TypeDefinition factoryClass)
 		{
 			MethodDefinition method = factoryClass.AddMethod(MethodName, CreateAssetAttributes, group.GetSingularTypeOrInterface().ToTypeSignature());
-			Parameter? assetInfoParameter = group.ID < 0 ? null : method.AddParameter(assetInfoType, "info");
+			Parameter? assetInfoParameter = group is SubclassGroup ? null : method.AddParameter(assetInfoType, "info");
 			Parameter versionParameter = method.AddParameter(unityVersionType, "version");
 			CilInstructionCollection processor = method.GetProcessor();
 			processor.FillNormalCreationMethod(group, versionParameter, assetInfoParameter);

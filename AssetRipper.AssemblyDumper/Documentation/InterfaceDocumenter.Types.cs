@@ -7,7 +7,15 @@
 			if (group is ClassGroup classGroup)
 			{
 				DocumentationHandler.AddTypeDefinitionLine(group.Interface, $"Interface for the {string.Join(", ", classGroup.Names)} classes.");
-				DocumentationHandler.AddTypeDefinitionLine(group.Interface, $"Type ID: {classGroup.ID}");
+				HashSet<int> typeIDs = classGroup.Classes.Select(c => c.OriginalTypeID).ToHashSet();
+				if (typeIDs.Count == 1)
+				{
+					DocumentationHandler.AddTypeDefinitionLine(group.Interface, $"Type ID: {typeIDs.First()}");
+				}
+				else
+				{
+					DocumentationHandler.AddTypeDefinitionLine(group.Interface, $"Type IDs: {string.Join(", ", typeIDs)}");
+				}
 				if (group.Types.All(t => t.IsAbstract))
 				{
 					DocumentationHandler.AddTypeDefinitionLine(group.Interface, "Abstract");

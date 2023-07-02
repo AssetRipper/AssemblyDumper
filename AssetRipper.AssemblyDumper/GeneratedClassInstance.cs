@@ -6,7 +6,6 @@ namespace AssetRipper.AssemblyDumper
 	internal sealed class GeneratedClassInstance
 	{
 		public string Name => Class.Name;
-		public int ID => Group.ID;
 		public UniversalClass Class { get; }
 		public TypeDefinition Type { get; set; }
 		public Range<UnityVersion> VersionRange { get; set; }
@@ -37,14 +36,14 @@ namespace AssetRipper.AssemblyDumper
 
 		public bool InheritsFromType(int id)
 		{
-			return ID == id || (Base?.InheritsFromType(id) ?? false);
+			return Class.OriginalTypeID == id || (Base?.InheritsFromType(id) ?? false);
 		}
 
 		public bool InheritsFromAssetImporter() => InheritsFromType(1003);//The id for AssetImporter
 
 		public void InitializeHistory(HistoryFile historyFile)
 		{
-			if (ID < 0)
+			if (Group is SubclassGroup)
 			{
 				TryGetSubclass(Name, VersionRange.Start, historyFile, out ComplexTypeHistory? history);
 				History = history;

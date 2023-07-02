@@ -9,7 +9,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
-			Dictionary<string, long> nameDictionary = CreateDictionary();
+			Dictionary<int, ClassGroup> classIdDictionary = CreateClassIdDictionary();
+			Dictionary<string, long> nameDictionary = CreateNameDictionary(classIdDictionary);
 			ClassIdTypeDefintion = EnumCreator.CreateFromDictionary(SharedState.Instance, SharedState.RootNamespace, "ClassIDType", nameDictionary);
 
 			List<KeyValuePair<string, long>> alphabeticalList = nameDictionary.ToList();
@@ -22,7 +23,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				if (field.IsStatic)
 				{
 					int id = (int)nameDictionary[field.Name!];
-					FieldGroupDictionary.Add(field, SharedState.Instance.ClassGroups[id]);
+					FieldGroupDictionary.Add(field, classIdDictionary[id]);
 				}
 			}
 			foreach (FieldDefinition field in alphabeticalEnum.Fields)
@@ -30,20 +31,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 				if (field.IsStatic)
 				{
 					int id = (int)nameDictionary[field.Name!];
-					FieldGroupDictionary.Add(field, SharedState.Instance.ClassGroups[id]);
+					FieldGroupDictionary.Add(field, classIdDictionary[id]);
 				}
 			}
 
 			Console.WriteLine($"\t{nameDictionary.Count} ClassIDType numbers.");
 		}
 
-		private static Dictionary<string, long> CreateDictionary()
+		private static Dictionary<string, long> CreateNameDictionary(Dictionary<int, ClassGroup> classIdDictionary)
 		{
-			Dictionary<int, string> rawDictionary = SharedState.Instance.ClassGroups.OrderBy(pair => pair.Key).ToDictionary(pair => pair.Key, pair => pair.Value.Name);
-			HashSet<string> duplicateNames = GetDuplicates(rawDictionary.Values);
-			Dictionary<string, long> result = new Dictionary<string, long>(rawDictionary.Count);
-			foreach ((int id, string rawName) in rawDictionary)
+			HashSet<string> duplicateNames = GetDuplicates(classIdDictionary.Values.Select(g => g.Name));
+			Dictionary<string, long> result = new Dictionary<string, long>(classIdDictionary.Count);
+			foreach ((int id, ClassGroup group) in classIdDictionary.OrderBy(pair => pair.Key))
 			{
+				string rawName = group.Name;
 				if (duplicateNames.Contains(rawName))
 				{
 					result.Add($"{rawName}_{id}", id);
@@ -56,17 +57,31 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return result;
 		}
 
+		private static Dictionary<int, ClassGroup> CreateClassIdDictionary()
+		{
+			Dictionary<int, ClassGroup> rawDictionary = SharedState.Instance.ClassGroups.ToDictionary(pair => pair.Key, pair => pair.Value);
+			foreach ((int mainID, IReadOnlyList<int> idList) in Pass001_MergeMovedGroups.Changes)
+			{
+				ClassGroup group = SharedState.Instance.ClassGroups[mainID];
+				foreach (int id in idList)
+				{
+					rawDictionary.Add(id, group);
+				}
+			}
+
+			return rawDictionary;
+		}
+
 		private static HashSet<string> GetDuplicates(IEnumerable<string> rawStrings)
 		{
-			HashSet<string> uniqueStrings = new HashSet<string>();
-			HashSet<string> duplicates = new HashSet<string>();
+			HashSet<string> uniqueStrings = new();
+			HashSet<string> duplicates = new();
 			foreach (string str in rawStrings)
 			{
-				if (!uniqueStrings.Contains(str))
+				if (uniqueStrings.Add(str))
 				{
-					uniqueStrings.Add(str);
 				}
-				else if (!duplicates.Contains(str))
+				else
 				{
 					duplicates.Add(str);
 				}

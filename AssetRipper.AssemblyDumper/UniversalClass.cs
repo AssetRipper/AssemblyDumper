@@ -19,6 +19,10 @@ namespace AssetRipper.AssemblyDumper
 		/// </summary>
 		public int TypeID { get; set; }
 		/// <summary>
+		/// <see cref="TypeID"/> might be overridden. This is the original type id.
+		/// </summary>
+		public int OriginalTypeID { get; set; }
+		/// <summary>
 		/// The name of the base class if it exists. Namespace not included
 		/// </summary>
 		public string? BaseString { get; set; }
@@ -73,6 +77,7 @@ namespace AssetRipper.AssemblyDumper
 			Name = mainRootNode.TypeName;
 			OriginalName = mainRootNode.OriginalTypeName;
 			TypeID = -1;
+			OriginalTypeID = -1;
 			IsAbstract = false;
 			IsEditorOnly = releaseRootNode == null;
 			IsReleaseOnly = editorRootNode == null;
@@ -87,6 +92,7 @@ namespace AssetRipper.AssemblyDumper
 				Name = name,
 				OriginalName = name,
 				TypeID = typeId,
+				OriginalTypeID = typeId,
 				BaseString = stringBuffer[tpkClass.Base],
 				IsAbstract = tpkClass.Flags.IsAbstract(),
 				IsEditorOnly = tpkClass.Flags.IsEditorOnly(),
@@ -107,6 +113,7 @@ namespace AssetRipper.AssemblyDumper
 			newClass.Name = Name;
 			newClass.OriginalName = OriginalName;
 			newClass.TypeID = TypeID;
+			newClass.OriginalTypeID = OriginalTypeID;
 			newClass.BaseString = BaseString;
 			newClass.BaseClass = BaseClass;
 			newClass.DerivedClasses.Capacity = DerivedClasses.Count;
