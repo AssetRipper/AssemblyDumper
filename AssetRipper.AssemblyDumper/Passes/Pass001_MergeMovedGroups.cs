@@ -6,6 +6,7 @@ internal static class Pass001_MergeMovedGroups
 {
 	public static readonly IReadOnlyDictionary<int, IReadOnlyList<int>> Changes = new Dictionary<int, IReadOnlyList<int>>
 	{
+		{ 258, new int[] { 197 } },//LightProbes
 		{ 319, new int[] { 1011 } },//AvatarMask
 		{ 329, new int[] { 327 } },//VideoClip
 	};
