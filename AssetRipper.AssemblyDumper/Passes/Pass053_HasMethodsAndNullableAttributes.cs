@@ -11,18 +11,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
-				RecalculateInterfacePropertyRanges(group);
 				ApplyNullableAttributesToTypes(group);
 				AddHasMethodsAndApplyNullableAttributesToProperties(group);
 				AddMemberNotNullAttributesToHasMethods(group);
-			}
-		}
-
-		private static void RecalculateInterfacePropertyRanges(ClassGroupBase group)
-		{
-			foreach (InterfaceProperty interfaceProperty in group.InterfaceProperties)
-			{
-				interfaceProperty.RecalculateRanges();
 			}
 		}
 

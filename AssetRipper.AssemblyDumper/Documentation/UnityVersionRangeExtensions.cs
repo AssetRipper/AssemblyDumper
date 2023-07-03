@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using AssetRipper.AssemblyDumper.Utils;
+using System.Text;
 
 namespace AssetRipper.AssemblyDumper.Documentation
 {
@@ -25,6 +26,13 @@ namespace AssetRipper.AssemblyDumper.Documentation
 		{
 			StringBuilder sb = new();
 			sb.AppendUnityVersionRanges(ranges, minimumVersion);
+			return sb.ToString();
+		}
+
+		public static string GetString(this DiscontinuousRange<UnityVersion> range, UnityVersion minimumVersion)
+		{
+			StringBuilder sb = new();
+			sb.AppendUnityVersionRanges(range, minimumVersion);
 			return sb.ToString();
 		}
 	}

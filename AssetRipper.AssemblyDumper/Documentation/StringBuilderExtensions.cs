@@ -22,5 +22,17 @@ namespace AssetRipper.AssemblyDumper.Documentation
 				sb.AppendUnityVersionRange(ranges[i], minimumVersion);
 			}
 		}
+		public static void AppendUnityVersionRanges(this StringBuilder sb, DiscontinuousRange<UnityVersion> range, UnityVersion minimumVersion)
+		{
+			if (!range.IsEmpty())
+			{
+				sb.AppendUnityVersionRange(range[0], minimumVersion);
+				for (int i = 1; i < range.Count; i++)
+				{
+					sb.Append(", ");
+					sb.AppendUnityVersionRange(range[i], minimumVersion);
+				}
+			}
+		}
 	}
 }

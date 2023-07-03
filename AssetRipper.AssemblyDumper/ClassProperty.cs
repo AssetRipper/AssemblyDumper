@@ -7,17 +7,23 @@
 			BackingField = backingField;
 			if (!IsInjected && backingField?.Name is not null)
 			{
-				UniversalNode node = @class.Class.ReleaseRootNode?.TryGetSubNodeByName(backingField.Name)
-					?? @class.Class.EditorRootNode?.TryGetSubNodeByName(backingField.Name)
-					?? throw new Exception($"Failed to find node: {@class.Name}.{backingField.Name} on {@class.VersionRange}");
-				OriginalFieldName = node.OriginalName;
+				ReleaseNode = @class.Class.ReleaseRootNode?.TryGetSubNodeByName(backingField.Name);
+				EditorNode = @class.Class.EditorRootNode?.TryGetSubNodeByName(backingField.Name);
+				if (ReleaseNode is null && EditorNode is null)
+				{
+					throw new Exception($"Failed to find node: {@class.Name}.{backingField.Name} on {@class.VersionRange}");
+				}
 			}
 			Class = @class;
 			Base = @base;
 			Base.AddImplementation(this);
 		}
 
-		public string? OriginalFieldName { get; }
+		public UniversalNode? ReleaseNode { get; }
+
+		public UniversalNode? EditorNode { get; }
+
+		public string? OriginalFieldName => ReleaseNode?.OriginalName ?? EditorNode?.OriginalName;
 
 		public FieldDefinition? BackingField { get; }
 
@@ -30,6 +36,14 @@
 
 		[MemberNotNullWhen(true, nameof(BackingField))]
 		public bool IsPresent => !IsAbsent;
+
+		[MemberNotNullWhen(true, nameof(ReleaseNode))]
+		[MemberNotNullWhen(false, nameof(EditorNode))]
+		public bool IsReleaseOnly => ReleaseNode is not null && EditorNode is null;
+
+		[MemberNotNullWhen(false, nameof(ReleaseNode))]
+		[MemberNotNullWhen(true, nameof(EditorNode))]
+		public bool IsEditorOnly => ReleaseNode is null && EditorNode is not null;
 
 		[MemberNotNullWhen(true, nameof(BackingField))]
 		public bool HasBackingFieldInDeclaringType
