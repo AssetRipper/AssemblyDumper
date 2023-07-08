@@ -117,6 +117,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 						"LightmapFormat_C28" => "UnityEditor.TextureUsageMode",
 						_ => null,
 					},
+					43 => interfaceProperty.Name switch
+					{
+						"MeshCompression_C43" => "UnityEditor.ModelImporterMeshCompression",
+						_ => null,
+					},
 					83 => interfaceProperty.Name switch
 					{
 						"CompressionFormat_C83" => "UnityEngine.AudioCompressionFormat",
