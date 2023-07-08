@@ -36,7 +36,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			}
 
 			//SharedState.Instance.MinVersion isn't used here because enums don't have the version type stripped.
-			DocumentationHandler.AddTypeDefinitionLine(type, history.GetVersionRange().GetUnionedRanges().GetString(SharedState.Instance.SourceVersions[0]));
+			DocumentationHandler.AddTypeDefinitionLine(type, history.GetVersionRange().GetUnionedRanges().GetString(SharedState.Instance.MinVersion));
 		}
 
 		private static IEnumerable<UnityVersionRange> GetVersionRange(VersionedList<bool> existence, VersionedList<long> values, long value)

@@ -73,24 +73,25 @@ namespace AssetRipper.AssemblyDumper.Passes
 			//Inject types
 			foreach (InjectedTypeData injectedTypeData in injectedTypes)
 			{
+				UnityVersion minVersion = SharedState.Instance.MinVersion;
 				EnumHistory history = new();
 				history.Name = injectedTypeData.Name;
 				history.FullName = $"Injected.{injectedTypeData.Name}";
 				history.IsFlagsEnum = injectedTypeData.IsFlags;
-				history.ElementType.Add(UnityVersion.MinVersion, injectedTypeData.ElementType);
-				history.NativeName.Add(UnityVersion.MinVersion, null);
-				history.DocumentationString.Add(UnityVersion.MinVersion, injectedTypeData.Summary);
-				history.ObsoleteMessage.Add(UnityVersion.MinVersion, null);
-				history.Exists.Add(UnityVersion.MinVersion, true);
+				history.ElementType.Add(minVersion, injectedTypeData.ElementType);
+				history.NativeName.Add(minVersion, null);
+				history.DocumentationString.Add(minVersion, injectedTypeData.Summary);
+				history.ObsoleteMessage.Add(minVersion, null);
+				history.Exists.Add(minVersion, true);
 				foreach ((string fieldName, long value, string? description) in injectedTypeData.Members)
 				{
 					EnumMemberHistory member = new();
 					member.Name = fieldName;
-					member.NativeName.Add(UnityVersion.MinVersion, null);
-					member.Value.Add(UnityVersion.MinVersion, value);
-					member.DocumentationString.Add(UnityVersion.MinVersion, string.IsNullOrEmpty(description) ? null : description);
-					member.ObsoleteMessage.Add(UnityVersion.MinVersion, null);
-					member.Exists.Add(UnityVersion.MinVersion, true);
+					member.NativeName.Add(minVersion, null);
+					member.Value.Add(minVersion, value);
+					member.DocumentationString.Add(minVersion, string.IsNullOrEmpty(description) ? null : description);
+					member.ObsoleteMessage.Add(minVersion, null);
+					member.Exists.Add(minVersion, true);
 					history.Members.Add(fieldName, member);
 				}
 				dictionary.Add(history.FullName, history);
@@ -100,6 +101,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			foreach ((string fullName, List<(string, long, string?)> list) in injectedValues)
 			{
 				EnumHistory history = dictionary[fullName];
+				UnityVersion minVersion = history.Exists[0].Key;
 				foreach ((string fieldName, long value, string? description) in list)
 				{
 					if (history.Members.ContainsKey(fieldName))
@@ -110,11 +112,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 					{
 						EnumMemberHistory member = new();
 						member.Name = fieldName;
-						member.NativeName.Add(UnityVersion.MinVersion, null);
-						member.Value.Add(UnityVersion.MinVersion, value);
-						member.DocumentationString.Add(UnityVersion.MinVersion, string.IsNullOrEmpty(description) ? "Injected" : $"Injected. {description}");
-						member.ObsoleteMessage.Add(UnityVersion.MinVersion, null);
-						member.Exists.Add(UnityVersion.MinVersion, true);
+						member.NativeName.Add(minVersion, null);
+						member.Value.Add(minVersion, value);
+						member.DocumentationString.Add(minVersion, string.IsNullOrEmpty(description) ? "Injected" : $"Injected. {description}");
+						member.ObsoleteMessage.Add(minVersion, null);
+						member.Exists.Add(minVersion, true);
 						history.Members.Add(fieldName, member);
 					}
 				}
