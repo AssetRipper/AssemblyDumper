@@ -15,7 +15,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			UnityVersion minimumVersion = history.Exists[0].Key;
 			foreach ((string memberName, EnumMemberHistory memberHistory) in history.Members)
 			{
-				if (memberHistory.Value.Count == 1)
+				if (memberHistory.TryGetUniqueValue(out _, out IEnumerable<KeyValuePair<string, long>>? pairs))
 				{
 					FieldDefinition field = type.GetFieldByName(memberName);
 					VersionedListDocumenter.AddSet(field, memberHistory.DocumentationString, "Summary: ");
@@ -24,29 +24,19 @@ namespace AssetRipper.AssemblyDumper.Documentation
 				}
 				else
 				{
-					HashSet<long> values = new();
-					foreach (long value in memberHistory.Value.Values)
+					foreach ((string fieldName, long value) in pairs)
 					{
-						if (values.Add(value))
-						{
-							string fieldName = GetEnumFieldName(memberName, value);
-							FieldDefinition field = type.GetFieldByName(fieldName);
-							VersionedListDocumenter.AddSet(field, memberHistory.DocumentationString, "Summary: ");
-							VersionedListDocumenter.AddList(field, memberHistory.ObsoleteMessage, "Obsolete Message: ");
-							DocumentationHandler.AddFieldDefinitionLine(field,
-								GetVersionRange(memberHistory.Exists, memberHistory.Value, value).GetUnionedRanges().GetString(minimumVersion));
-						}
+						FieldDefinition field = type.GetFieldByName(fieldName);
+						VersionedListDocumenter.AddSet(field, memberHistory.DocumentationString, "Summary: ");
+						VersionedListDocumenter.AddList(field, memberHistory.ObsoleteMessage, "Obsolete Message: ");
+						DocumentationHandler.AddFieldDefinitionLine(field,
+							GetVersionRange(memberHistory.Exists, memberHistory.Value, value).GetUnionedRanges().GetString(minimumVersion));
 					}
 				}
 			}
 
 			//SharedState.Instance.MinVersion isn't used here because enums don't have the version type stripped.
 			DocumentationHandler.AddTypeDefinitionLine(type, history.GetVersionRange().GetUnionedRanges().GetString(SharedState.Instance.SourceVersions[0]));
-		}
-
-		private static string GetEnumFieldName(string name, long value)
-		{
-			return value < 0 ? $"{name}_N{-value}" : $"{name}_{value}";
 		}
 
 		private static IEnumerable<UnityVersionRange> GetVersionRange(VersionedList<bool> existence, VersionedList<long> values, long value)

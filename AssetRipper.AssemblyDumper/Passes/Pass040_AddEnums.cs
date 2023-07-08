@@ -87,30 +87,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static IEnumerable<KeyValuePair<string, long>> GetFields(EnumHistory history)
 		{
-			HashSet<KeyValuePair<string, long>> set = new();
+			List<KeyValuePair<string, long>> list = new();
 			foreach (EnumMemberHistory member in history.Members.Values)
 			{
-				if (member.Value.Count == 1)
+				if (member.TryGetUniqueValue(out long value, out IEnumerable<KeyValuePair<string, long>>? pairs))
 				{
-					set.Add(new KeyValuePair<string, long>(member.Name, member.Value[0].Value));
+					list.Add(new KeyValuePair<string, long>(member.Name, value));
 				}
 				else
 				{
-					foreach (long value in member.Value.Values)
-					{
-						string fieldName = GetEnumFieldName(member.Name, value);
-						set.Add(new KeyValuePair<string, long>(fieldName, value));
-					}
+					list.AddRange(pairs);
 				}
 			}
-			var list = set.ToList();
 			list.Sort(CompareEnumFields);
 			return list;
-		}
-
-		private static string GetEnumFieldName(string name, long value)
-		{
-			return value < 0 ? $"{name}_N{-value}" : $"{name}_{value}";
 		}
 
 		/// <summary>
