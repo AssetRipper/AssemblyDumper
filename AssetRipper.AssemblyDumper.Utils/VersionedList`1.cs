@@ -61,7 +61,7 @@ namespace AssetRipper.AssemblyDumper.Utils
 		/// <summary>
 		/// Throws if <see cref="Count"/> == 0
 		/// </summary>
-		private UnityVersion MostRecentVersion => this[Count - 1].Key;
+		private UnityVersion MostRecentVersion => this[^1].Key;
 
 		public void Add(KeyValuePair<UnityVersion, T?> pair)
 		{
@@ -128,17 +128,52 @@ namespace AssetRipper.AssemblyDumper.Utils
 
 		public int IndexOf(KeyValuePair<UnityVersion, T?> item) => _list.IndexOf(item);
 
-		public void Insert(int index, KeyValuePair<UnityVersion, T?> item) => throw new NotSupportedException();
+		public void Insert(int index, KeyValuePair<UnityVersion, T?> item)
+		{
+			if (index == Count)
+			{
+				Add(item);
+			}
+			else
+			{
+				throw new NotSupportedException();
+			}
+		}
 
-		public bool Remove(KeyValuePair<UnityVersion, T?> item) => throw new NotSupportedException();
+		public bool Remove(KeyValuePair<UnityVersion, T?> item)
+		{
+			if (Count > 0 && EqualityComparer<KeyValuePair<UnityVersion, T?>>.Default.Equals(item, this[^1]))
+			{
+				_list.RemoveAt(Count - 1);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
 
-		public void RemoveAt(int index) => throw new NotSupportedException();
+		public void RemoveAt(int index)
+		{
+			if (index == Count - 1)
+			{
+				Pop();
+			}
+			else
+			{
+				throw new NotSupportedException();
+			}
+		}
 
 		public void Pop()
 		{
 			if (Count > 0)
 			{
 				_list.RemoveAt(Count - 1);
+			}
+			else
+			{
+				throw new InvalidOperationException();
 			}
 		}
 

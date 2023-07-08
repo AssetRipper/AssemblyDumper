@@ -69,6 +69,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			Dictionary<string, EnumHistory> dictionary = SharedState.Instance.HistoryFile.Enums;
+
+			//Inject types
 			foreach (InjectedTypeData injectedTypeData in injectedTypes)
 			{
 				EnumHistory history = new();
@@ -93,6 +95,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				dictionary.Add(history.FullName, history);
 			}
+
+			//Inject values
 			foreach ((string fullName, List<(string, long, string?)> list) in injectedValues)
 			{
 				EnumHistory history = dictionary[fullName];
@@ -115,6 +119,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 					}
 				}
 			}
+
+			//Inject documentation
 			foreach ((string fullName, List<(string, string)> list) in injectedDocumentation)
 			{
 				EnumHistory history = dictionary[fullName];
@@ -126,6 +132,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 						(UnityVersion version, string? oldDocumentation) = member.DocumentationString[i];
 						string newDocumentation = string.IsNullOrEmpty(oldDocumentation) ? description : $"{description}<br/>\n{oldDocumentation}";
 						member.DocumentationString[i] = new KeyValuePair<UnityVersion, string?>(version, newDocumentation);
+					}
+				}
+			}
+
+			//Fix TextureFormat
+			{
+				EnumHistory history = dictionary["UnityEngine.TextureFormat"];
+				foreach (EnumMemberHistory member in history.Members.Values)
+				{
+					if (member.Value.Count == 2 && member.Value[1].Value == -127)
+					{
+						member.Value.RemoveAt(1);
 					}
 				}
 			}
