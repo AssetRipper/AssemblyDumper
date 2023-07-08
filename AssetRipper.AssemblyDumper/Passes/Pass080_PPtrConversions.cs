@@ -142,7 +142,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			string parameterTypeName = pptrGroup.Name.Substring(5);
 			if (SharedState.Instance.NameToTypeID.TryGetValue(parameterTypeName, out HashSet<int>? idList) && idList.Count == 1)
 			{
-				type = SharedState.Instance.ClassGroups[idList.First()].GetSingularTypeOrInterface();
+				type = SharedState.Instance.ClassGroups[idList.First()].Interface;
 				return true;
 			}
 			else
