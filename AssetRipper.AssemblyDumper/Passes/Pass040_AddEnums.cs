@@ -18,101 +18,51 @@ namespace AssetRipper.AssemblyDumper.Passes
 			"UnityEngine.LogType",
 		};
 
-		private static readonly Dictionary<string, (TypeDefinition, EnumHistory)> enumDictionary = new();
-		internal static IReadOnlyDictionary<string, (TypeDefinition, EnumHistory)> EnumDictionary => enumDictionary;
+		private static readonly Dictionary<string, (TypeDefinition, EnumDefinitionBase)> enumDictionary = new();
+		internal static IReadOnlyDictionary<string, (TypeDefinition, EnumDefinitionBase)> EnumDictionary => enumDictionary;
 		public static void DoPass()
 		{
 			IMethodDefOrRef flagsConstructor = SharedState.Instance.Importer.ImportDefaultConstructor<FlagsAttribute>();
-			int count = 0;
-			Dictionary<string, int> duplicateNames = GetDuplicateNames(SharedState.Instance.HistoryFile.Enums.Values);
-			foreach ((string fullName, EnumHistory enumHistory) in SharedState.Instance.HistoryFile.Enums)
+			int total = 0;
+			int merged = 0;
+			Dictionary<string, IReadOnlyList<EnumDefinitionBase>> definitionDictionary = EnumDefinitionBase.Create(SharedState.Instance.HistoryFile.Enums.Values.Where(h =>
 			{
-				if (fullNameBlackList.Contains(fullName) || namespaceBlacklist.Contains(enumHistory.Namespace))
-				{
-					continue;
-				}
-				if (!enumHistory.TryGetMergedElementType(out ElementType elementType))
-				{
-					Console.WriteLine($"Could not convert {enumHistory.FullName} to IL because it has incompatible underlying types.");
-					continue;
-				}
-
-				string enumName;
-				if (duplicateNames.TryGetValue(enumHistory.Name, out int index))
-				{
-					enumName = $"{enumHistory.Name}_{index}";
-					duplicateNames[enumHistory.Name] = index + 1;
-				}
-				else
-				{
-					enumName = enumHistory.Name;
-				}
-
-				TypeDefinition type = EnumCreator.CreateFromDictionary(
-					SharedState.Instance,
-					SharedState.EnumsNamespace,
-					enumName,
-					enumHistory.GetFields().Order(EnumFieldComparer.Instance),
-					elementType.ToEnumUnderlyingType());
-
-				if (enumHistory.IsFlagsEnum)
-				{
-					type.AddCustomAttribute(flagsConstructor);
-				}
-
-				enumDictionary.Add(fullName, (type, enumHistory));
-
-				count++;
-			}
-			Console.WriteLine($"\t{count} generated enums.");
-		}
-
-		private static Dictionary<string, int> GetDuplicateNames(IEnumerable<EnumHistory> enums)
-		{
-			HashSet<string> firsts = new();
-			Dictionary<string, int> seconds = new();
-			foreach (EnumHistory enumHistory in enums)
+				return !fullNameBlackList.Contains(h.FullName) && !namespaceBlacklist.Contains(h.Namespace);
+			}));
+			foreach ((string name, IReadOnlyList<EnumDefinitionBase> definitionList) in definitionDictionary)
 			{
-				if (!firsts.Add(enumHistory.Name))
+				for (int i = 0; i < definitionList.Count; i++)
 				{
-					seconds.TryAdd(enumHistory.Name, 0);
+					EnumDefinitionBase definition = definitionList[i];
+
+					string enumName = definitionList.Count > 1 ? $"{definition.Name}_{i}" : definition.Name;
+
+					TypeDefinition type = EnumCreator.CreateFromDictionary(
+						SharedState.Instance,
+						SharedState.EnumsNamespace,
+						enumName,
+						definition.GetOrderedFields(),
+						definition.ElementType.ToEnumUnderlyingType());
+
+					if (definition.IsFlagsEnum)
+					{
+						type.AddCustomAttribute(flagsConstructor);
+					}
+
+					foreach (string fullName in definition.FullNames)
+					{
+						enumDictionary.Add(fullName, (type, definition));
+					}
+
+					if (definition is MergedEnumDefinition)
+					{
+						merged++;
+					}
+
+					total++;
 				}
 			}
-			return seconds;
-		}
-
-		private sealed class EnumFieldComparer : IComparer<KeyValuePair<string, long>>
-		{
-			private EnumFieldComparer() { }
-
-			public static EnumFieldComparer Instance { get; } = new();
-
-			int IComparer<KeyValuePair<string, long>>.Compare(KeyValuePair<string, long> x, KeyValuePair<string, long> y)
-			{
-				return Compare(x, y);
-			}
-
-			/// <summary>
-			/// Compare two enum fields
-			/// </summary>
-			/// <param name="x"></param>
-			/// <param name="y"></param>
-			/// <returns>
-			/// <paramref name="x"/> &lt; <paramref name="y"/> : -1<br/>
-			/// <paramref name="x"/> == <paramref name="y"/> : 0<br/>
-			/// <paramref name="x"/> &gt; <paramref name="y"/> : 1<br/>
-			/// </returns>
-			public static int Compare(KeyValuePair<string, long> x, KeyValuePair<string, long> y)
-			{
-				if (x.Value != y.Value)
-				{
-					return x.Value < y.Value ? -1 : 1;
-				}
-				else
-				{
-					return x.Key.CompareTo(y.Key);
-				}
-			}
+			Console.WriteLine($"\t{total} generated enums, of which {merged} were created from multiple sources.");
 		}
 	}
 }

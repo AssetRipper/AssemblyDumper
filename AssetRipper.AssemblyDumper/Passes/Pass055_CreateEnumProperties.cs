@@ -13,7 +13,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				foreach (InterfaceProperty interfaceProperty in group.InterfaceProperties)
 				{
-					if (interfaceProperty.TryGetEnumFullName(out string? fullName) && Pass040_AddEnums.EnumDictionary.TryGetValue(fullName, out (TypeDefinition, EnumHistory) tuple))
+					if (interfaceProperty.TryGetEnumFullName(out string? fullName) && Pass040_AddEnums.EnumDictionary.TryGetValue(fullName, out (TypeDefinition, EnumDefinitionBase) tuple))
 					{
 						CreateEnumProperty(group, interfaceProperty, tuple.Item1);
 					}

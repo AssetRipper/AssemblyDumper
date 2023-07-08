@@ -43,6 +43,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 					("Rotate90", 4, "Might not exist. It was included in legacy code."),
 					("Any_Old", 5, "Might not exist. It was included in legacy code."),
 				} },
+			{ "UnityEngine.AnimatorControllerParameterType",
+				new()
+				{
+					("Vector", 0, "Added to allow merging. Remove once complex merging is implemented."),
+				} },
 			{ "UnityEditor.Animations.AnimatorConditionMode",
 				new()
 				{
@@ -73,7 +78,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			//Inject types
 			foreach (InjectedTypeData injectedTypeData in injectedTypes)
 			{
-				UnityVersion minVersion = SharedState.Instance.MinVersion;
+				UnityVersion minVersion = SharedState.Instance.MinSourceVersion;
 				EnumHistory history = new();
 				history.Name = injectedTypeData.Name;
 				history.FullName = $"Injected.{injectedTypeData.Name}";

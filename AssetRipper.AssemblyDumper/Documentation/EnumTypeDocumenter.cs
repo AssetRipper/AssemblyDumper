@@ -6,37 +6,43 @@ namespace AssetRipper.AssemblyDumper.Documentation
 {
 	internal static class EnumTypeDocumenter
 	{
-		public static void AddEnumTypeDocumentation(TypeDefinition type, EnumHistory history)
+		public static void AddEnumTypeDocumentation(TypeDefinition type, EnumDefinitionBase definition)
 		{
-			DocumentationHandler.AddTypeDefinitionLine(type, $"Full Name: \"{XmlUtils.EscapeXmlInvalidCharacters(history.FullName)}\"");
-			VersionedListDocumenter.AddSet(type, history.DocumentationString, "Summary: ");
-			VersionedListDocumenter.AddList(type, history.ObsoleteMessage, "Obsolete Message: ");
-
-			UnityVersion minimumVersion = history.Exists[0].Key;
-			foreach ((string memberName, EnumMemberHistory memberHistory) in history.Members)
+			string fullNameList = string.Join(", ", definition.FullNames.Select(fullName => $"\"{XmlUtils.EscapeXmlInvalidCharacters(fullName)}\"" ));
+			DocumentationHandler.AddTypeDefinitionLine(type, $"Full Names: {fullNameList}");
+			if (definition is SingleEnumDefinition singleEnumDefinition)
 			{
-				if (memberHistory.TryGetUniqueValue(out _, out IEnumerable<KeyValuePair<string, long>>? pairs))
+				EnumHistory history = singleEnumDefinition.History;
+
+				VersionedListDocumenter.AddSet(type, history.DocumentationString, "Summary: ");
+				VersionedListDocumenter.AddList(type, history.ObsoleteMessage, "Obsolete Message: ");
+
+				UnityVersion minimumVersion = definition.MinimumVersion;
+				foreach ((string memberName, EnumMemberHistory memberHistory) in history.Members)
 				{
-					FieldDefinition field = type.GetFieldByName(memberName);
-					VersionedListDocumenter.AddSet(field, memberHistory.DocumentationString, "Summary: ");
-					VersionedListDocumenter.AddList(field, memberHistory.ObsoleteMessage, "Obsolete Message: ");
-					DocumentationHandler.AddFieldDefinitionLine(field, memberHistory.GetVersionRange().GetUnionedRanges().GetString(minimumVersion));
-				}
-				else
-				{
-					foreach ((string fieldName, long value) in pairs)
+					if (memberHistory.TryGetUniqueValue(out _, out IEnumerable<KeyValuePair<string, long>>? pairs))
 					{
-						FieldDefinition field = type.GetFieldByName(fieldName);
+						FieldDefinition field = type.GetFieldByName(memberName);
 						VersionedListDocumenter.AddSet(field, memberHistory.DocumentationString, "Summary: ");
 						VersionedListDocumenter.AddList(field, memberHistory.ObsoleteMessage, "Obsolete Message: ");
-						DocumentationHandler.AddFieldDefinitionLine(field,
-							GetVersionRange(memberHistory.Exists, memberHistory.Value, value).GetUnionedRanges().GetString(minimumVersion));
+						DocumentationHandler.AddFieldDefinitionLine(field, memberHistory.GetVersionRange().GetUnionedRanges().GetString(minimumVersion));
+					}
+					else
+					{
+						foreach ((string fieldName, long value) in pairs)
+						{
+							FieldDefinition field = type.GetFieldByName(fieldName);
+							VersionedListDocumenter.AddSet(field, memberHistory.DocumentationString, "Summary: ");
+							VersionedListDocumenter.AddList(field, memberHistory.ObsoleteMessage, "Obsolete Message: ");
+							DocumentationHandler.AddFieldDefinitionLine(field,
+								GetVersionRange(memberHistory.Exists, memberHistory.Value, value).GetUnionedRanges().GetString(minimumVersion));
+						}
 					}
 				}
-			}
 
-			//SharedState.Instance.MinVersion isn't used here because enums don't have the version type stripped.
-			DocumentationHandler.AddTypeDefinitionLine(type, history.GetVersionRange().GetUnionedRanges().GetString(SharedState.Instance.MinVersion));
+				//SharedState.Instance.MinVersion isn't used here because enums don't have the version type stripped.
+				DocumentationHandler.AddTypeDefinitionLine(type, history.GetVersionRange().GetUnionedRanges().GetString(SharedState.Instance.MinSourceVersion));
+			}
 		}
 
 		private static IEnumerable<UnityVersionRange> GetVersionRange(VersionedList<bool> existence, VersionedList<long> values, long value)

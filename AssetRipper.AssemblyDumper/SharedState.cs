@@ -29,6 +29,13 @@ namespace AssetRipper.AssemblyDumper
 		public static SharedState Instance => _instance ?? throw new NullReferenceException("ShareState.Instance not initialized");
 
 		public UnityVersion MinVersion { get; }
+		/// <summary>
+		/// The minimum version in <see cref="SourceVersions"/>.
+		/// </summary>
+		/// <remarks>
+		/// This is used for versions without stripping, such as enums.
+		/// </remarks>
+		public UnityVersion MinSourceVersion => SourceVersions[0];
 		public UnityVersion MaxVersion { get; }
 		public UnityVersion[] SourceVersions { get; }
 		public UniversalCommonString CommonString { get; }

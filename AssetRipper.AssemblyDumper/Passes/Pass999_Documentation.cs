@@ -1,5 +1,4 @@
 ﻿using AssetRipper.AssemblyDumper.Documentation;
-using AssetRipper.DocExtraction.DataStructures;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -21,9 +20,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			IdEnumDocumenter.AddIdEnumDocumentation();
 
-			foreach ((TypeDefinition type, EnumHistory history) in Pass040_AddEnums.EnumDictionary.Values)
+			foreach ((TypeDefinition type, EnumDefinitionBase definition) in Pass040_AddEnums.EnumDictionary.Values.Distinct())
 			{
-				EnumTypeDocumenter.AddEnumTypeDocumentation(type, history);
+				EnumTypeDocumenter.AddEnumTypeDocumentation(type, definition);
 			}
 
 			DocumentationHandler.MakeDocumentationFile();

@@ -1,6 +1,7 @@
 ﻿using AssetRipper.AssemblyDumper.Utils;
 using AssetRipper.DocExtraction.MetaData;
 using AssetRipper.VersionUtilities;
+using System.Text.Json.Serialization;
 
 namespace AssetRipper.DocExtraction.DataStructures;
 
@@ -11,6 +12,14 @@ public abstract class HistoryBase
 	public VersionedList<string> NativeName { get; set; } = new();
 	public VersionedList<string> ObsoleteMessage { get; set; } = new();
 	public VersionedList<string> DocumentationString { get; set; } = new();
+	[JsonIgnore]
+	public UnityVersion MinimumVersion
+	{
+		get
+		{
+			return Exists.Count > 0 ? Exists[0].Key : UnityVersion.MinVersion;
+		}
+	}
 	public override string ToString() => Name;
 
 	public virtual void Initialize(UnityVersion version, DocumentationBase first)
