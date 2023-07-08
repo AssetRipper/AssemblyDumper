@@ -52,7 +52,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					SharedState.Instance,
 					SharedState.EnumsNamespace,
 					enumName,
-					GetFields(enumHistory),
+					enumHistory.GetFields().Order(EnumFieldComparer.Instance),
 					elementType.ToEnumUnderlyingType());
 
 				if (enumHistory.IsFlagsEnum)
@@ -73,55 +73,45 @@ namespace AssetRipper.AssemblyDumper.Passes
 			Dictionary<string, int> seconds = new();
 			foreach (EnumHistory enumHistory in enums)
 			{
-				if (firsts.Contains(enumHistory.Name))
+				if (!firsts.Add(enumHistory.Name))
 				{
 					seconds.TryAdd(enumHistory.Name, 0);
-				}
-				else
-				{
-					firsts.Add(enumHistory.Name);
 				}
 			}
 			return seconds;
 		}
 
-		private static IEnumerable<KeyValuePair<string, long>> GetFields(EnumHistory history)
+		private sealed class EnumFieldComparer : IComparer<KeyValuePair<string, long>>
 		{
-			List<KeyValuePair<string, long>> list = new();
-			foreach (EnumMemberHistory member in history.Members.Values)
+			private EnumFieldComparer() { }
+
+			public static EnumFieldComparer Instance { get; } = new();
+
+			int IComparer<KeyValuePair<string, long>>.Compare(KeyValuePair<string, long> x, KeyValuePair<string, long> y)
 			{
-				if (member.TryGetUniqueValue(out long value, out IEnumerable<KeyValuePair<string, long>>? pairs))
+				return Compare(x, y);
+			}
+
+			/// <summary>
+			/// Compare two enum fields
+			/// </summary>
+			/// <param name="x"></param>
+			/// <param name="y"></param>
+			/// <returns>
+			/// <paramref name="x"/> &lt; <paramref name="y"/> : -1<br/>
+			/// <paramref name="x"/> == <paramref name="y"/> : 0<br/>
+			/// <paramref name="x"/> &gt; <paramref name="y"/> : 1<br/>
+			/// </returns>
+			public static int Compare(KeyValuePair<string, long> x, KeyValuePair<string, long> y)
+			{
+				if (x.Value != y.Value)
 				{
-					list.Add(new KeyValuePair<string, long>(member.Name, value));
+					return x.Value < y.Value ? -1 : 1;
 				}
 				else
 				{
-					list.AddRange(pairs);
+					return x.Key.CompareTo(y.Key);
 				}
-			}
-			list.Sort(CompareEnumFields);
-			return list;
-		}
-
-		/// <summary>
-		/// Compare two enum fields
-		/// </summary>
-		/// <param name="a"></param>
-		/// <param name="b"></param>
-		/// <returns>
-		/// <paramref name="a"/> &lt; <paramref name="b"/> : -1<br/>
-		/// <paramref name="a"/> == <paramref name="b"/> : 0<br/>
-		/// <paramref name="a"/> &gt; <paramref name="b"/> : 1<br/>
-		/// </returns>
-		private static int CompareEnumFields(KeyValuePair<string, long> a, KeyValuePair<string, long> b)
-		{
-			if (a.Value != b.Value)
-			{
-				return a.Value < b.Value ? -1 : 1;
-			}
-			else
-			{
-				return a.Key.CompareTo(b.Key);
 			}
 		}
 	}
