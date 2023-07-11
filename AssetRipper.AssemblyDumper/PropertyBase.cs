@@ -1,8 +1,10 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.DocExtraction.DataStructures;
+using System.Diagnostics;
 
 namespace AssetRipper.AssemblyDumper
 {
+	[DebuggerDisplay($"{{{nameof(GetDebuggerDisplay)}(),nq}}")]
 	internal abstract class PropertyBase
 	{
 		protected PropertyBase(PropertyDefinition definition)
@@ -14,6 +16,8 @@ namespace AssetRipper.AssemblyDumper
 		public PropertyDefinition? SpecialDefinition { get; set; }
 		public DataMemberHistory? History { get; set; }
 		public MethodDefinition? HasMethod { get; set; }
+		public MethodDefinition? ReleaseOnlyMethod { get; set; }
+		public MethodDefinition? EditorOnlyMethod { get; set; }
 
 		[MemberNotNullWhen(true, nameof(SpecialDefinition))]
 		public bool HasEnumVariant
@@ -45,5 +49,7 @@ namespace AssetRipper.AssemblyDumper
 				out getReference,
 				out equalsReference);
 		}
+
+		private string? GetDebuggerDisplay() => Name;
 	}
 }

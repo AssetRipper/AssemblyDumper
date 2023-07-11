@@ -52,6 +52,16 @@
 			return $"Has_{propertyNameWithTypeSuffix}";
 		}
 
+		public static string GetReleaseOnlyMethodName(string propertyNameWithTypeSuffix)
+		{
+			return $"IsReleaseOnly_{propertyNameWithTypeSuffix}";
+		}
+
+		public static string GetEditorOnlyMethodName(string propertyNameWithTypeSuffix)
+		{
+			return $"IsEditorOnly_{propertyNameWithTypeSuffix}";
+		}
+
 		public static void FillWithSimpleBooleanReturn(this CilInstructionCollection processor, bool returnTrue)
 		{
 			if (returnTrue)

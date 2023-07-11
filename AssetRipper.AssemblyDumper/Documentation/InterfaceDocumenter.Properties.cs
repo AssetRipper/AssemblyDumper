@@ -1,5 +1,4 @@
-﻿using AssetRipper.AssemblyDumper.Utils;
-using AssetRipper.DocExtraction.Extensions;
+﻿using AssetRipper.DocExtraction.Extensions;
 
 namespace AssetRipper.AssemblyDumper.Documentation;
 
@@ -9,29 +8,31 @@ internal static partial class InterfaceDocumenter
 	{
 		foreach (InterfaceProperty interfaceProperty in group.InterfaceProperties)
 		{
-			DiscontinuousRange<UnityVersion> releaseOnlyRange = interfaceProperty.ReleaseOnlyRange;
-			if (!releaseOnlyRange.IsEmpty())
+			if (!interfaceProperty.ReleaseOnlyRange.IsEmpty())
 			{
-				if (releaseOnlyRange == interfaceProperty.PresentRange)
+				if (interfaceProperty.ReleaseOnlyMethod is null)
 				{
 					DocumentationHandler.AddPropertyDefinitionLine(interfaceProperty, "Release Only");
 				}
 				else
 				{
-					DocumentationHandler.AddPropertyDefinitionLine(interfaceProperty, $"Sometimes Release Only: {releaseOnlyRange.GetString(interfaceProperty.Group.MinimumVersion)}");
+					string versionString = interfaceProperty.ReleaseOnlyRange.GetString(interfaceProperty.Group.MinimumVersion);
+					DocumentationHandler.AddPropertyDefinitionLine(interfaceProperty, $"Sometimes Release Only: {versionString}");
+					DocumentationHandler.AddMethodDefinitionLine(interfaceProperty.ReleaseOnlyMethod, versionString);
 				}
 			}
 
-			DiscontinuousRange<UnityVersion> editorOnlyRange = interfaceProperty.EditorOnlyRange;
-			if (!editorOnlyRange.IsEmpty())
+			if (!interfaceProperty.EditorOnlyRange.IsEmpty())
 			{
-				if (editorOnlyRange == interfaceProperty.PresentRange)
+				if (interfaceProperty.EditorOnlyMethod is null)
 				{
 					DocumentationHandler.AddPropertyDefinitionLine(interfaceProperty, "Editor Only");
 				}
 				else
 				{
-					DocumentationHandler.AddPropertyDefinitionLine(interfaceProperty, $"Sometimes Editor Only: {editorOnlyRange.GetString(interfaceProperty.Group.MinimumVersion)}");
+					string versionString = interfaceProperty.EditorOnlyRange.GetString(interfaceProperty.Group.MinimumVersion);
+					DocumentationHandler.AddPropertyDefinitionLine(interfaceProperty, $"Sometimes Editor Only: {versionString}");
+					DocumentationHandler.AddMethodDefinitionLine(interfaceProperty.EditorOnlyMethod, versionString);
 				}
 			}
 

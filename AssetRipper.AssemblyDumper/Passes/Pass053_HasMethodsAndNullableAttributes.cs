@@ -13,7 +13,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				ApplyNullableAttributesToTypes(group);
 				AddHasMethodsAndApplyNullableAttributesToProperties(group);
-				AddMemberNotNullAttributesToHasMethods(group);
+				AddIsMethods(group);
+				AddMemberNotNullAttributesToInterfaceMethods(group);
 			}
 		}
 
@@ -62,11 +63,35 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 		}
 
-		private static void AddMemberNotNullAttributesToHasMethods(ClassGroupBase group)
+		private static void AddIsMethods(ClassGroupBase group)
+		{
+			foreach (InterfaceProperty interfaceProperty in group.InterfaceProperties)
+			{
+				string propertyName = interfaceProperty.Definition.Name!;
+				if (!interfaceProperty.ReleaseOnlyRange.IsEmpty() && interfaceProperty.ReleaseOnlyRange != interfaceProperty.PresentRange)
+				{
+					interfaceProperty.ReleaseOnlyMethod = group.Interface.AddReleaseOnlyMethodDeclaration(propertyName);
+					foreach (ClassProperty classProperty in interfaceProperty.Implementations)
+					{
+						classProperty.ReleaseOnlyMethod = classProperty.Class.Type.AddReleaseOnlyMethodImplementation(propertyName, classProperty.IsReleaseOnly);
+					}
+				}
+				if (!interfaceProperty.EditorOnlyRange.IsEmpty() && interfaceProperty.EditorOnlyRange != interfaceProperty.PresentRange)
+				{
+					interfaceProperty.EditorOnlyMethod = group.Interface.AddEditorOnlyMethodDeclaration(propertyName);
+					foreach (ClassProperty classProperty in interfaceProperty.Implementations)
+					{
+						classProperty.EditorOnlyMethod = classProperty.Class.Type.AddEditorOnlyMethodImplementation(propertyName, classProperty.IsEditorOnly);
+					}
+				}
+			}
+		}
+
+		private static void AddMemberNotNullAttributesToInterfaceMethods(ClassGroupBase group)
 		{
 			foreach (InterfaceProperty property in group.InterfaceProperties)
 			{
-				if (property.HasMethod is null)
+				if (property.HasMethod is null && property.ReleaseOnlyMethod is null && property.EditorOnlyMethod is null)
 				{
 					continue;
 				}
@@ -77,15 +102,44 @@ namespace AssetRipper.AssemblyDumper.Passes
 					{
 						continue;
 					}
-					//other is always present when this is present
-					else if (otherProperty.PresentRange.Contains(property.PresentRange))
+					if (property.HasMethod is not null)
 					{
-						property.HasMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, true, otherProperty.Definition.Name!);
+						//other is always present when this is present
+						if (otherProperty.PresentRange.Contains(property.PresentRange))
+						{
+							property.HasMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, true, otherProperty.Definition.Name!);
+						}
+						//other is always present when this is absent
+						else if (otherProperty.PresentRange.Contains(property.AbsentRange))
+						{
+							property.HasMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, false, otherProperty.Definition.Name!);
+						}
 					}
-					//other is always present when this is absent
-					else if (otherProperty.PresentRange.Contains(property.AbsentRange))
+					if (property.ReleaseOnlyMethod is not null)
 					{
-						property.HasMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, false, otherProperty.Definition.Name!);
+						//other is always present when this is release only
+						if (otherProperty.PresentRange.Contains(property.ReleaseOnlyRange))
+						{
+							property.ReleaseOnlyMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, true, otherProperty.Definition.Name!);
+						}
+						//other is always present when this is not release only
+						else if (otherProperty.PresentRange.Contains(property.NotReleaseOnlyRange))
+						{
+							property.ReleaseOnlyMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, false, otherProperty.Definition.Name!);
+						}
+					}
+					if (property.EditorOnlyMethod is not null)
+					{
+						//other is always present when this is editor only
+						if (otherProperty.PresentRange.Contains(property.EditorOnlyRange))
+						{
+							property.EditorOnlyMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, true, otherProperty.Definition.Name!);
+						}
+						//other is always present when this is not editor only
+						else if (otherProperty.PresentRange.Contains(property.NotEditorOnlyRange))
+						{
+							property.EditorOnlyMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, false, otherProperty.Definition.Name!);
+						}
 					}
 				}
 			}
@@ -93,21 +147,50 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static MethodDefinition AddHasMethodDeclaration(this TypeDefinition @interface, string propertyName)
 		{
+			return @interface.AddBooleanMethodDeclaration(GeneratedInterfaceUtils.GetHasMethodName(propertyName));
+		}
+
+		private static MethodDefinition AddHasMethodImplementation(this TypeDefinition declaringType, string propertyName, bool returnTrue)
+		{
+			return declaringType.AddBooleanMethodImplementation(GeneratedInterfaceUtils.GetHasMethodName(propertyName), returnTrue);
+		}
+
+		private static MethodDefinition AddReleaseOnlyMethodDeclaration(this TypeDefinition @interface, string propertyName)
+		{
+			return @interface.AddBooleanMethodDeclaration(GeneratedInterfaceUtils.GetReleaseOnlyMethodName(propertyName));
+		}
+
+		private static MethodDefinition AddReleaseOnlyMethodImplementation(this TypeDefinition declaringType, string propertyName, bool returnTrue)
+		{
+			return declaringType.AddBooleanMethodImplementation(GeneratedInterfaceUtils.GetReleaseOnlyMethodName(propertyName), returnTrue);
+		}
+
+		private static MethodDefinition AddEditorOnlyMethodDeclaration(this TypeDefinition @interface, string propertyName)
+		{
+			return @interface.AddBooleanMethodDeclaration(GeneratedInterfaceUtils.GetEditorOnlyMethodName(propertyName));
+		}
+
+		private static MethodDefinition AddEditorOnlyMethodImplementation(this TypeDefinition declaringType, string propertyName, bool returnTrue)
+		{
+			return declaringType.AddBooleanMethodImplementation(GeneratedInterfaceUtils.GetEditorOnlyMethodName(propertyName), returnTrue);
+		}
+
+		private static MethodDefinition AddBooleanMethodDeclaration(this TypeDefinition @interface, string methodName)
+		{
 			return @interface.AddMethod(
-				GeneratedInterfaceUtils.GetHasMethodName(propertyName),
+				methodName,
 				InterfaceUtils.InterfaceMethodDeclaration,
 				SharedState.Instance.Importer.Boolean);
 		}
 
-		private static MethodDefinition AddHasMethodImplementation(this TypeDefinition declaringType, string propertyName, bool isType)
+		private static MethodDefinition AddBooleanMethodImplementation(this TypeDefinition declaringType, string methodName, bool returnTrue)
 		{
 			MethodDefinition method = declaringType.AddMethod(
-				GeneratedInterfaceUtils.GetHasMethodName(propertyName),
+				methodName,
 				InterfaceUtils.InterfaceMethodImplementation,
 				SharedState.Instance.Importer.Boolean);
-			method.CilMethodBody!.Instructions.FillWithSimpleBooleanReturn(isType);
+			method.CilMethodBody!.Instructions.FillWithSimpleBooleanReturn(returnTrue);
 			return method;
 		}
-
 	}
 }

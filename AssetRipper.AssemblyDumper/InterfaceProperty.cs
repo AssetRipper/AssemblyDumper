@@ -7,6 +7,10 @@ namespace AssetRipper.AssemblyDumper
 		private readonly List<ClassProperty> implementations = new();
 		private DiscontinuousRange<UnityVersion>? presentRange;
 		private DiscontinuousRange<UnityVersion>? absentRange;
+		private DiscontinuousRange<UnityVersion>? releaseOnlyRange;
+		private DiscontinuousRange<UnityVersion>? editorOnlyRange;
+		private DiscontinuousRange<UnityVersion>? notReleaseOnlyRange;
+		private DiscontinuousRange<UnityVersion>? notEditorOnlyRange;
 
 		public InterfaceProperty(PropertyDefinition definition, ClassGroupBase group) : base(definition)
 		{
@@ -35,9 +39,41 @@ namespace AssetRipper.AssemblyDumper
 
 		public ClassGroupBase Group { get; }
 
-		public DiscontinuousRange<UnityVersion> ReleaseOnlyRange => CalculateRange(p => p.IsReleaseOnly);
+		public DiscontinuousRange<UnityVersion> ReleaseOnlyRange
+		{
+			get
+			{
+				releaseOnlyRange ??= CalculateRange(p => p.IsReleaseOnly);
+				return releaseOnlyRange.Value;
+			}
+		}
 
-		public DiscontinuousRange<UnityVersion> EditorOnlyRange => CalculateRange(p => p.IsEditorOnly);
+		public DiscontinuousRange<UnityVersion> EditorOnlyRange
+		{
+			get
+			{
+				editorOnlyRange ??= CalculateRange(p => p.IsEditorOnly);
+				return editorOnlyRange.Value;
+			}
+		}
+
+		public DiscontinuousRange<UnityVersion> NotReleaseOnlyRange
+		{
+			get
+			{
+				notReleaseOnlyRange ??= CalculateRange(p => !p.IsReleaseOnly);
+				return notReleaseOnlyRange.Value;
+			}
+		}
+
+		public DiscontinuousRange<UnityVersion> NotEditorOnlyRange
+		{
+			get
+			{
+				notEditorOnlyRange ??= CalculateRange(p => !p.IsEditorOnly);
+				return notEditorOnlyRange.Value;
+			}
+		}
 
 		internal void AddImplementation(ClassProperty implementation)
 		{
