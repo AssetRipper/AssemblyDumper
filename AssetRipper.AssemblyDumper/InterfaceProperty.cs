@@ -80,6 +80,10 @@ namespace AssetRipper.AssemblyDumper
 			implementations.Add(implementation);
 			presentRange = null;
 			absentRange = null;
+			releaseOnlyRange = null;
+			editorOnlyRange = null;
+			notReleaseOnlyRange = null;
+			notEditorOnlyRange = null;
 		}
 
 		private DiscontinuousRange<UnityVersion> CalculateRange(Func<ClassProperty, bool> predicate)
