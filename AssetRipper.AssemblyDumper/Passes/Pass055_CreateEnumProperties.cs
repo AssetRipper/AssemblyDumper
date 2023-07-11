@@ -117,6 +117,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 						"LightmapFormat_C28" => "UnityEditor.TextureUsageMode",
 						_ => null,
 					},
+					30 => interfaceProperty.Name switch
+					{
+						"DefaultMobileRenderingPath_C30" => "UnityEngine.RenderingPath",
+						"DefaultRenderingPath_C30" => "UnityEngine.RenderingPath",
+						_ => null,
+					},
 					43 => interfaceProperty.Name switch
 					{
 						"MeshCompression_C43" => "UnityEditor.ModelImporterMeshCompression",
