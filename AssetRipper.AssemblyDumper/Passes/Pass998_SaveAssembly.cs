@@ -1,4 +1,5 @@
-﻿using AsmResolver.DotNet.Builder;
+﻿using AsmResolver;
+using AsmResolver.DotNet.Builder;
 using System.IO;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -11,36 +12,19 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			string filePath = Path.Combine(Environment.CurrentDirectory, assembly.Name!.ToString() + ".dll");
 
-			DotNetDirectoryFactory factory = new DotNetDirectoryFactory();
-			//factory.MetadataBuilderFlags |= MetadataBuilderFlags.NoStringsStreamOptimization; //Check later, but currently less than 1% difference
-			ManagedPEImageBuilder builder = new ManagedPEImageBuilder(factory);
+			DotNetDirectoryFactory factory = new();
+			ManagedPEImageBuilder builder = new ManagedPEImageBuilder(factory, ThrowErrorListener.Instance);
 
-			//Console.WriteLine($"Saving assembly to {filePath}");
-			try
+			if (File.Exists(filePath))
 			{
-				if (File.Exists(filePath))
-				{
-					File.Delete(filePath);
-				}
-
-				assembly.Write(filePath, builder);
-				Console.WriteLine($"\t{GetTypeCount()} top level types.");
-				Console.WriteLine($"\t{GetMethodCount()} methods.");
-				Console.WriteLine($"\t{GetPropertyCount()} properties.");
-				Console.WriteLine($"\t{GetFieldCount()} fields.");
+				File.Delete(filePath);
 			}
-			catch (AggregateException aggregateException)
-			{
-				Console.WriteLine("AggregateException thrown");
-				aggregateException = aggregateException.Flatten();
 
-				foreach (Exception? error in aggregateException.InnerExceptions)
-				{
-					Console.WriteLine();
-					Console.WriteLine(error.ToString());
-					Console.WriteLine();
-				}
-			}
+			assembly.Write(filePath, builder);
+			Console.WriteLine($"\t{GetTypeCount()} top level types.");
+			Console.WriteLine($"\t{GetMethodCount()} methods.");
+			Console.WriteLine($"\t{GetPropertyCount()} properties.");
+			Console.WriteLine($"\t{GetFieldCount()} fields.");
 		}
 
 		private static int GetTypeCount()
