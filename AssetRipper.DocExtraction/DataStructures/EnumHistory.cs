@@ -2,7 +2,7 @@
 using AssetRipper.AssemblyDumper.Utils;
 using AssetRipper.DocExtraction.Extensions;
 using AssetRipper.DocExtraction.MetaData;
-using AssetRipper.VersionUtilities;
+using AssetRipper.Primitives;
 
 namespace AssetRipper.DocExtraction.DataStructures;
 public sealed class EnumHistory : TypeHistory<EnumMemberHistory, EnumMemberDocumentation>

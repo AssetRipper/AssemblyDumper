@@ -1,6 +1,6 @@
 ﻿using AssetRipper.AssemblyDumper.Utils;
 using AssetRipper.DocExtraction.MetaData;
-using AssetRipper.VersionUtilities;
+using AssetRipper.Primitives;
 
 namespace AssetRipper.DocExtraction.DataStructures;
 

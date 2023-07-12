@@ -1,5 +1,5 @@
 ﻿using AssetRipper.DocExtraction.MetaData;
-using AssetRipper.VersionUtilities;
+using AssetRipper.Primitives;
 using System.Text.Json.Serialization;
 
 namespace AssetRipper.DocExtraction.DataStructures;

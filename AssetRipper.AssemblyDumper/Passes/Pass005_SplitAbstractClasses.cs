@@ -1,5 +1,5 @@
 ﻿using AssetRipper.AssemblyDumper.Utils;
-using RangeClassList = System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<AssetRipper.AssemblyDumper.Utils.Range<AssetRipper.VersionUtilities.UnityVersion>, AssetRipper.AssemblyDumper.UniversalClass>>;
+using RangeClassList = System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<AssetRipper.AssemblyDumper.Utils.Range<AssetRipper.Primitives.UnityVersion>, AssetRipper.AssemblyDumper.UniversalClass>>;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

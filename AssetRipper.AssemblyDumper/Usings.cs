@@ -5,11 +5,11 @@ global using AsmResolver.DotNet.Signatures;
 global using AsmResolver.DotNet.Signatures.Types;
 global using AsmResolver.PE.DotNet.Cil;
 global using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
-global using AssetRipper.VersionUtilities;
+global using AssetRipper.Primitives;
 global using System;
 global using System.Collections.Generic;
 global using System.Diagnostics.CodeAnalysis;
 global using System.Linq;
 
-global using UnityVersionRange = AssetRipper.AssemblyDumper.Utils.Range<AssetRipper.VersionUtilities.UnityVersion>;
+global using UnityVersionRange = AssetRipper.AssemblyDumper.Utils.Range<AssetRipper.Primitives.UnityVersion>;
 

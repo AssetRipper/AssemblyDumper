@@ -1,4 +1,4 @@
-﻿using AssetRipper.VersionUtilities;
+﻿using AssetRipper.Primitives;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;

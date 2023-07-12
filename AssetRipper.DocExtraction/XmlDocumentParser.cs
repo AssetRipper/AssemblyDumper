@@ -1,4 +1,4 @@
-﻿using AssetRipper.VersionUtilities;
+﻿using AssetRipper.Primitives;
 using System.IO;
 using System.Xml;
 

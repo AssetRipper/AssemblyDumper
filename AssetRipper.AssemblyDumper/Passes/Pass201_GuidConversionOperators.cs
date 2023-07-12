@@ -18,8 +18,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void AddImplicitConversion(TypeDefinition guidType)
 		{
-			ITypeDefOrRef commonGuidType = SharedState.Instance.Importer.ImportType<UnityGUID>();
-			IMethodDefOrRef constructor = SharedState.Instance.Importer.ImportConstructor<UnityGUID>(4);
+			ITypeDefOrRef commonGuidType = SharedState.Instance.Importer.ImportType<UnityGuid>();
+			IMethodDefOrRef constructor = SharedState.Instance.Importer.ImportConstructor<UnityGuid>(4);
 
 			FieldDefinition data0 = guidType.Fields.Single(field => field.Name == "m_Data_0_");
 			FieldDefinition data1 = guidType.Fields.Single(field => field.Name == "m_Data_1_");
@@ -46,7 +46,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void AddExplicitConversion(TypeDefinition guidType)
 		{
-			ITypeDefOrRef commonGuidType = SharedState.Instance.Importer.ImportType<UnityGUID>();
+			ITypeDefOrRef commonGuidType = SharedState.Instance.Importer.ImportType<UnityGuid>();
 			IMethodDefOrRef constructor = guidType.Methods.Single(m => m.IsConstructor && m.Parameters.Count == 0 && !m.IsStatic);
 
 			FieldDefinition data0 = guidType.Fields.Single(field => field.Name == "m_Data_0_");
@@ -54,10 +54,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			FieldDefinition data2 = guidType.Fields.Single(field => field.Name == "m_Data_2_");
 			FieldDefinition data3 = guidType.Fields.Single(field => field.Name == "m_Data_3_");
 
-			IMethodDefOrRef getData0 = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == $"get_{nameof(UnityGUID.Data0)}");
-			IMethodDefOrRef getData1 = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == $"get_{nameof(UnityGUID.Data1)}");
-			IMethodDefOrRef getData2 = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == $"get_{nameof(UnityGUID.Data2)}");
-			IMethodDefOrRef getData3 = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == $"get_{nameof(UnityGUID.Data3)}");
+			IMethodDefOrRef getData0 = SharedState.Instance.Importer.ImportMethod<UnityGuid>(m => m.Name == $"get_{nameof(UnityGuid.Data0)}");
+			IMethodDefOrRef getData1 = SharedState.Instance.Importer.ImportMethod<UnityGuid>(m => m.Name == $"get_{nameof(UnityGuid.Data1)}");
+			IMethodDefOrRef getData2 = SharedState.Instance.Importer.ImportMethod<UnityGuid>(m => m.Name == $"get_{nameof(UnityGuid.Data2)}");
+			IMethodDefOrRef getData3 = SharedState.Instance.Importer.ImportMethod<UnityGuid>(m => m.Name == $"get_{nameof(UnityGuid.Data3)}");
 
 			MethodDefinition explicitMethod = guidType.AddMethod("op_Explicit", ConversionAttributes, guidType.ToTypeSignature());
 			Parameter parameter = explicitMethod.AddParameter(commonGuidType.ToTypeSignature(), "value");

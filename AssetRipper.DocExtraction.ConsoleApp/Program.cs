@@ -1,6 +1,6 @@
 ﻿using AssetRipper.DocExtraction.DataStructures;
 using AssetRipper.DocExtraction.MetaData;
-using AssetRipper.VersionUtilities;
+using AssetRipper.Primitives;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;

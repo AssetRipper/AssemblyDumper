@@ -121,7 +121,6 @@ namespace AssetRipper.AssemblyDumper
 			AddLocalReferenceModule("AssetRipper.IO.Files");
 			AddLocalReferenceModule("AssetRipper.Numerics");
 			AddLocalReferenceModule("AssetRipper.Primitives");
-			AddLocalReferenceModule("AssetRipper.VersionUtilities");
 			AddLocalReferenceModule("AssetRipper.Yaml");
 			AddSystemReferenceModule("System.Runtime");
 			AddSystemReferenceModule("System.Numerics.Vectors");

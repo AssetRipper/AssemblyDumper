@@ -51,8 +51,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			MethodDefinition method = type.AddMethod(nameof(object.ToString), MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual, type.Module!.CorLibTypeFactory.String);
 			MethodDefinition conversionMethod = type.Methods.Single(m => m.Name == "op_Implicit");
-			ITypeDefOrRef commonRef = SharedState.Instance.Importer.ImportType<UnityGUID>();
-			IMethodDefOrRef toStringMethod = SharedState.Instance.Importer.ImportMethod<UnityGUID>(m => m.Name == nameof(UnityGUID.ToString));
+			ITypeDefOrRef commonRef = SharedState.Instance.Importer.ImportType<UnityGuid>();
+			IMethodDefOrRef toStringMethod = SharedState.Instance.Importer.ImportMethod<UnityGuid>(m => m.Name == nameof(UnityGuid.ToString));
 
 			CilInstructionCollection processor = method.GetProcessor();
 			CilLocalVariable local = processor.AddLocalVariable(commonRef.ToTypeSignature());

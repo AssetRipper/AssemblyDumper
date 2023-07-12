@@ -1,5 +1,5 @@
 ﻿using AssetRipper.AssemblyDumper.Utils;
-using AssetRipper.VersionUtilities;
+using AssetRipper.Primitives;
 
 namespace AssetRipper.AssemblyDumper.Tests
 {
