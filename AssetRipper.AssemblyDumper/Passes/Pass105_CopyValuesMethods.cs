@@ -17,32 +17,40 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private const string DeepCloneName = "DeepClone";
 		private static readonly Dictionary<TypeSignatureStruct, (IMethodDescriptor, CopyMethodType)> singleTypeDictionary = new();
 		private static readonly Dictionary<(TypeSignatureStruct, TypeSignatureStruct), (IMethodDescriptor, CopyMethodType)> doubleTypeDictionary = new();
-		private static MethodDefinition? duplicateArrayMethod;
-		private static MethodDefinition? duplicateArrayArrayMethod;
-		private static ITypeDefOrRef? pptrConverterType;
-		private static IMethodDefOrRef? pptrConvertMethod;
-		private static IMethodDefOrRef? pptrCopyMethod;
-		private static TypeDefinition? helperType;
 		private static readonly HashSet<ClassGroupBase> processedGroups = new();
+#nullable disable
+		private static MethodDefinition duplicateArrayMethod;
+		private static MethodDefinition duplicateArrayArrayMethod;
+		private static ITypeDefOrRef pptrConverterType;
+		private static IMethodDefOrRef pptrConvertMethod;
+		private static IMethodDefOrRef pptrCopyMethod;
+		private static TypeDefinition helperType;
 
-		private static ITypeDefOrRef? accessPairBase;
-		private static IMethodDefOrRef? accessPairBaseGetKey;
-		private static IMethodDefOrRef? accessPairBaseSetKey;
-		private static IMethodDefOrRef? accessPairBaseGetValue;
-		private static IMethodDefOrRef? accessPairBaseSetValue;
+		private static ITypeDefOrRef accessPairBase;
+		private static IMethodDefOrRef accessPairBaseGetKey;
+		private static IMethodDefOrRef accessPairBaseSetKey;
+		private static IMethodDefOrRef accessPairBaseGetValue;
+		private static IMethodDefOrRef accessPairBaseSetValue;
+		
+		private static ITypeDefOrRef accessListBase;
+		private static IMethodDefOrRef accessListBaseGetCount;
+		private static IMethodDefOrRef accessListBaseSetCapacity;
+		private static IMethodDefOrRef accessListBaseGetItem;
 
-		private static ITypeDefOrRef? accessListBase;
-		private static IMethodDefOrRef? accessListBaseGetCount;
-		private static IMethodDefOrRef? accessListBaseSetCapacity;
-		private static IMethodDefOrRef? accessListBaseGetItem;
-		private static IMethodDefOrRef? accessListBaseAddNew;
-		private static IMethodDefOrRef? accessListBaseAdd;
+		private static ITypeDefOrRef accessDictionaryBase;
+		private static IMethodDefOrRef accessDictionaryBaseGetCount;
+		private static IMethodDefOrRef accessDictionaryBaseSetCapacity;
+		private static IMethodDefOrRef accessDictionaryBaseGetPair;
 
-		private static ITypeDefOrRef? accessDictionaryBase;
-		private static IMethodDefOrRef? accessDictionaryBaseGetCount;
-		private static IMethodDefOrRef? accessDictionaryBaseSetCapacity;
-		private static IMethodDefOrRef? accessDictionaryBaseGetPair;
-		private static IMethodDefOrRef? accessDictionaryBaseAddNew;
+		private static ITypeDefOrRef assetList;
+		private static IMethodDefOrRef assetListAdd;
+		private static IMethodDefOrRef assetListAddNew;
+
+		private static ITypeDefOrRef assetDictionary;
+		private static IMethodDefOrRef assetDictionaryAddNew;
+
+		private static ITypeDefOrRef assetPair;
+#nullable enable
 
 		public static void DoPass()
 		{
@@ -60,14 +68,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 			accessListBaseGetCount = SharedState.Instance.Importer.ImportMethod(typeof(AccessListBase<>), m => m.Name == $"get_{nameof(AccessListBase<int>.Count)}");
 			accessListBaseSetCapacity = SharedState.Instance.Importer.ImportMethod(typeof(AccessListBase<>), m => m.Name == $"set_{nameof(AccessListBase<int>.Capacity)}");
 			accessListBaseGetItem = SharedState.Instance.Importer.ImportMethod(typeof(AccessListBase<>), m => m.Name == "get_Item");
-			accessListBaseAddNew = SharedState.Instance.Importer.ImportMethod(typeof(AccessListBase<>), m => m.Name == nameof(AccessListBase<int>.AddNew));
-			accessListBaseAdd = SharedState.Instance.Importer.ImportMethod(typeof(AccessListBase<>), m => m.Name == nameof(AccessListBase<int>.Add));
 
 			accessDictionaryBase = SharedState.Instance.Importer.ImportType(typeof(AccessDictionaryBase<,>));
 			accessDictionaryBaseGetCount = SharedState.Instance.Importer.ImportMethod(typeof(AccessDictionaryBase<,>), m => m.Name == $"get_{nameof(AccessDictionaryBase<int, int>.Count)}");
 			accessDictionaryBaseSetCapacity = SharedState.Instance.Importer.ImportMethod(typeof(AccessDictionaryBase<,>), m => m.Name == $"set_{nameof(AccessDictionaryBase<int, int>.Capacity)}");
 			accessDictionaryBaseGetPair = SharedState.Instance.Importer.ImportMethod(typeof(AccessDictionaryBase<,>), m => m.Name == nameof(AccessDictionaryBase<int, int>.GetPair));
-			accessDictionaryBaseAddNew = SharedState.Instance.Importer.ImportMethod(typeof(AccessDictionaryBase<,>), m => m.Name == nameof(AccessDictionaryBase<int, int>.AddNew));
+
+			assetList = SharedState.Instance.Importer.ImportType(typeof(AssetList<>));
+			assetListAdd = SharedState.Instance.Importer.ImportMethod(typeof(AssetList<>), m => m.Name == nameof(AssetList<int>.Add));
+			assetListAddNew = SharedState.Instance.Importer.ImportMethod(typeof(AssetList<>), m => m.Name == nameof(AssetList<int>.AddNew));
+
+			assetDictionary = SharedState.Instance.Importer.ImportType(typeof(AssetDictionary<,>));
+			assetDictionaryAddNew = SharedState.Instance.Importer.ImportMethod(typeof(AssetDictionary<,>), m => m.Name == nameof(AssetDictionary<int, int>.AddNew));
+
+			assetPair = SharedState.Instance.Importer.ImportType(typeof(AssetPair<,>));
 
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 			{
@@ -82,7 +96,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					MethodDefinition method = group.Interface.AddMethod(DeepCloneName, InterfaceUtils.InterfaceMethodDeclaration, group.Interface.ToTypeSignature());
 					if (needsConverter)
 					{
-						method.AddParameter(pptrConverterType!.ToTypeSignature(), "converter");
+						method.AddParameter(pptrConverterType.ToTypeSignature(), "converter");
 					}
 				}
 				foreach (TypeDefinition type in group.Types)
@@ -95,7 +109,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					processor.Add(CilOpCodes.Ldarg_0);
 					if (needsConverter)
 					{
-						method.AddParameter(pptrConverterType!.ToTypeSignature(), "converter");
+						method.AddParameter(pptrConverterType.ToTypeSignature(), "converter");
 						processor.Add(CilOpCodes.Ldarg_1);
 					}
 					processor.Add(CilOpCodes.Call, copyValuesMethod);
@@ -146,7 +160,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						Pass099_CreateEmptyMethods.OverrideMethodAttributes,
 						SharedState.Instance.Importer.Void);
 					copyValuesMethod.AddParameter(unityAssetBaseInterfaceRef, "source");
-					copyValuesMethod.AddParameter(pptrConverterType!.ToTypeSignature(), "converter");
+					copyValuesMethod.AddParameter(pptrConverterType.ToTypeSignature(), "converter");
 					copyValuesMethod.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
 					overridenMethods.Add(type, copyValuesMethod);
 				}
@@ -246,7 +260,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					MethodDefinition method = group.Interface.AddMethod(CopyValuesName, InterfaceUtils.InterfaceMethodDeclaration, SharedState.Instance.Importer.Void);
 					method.AddParameter(group.Interface.ToTypeSignature(), "source");
-					method.AddParameter(pptrConverterType!.ToTypeSignature(), "converter");
+					method.AddParameter(pptrConverterType.ToTypeSignature(), "converter");
 					method.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
 					singleTypeDictionary.Add(group.Interface.ToTypeSignature(), (method, CopyMethodType.Callvirt | CopyMethodType.HasConverter));
 				}
@@ -254,7 +268,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					MethodDefinition method = type.AddMethod(CopyValuesName, InterfaceUtils.InterfaceMethodImplementation, SharedState.Instance.Importer.Void);
 					method.AddParameter(group.Interface.ToTypeSignature(), "source");
-					method.AddParameter(pptrConverterType!.ToTypeSignature(), "converter");
+					method.AddParameter(pptrConverterType.ToTypeSignature(), "converter");
 					method.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
 					CilInstructionCollection processor = method.GetProcessor();
 					CilInstructionLabel returnLabel = new();
@@ -268,7 +282,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					processor.Add(CilOpCodes.Ldarg_1);
 					processor.Add(CilOpCodes.Ldarg_2);
 					TypeSignature pptrTypeArgument = GetPPtrTypeArgument(type, group.Interface);
-					processor.Add(CilOpCodes.Call, pptrCopyMethod!.MakeGenericInstanceMethod(pptrTypeArgument));
+					processor.Add(CilOpCodes.Call, pptrCopyMethod.MakeGenericInstanceMethod(pptrTypeArgument));
 					processor.Add(CilOpCodes.Br, returnLabel);
 
 					isNullLabel.Instruction = processor.Add(CilOpCodes.Nop);
@@ -356,7 +370,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					if (needsConverter)
 					{
-						method.AddParameter(pptrConverterType!.ToTypeSignature(), "converter");
+						method.AddParameter(pptrConverterType.ToTypeSignature(), "converter");
 						singleTypeDictionary.Add(type.ToTypeSignature(), (method, CopyMethodType.HasConverter));
 					}
 					else
@@ -374,7 +388,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					}
 					if (needsConverter)
 					{
-						method.AddParameter(pptrConverterType!.ToTypeSignature(), "converter");
+						method.AddParameter(pptrConverterType.ToTypeSignature(), "converter");
 						singleTypeDictionary.Add(group.Interface.ToTypeSignature(), (method, CopyMethodType.Callvirt | CopyMethodType.HasConverter));
 					}
 					else
@@ -406,7 +420,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					{
 						bool needsConverter = false;
 						GenericInstanceTypeSignature sourceGenericSignature = (GenericInstanceTypeSignature)sourceSignature;
-						MethodDefinition method = helperType!.AddMethod(
+						MethodDefinition method = helperType.AddMethod(
 							MakeUniqueCopyValuesName(targetSignature, sourceSignature),
 							StaticClassCreator.StaticMethodAttributes,
 							SharedState.Instance.Importer.Void);
@@ -417,12 +431,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 						{
 							case $"{nameof(AssetDictionary<int, int>)}`2":
 								{
+									//Argument 0 (target) is AssetDictionary`2. Argument 1 (source) is AccessDictionaryBase`2.
+
 									TypeSignature targetKeyTypeSignature = targetGenericSignature.TypeArguments[0];
 									TypeSignature targetValueTypeSignature = targetGenericSignature.TypeArguments[1];
-									TypeSignature targetPairTypeSignature = accessPairBase!.MakeGenericInstanceType(targetKeyTypeSignature, targetValueTypeSignature);
+									TypeSignature targetPairTypeSignature = assetPair.MakeGenericInstanceType(targetKeyTypeSignature, targetValueTypeSignature);
 									TypeSignature sourceKeyTypeSignature = sourceGenericSignature.TypeArguments[0];
 									TypeSignature sourceValueTypeSignature = sourceGenericSignature.TypeArguments[1];
-									TypeSignature sourcePairTypeSignature = accessPairBase!.MakeGenericInstanceType(sourceKeyTypeSignature, sourceValueTypeSignature);
+									TypeSignature sourcePairTypeSignature = accessPairBase.MakeGenericInstanceType(sourceKeyTypeSignature, sourceValueTypeSignature);
 
 									CilInstructionLabel returnLabel = new();
 									CilInstructionLabel isNullLabel = new();
@@ -453,9 +469,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 									(IMethodDescriptor copyMethod, CopyMethodType copyMethodType) = GetOrMakeMethod(targetPairTypeSignature, sourcePairTypeSignature);
 									processor.Add(CilOpCodes.Ldarg_0);
 									processor.Add(CilOpCodes.Callvirt, MakeDictionaryAddNewMethod(targetKeyTypeSignature, targetValueTypeSignature));
-									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Ldloc, iLocal);
-									processor.Add(CilOpCodes.Callvirt, MakeDictionaryGetPairMethod(targetKeyTypeSignature, targetValueTypeSignature));
 									processor.Add(CilOpCodes.Ldarg_1);
 									processor.Add(CilOpCodes.Ldloc, iLocal);
 									processor.Add(CilOpCodes.Callvirt, MakeDictionaryGetPairMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
@@ -489,6 +502,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 								break;
 							case $"{nameof(AssetList<int>)}`1":
 								{
+									//Argument 0 (target) is AssetList`1. Argument 1 (source) is AccessListBase`1.
+
 									TypeSignature targetElementTypeSignature = targetGenericSignature.TypeArguments[0];
 									TypeSignature sourceElementTypeSignature = sourceGenericSignature.TypeArguments[0];
 
@@ -524,7 +539,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 										processor.Add(CilOpCodes.Ldarg_1);
 										processor.Add(CilOpCodes.Ldloc, iLocal);
 										processor.Add(CilOpCodes.Callvirt, MakeListGetItemMethod(sourceElementTypeSignature));
-										processor.Add(CilOpCodes.Callvirt, MakeListAddMethod(targetElementTypeSignature));
+										processor.Add(CilOpCodes.Callvirt, MakeAssetListAddMethod(targetElementTypeSignature));
 									}
 									else if (targetElementTypeSignature is SzArrayTypeSignature keyArrayTypeSignature)
 									{
@@ -535,7 +550,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 										(IMethodDescriptor copyMethod, CopyMethodType copyMethodType) = GetOrMakeMethod(targetElementTypeSignature, sourceElementTypeSignature);
 
 										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Callvirt, MakeListAddNewMethod(targetElementTypeSignature));
+										processor.Add(CilOpCodes.Callvirt, MakeAssetListAddNewMethod(targetElementTypeSignature));
 										processor.Add(CilOpCodes.Ldarg_1);
 										processor.Add(CilOpCodes.Ldloc, iLocal);
 										processor.Add(CilOpCodes.Callvirt, MakeListGetItemMethod(sourceElementTypeSignature));
@@ -649,7 +664,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						(IMethodDescriptor, CopyMethodType) result;
 						if (needsConverter)
 						{
-							method.AddParameter(pptrConverterType!.ToTypeSignature(), "converter");
+							method.AddParameter(pptrConverterType.ToTypeSignature(), "converter");
 							result = (method, CopyMethodType.HasConverter);
 						}
 						else
@@ -673,104 +688,104 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
-				accessDictionaryBase!.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
-				accessDictionaryBaseGetCount!);
+				accessDictionaryBase.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
+				accessDictionaryBaseGetCount);
 		}
 
 		private static IMethodDefOrRef MakeDictionarySetCapacityMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
-				accessDictionaryBase!.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
-				accessDictionaryBaseSetCapacity!);
+				accessDictionaryBase.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
+				accessDictionaryBaseSetCapacity);
 		}
 
 		private static IMethodDefOrRef MakeDictionaryGetPairMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
-				accessDictionaryBase!.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
-				accessDictionaryBaseGetPair!);
+				accessDictionaryBase.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
+				accessDictionaryBaseGetPair);
 		}
 
 		private static IMethodDefOrRef MakeDictionaryAddNewMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
-				accessDictionaryBase!.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
-				accessDictionaryBaseAddNew!);
+				assetDictionary.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
+				assetDictionaryAddNew);
 		}
 
 		private static IMethodDefOrRef MakeListGetCountMethod(TypeSignature elementTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
-				accessListBase!.MakeGenericInstanceType(elementTypeSignature),
-				accessListBaseGetCount!);
+				accessListBase.MakeGenericInstanceType(elementTypeSignature),
+				accessListBaseGetCount);
 		}
 
 		private static IMethodDefOrRef MakeListSetCapacityMethod(TypeSignature elementTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
-				accessListBase!.MakeGenericInstanceType(elementTypeSignature),
-				accessListBaseSetCapacity!);
+				accessListBase.MakeGenericInstanceType(elementTypeSignature),
+				accessListBaseSetCapacity);
 		}
 
 		private static IMethodDefOrRef MakeListGetItemMethod(TypeSignature elementTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
-				accessListBase!.MakeGenericInstanceType(elementTypeSignature),
-				accessListBaseGetItem!);
+				accessListBase.MakeGenericInstanceType(elementTypeSignature),
+				accessListBaseGetItem);
 		}
 
-		private static IMethodDefOrRef MakeListAddNewMethod(TypeSignature elementTypeSignature)
+		private static IMethodDefOrRef MakeAssetListAddNewMethod(TypeSignature elementTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
-				accessListBase!.MakeGenericInstanceType(elementTypeSignature),
-				accessListBaseAddNew!);
+				assetList.MakeGenericInstanceType(elementTypeSignature),
+				assetListAddNew);
 		}
 
-		private static IMethodDefOrRef MakeListAddMethod(TypeSignature elementTypeSignature)
+		private static IMethodDefOrRef MakeAssetListAddMethod(TypeSignature elementTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
-				accessListBase!.MakeGenericInstanceType(elementTypeSignature),
-				accessListBaseAdd!);
+				assetList.MakeGenericInstanceType(elementTypeSignature),
+				assetListAdd);
 		}
 
 		private static IMethodDefOrRef MakePairGetKeyMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
-				accessPairBase!.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
-				accessPairBaseGetKey!);
+				accessPairBase.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
+				accessPairBaseGetKey);
 		}
 
 		private static IMethodDefOrRef MakePairSetKeyMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
-				accessPairBase!.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
-				accessPairBaseSetKey!);
+				accessPairBase.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
+				accessPairBaseSetKey);
 		}
 
 		private static IMethodDefOrRef MakePairGetValueMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
-				accessPairBase!.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
-				accessPairBaseGetValue!);
+				accessPairBase.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
+				accessPairBaseGetValue);
 		}
 
 		private static IMethodDefOrRef MakePairSetValueMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
-				accessPairBase!.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
-				accessPairBaseSetValue!);
+				accessPairBase.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
+				accessPairBaseSetValue);
 		}
 
 		private static string MakeUniqueCopyValuesName(TypeSignature target, TypeSignature source)
@@ -784,12 +799,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			if (elementType is SzArrayTypeSignature nestedArray)
 			{
 				Debug.Assert(nestedArray.BaseType is CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) });
-				return duplicateArrayArrayMethod!.MakeGenericInstanceMethod(nestedArray.BaseType);
+				return duplicateArrayArrayMethod.MakeGenericInstanceMethod(nestedArray.BaseType);
 			}
 			else
 			{
 				Debug.Assert(elementType is CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) });
-				return duplicateArrayMethod!.MakeGenericInstanceMethod(elementType);
+				return duplicateArrayMethod.MakeGenericInstanceMethod(elementType);
 			}
 		}
 

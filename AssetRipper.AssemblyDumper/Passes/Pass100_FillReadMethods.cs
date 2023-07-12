@@ -26,12 +26,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static TypeDefinition assetDictionaryDefinition;
 		private static ITypeDefOrRef assetListReference;
 		private static TypeDefinition assetListDefinition;
-		private static ITypeDefOrRef keyValuePairReference;
-		private static TypeDefinition keyValuePairDefinition;
+		private static ITypeDefOrRef assetPairReference;
+		private static TypeDefinition assetPairDefinition;
 
 		private static MethodDefinition readAssetAlignDefinition;
 		private static MethodDefinition readAssetListDefinition;
 		private static MethodDefinition readAssetListAlignDefinition;
+		private static MethodDefinition readAssetPairDefinition;
+		private static MethodDefinition readAssetPairAlignDefinition;
 		private static MethodDefinition readAssetDictionaryDefinition;
 		private static MethodDefinition readAssetDictionaryAlignDefinition;
 #nullable enable
@@ -56,6 +58,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			readAssetAlignDefinition = MakeGenericAssetAlignMethod();
 			readAssetListDefinition = MakeGenericListMethod(false);
 			readAssetListAlignDefinition = MakeGenericListMethod(true);
+			readAssetPairDefinition = MakeGenericPairMethod(false);
+			readAssetPairAlignDefinition = MakeGenericPairMethod(true);
 			readAssetDictionaryDefinition = MakeGenericDictionaryMethod(false);
 			readAssetDictionaryAlignDefinition = MakeGenericDictionaryMethod(true);
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
@@ -72,6 +76,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			readAssetAlignDefinition = MakeGenericAssetAlignMethod();
 			readAssetListDefinition = MakeGenericListMethod(false);
 			readAssetListAlignDefinition = MakeGenericListMethod(true);
+			readAssetPairDefinition = MakeGenericPairMethod(false);
+			readAssetPairAlignDefinition = MakeGenericPairMethod(true);
 			readAssetDictionaryDefinition = MakeGenericDictionaryMethod(false);
 			readAssetDictionaryAlignDefinition = MakeGenericDictionaryMethod(true);
 			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
@@ -110,11 +116,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			assetDictionaryReference = SharedState.Instance.Importer.ImportType(typeof(AssetDictionary<,>));
 			assetListReference = SharedState.Instance.Importer.ImportType(typeof(AssetList<>));
-			keyValuePairReference = SharedState.Instance.Importer.ImportType(typeof(AssetPair<,>));
+			assetPairReference = SharedState.Instance.Importer.ImportType(typeof(AssetPair<,>));
 
 			assetDictionaryDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetDictionary<,>));
 			assetListDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetList<>));
-			keyValuePairDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetPair<,>));
+			assetPairDefinition = SharedState.Instance.Importer.LookupType(typeof(AssetPair<,>));
 		}
 
 		private static void CreateHelperClassForWriteMethods()
@@ -124,6 +130,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			type.Methods.Add(readAssetAlignDefinition);
 			type.Methods.Add(readAssetListDefinition);
 			type.Methods.Add(readAssetListAlignDefinition);
+			type.Methods.Add(readAssetPairDefinition);
+			type.Methods.Add(readAssetPairAlignDefinition);
 			type.Methods.Add(readAssetDictionaryDefinition);
 			type.Methods.Add(readAssetDictionaryAlignDefinition);
 			foreach ((string _, IMethodDescriptor method) in methodDictionary.OrderBy(pair => pair.Key))
@@ -220,13 +228,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 					{
 						UniversalNode arrayNode = node.SubNodes[0];
 						UniversalNode pairNode = arrayNode.SubNodes[1];
-						UniversalNode firstTypeNode = pairNode.SubNodes[0];
-						UniversalNode secondTypeNode = pairNode.SubNodes[1];
 						bool align = node.AlignBytes || arrayNode.AlignBytes;
 						GenericInstanceTypeSignature genericSignature = (GenericInstanceTypeSignature)type;
 						Debug.Assert(genericSignature.GenericType.Name == $"{nameof(AssetDictionary<int, int>)}`2");
 						Debug.Assert(genericSignature.TypeArguments.Count == 2);
-						method = MakeDictionaryMethod(uniqueName, firstTypeNode, genericSignature.TypeArguments[0], secondTypeNode, genericSignature.TypeArguments[1], version, align);
+						GenericInstanceTypeSignature pairSignature = assetPairReference.MakeGenericInstanceType(genericSignature.TypeArguments[0], genericSignature.TypeArguments[1]);
+						method = MakeDictionaryMethod(uniqueName, pairNode, pairSignature, version, align);
 					}
 					break;
 				case NodeType.Pair:
@@ -295,8 +302,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static IMethodDescriptor MakeDictionaryMethod(string uniqueName, UniversalNode keyTypeNode, TypeSignature keySignature, UniversalNode valueTypeNode, TypeSignature valueSignature, UnityVersion version, bool align)
+		private static IMethodDescriptor MakeDictionaryMethod(string uniqueName, UniversalNode pairNode, GenericInstanceTypeSignature pairSignature, UnityVersion version, bool align)
 		{
+			TypeSignature keySignature = pairSignature.TypeArguments[0];
+			TypeSignature valueSignature = pairSignature.TypeArguments[1];
 			if (keySignature.IsTypeDefinition() && valueSignature.IsTypeDefinition())
 			{
 				return align
@@ -305,9 +314,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			else
 			{
-				IMethodDescriptor firstWriteMethod = GetOrMakeMethod(keyTypeNode, keySignature, version);
-				IMethodDescriptor secondWriteMethod = GetOrMakeMethod(valueTypeNode, valueSignature, version);
-				return MakeDictionaryMethod(uniqueName, firstWriteMethod, keySignature, secondWriteMethod, valueSignature, align);
+				IMethodDescriptor pairReadMethod = GetOrMakeMethod(pairNode, pairSignature, version);
+				return MakeDictionaryMethod(uniqueName, pairReadMethod, keySignature, valueSignature, align);
 			}
 		}
 
@@ -316,8 +324,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			string uniqueName = align ? "MapAlign_Asset_Asset" : "Map_Asset_Asset";
 			GenericParameterSignature keyType = new GenericParameterSignature(SharedState.Instance.Module, GenericParameterType.Method, 0);
 			GenericParameterSignature valueType = new GenericParameterSignature(SharedState.Instance.Module, GenericParameterType.Method, 1);
-			IMethodDefOrRef readMethod = SharedState.Instance.Importer.ImportMethod<UnityAssetBase>(m => m.Name == ReadMethod && m.Parameters[0].ParameterType is ByReferenceTypeSignature);
-			MethodDefinition method = MakeDictionaryMethod(uniqueName, readMethod, keyType, readMethod, valueType, align);
+			IMethodDescriptor readMethod = readAssetPairDefinition.MakeGenericInstanceMethod(keyType, valueType);
+			MethodDefinition method = MakeDictionaryMethod(uniqueName, readMethod, keyType, valueType, align);
 
 			GenericParameter keyParameter = new GenericParameter("TKey", GenericParameterAttributes.DefaultConstructorConstraint);
 			keyParameter.Constraints.Add(new GenericParameterConstraint(SharedState.Instance.Importer.ImportType<UnityAssetBase>()));
@@ -330,17 +338,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static MethodDefinition MakeDictionaryMethod(string uniqueName, IMethodDescriptor keyReadMethod, TypeSignature keySignature, IMethodDescriptor valueReadMethod, TypeSignature valueSignature, bool align)
+		private static MethodDefinition MakeDictionaryMethod(string uniqueName, IMethodDescriptor pairReadMethod, TypeSignature keySignature, TypeSignature valueSignature, bool align)
 		{
 			GenericInstanceTypeSignature genericDictionaryType = assetDictionaryReference.MakeGenericInstanceType(keySignature, valueSignature);
 
-			IMethodDefOrRef getPairMethod = MethodUtils.MakeMethodOnGenericType(
-				SharedState.Instance.Importer,
-				genericDictionaryType,
-				assetDictionaryDefinition.Methods.Single(m => m.Name == nameof(AssetDictionary<int, int>.GetPair)));
-
-			MethodDefinition addMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetDictionary<,>), m => m.Name == nameof(AssetDictionary<int, int>.Add) && m.Parameters.Count == 2);
-			IMethodDefOrRef addMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictionaryType, addMethodDefinition);
 			MethodDefinition clearMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetDictionary<,>), m => m.Name == nameof(AssetDictionary<int, int>.Clear));
 			IMethodDefOrRef clearMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictionaryType, clearMethodDefinition);
 
@@ -349,8 +350,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
 			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-			CilLocalVariable keyLocal = processor.AddLocalVariable(keySignature);
-			CilLocalVariable valueLocal = processor.AddLocalVariable(valueSignature);
 
 			CilInstructionLabel loopConditionStartList = new();
 
@@ -372,61 +371,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
 			ICilLabel jumpTargetList = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
-			//Read key
-			if (keySignature.IsArrayOrPrimitive())
-			{
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.AddCall(keyReadMethod);
-				processor.Add(CilOpCodes.Stloc, keyLocal);
-			}
-			else if (keySignature is GenericParameterSignature)
-			{
-				IMethodDefOrRef createInstanceMethod = SharedState.Instance.Importer.ImportMethod(typeof(Activator), m => m.Name == nameof(Activator.CreateInstance) && m.Parameters.Count == 0 && m.GenericParameters.Count == 1);
-				processor.Add(CilOpCodes.Call, createInstanceMethod.MakeGenericInstanceMethod(keySignature));
-				processor.Add(CilOpCodes.Stloc, keyLocal);
-				processor.Add(CilOpCodes.Ldloc, keyLocal);
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.AddCall(keyReadMethod);
-			}
-			else
-			{
-				processor.Add(CilOpCodes.Newobj, keySignature.GetDefaultConstructor());
-				processor.Add(CilOpCodes.Stloc, keyLocal);
-				processor.Add(CilOpCodes.Ldloc, keyLocal);
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.AddCall(keyReadMethod);
-			}
+			MethodDefinition addNewMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetDictionary<,>), m => m.Name == nameof(AssetDictionary<int, int>.AddNew));
+			IMethodDefOrRef addNewMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictionaryType, addNewMethodDefinition);
 
-			//Read value
-			if (valueSignature.IsArrayOrPrimitive())
-			{
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.AddCall(valueReadMethod);
-				processor.Add(CilOpCodes.Stloc, valueLocal);
-			}
-			else if (valueSignature is GenericParameterSignature)
-			{
-				IMethodDefOrRef createInstanceMethod = SharedState.Instance.Importer.ImportMethod(typeof(Activator), m => m.Name == nameof(Activator.CreateInstance) && m.Parameters.Count == 0 && m.GenericParameters.Count == 1);
-				processor.Add(CilOpCodes.Call, createInstanceMethod.MakeGenericInstanceMethod(valueSignature));
-				processor.Add(CilOpCodes.Stloc, valueLocal);
-				processor.Add(CilOpCodes.Ldloc, valueLocal);
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.AddCall(valueReadMethod);
-			}
-			else
-			{
-				processor.Add(CilOpCodes.Newobj, valueSignature.GetDefaultConstructor());
-				processor.Add(CilOpCodes.Stloc, valueLocal);
-				processor.Add(CilOpCodes.Ldloc, valueLocal);
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.AddCall(valueReadMethod);
-			}
-
-			//Add to dictionary
+			//Add new and read pair
 			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldloc, keyLocal);
-			processor.Add(CilOpCodes.Ldloc, valueLocal);
-			processor.AddCall(addMethodReference);
+			processor.AddCall(addNewMethodReference);
+			processor.Add(CilOpCodes.Ldarg_1);
+			processor.AddCall(pairReadMethod);
 
 			//Increment i
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
@@ -451,10 +403,42 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static IMethodDescriptor MakePairMethod(string uniqueName, UniversalNode keyTypeNode, TypeSignature keySignature, UniversalNode valueTypeNode, TypeSignature valueSignature, UnityVersion version, bool align)
 		{
-			IMethodDescriptor keyReadMethod = GetOrMakeMethod(keyTypeNode, keySignature, version);
-			IMethodDescriptor valueReadMethod = GetOrMakeMethod(valueTypeNode, valueSignature, version);
+			if (keySignature.IsTypeDefinition() && valueSignature.IsTypeDefinition())
+			{
+				return align
+					? readAssetPairAlignDefinition.MakeGenericInstanceMethod(keySignature, valueSignature)
+					: readAssetPairDefinition.MakeGenericInstanceMethod(keySignature, valueSignature);
+			}
+			else
+			{
+				IMethodDescriptor keyReadMethod = GetOrMakeMethod(keyTypeNode, keySignature, version);
+				IMethodDescriptor valueReadMethod = GetOrMakeMethod(valueTypeNode, valueSignature, version);
+				return MakePairMethod(uniqueName, keyReadMethod, keySignature, valueReadMethod, valueSignature, align);
+			}
+		}
 
-			GenericInstanceTypeSignature genericPairType = keyValuePairReference.MakeGenericInstanceType(keySignature, valueSignature);
+		private static MethodDefinition MakeGenericPairMethod(bool align)
+		{
+			string uniqueName = align ? "PairAlign_Asset_Asset" : "Pair_Asset_Asset";
+			GenericParameterSignature keyType = new GenericParameterSignature(SharedState.Instance.Module, GenericParameterType.Method, 0);
+			GenericParameterSignature valueType = new GenericParameterSignature(SharedState.Instance.Module, GenericParameterType.Method, 1);
+			IMethodDefOrRef readMethod = SharedState.Instance.Importer.ImportMethod<UnityAssetBase>(m => m.Name == ReadMethod && m.Parameters[0].ParameterType is ByReferenceTypeSignature);
+			MethodDefinition method = MakePairMethod(uniqueName, readMethod, keyType, readMethod, valueType, align);
+
+			GenericParameter keyParameter = new GenericParameter("TKey", GenericParameterAttributes.DefaultConstructorConstraint);
+			keyParameter.Constraints.Add(new GenericParameterConstraint(SharedState.Instance.Importer.ImportType<UnityAssetBase>()));
+			method.GenericParameters.Add(keyParameter);
+			GenericParameter valueParameter = new GenericParameter("TValue", GenericParameterAttributes.DefaultConstructorConstraint);
+			valueParameter.Constraints.Add(new GenericParameterConstraint(SharedState.Instance.Importer.ImportType<UnityAssetBase>()));
+			method.GenericParameters.Add(valueParameter);
+			method.Signature!.GenericParameterCount = 2;
+
+			return method;
+		}
+
+		private static MethodDefinition MakePairMethod(string uniqueName, IMethodDescriptor keyReadMethod, TypeSignature keySignature, IMethodDescriptor valueReadMethod, TypeSignature valueSignature, bool align)
+		{
+			GenericInstanceTypeSignature genericPairType = assetPairReference.MakeGenericInstanceType(keySignature, valueSignature);
 
 			MethodDefinition method = NewMethod(uniqueName, genericPairType);
 			CilInstructionCollection processor = method.GetProcessor();
@@ -464,7 +448,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				IMethodDefOrRef setKeyMethod = MethodUtils.MakeMethodOnGenericType(
 					SharedState.Instance.Importer,
 					genericPairType,
-					keyValuePairDefinition.Methods.Single(m => m.Name == $"set_{nameof(AssetPair<int, int>.Key)}"));
+					assetPairDefinition.Methods.Single(m => m.Name == $"set_{nameof(AssetPair<int, int>.Key)}"));
 
 				processor.Add(CilOpCodes.Ldarg_0);//pair
 				processor.Add(CilOpCodes.Ldarg_1);//reader
@@ -476,7 +460,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				IMethodDefOrRef getKeyMethod = MethodUtils.MakeMethodOnGenericType(
 					SharedState.Instance.Importer,
 					genericPairType,
-					keyValuePairDefinition.Methods.Single(m => m.Name == $"get_{nameof(AssetPair<int, int>.Key)}"));
+					assetPairDefinition.Methods.Single(m => m.Name == $"get_{nameof(AssetPair<int, int>.Key)}"));
 
 				processor.Add(CilOpCodes.Ldarg_0);//pair
 				processor.AddCall(getKeyMethod);
@@ -489,7 +473,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				IMethodDefOrRef setValueMethod = MethodUtils.MakeMethodOnGenericType(
 					SharedState.Instance.Importer,
 					genericPairType,
-					keyValuePairDefinition.Methods.Single(m => m.Name == $"set_{nameof(AssetPair<int, int>.Value)}"));
+					assetPairDefinition.Methods.Single(m => m.Name == $"set_{nameof(AssetPair<int, int>.Value)}"));
 
 				processor.Add(CilOpCodes.Ldarg_0);//pair
 				processor.Add(CilOpCodes.Ldarg_1);//reader
@@ -501,7 +485,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				IMethodDefOrRef getValueMethod = MethodUtils.MakeMethodOnGenericType(
 					SharedState.Instance.Importer,
 					genericPairType,
-					keyValuePairDefinition.Methods.Single(m => m.Name == $"get_{nameof(AssetPair<int, int>.Value)}"));
+					assetPairDefinition.Methods.Single(m => m.Name == $"get_{nameof(AssetPair<int, int>.Value)}"));
 
 				processor.Add(CilOpCodes.Ldarg_0);//pair
 				processor.AddCall(getValueMethod);
@@ -583,8 +567,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			GenericInstanceTypeSignature genericListType = assetListReference.MakeGenericInstanceType(elementType);
 
-			MethodDefinition addMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == nameof(AssetList<int>.Add));
-			IMethodDefOrRef addMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericListType, addMethodDefinition);
 			MethodDefinition clearMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == nameof(AssetList<int>.Clear));
 			IMethodDefOrRef clearMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericListType, clearMethodDefinition);
 
@@ -615,28 +597,24 @@ namespace AssetRipper.AssemblyDumper.Passes
 			ICilLabel jumpTargetList = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			//Read and add to list
-			processor.Add(CilOpCodes.Ldarg_0);
 			if (elementType.IsArrayOrPrimitive())
 			{
+				MethodDefinition addMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == nameof(AssetList<int>.Add));
+				IMethodDefOrRef addMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericListType, addMethodDefinition);
+				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Ldarg_1);
 				processor.AddCall(elementReadMethod);
-			}
-			else if (elementType is GenericParameterSignature)
-			{
-				IMethodDefOrRef createInstanceMethod = SharedState.Instance.Importer.ImportMethod(typeof(Activator), m => m.Name == nameof(Activator.CreateInstance) && m.Parameters.Count == 0 && m.GenericParameters.Count == 1);
-				processor.Add(CilOpCodes.Call, createInstanceMethod.MakeGenericInstanceMethod(elementType));
-				processor.Add(CilOpCodes.Dup);
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.AddCall(elementReadMethod);
+				processor.AddCall(addMethodReference);
 			}
 			else
 			{
-				processor.Add(CilOpCodes.Newobj, elementType.GetDefaultConstructor());
-				processor.Add(CilOpCodes.Dup);
+				MethodDefinition addNewMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == nameof(AssetList<int>.AddNew));
+				IMethodDefOrRef addNewMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericListType, addNewMethodDefinition);
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.AddCall(addNewMethodReference);
 				processor.Add(CilOpCodes.Ldarg_1);
 				processor.AddCall(elementReadMethod);
 			}
-			processor.AddCall(addMethodReference);
 
 			//Increment i
 			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
@@ -665,6 +643,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			if (elementType is CorLibTypeSignature corLibTypeSignature && corLibTypeSignature.ElementType == ElementType.U1)
 			{
 				return MakeTypelessDataMethod(uniqueName, align);
+			}
+
+			bool throwForNonByteArrays = true;
+			if (throwForNonByteArrays)
+			{
+				throw new NotSupportedException();
 			}
 
 			IMethodDescriptor elementReadMethod = GetOrMakeMethod(elementTypeNode, elementType, version);
