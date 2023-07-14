@@ -47,6 +47,7 @@ namespace AssetRipper.AssemblyDumper
 		public Dictionary<TypeDefinition, ClassGroupBase> TypesToGroups { get; } = new();
 		public Dictionary<string, HashSet<int>> NameToTypeID { get; } = new();
 		public Dictionary<string, TypeDefinition> MarkerInterfaces { get; } = new();
+		private Dictionary<Type, TypeDefinition> InjectedHelperTypes { get; } = new();
 
 		public IEnumerable<ClassGroupBase> AllGroups => ClassGroups.Values.Union<ClassGroupBase>(SubclassGroups.Values);
 		public IEnumerable<TypeDefinition> AllTypes => TypesToGroups.Keys;
@@ -198,12 +199,16 @@ namespace AssetRipper.AssemblyDumper
 
 		internal TypeDefinition InjectHelperType(Type type)
 		{
-			MemberCloner cloner = new MemberCloner(Module);
-			cloner.Include(Importer.LookupType(type) ?? throw new NullReferenceException(type.FullName), true);
-			MemberCloneResult result = cloner.Clone();
-			TypeDefinition helperType = result.ClonedTopLevelTypes.Single();
-			helperType.Namespace = HelpersNamespace;
-			Module.TopLevelTypes.Add(helperType);
+			if (!InjectedHelperTypes.TryGetValue(type, out TypeDefinition? helperType))
+			{
+				MemberCloner cloner = new MemberCloner(Module);
+				cloner.Include(Importer.LookupType(type) ?? throw new NullReferenceException(type.FullName), true);
+				MemberCloneResult result = cloner.Clone();
+				helperType = result.ClonedTopLevelTypes.Single();
+				helperType.Namespace = HelpersNamespace;
+				Module.TopLevelTypes.Add(helperType);
+				InjectedHelperTypes.Add(type, helperType);
+			}
 			return helperType;
 		}
 	}
