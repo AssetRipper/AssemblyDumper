@@ -45,9 +45,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static ITypeDefOrRef assetList;
 		private static IMethodDefOrRef assetListAdd;
 		private static IMethodDefOrRef assetListAddNew;
+		private static IMethodDefOrRef assetListClear;
 
 		private static ITypeDefOrRef assetDictionary;
 		private static IMethodDefOrRef assetDictionaryAddNew;
+		private static IMethodDefOrRef assetDictionaryClear;
 
 		private static ITypeDefOrRef assetPair;
 #nullable enable
@@ -77,9 +79,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 			assetList = SharedState.Instance.Importer.ImportType(typeof(AssetList<>));
 			assetListAdd = SharedState.Instance.Importer.ImportMethod(typeof(AssetList<>), m => m.Name == nameof(AssetList<int>.Add));
 			assetListAddNew = SharedState.Instance.Importer.ImportMethod(typeof(AssetList<>), m => m.Name == nameof(AssetList<int>.AddNew));
+			assetListClear = SharedState.Instance.Importer.ImportMethod(typeof(AssetList<>), m => m.Name == nameof(AssetList<int>.Clear));
 
 			assetDictionary = SharedState.Instance.Importer.ImportType(typeof(AssetDictionary<,>));
 			assetDictionaryAddNew = SharedState.Instance.Importer.ImportMethod(typeof(AssetDictionary<,>), m => m.Name == nameof(AssetDictionary<int, int>.AddNew));
+			assetDictionaryClear = SharedState.Instance.Importer.ImportMethod(typeof(AssetDictionary<,>), m => m.Name == nameof(AssetDictionary<int, int>.Clear));
 
 			assetPair = SharedState.Instance.Importer.ImportType(typeof(AssetPair<,>));
 
@@ -442,6 +446,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 									CilInstructionLabel returnLabel = new();
 									CilInstructionLabel isNullLabel = new();
+
+									processor.Add(CilOpCodes.Ldarg_0);
+									processor.Add(CilOpCodes.Callvirt, MakeAssetDictionaryClearMethod(targetKeyTypeSignature, targetValueTypeSignature));
+
 									processor.Add(CilOpCodes.Ldarg_1);
 									processor.Add(CilOpCodes.Ldnull);
 									processor.Add(CilOpCodes.Cgt_Un);
@@ -468,7 +476,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 									(IMethodDescriptor copyMethod, CopyMethodType copyMethodType) = GetOrMakeMethod(targetPairTypeSignature, sourcePairTypeSignature);
 									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Callvirt, MakeDictionaryAddNewMethod(targetKeyTypeSignature, targetValueTypeSignature));
+									processor.Add(CilOpCodes.Callvirt, MakeAssetDictionaryAddNewMethod(targetKeyTypeSignature, targetValueTypeSignature));
 									processor.Add(CilOpCodes.Ldarg_1);
 									processor.Add(CilOpCodes.Ldloc, iLocal);
 									processor.Add(CilOpCodes.Callvirt, MakeDictionaryGetPairMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
@@ -509,6 +517,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 									CilInstructionLabel returnLabel = new();
 									CilInstructionLabel isNullLabel = new();
+
+									processor.Add(CilOpCodes.Ldarg_0);
+									processor.Add(CilOpCodes.Callvirt, MakeAssetListClearMethod(targetElementTypeSignature));
+
 									processor.Add(CilOpCodes.Ldarg_1);
 									processor.Add(CilOpCodes.Ldnull);
 									processor.Add(CilOpCodes.Cgt_Un);
@@ -708,12 +720,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 				accessDictionaryBaseGetPair);
 		}
 
-		private static IMethodDefOrRef MakeDictionaryAddNewMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
+		private static IMethodDefOrRef MakeAssetDictionaryAddNewMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(
 				SharedState.Instance.Importer,
 				assetDictionary.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
 				assetDictionaryAddNew);
+		}
+
+		private static IMethodDefOrRef MakeAssetDictionaryClearMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
+		{
+			return MethodUtils.MakeMethodOnGenericType(
+				SharedState.Instance.Importer,
+				assetDictionary.MakeGenericInstanceType(keyTypeSignature, valueTypeSignature),
+				assetDictionaryClear);
 		}
 
 		private static IMethodDefOrRef MakeListGetCountMethod(TypeSignature elementTypeSignature)
@@ -754,6 +774,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 				SharedState.Instance.Importer,
 				assetList.MakeGenericInstanceType(elementTypeSignature),
 				assetListAdd);
+		}
+
+		private static IMethodDefOrRef MakeAssetListClearMethod(TypeSignature elementTypeSignature)
+		{
+			return MethodUtils.MakeMethodOnGenericType(
+				SharedState.Instance.Importer,
+				assetList.MakeGenericInstanceType(elementTypeSignature),
+				assetListClear);
 		}
 
 		private static IMethodDefOrRef MakePairGetKeyMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
