@@ -1,4 +1,5 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyCreationTools;
+using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Generics;
@@ -19,14 +20,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				return method.Name == $"get_{nameof(PPtrAccessList<IPPtr<IUnityObjectBase>, IUnityObjectBase>.Empty)}";
 			});
-			IMethodDefOrRef pptrTryGetAssetMethod = SharedState.Instance.Importer.ImportMethod(typeof(PPtrExtensions), method =>
-			{
-				return method.Name == nameof(PPtrExtensions.TryGetAsset) && method.Parameters.Count == 2;
-			});
-			IMethodDefOrRef pptrSetAssetMethod = SharedState.Instance.Importer.ImportMethod(typeof(PPtrExtensions), method =>
-			{
-				return method.Name == nameof(PPtrExtensions.SetAsset) && method.Parameters.Count == 3;
-			});
 			IMethodDefOrRef getCollectionMethod = SharedState.Instance.Importer.ImportMethod(typeof(UnityObjectBase), method =>
 			{
 				return method.Name == $"get_{nameof(UnityObjectBase.Collection)}";
@@ -42,8 +35,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 						TypeSignature originalPropertySignature = interfaceProperty.Definition.Signature!.ReturnType;
 						if (originalPropertySignature.IsPPtr(out TypeDefinition? pptrType, out TypeDefinition? parameterType))
 						{
-							MethodSpecification tryGetAssetMethodInstance = pptrTryGetAssetMethod.MakeGenericInstanceMethod(parameterType.ToTypeSignature());
-							MethodSpecification setAssetMethodInstance = pptrSetAssetMethod.MakeGenericInstanceMethod(parameterType.ToTypeSignature());
 							interfaceProperty.SpecialDefinition = interfaceProperty.Group.Interface.AddFullProperty(
 								pptrPropertyName,
 								InterfaceUtils.InterfacePropertyDeclaration,
@@ -67,13 +58,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 									}
 									else
 									{
+										CilLocalVariable local = processor.AddLocalVariable(parameterType.ToTypeSignature());
 										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Call, classProperty.Definition.GetMethod!);
+										processor.Add(CilOpCodes.Callvirt, classProperty.Definition.GetMethod!);
 										processor.Add(CilOpCodes.Ldarg_0);
 										processor.Add(CilOpCodes.Callvirt, getCollectionMethod);
-										processor.Add(CilOpCodes.Call, tryGetAssetMethodInstance);
+										processor.Add(CilOpCodes.Ldloca, local);
+										processor.Add(CilOpCodes.Callvirt, Pass080_PPtrConversions.PPtrsToTryGetAssetMethods[pptrType]);
+										processor.Add(CilOpCodes.Pop);
+										processor.Add(CilOpCodes.Ldloc, local);
 									}
 									processor.Add(CilOpCodes.Ret);
+									processor.OptimizeMacros();
 								}
 								//Set method
 								{
@@ -81,11 +77,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 									if (classProperty.BackingField is not null)
 									{
 										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Call, classProperty.Definition.GetMethod!);
+										processor.Add(CilOpCodes.Callvirt, classProperty.Definition.GetMethod!);
 										processor.Add(CilOpCodes.Ldarg_0);
 										processor.Add(CilOpCodes.Callvirt, getCollectionMethod);
 										processor.Add(CilOpCodes.Ldarg_1);
-										processor.Add(CilOpCodes.Call, setAssetMethodInstance);
+										processor.Add(CilOpCodes.Callvirt, Pass080_PPtrConversions.PPtrsToSetAssetMethods[pptrType]);
 									}
 									processor.Add(CilOpCodes.Ret);
 								}
@@ -128,7 +124,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 									else
 									{
 										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Call, classProperty.Definition.GetMethod!);
+										processor.Add(CilOpCodes.Callvirt, classProperty.Definition.GetMethod!);
 										processor.Add(CilOpCodes.Ldarg_0);
 										processor.Add(CilOpCodes.Newobj, constructor);
 									}

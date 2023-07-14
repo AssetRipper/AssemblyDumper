@@ -1,6 +1,5 @@
 ﻿#nullable disable
 
-using AssetRipper;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Cloning;
 using AssetRipper.Assets.Metadata;
@@ -38,9 +37,9 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 				return copy;
 			}
 		}
-		public static void CopyPPtr<T>(IPPtr<T> targetPPtr, IPPtr sourcePPtr, PPtrConverter converter) where T : IUnityObjectBase
+		public static PPtr ConvertPPtr<T>(IPPtr sourcePPtr, PPtrConverter converter) where T : IUnityObjectBase
 		{
-			targetPPtr.CopyValues(converter.Convert<T>(new PPtr(sourcePPtr.FileID, sourcePPtr.PathID)));
+			return converter.Convert<T>(new PPtr(sourcePPtr.FileID, sourcePPtr.PathID));
 		}
 	}
 }

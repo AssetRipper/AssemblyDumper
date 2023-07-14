@@ -18,13 +18,19 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static readonly Dictionary<TypeSignatureStruct, (IMethodDescriptor, CopyMethodType)> singleTypeDictionary = new();
 		private static readonly Dictionary<(TypeSignatureStruct, TypeSignatureStruct), (IMethodDescriptor, CopyMethodType)> doubleTypeDictionary = new();
 		private static readonly HashSet<ClassGroupBase> processedGroups = new();
+
 #nullable disable
+		private static TypeSignature pptrCommonType;
+		private static IMethodDefOrRef pptrCommonGetFileIDMethod;
+		private static IMethodDefOrRef pptrCommonGetPathIDMethod;
+
+		private static ITypeDefOrRef pptrConverterType;
+		private static IMethodDefOrRef pptrConverterConvertMethod;
+
+		private static TypeDefinition helperType;
 		private static MethodDefinition duplicateArrayMethod;
 		private static MethodDefinition duplicateArrayArrayMethod;
-		private static ITypeDefOrRef pptrConverterType;
 		private static IMethodDefOrRef pptrConvertMethod;
-		private static IMethodDefOrRef pptrCopyMethod;
-		private static TypeDefinition helperType;
 
 		private static ITypeDefOrRef accessPairBase;
 		private static IMethodDefOrRef accessPairBaseGetKey;
@@ -56,8 +62,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		public static void DoPass()
 		{
+			pptrCommonType = SharedState.Instance.Importer.ImportType<PPtr>().ToTypeSignature();
+			pptrCommonGetFileIDMethod = SharedState.Instance.Importer.ImportMethod<PPtr>(m => m.Name == $"get_{nameof(PPtr.FileID)}");
+			pptrCommonGetPathIDMethod = SharedState.Instance.Importer.ImportMethod<PPtr>(m => m.Name == $"get_{nameof(PPtr.PathID)}");
+
 			pptrConverterType = SharedState.Instance.Importer.ImportType<PPtrConverter>();
-			pptrConvertMethod = SharedState.Instance.Importer.ImportMethod<PPtrConverter>(m => m.Name == nameof(PPtrConverter.Convert));
+			pptrConverterConvertMethod = SharedState.Instance.Importer.ImportMethod<PPtrConverter>(m => m.Name == nameof(PPtrConverter.Convert));
 			helperType = InjectHelper();
 
 			accessPairBase = SharedState.Instance.Importer.ImportType(typeof(AccessPairBase<,>));
@@ -242,13 +252,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		[MemberNotNull(nameof(duplicateArrayMethod))]
 		[MemberNotNull(nameof(duplicateArrayArrayMethod))]
-		[MemberNotNull(nameof(pptrCopyMethod))]
+		[MemberNotNull(nameof(pptrConvertMethod))]
 		private static TypeDefinition InjectHelper()
 		{
 			TypeDefinition clonedType = SharedState.Instance.InjectHelperType(typeof(CopyValuesHelper));
 			duplicateArrayMethod = clonedType.GetMethodByName(nameof(CopyValuesHelper.DuplicateArray));
 			duplicateArrayArrayMethod = clonedType.GetMethodByName(nameof(CopyValuesHelper.DuplicateArrayArray));
-			pptrCopyMethod = clonedType.GetMethodByName(nameof(CopyValuesHelper.CopyPPtr));
+			pptrConvertMethod = clonedType.GetMethodByName(nameof(CopyValuesHelper.ConvertPPtr));
 			return clonedType;
 		}
 
@@ -259,7 +269,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				return;
 			}
 
-			if (group.Name.StartsWith("PPtr_", StringComparison.Ordinal))
+			if (group is SubclassGroup { IsPPtr: true })
 			{
 				{
 					MethodDefinition method = group.Interface.AddMethod(CopyValuesName, InterfaceUtils.InterfaceMethodDeclaration, SharedState.Instance.Importer.Void);
@@ -282,11 +292,30 @@ namespace AssetRipper.AssemblyDumper.Passes
 					processor.Add(CilOpCodes.Cgt_Un);
 					processor.Add(CilOpCodes.Brfalse, isNullLabel);
 
-					processor.Add(CilOpCodes.Ldarg_0);
+					//Convert PPtr
+					CilLocalVariable convertedPPtr = processor.AddLocalVariable(pptrCommonType);
 					processor.Add(CilOpCodes.Ldarg_1);
 					processor.Add(CilOpCodes.Ldarg_2);
-					TypeSignature pptrTypeArgument = GetPPtrTypeArgument(type, group.Interface);
-					processor.Add(CilOpCodes.Call, pptrCopyMethod.MakeGenericInstanceMethod(pptrTypeArgument));
+					processor.Add(CilOpCodes.Call, pptrConvertMethod.MakeGenericInstanceMethod(GetPPtrTypeArgument(type, group.Interface)));
+					processor.Add(CilOpCodes.Stloc, convertedPPtr);
+
+					//Store FileID
+					processor.Add(CilOpCodes.Ldarg_0);
+					processor.Add(CilOpCodes.Ldloca, convertedPPtr);
+					processor.Add(CilOpCodes.Call, pptrCommonGetFileIDMethod);
+					processor.Add(CilOpCodes.Stfld, type.GetFieldByName("m_FileID_"));
+
+					//Store PathID
+					processor.Add(CilOpCodes.Ldarg_0);
+					processor.Add(CilOpCodes.Ldloca, convertedPPtr);
+					processor.Add(CilOpCodes.Call, pptrCommonGetPathIDMethod);
+					FieldDefinition pathIDField = type.GetFieldByName("m_PathID_");
+					if (pathIDField.Signature!.FieldType is CorLibTypeSignature { ElementType: ElementType.I4 })
+					{
+						processor.Add(CilOpCodes.Conv_Ovf_I4);//Convert I8 to I4
+					}
+					processor.Add(CilOpCodes.Stfld, pathIDField);
+
 					processor.Add(CilOpCodes.Br, returnLabel);
 
 					isNullLabel.Instruction = processor.Add(CilOpCodes.Nop);

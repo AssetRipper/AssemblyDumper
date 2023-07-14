@@ -113,5 +113,13 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 			attribute.AddFixedArgument(importer.String, memberName);
 			return attribute;
 		}
+
+		public static CustomAttribute AddNotNullWhenAttribute(this IHasCustomAttribute _this, CachedReferenceImporter importer, bool returnValue)
+		{
+			IMethodDefOrRef constructor = importer.ImportConstructor<System.Diagnostics.CodeAnalysis.NotNullWhenAttribute>(1);
+			CustomAttribute attribute = _this.AddCustomAttribute(constructor);
+			attribute.AddFixedArgument(importer.Boolean, returnValue);
+			return attribute;
+		}
 	}
 }

@@ -1,5 +1,5 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.AssemblyDumper.Documentation;
+﻿using AssetRipper.AssemblyDumper.Documentation;
+using AssetRipper.AssemblyDumper.InjectedTypes;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Metadata;
 
@@ -9,9 +9,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		public static void DoPass()
 		{
+			static bool filter(MethodDefinition m) => m.Name == nameof(PPtrHelper.ExportYaml) && m.Parameters.Count == 3;
+			IMethodDefOrRef genericExportMethod = SharedState.Instance.InjectHelperType(typeof(PPtrHelper)).Methods.Single(filter);
+
 			foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
 			{
-				if (group.Name.StartsWith("PPtr_"))
+				if (group.IsPPtr)
 				{
 					foreach (GeneratedClassInstance instance in group.Instances)
 					{
@@ -19,8 +22,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 						//Yaml
 						{
+							IMethodDescriptor exportMethod = genericExportMethod.MakeGenericInstanceMethod(parameterType.ToTypeSignature());
 							int parameterClassID = SharedState.Instance.TypesToGroups[parameterType].ID;
-							FixYaml(instance.Type, parameterType, parameterClassID);
+							FixYaml(instance.Type, exportMethod, parameterClassID);
 						}
 
 						//DebuggerDisplay
@@ -38,20 +42,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 		}
 
-		private static void FixYaml(TypeDefinition pptrType, TypeDefinition parameterType, int parameterClassID)
+		private static void FixYaml(TypeDefinition pptrType, IMethodDescriptor exportMethod, int parameterClassID)
 		{
-			Func<MethodDefinition, bool> filter = m => m.Name == nameof(PPtrExtensions.ExportYaml) && m.Parameters.Count == 3;
-			IMethodDefOrRef exportGeneric = SharedState.Instance.Importer.ImportMethod(typeof(PPtrExtensions), filter);
-			MethodSpecification commonExportReference = MethodUtils.MakeGenericInstanceMethod(SharedState.Instance.Importer, exportGeneric, parameterType.ToTypeSignature());
-
 			MethodDefinition releaseYamlMethod = pptrType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlRelease));
 			MethodDefinition editorYamlMethod = pptrType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlEditor));
 
-			FixMethod(releaseYamlMethod, commonExportReference, parameterClassID);
-			FixMethod(editorYamlMethod, commonExportReference, parameterClassID);
+			FixMethod(releaseYamlMethod, exportMethod, parameterClassID);
+			FixMethod(editorYamlMethod, exportMethod, parameterClassID);
 		}
 
-		private static void FixMethod(MethodDefinition yamlMethod, MethodSpecification exportMethod, int parameterClassID)
+		private static void FixMethod(MethodDefinition yamlMethod, IMethodDescriptor exportMethod, int parameterClassID)
 		{
 			CilInstructionCollection processor = yamlMethod.CilMethodBody!.Instructions;
 			processor.Clear();

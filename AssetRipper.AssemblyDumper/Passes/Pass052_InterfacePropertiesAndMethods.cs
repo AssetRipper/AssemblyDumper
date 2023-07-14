@@ -38,14 +38,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 				bool missingOnSomeVersions = differingFieldNames.Contains(fieldName);
 				bool isValueType = propertyTypeSignature.IsValueType;
 
-				PropertyDefinition propertyDeclaration = group.Interface.AddInterfacePropertyDeclaration(propertyName, propertyTypeSignature);
+				PropertyDefinition propertyDeclaration = group.AddInterfacePropertyDeclaration(propertyName, propertyTypeSignature);
 				InterfaceProperty interfaceProperty = new InterfaceProperty(propertyDeclaration, group);
 				group.InterfaceProperties.Add(interfaceProperty);
 
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
-					TypeDefinition type = instance.Type;
-					FieldDefinition? field = type.TryGetFieldByName(fieldName, true);
+					FieldDefinition? field = instance.Type.TryGetFieldByName(fieldName, true);
 					PropertyDefinition property;
 					ClassProperty classProperty;
 					if (hasConflictingTypes || missingOnSomeVersions)
@@ -56,12 +55,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 						if (presentAndMatchesType)
 						{
-							property = type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, field);
+							property = instance.ImplementInterfaceProperty(interfaceProperty, field);
 							classProperty = new ClassProperty(property, field, interfaceProperty, instance);
 						}
 						else
 						{
-							property = type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, null);
+							property = instance.ImplementInterfaceProperty(interfaceProperty, null);
 							classProperty = new ClassProperty(property, null, interfaceProperty, instance);
 						}
 
@@ -74,12 +73,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 					}
 					else
 					{
-						property = type.ImplementInterfaceProperty(propertyName, propertyTypeSignature, field);
+						property = instance.ImplementInterfaceProperty(interfaceProperty, field);
 						classProperty = new ClassProperty(property, field, interfaceProperty, instance);
 						instance.Properties.Add(classProperty);
 					}
 
-					if (type.IsAbstract)
+					if (instance.Type.IsAbstract)
 					{
 						property.AddDebuggerBrowsableNeverAttribute();//Properties in base classes are redundant in the debugger.
 					}
@@ -272,11 +271,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return true;
 		}
 
-		private static PropertyDefinition AddInterfacePropertyDeclaration(this TypeDefinition @interface, string propertyName, TypeSignature propertyType)
+		private static PropertyDefinition AddInterfacePropertyDeclaration(this ClassGroupBase group, string propertyName, TypeSignature propertyType)
 		{
-			return ShouldUseFullProperty(propertyType)
-				? @interface.AddFullProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType)
-				: @interface.AddGetterProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType);
+			return group is not SubclassGroup { IsPPtr:true } && ShouldUseFullProperty(propertyType)
+				? group.Interface.AddFullProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType)
+				: group.Interface.AddGetterProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType);
 		}
 
 		private static bool ShouldUseFullProperty(TypeSignature propertyType)
@@ -284,17 +283,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return propertyType is SzArrayTypeSignature or CorLibTypeSignature || propertyType.IsUtf8String() || propertyType.IsValueType;
 		}
 
-		private static PropertyDefinition ImplementInterfaceProperty(this TypeDefinition declaringType, string propertyName, TypeSignature propertyType, FieldDefinition? field)
+		private static PropertyDefinition ImplementInterfaceProperty(this GeneratedClassInstance instance, InterfaceProperty interfaceProperty, FieldDefinition? field)
 		{
-			if (ShouldUseFullProperty(propertyType))
+			TypeDefinition declaringType = instance.Type;
+			string propertyName = interfaceProperty.Name;
+			TypeSignature propertyType = interfaceProperty.Definition.Signature!.ReturnType;
+			if (interfaceProperty.HasSetAccessor)
 			{
 				return declaringType.ImplementFullProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, propertyType, field);
 			}
-			else if (field is null || propertyType is TypeDefOrRefSignature)
-			{
-				return declaringType.ImplementGetterProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, propertyType, field);
-			}
-			else if (propertyType is GenericInstanceTypeSignature genericPropertyType)
+			else if (field is not null && propertyType is GenericInstanceTypeSignature genericPropertyType)
 			{
 				IMethodDefOrRef constructor;
 				switch (genericPropertyType.GenericType.Name?.Value)
@@ -362,7 +360,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			else
 			{
-				throw new NotSupportedException();
+				return declaringType.ImplementGetterProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, propertyType, field);
 			}
 		}
 
