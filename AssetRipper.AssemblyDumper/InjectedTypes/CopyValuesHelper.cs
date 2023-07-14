@@ -40,7 +40,7 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 		}
 		public static void CopyPPtr<T>(IPPtr<T> targetPPtr, IPPtr sourcePPtr, PPtrConverter converter) where T : IUnityObjectBase
 		{
-			targetPPtr.CopyValues(converter.Convert<T>(sourcePPtr.ToStruct()));
+			targetPPtr.CopyValues(converter.Convert<T>(new PPtr(sourcePPtr.FileID, sourcePPtr.PathID)));
 		}
 	}
 }
