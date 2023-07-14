@@ -29,10 +29,12 @@ namespace AssetRipper.AssemblyDumper
 			}
 		}
 
+		public bool HasSetAccessor => Definition.SetMethod != null;
+
 		/// <summary>
 		/// The <see cref="PropertyDefinition.Name"/> for <see cref="Definition"/>.
 		/// </summary>
-		public string? Name => Definition.Name;
+		public string Name => Definition.Name ?? "";
 
 		public virtual bool IsInjected => false;
 
@@ -50,6 +52,6 @@ namespace AssetRipper.AssemblyDumper
 				out equalsReference);
 		}
 
-		private string? GetDebuggerDisplay() => Name;
+		private string GetDebuggerDisplay() => Name;
 	}
 }

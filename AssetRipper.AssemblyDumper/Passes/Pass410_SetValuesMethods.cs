@@ -1,6 +1,5 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
-using AssetRipper.Primitives;
 using System.Collections;
 using System.Text;
 
@@ -20,15 +19,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void ProcessGroup(SubclassGroup group)
 		{
-			if (group.InterfaceProperties.Select(i => i.Definition).All(prop => prop.IsArrayOrPrimitive()))
+			if (group.InterfaceProperties.All(prop => prop.HasSetAccessor))
 			{
 				group.ImplementSetValuesMethod();
 			}
-		}
-
-		private static bool IsArrayOrPrimitive(this PropertyDefinition property)
-		{
-			return property.Signature?.ReturnType is SzArrayTypeSignature or CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) };
 		}
 
 		private static void ImplementSetValuesMethod(this SubclassGroup group)
