@@ -161,7 +161,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					MethodDefinition copyValuesMethod = type.AddMethod(
 						nameof(UnityAssetBase.CopyValues),
-						Pass099_CreateEmptyMethods.OverrideMethodAttributes,
+						Pass060_CreateEmptyMethods.OverrideMethodAttributes,
 						SharedState.Instance.Importer.Void);
 					copyValuesMethod.AddParameter(unityAssetBaseInterfaceRef, "source");
 					copyValuesMethod.AddParameter(pptrConverterType.ToTypeSignature(), "converter");

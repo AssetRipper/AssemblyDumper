@@ -8,7 +8,7 @@ using AssetRipper.Yaml;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
-	public static class Pass099_CreateEmptyMethods
+	public static class Pass060_CreateEmptyMethods
 	{
 		public const MethodAttributes OverrideMethodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.ReuseSlot | MethodAttributes.HideBySig;
 

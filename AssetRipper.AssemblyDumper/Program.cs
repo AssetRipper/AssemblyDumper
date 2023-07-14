@@ -108,6 +108,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass055_CreateEnumProperties.DoPass();
 			}
+			using (new TimingCookie("Pass 060: Create Empty Methods"))
+			{
+				Pass060_CreateEmptyMethods.DoPass();
+			}
 			using (new TimingCookie("Pass 080: PPtr Conversions"))
 			{
 				Pass080_PPtrConversions.DoPass();
@@ -115,10 +119,6 @@ namespace AssetRipper.AssemblyDumper
 			using (new TimingCookie("Pass 081: PPtr Properties"))
 			{
 				Pass081_CreatePPtrProperties.DoPass();
-			}
-			using (new TimingCookie("Pass 099: Create Empty Methods"))
-			{
-				Pass099_CreateEmptyMethods.DoPass();
 			}
 			using (new TimingCookie("Pass 100: Filling Read Methods"))
 			{

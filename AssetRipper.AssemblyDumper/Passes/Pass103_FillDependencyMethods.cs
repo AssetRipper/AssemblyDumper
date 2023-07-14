@@ -101,7 +101,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			foreach (GeneratedClassInstance instance in group.Instances)
 			{
-				MethodDefinition method = instance.Type.AddMethod(nameof(UnityAssetBase.FetchDependencies), Pass099_CreateEmptyMethods.OverrideMethodAttributes, returnType);
+				MethodDefinition method = instance.Type.AddMethod(nameof(UnityAssetBase.FetchDependencies), Pass060_CreateEmptyMethods.OverrideMethodAttributes, returnType);
 				method.AddParameter(fieldNameRef, "parent", out ParameterDefinition parameterDefinition);
 				parameterDefinition.AddNullableAttribute(NullableAnnotation.MaybeNull);
 				CilInstructionCollection processor = method.GetProcessor();
