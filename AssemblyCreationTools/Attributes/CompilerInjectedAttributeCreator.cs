@@ -104,7 +104,7 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 			return attribute;
 		}
 
-		public static CustomAttribute AddMemberNotNullAttribute(this IHasCustomAttribute _this, CachedReferenceImporter importer, bool returnValue, string memberName)
+		public static CustomAttribute AddMemberNotNullWhenAttribute(this IHasCustomAttribute _this, CachedReferenceImporter importer, bool returnValue, string memberName)
 		{
 			IMethodDefOrRef constructor = importer.ImportConstructor<System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute>(
 				m => m.Parameters.Count == 2 && m.Parameters[1].ParameterType is CorLibTypeSignature);

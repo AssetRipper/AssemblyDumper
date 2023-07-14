@@ -107,12 +107,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 						//other is always present when this is present
 						if (otherProperty.PresentRange.Contains(property.PresentRange))
 						{
-							property.HasMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, true, otherProperty.Definition.Name!);
+							property.HasMethod.AddMemberNotNullWhenAttribute(SharedState.Instance.Importer, true, otherProperty.Definition.Name!);
 						}
 						//other is always present when this is absent
 						else if (otherProperty.PresentRange.Contains(property.AbsentRange))
 						{
-							property.HasMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, false, otherProperty.Definition.Name!);
+							property.HasMethod.AddMemberNotNullWhenAttribute(SharedState.Instance.Importer, false, otherProperty.Definition.Name!);
 						}
 					}
 					if (property.ReleaseOnlyMethod is not null)
@@ -120,12 +120,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 						//other is always present when this is release only
 						if (otherProperty.PresentRange.Contains(property.ReleaseOnlyRange))
 						{
-							property.ReleaseOnlyMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, true, otherProperty.Definition.Name!);
+							property.ReleaseOnlyMethod.AddMemberNotNullWhenAttribute(SharedState.Instance.Importer, true, otherProperty.Definition.Name!);
 						}
 						//other is always present when this is not release only
 						else if (otherProperty.PresentRange.Contains(property.NotReleaseOnlyRange))
 						{
-							property.ReleaseOnlyMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, false, otherProperty.Definition.Name!);
+							property.ReleaseOnlyMethod.AddMemberNotNullWhenAttribute(SharedState.Instance.Importer, false, otherProperty.Definition.Name!);
 						}
 					}
 					if (property.EditorOnlyMethod is not null)
@@ -133,12 +133,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 						//other is always present when this is editor only
 						if (otherProperty.PresentRange.Contains(property.EditorOnlyRange))
 						{
-							property.EditorOnlyMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, true, otherProperty.Definition.Name!);
+							property.EditorOnlyMethod.AddMemberNotNullWhenAttribute(SharedState.Instance.Importer, true, otherProperty.Definition.Name!);
 						}
 						//other is always present when this is not editor only
 						else if (otherProperty.PresentRange.Contains(property.NotEditorOnlyRange))
 						{
-							property.EditorOnlyMethod.AddMemberNotNullAttribute(SharedState.Instance.Importer, false, otherProperty.Definition.Name!);
+							property.EditorOnlyMethod.AddMemberNotNullWhenAttribute(SharedState.Instance.Importer, false, otherProperty.Definition.Name!);
 						}
 					}
 				}
