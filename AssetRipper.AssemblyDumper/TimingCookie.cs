@@ -2,7 +2,7 @@
 
 namespace AssetRipper.AssemblyDumper
 {
-	internal struct TimingCookie : IDisposable
+	internal readonly struct TimingCookie : IDisposable
 	{
 		private readonly Stopwatch stopWatch = new();
 

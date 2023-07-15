@@ -273,7 +273,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static PropertyDefinition AddInterfacePropertyDeclaration(this ClassGroupBase group, string propertyName, TypeSignature propertyType)
 		{
-			return group is not SubclassGroup { IsPPtr:true } && ShouldUseFullProperty(propertyType)
+			return !group.IsPPtr && ShouldUseFullProperty(propertyType)
 				? group.Interface.AddFullProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType)
 				: group.Interface.AddGetterProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType);
 		}

@@ -37,7 +37,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			"m_PrefabInstance",
 		};
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+#nullable disable
 		private static IMethodDefOrRef addSerializedVersionMethod;
 		private static IMethodDefOrRef mappingAddMethod;
 		private static IMethodDefOrRef sequenceAddMethod;
@@ -57,12 +57,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static TypeDefinition assetListDefinition;
 		private static ITypeDefOrRef keyValuePairReference;
 		private static TypeDefinition keyValuePairDefinition;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+#nullable enable
 
 		private static readonly Dictionary<string, IMethodDescriptor> methodDictionary = new();
 
 		private static readonly SignatureComparer signatureComparer = new(SignatureComparisonFlags.VersionAgnostic);
-		private static CilInstructionLabel DummyInstructionLabel { get; } = new CilInstructionLabel();
 
 		private static bool emittingRelease = true;
 
@@ -120,7 +119,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					instance.FillEditorMethod(isImporter);
 				}
 			}
-			CreateHelperClassForWriteMethods();
+			CreateHelperClass();
 			methodDictionary.Clear();
 
 			emittingRelease = true;
@@ -132,16 +131,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 					instance.FillReleaseMethod(isImporter);
 				}
 			}
-			CreateHelperClassForWriteMethods();
+			CreateHelperClass();
 			methodDictionary.Clear();
 		}
 
-		private static void CreateHelperClassForWriteMethods()
+		private static void CreateHelperClass()
 		{
 			TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.HelpersNamespace, $"{ExportYamlMethod}Methods");
 			type.IsPublic = false;
-			//type.Methods.Add(readAssetListDefinition!);
-			//type.Methods.Add(readAssetDictionaryDefinition!);
 			foreach ((string _, IMethodDescriptor method) in methodDictionary.OrderBy(pair => pair.Key))
 			{
 				if (method is MethodDefinition methodDefinition && methodDefinition.DeclaringType is null)
@@ -315,8 +312,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition method = NewMethod(uniqueName, genericDictType);
 			CilInstructionCollection processor = method.GetProcessor();
 
-			CilLocalVariable sequenceLocal = new CilLocalVariable(yamlSequenceNodeReference.ToTypeSignature());
-			processor.Owner.LocalVariables.Add(sequenceLocal);
+			CilLocalVariable sequenceLocal = processor.AddLocalVariable(yamlSequenceNodeReference.ToTypeSignature()); //Create local
 			processor.Add(CilOpCodes.Ldc_I4, 1); //SequenceStyle.BlockCurve
 			processor.Add(CilOpCodes.Newobj, sequenceNodeConstructor);
 			processor.Add(CilOpCodes.Stloc, sequenceLocal);
@@ -338,7 +334,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			CilInstruction unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
+			CilInstructionLabel loopConditionStartLabel = new();
+			processor.Add(CilOpCodes.Br, loopConditionStartLabel);
 
 			//Now we just read key + value, increment i, compare against count, and jump back to here if it's less
 			ICilLabel jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create the dummy instruction to jump back to
@@ -366,10 +363,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			ICilLabel? loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
+			loopConditionStartLabel.Instruction = processor.Add(CilOpCodes.Nop);
+			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
-			unconditionalBranchInstruction.Operand = loopConditionStartLabel;
 
 			processor.Add(CilOpCodes.Ldloc, sequenceLocal);
 			processor.Add(CilOpCodes.Ret);
@@ -500,7 +497,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			CilInstruction? unconditionalBranchInstruction = processor.Add(CilOpCodes.Br, DummyInstructionLabel);
+			CilInstructionLabel loopConditionStartLabel = new();
+			processor.Add(CilOpCodes.Br, loopConditionStartLabel);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
 			ICilLabel jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
@@ -533,10 +531,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			ICilLabel loopConditionStartLabel = processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
+			loopConditionStartLabel.Instruction = processor.Add(CilOpCodes.Nop);
+			processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
 			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
 			processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
-			unconditionalBranchInstruction.Operand = loopConditionStartLabel;
 
 			processor.Add(CilOpCodes.Ldloc, sequenceNode);
 			processor.Add(CilOpCodes.Ret);
@@ -607,7 +605,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void MaybeEmitFlowMappingStyle(this CilInstructionCollection processor, UniversalNode rootNode, CilLocalVariable yamlMappingNode)
 		{
-			if (((TransferMetaFlags)rootNode.MetaFlag).IsTransferUsingFlowMappingStyle())
+			if (rootNode.MetaFlag.IsTransferUsingFlowMappingStyle())
 			{
 				IMethodDefOrRef setter = SharedState.Instance.Importer.ImportMethod<YamlMappingNode>(m => m.Name == "set_Style");
 				processor.Add(CilOpCodes.Ldloc, yamlMappingNode);
@@ -629,7 +627,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static CilInstruction AddCall(this CilInstructionCollection processor, IMethodDescriptor method)
 		{
-			return method is MethodDefinition definition && definition.IsStatic
+			return method is MethodDefinition { IsStatic: true }
 				? processor.Add(CilOpCodes.Call, method)
 				: processor.Add(CilOpCodes.Callvirt, method);
 		}

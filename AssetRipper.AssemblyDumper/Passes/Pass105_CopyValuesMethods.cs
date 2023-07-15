@@ -269,7 +269,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				return;
 			}
 
-			if (group is SubclassGroup { IsPPtr: true })
+			if (group.IsPPtr)
 			{
 				{
 					MethodDefinition method = group.Interface.AddMethod(CopyValuesName, InterfaceUtils.InterfaceMethodDeclaration, SharedState.Instance.Importer.Void);
