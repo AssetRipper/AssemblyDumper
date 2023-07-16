@@ -144,6 +144,14 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass105_CopyValuesMethods.DoPass();
 			}
+			using (new TimingCookie("Pass 106: Json Serialize Methods"))
+			{
+				Pass106_SerializeMethods.DoPass();
+			}
+			using (new TimingCookie("Pass 107: Json Deserialize Methods"))
+			{
+				Pass107_DeserializeMethods.DoPass();
+			}
 			using (new TimingCookie("Pass 110: Class Name and ID Overrides"))
 			{
 				Pass110_ClassNameAndIdOverrides.DoPass();

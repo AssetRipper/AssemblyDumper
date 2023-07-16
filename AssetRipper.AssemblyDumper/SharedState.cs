@@ -127,6 +127,7 @@ namespace AssetRipper.AssemblyDumper
 			AddSystemReferenceModule("System.Numerics.Vectors");
 			AddSystemReferenceModule("System.Linq");
 			AddSystemReferenceModule("System.Collections");
+			AddSystemReferenceModule("System.Text.Json");
 			AddSystemReferenceModule("System.Threading");
 			AddLocalReferenceModule("AssetRipper.AssemblyDumper");//needed for member cloning
 		}
