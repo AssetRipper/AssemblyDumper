@@ -41,7 +41,7 @@ internal class Program
 		<GenerateDocumentationFile>{GenerateDocumentationFile}</GenerateDocumentationFile>
 		<DocumentationFile>bin\AssetRipper.SourceGenerated.xml</DocumentationFile>
 
-		<NoWarn>1591</NoWarn>
+		<NoWarn>1591,8600,8601,8602,8603,8604</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
