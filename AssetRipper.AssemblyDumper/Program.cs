@@ -180,9 +180,9 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass206_BoneWeights4ExplicitConversions.DoPass();
 			}
-			using (new TimingCookie("Pass 300: Has Name Interface"))
+			using (new TimingCookie("Pass 300: Named Interface"))
 			{
-				Pass300_HasNameInterface.DoPass();
+				Pass300_NamedInterface.DoPass();
 			}
 			using (new TimingCookie("Pass 301: Has Hide Flags Interface"))
 			{
