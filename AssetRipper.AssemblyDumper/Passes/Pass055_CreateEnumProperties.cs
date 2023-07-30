@@ -1,6 +1,5 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
-using AssetRipper.DocExtraction.DataStructures;
 using AssetRipper.DocExtraction.Extensions;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -61,6 +60,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static bool TryGetEnumFullName(this InterfaceProperty interfaceProperty, [NotNullWhen(true)] out string? fullName)
 		{
+			if (interfaceProperty.Group is ClassGroup && interfaceProperty.Name.StartsWith("HideFlags_C", StringComparison.Ordinal))
+			{
+				fullName = "UnityEngine.HideFlags";
+				return true;
+			}
 			interfaceProperty.TryGetEnumFullNameFromHistory(out string? metadata);
 			if (interfaceProperty.TryGetOverridenEnumFullName(out string? overriden))
 			{

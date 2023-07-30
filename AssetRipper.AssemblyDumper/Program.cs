@@ -184,10 +184,6 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass300_NamedInterface.DoPass();
 			}
-			using (new TimingCookie("Pass 301: Has Hide Flags Interface"))
-			{
-				Pass301_HasHideFlagsInterface.DoPass();
-			}
 			using (new TimingCookie("Pass 400: IEquatable Interface"))
 			{
 				Pass400_AddEqualityMethods.DoPass();
