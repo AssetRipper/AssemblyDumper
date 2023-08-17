@@ -13,6 +13,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\AssetRipper\Source\AssetRipper.Assets\AssetRipper.Assets.csproj" />
+		<ProjectReference Include="..\..\AssetRipper\Source\AssetRipper.Checksum\AssetRipper.Checksum.csproj" />
 		<ProjectReference Include="..\..\AssetRipper\Source\AssetRipper.IO.Endian\AssetRipper.IO.Endian.csproj" />
 		<ProjectReference Include="..\..\AssetRipper\Source\AssetRipper.IO.Files\AssetRipper.IO.Files.csproj" />
 		<ProjectReference Include="..\..\AssetRipper\Source\AssetRipper.Numerics\AssetRipper.Numerics.csproj" />

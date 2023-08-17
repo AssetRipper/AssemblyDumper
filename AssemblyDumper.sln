@@ -48,6 +48,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.IO.Files", "..\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.Numerics", "..\AssetRipper\Source\AssetRipper.Numerics\AssetRipper.Numerics.csproj", "{E4CDB120-28B8-491F-A22F-6595BCEF0707}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.Checksum", "..\AssetRipper\Source\AssetRipper.Checksum\AssetRipper.Checksum.csproj", "{E6CCCEEA-1370-424F-8AFE-92005C57343E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -118,6 +120,10 @@ Global
 		{E4CDB120-28B8-491F-A22F-6595BCEF0707}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4CDB120-28B8-491F-A22F-6595BCEF0707}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4CDB120-28B8-491F-A22F-6595BCEF0707}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6CCCEEA-1370-424F-8AFE-92005C57343E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6CCCEEA-1370-424F-8AFE-92005C57343E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6CCCEEA-1370-424F-8AFE-92005C57343E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6CCCEEA-1370-424F-8AFE-92005C57343E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -133,6 +139,7 @@ Global
 		{002CDA91-A6DD-48CE-9C97-C433BB4DAB39} = {01351761-6949-4784-B493-478F9886273B}
 		{7AA82E00-DE13-47E8-A263-BE28E8171ED7} = {01351761-6949-4784-B493-478F9886273B}
 		{E4CDB120-28B8-491F-A22F-6595BCEF0707} = {01351761-6949-4784-B493-478F9886273B}
+		{E6CCCEEA-1370-424F-8AFE-92005C57343E} = {01351761-6949-4784-B493-478F9886273B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {75198E33-4C14-4946-8786-781402305986}
