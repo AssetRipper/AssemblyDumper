@@ -232,10 +232,6 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass508_LazySceneObjectIdentifier.DoPass();
 			}
-			using (new TimingCookie("Pass 520: Custom Field Initializers"))
-			{
-				Pass520_CustomFieldInitializers.DoPass();
-			}
 			using (new TimingCookie("Pass 555: Create Common String"))
 			{
 				Pass555_CreateCommonString.DoPass();
