@@ -182,7 +182,7 @@ internal static class VersionedListDocumenter
 		}
 	}
 
-	[return: NotNullIfNotNull("str")]
+	[return: NotNullIfNotNull(nameof(str))]
 	private static string? MaybePrefixString(string? str, string prefix)
 	{
 		return str is null ? null : $"{prefix}{str}";

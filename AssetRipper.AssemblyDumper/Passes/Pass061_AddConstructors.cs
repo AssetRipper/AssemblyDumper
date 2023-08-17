@@ -3,7 +3,7 @@ using AssetRipper.Assets.Metadata;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
-	public static class Pass016_AddConstructors
+	public static class Pass061_AddConstructors
 	{
 		private const MethodAttributes PublicInstanceConstructorAttributes =
 			MethodAttributes.Public |

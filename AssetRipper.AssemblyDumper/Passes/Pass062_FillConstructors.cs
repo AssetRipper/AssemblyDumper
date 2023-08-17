@@ -4,7 +4,7 @@ using AssetRipper.Primitives;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
-	public static class Pass017_FillConstructors
+	public static class Pass062_FillConstructors
 	{
 #nullable disable
 		private static IMethodDefOrRef emptyArray;
@@ -91,7 +91,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			foreach (FieldDefinition field in type.Fields)
 			{
-				if (field.IsStatic || field.Signature!.FieldType.IsValueType)
+				if (field.IsStatic || field.IsPrivate || field.Signature!.FieldType.IsValueType)
 				{
 					continue;
 				}

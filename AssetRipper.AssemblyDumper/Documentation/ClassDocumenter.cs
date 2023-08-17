@@ -60,20 +60,30 @@ namespace AssetRipper.AssemblyDumper.Documentation
 				return;
 			}
 
-			string fieldName = classProperty.BackingField.Name;
-
-			UniversalNode? releaseNode = instance.GetReleaseFieldByName(fieldName);
-			UniversalNode? editorNode = instance.GetEditorFieldByName(fieldName);
-			UniversalNode mainNode = releaseNode ?? editorNode ?? throw new Exception($"In {instance.Name}, could not find nodes for {fieldName}");
-
-			if (mainNode.Name != mainNode.OriginalName)
+			UniversalNode? releaseNode;
+			UniversalNode? editorNode;
+			if (classProperty.IsInjected)
 			{
-				DocumentationHandler.AddPropertyDefinitionLine(classProperty, $"Original field name: \"{XmlUtils.EscapeXmlInvalidCharacters(mainNode.OriginalName)}\"");
+				releaseNode = null;
+				editorNode = null;
 			}
-
-			if (mainNode.TypeName != mainNode.OriginalTypeName)
+			else
 			{
-				DocumentationHandler.AddPropertyDefinitionLine(classProperty, $"Original type: \"{XmlUtils.EscapeXmlInvalidCharacters(mainNode.OriginalTypeName)}\"");
+				string fieldName = classProperty.BackingField.Name;
+
+				releaseNode = instance.GetReleaseFieldByName(fieldName);
+				editorNode = instance.GetEditorFieldByName(fieldName);
+				UniversalNode mainNode = releaseNode ?? editorNode ?? throw new Exception($"In {instance.Name}, could not find nodes for {fieldName}");
+
+				if (mainNode.Name != mainNode.OriginalName)
+				{
+					DocumentationHandler.AddPropertyDefinitionLine(classProperty, $"Original field name: \"{XmlUtils.EscapeXmlInvalidCharacters(mainNode.OriginalName)}\"");
+				}
+
+				if (mainNode.TypeName != mainNode.OriginalTypeName)
+				{
+					DocumentationHandler.AddPropertyDefinitionLine(classProperty, $"Original type: \"{XmlUtils.EscapeXmlInvalidCharacters(mainNode.OriginalTypeName)}\"");
+				}
 			}
 
 			if (classProperty.HasEnumVariant)
@@ -85,8 +95,11 @@ namespace AssetRipper.AssemblyDumper.Documentation
 				DocumentationHandler.AddPropertyDefinitionLineNotSpecial(classProperty, "PPtr variant available.");
 			}
 
-			DocumentationHandler.AddPropertyDefinitionLine(classProperty, releaseNode is null ? "Editor Only" : $"Release Flags: {GetMetaFlagString(releaseNode.MetaFlag)}");
-			DocumentationHandler.AddPropertyDefinitionLine(classProperty, editorNode is null ? "Release Only" : $"Editor Flags: {GetMetaFlagString(editorNode.MetaFlag)}");
+			if (!classProperty.IsInjected)
+			{
+				DocumentationHandler.AddPropertyDefinitionLine(classProperty, releaseNode is null ? "Editor Only" : $"Release Flags: {GetMetaFlagString(releaseNode.MetaFlag)}");
+				DocumentationHandler.AddPropertyDefinitionLine(classProperty, editorNode is null ? "Release Only" : $"Editor Flags: {GetMetaFlagString(editorNode.MetaFlag)}");
+			}
 		}
 
 		private static UniversalNode? GetReleaseFieldByName(this GeneratedClassInstance instance, string fieldName)
