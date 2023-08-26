@@ -12,10 +12,7 @@ internal static class DebuggerExtensions
 	{
 		get
 		{
-			if (debuggerBrowsableConstructor == null)
-			{
-				debuggerBrowsableConstructor = SharedState.Instance.Importer.ImportConstructor<DebuggerBrowsableAttribute>(1);
-			}
+			debuggerBrowsableConstructor ??= SharedState.Instance.Importer.ImportConstructor<DebuggerBrowsableAttribute>(1);
 			return debuggerBrowsableConstructor;
 		}
 	}

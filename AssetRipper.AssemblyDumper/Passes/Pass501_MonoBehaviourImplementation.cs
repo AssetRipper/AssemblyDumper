@@ -1,23 +1,32 @@
 ﻿using AssetRipper.AssemblyCreationTools;
+using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
+using AssetRipper.AssemblyDumper.Documentation;
 using AssetRipper.AssemblyDumper.InjectedTypes;
 using AssetRipper.Assets;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
 	/// <summary>
-	/// Implements the IMonoBehaviour interface. Also fixes the read and yaml methods
+	/// Adds to the IMonoBehaviour and IScriptedImporter interfaces. Also fixes the read and yaml methods
 	/// </summary>
 	public static class Pass501_MonoBehaviourImplementation
 	{
 		public static void DoPass()
 		{
-			ClassGroup group = SharedState.Instance.ClassGroups[114];
-
 			TypeDefinition monoBehaviourHelperType = SharedState.Instance.InjectHelperType(typeof(MonoBehaviourHelper));
-
 			TypeSignature propertyType = SharedState.Instance.Importer.ImportTypeSignature<IUnityAssetBase>();
+
+			//MonoBehaviour
+			ApplyChangesToGroup(SharedState.Instance.ClassGroups[114], monoBehaviourHelperType, propertyType);
+
+			//ScriptedImporter
+			ApplyChangesToGroup(SharedState.Instance.ClassGroups[2089858483], monoBehaviourHelperType, propertyType);
+		}
+
+		private static void ApplyChangesToGroup(ClassGroup group, TypeDefinition monoBehaviourHelperType, TypeSignature propertyType)
+		{
 			const string propertyName = "Structure";
 			const string fieldName = "m_" + propertyName;
 
@@ -26,20 +35,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			foreach (GeneratedClassInstance instance in group.Instances)
 			{
-				FieldDefinition structureField = instance.Type.AddStructureField(fieldName, propertyType);
-				instance.Type.ImplementFullProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, null, structureField)
+				FieldDefinition structureField = instance.Type.AddField(propertyType, fieldName, visibility: FieldVisibility.Internal);
+				structureField
+					.AddNullableAttributesForMaybeNull()
+					.AddDebuggerBrowsableNeverAttribute();
+
+				PropertyDefinition property = instance.Type.ImplementFullProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, null, structureField)
 					.AddNullableAttributesForMaybeNull();
-				structureField.AddNullableAttributesForMaybeNull();
+
+				DocumentationHandler.AddPropertyDefinitionLine(property, "The custom structure of this asset, based on the instance fields of its MonoScript.");
 
 				instance.Type.FixExportMethods(structureField, monoBehaviourHelperType);
 			}
-		}
-
-		private static FieldDefinition AddStructureField(this TypeDefinition type, string fieldName, TypeSignature fieldType)
-		{
-			FieldDefinition result = new FieldDefinition(fieldName, FieldAttributes.Private, fieldType);
-			type.Fields.Add(result);
-			return result;
 		}
 
 		private static void FixExportMethods(this TypeDefinition type, FieldDefinition field, TypeDefinition monoBehaviourHelperType)
