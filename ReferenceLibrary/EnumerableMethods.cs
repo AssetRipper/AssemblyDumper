@@ -12,6 +12,7 @@ public class EnumerableMethods
 	int b = 4;
 	int[] c = new int[5];
 	int[] d = new int[6];
+	int[][] e = new int[7][];
 
 	public IEnumerable<int> GetNothing()
 	{
@@ -66,6 +67,21 @@ public class EnumerableMethods
 		}
 	}
 
+	public IEnumerable<int> GetCE()
+	{
+		for (int i = 0; i < c.Length; i++)
+		{
+			yield return c[i];
+		}
+		for (int j = 0; j < e.Length; j++)
+		{
+			for (int k = 0; k < e[j].Length; k++)
+			{
+				yield return e[j][k];
+			}
+		}
+	}
+
 	public IEnumerable<int> GetAinC()
 	{
 		for (int i = 0; i < c.Length; i++)
@@ -74,5 +90,4 @@ public class EnumerableMethods
 			yield return c[i];
 		}
 	}
-	private const string test = "test";
 }
