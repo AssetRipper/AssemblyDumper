@@ -244,9 +244,9 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass556_CreateClassIDTypeEnum.DoPass();
 			}
-			using (new TimingCookie("Pass 557: Create Source Version HashSet"))
+			using (new TimingCookie("Pass 557: Create SourceTpk Class"))
 			{
-				Pass557_CreateVersionHashSet.DoPass();
+				Pass557_CreateSourceTpkClass.DoPass();
 			}
 			using (new TimingCookie("Pass 558: Create Type to ClassIDType Dictionary"))
 			{

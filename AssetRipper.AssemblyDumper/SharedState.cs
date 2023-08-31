@@ -57,6 +57,7 @@ namespace AssetRipper.AssemblyDumper
 		public MethodDefinition NullableAttributeConstructorByte { get; }
 		public MethodDefinition NullableAttributeConstructorByteArray { get; }
 		public MethodDefinition NullableContextAttributeConstructor { get; }
+		public TypeDefinition PrivateImplementationDetails { get; }
 
 		private static readonly string referenceDirectory;
 
@@ -104,6 +105,10 @@ namespace AssetRipper.AssemblyDumper
 				.Single(m => m.IsConstructor && m.Parameters.Count == 1 && m.Parameters[0].ParameterType is CorLibTypeSignature);
 			NullableAttributeConstructorByteArray = nullableAttributeType.Methods
 				.Single(m => m.IsConstructor && m.Parameters.Count == 1 && m.Parameters[0].ParameterType is SzArrayTypeSignature);
+
+			PrivateImplementationDetails = new TypeDefinition(null, "<PrivateImplementationDetails>", TypeAttributes.NotPublic | TypeAttributes.AutoLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed);
+			Module.TopLevelTypes.Add(PrivateImplementationDetails);
+			PrivateImplementationDetails.AddCompilerGeneratedAttribute(Importer);
 		}
 
 		public static void Initialize(
