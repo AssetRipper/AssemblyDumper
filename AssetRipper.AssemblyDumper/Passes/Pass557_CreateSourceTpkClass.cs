@@ -16,8 +16,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 		public static void DoPass()
 		{
 			TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.RootNamespace, "SourceTpk");
-			AddVersionsProperty(type);
 			AddDataProperty(type);
+			AddVersionsProperty(type);
 		}
 
 		private static void AddVersionsProperty(TypeDefinition type)
@@ -41,12 +41,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			field.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 
 			MethodDefinition staticConstructor = type.GetOrCreateStaticConstructor();
-			staticConstructor.CilMethodBody ??= new CilMethodBody(staticConstructor);
-			CilInstructionCollection processor = staticConstructor.CilMethodBody.Instructions;
-			if (processor.Count > 0)
-			{
-				processor.Pop();
-			}
+			CilInstructionCollection processor = staticConstructor.CilMethodBody!.Instructions;
+			processor.Pop();//pop the ret
 			processor.Add(CilOpCodes.Newobj, hashsetConstructor);
 			foreach (UnityVersion version in SharedState.Instance.SourceVersions)
 			{
@@ -101,18 +97,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 			privateImplementationField.HasFieldRva = true;
 			privateImplementationField.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 
-			FieldDefinition field = type.AddField(SharedState.Instance.Importer.UInt8.MakeSzArrayType(), "_data", true, FieldVisibility.Private);
+			TypeDefinition internalType = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.RootNamespace, "SourceTpkData");
+			internalType.IsPublic = false;
+			FieldDefinition field = internalType.AddField(SharedState.Instance.Importer.UInt8.MakeSzArrayType(), "data", true, FieldVisibility.Internal);
 			field.IsInitOnly = true;
 
 			//Static Constructor
 			{
-				MethodDefinition staticConstructor = type.GetOrCreateStaticConstructor();
-				staticConstructor.CilMethodBody ??= new CilMethodBody(staticConstructor);
-				CilInstructionCollection processor = staticConstructor.CilMethodBody.Instructions;
-				if (processor.Count > 0)
-				{
-					processor.Pop();
-				}
+				MethodDefinition staticConstructor = internalType.GetOrCreateStaticConstructor();
+				CilInstructionCollection processor = staticConstructor.CilMethodBody!.Instructions;
+				processor.Pop();//pop the ret
 				processor.Add(CilOpCodes.Ldc_I4, data.Length);
 				processor.Add(CilOpCodes.Newarr, SharedState.Instance.Importer.UInt8.ToTypeDefOrRef());
 				processor.Add(CilOpCodes.Dup);
