@@ -13,6 +13,8 @@ public abstract class HistoryBase
 	public VersionedList<string> ObsoleteMessage { get; set; } = new();
 	public VersionedList<string> DocumentationString { get; set; } = new();
 	[JsonIgnore]
+	public string? InjectedDocumentation { get; set; }
+	[JsonIgnore]
 	public UnityVersion MinimumVersion
 	{
 		get

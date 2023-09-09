@@ -54,8 +54,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 					("ExitTime", 5, "The condition is true when the source state has stepped over the exit time value."),
 				} },
 		};
-		private static readonly Dictionary<string, List<(string, string)>> injectedDocumentation = new()
+		private static readonly Dictionary<string, List<(string?, string)>> injectedDocumentation = new()
 		{
+			{ "UnityEditor.ModelImporterMeshCompression",
+				new()
+				{
+					(null, "Compressing meshes saves space in the built game, but more compression introduces more artifacts in vertex data."),
+				}
+			},
 			{ "UnityEditor.TextureUsageMode",
 				new()
 				{
@@ -128,17 +134,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 
 			//Inject documentation
-			foreach ((string fullName, List<(string, string)> list) in injectedDocumentation)
+			foreach ((string fullName, List<(string?, string)> list) in injectedDocumentation)
 			{
 				EnumHistory history = dictionary[fullName];
-				foreach ((string fieldName, string description) in list)
+				foreach ((string? fieldName, string description) in list)
 				{
-					EnumMemberHistory member = history.Members[fieldName];
-					for (int i = 0; i < member.DocumentationString.Count; i++)
+					if (string.IsNullOrEmpty(fieldName))
 					{
-						(UnityVersion version, string? oldDocumentation) = member.DocumentationString[i];
-						string newDocumentation = string.IsNullOrEmpty(oldDocumentation) ? description : $"{description}<br/>\n{oldDocumentation}";
-						member.DocumentationString[i] = new KeyValuePair<UnityVersion, string?>(version, newDocumentation);
+						//Inject documentation for the enum itself
+						history.InjectedDocumentation = description;
+					}
+					else
+					{
+						EnumMemberHistory member = history.Members[fieldName];
+						member.InjectedDocumentation = description;
 					}
 				}
 			}

@@ -14,6 +14,11 @@ namespace AssetRipper.AssemblyDumper.Documentation
 			{
 				EnumHistory history = singleEnumDefinition.History;
 
+				if (!string.IsNullOrEmpty(history.InjectedDocumentation))
+				{
+					DocumentationHandler.AddTypeDefinitionLine(type, "Summary: " + history.InjectedDocumentation);
+				}
+
 				VersionedListDocumenter.AddSet(type, history.DocumentationString, "Summary: ");
 				VersionedListDocumenter.AddList(type, history.ObsoleteMessage, "Obsolete Message: ");
 
@@ -23,6 +28,10 @@ namespace AssetRipper.AssemblyDumper.Documentation
 					if (memberHistory.TryGetUniqueValue(out _, out IEnumerable<KeyValuePair<string, long>>? pairs))
 					{
 						FieldDefinition field = type.GetFieldByName(memberName);
+						if (!string.IsNullOrEmpty(memberHistory.InjectedDocumentation))
+						{
+							DocumentationHandler.AddFieldDefinitionLine(field, "Summary: " + memberHistory.InjectedDocumentation);
+						}
 						VersionedListDocumenter.AddSet(field, memberHistory.DocumentationString, "Summary: ");
 						VersionedListDocumenter.AddList(field, memberHistory.ObsoleteMessage, "Obsolete Message: ");
 						DocumentationHandler.AddFieldDefinitionLine(field, memberHistory.GetVersionRange().GetUnionedRanges().GetString(minimumVersion));
@@ -32,6 +41,10 @@ namespace AssetRipper.AssemblyDumper.Documentation
 						foreach ((string fieldName, long value) in pairs)
 						{
 							FieldDefinition field = type.GetFieldByName(fieldName);
+							if (!string.IsNullOrEmpty(memberHistory.InjectedDocumentation))
+							{
+								DocumentationHandler.AddFieldDefinitionLine(field, "Summary: " + memberHistory.InjectedDocumentation);
+							}
 							VersionedListDocumenter.AddSet(field, memberHistory.DocumentationString, "Summary: ");
 							VersionedListDocumenter.AddList(field, memberHistory.ObsoleteMessage, "Obsolete Message: ");
 							DocumentationHandler.AddFieldDefinitionLine(field,
