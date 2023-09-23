@@ -58,9 +58,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			static UniversalNode MakeRootNode()
 			{
-				UniversalNode rootNode = CreateRootNode(ClassName);
-				//These node names might not be correct.
-				//They are based on the Rectf node names.
+				UniversalNode rootNode = CreateRootNode(ClassName, 2);
 				rootNode.SubNodes.Add(MakeInt32Node("m_X", "x"));
 				rootNode.SubNodes.Add(MakeInt32Node("m_Y", "y"));
 				rootNode.SubNodes.Add(MakeInt32Node("m_Width", "width"));
