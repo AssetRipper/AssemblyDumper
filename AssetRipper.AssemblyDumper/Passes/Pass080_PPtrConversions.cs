@@ -18,6 +18,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static ITypeDefOrRef pptrTypeImported;
 		private static ITypeDefOrRef commonPPtrTypeGeneric;
 		private static ITypeDefOrRef commonPPtrType;
+		private static IMethodDefOrRef commonPPtrConstructor;
 		private static IMethodDefOrRef commonPPtrGetFileIDMethod;
 		private static IMethodDefOrRef commonPPtrGetPathIDMethod;
 		private static MethodDefinition forceCreatePPtrHelper;
@@ -33,6 +34,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			pptrTypeImported = SharedState.Instance.Importer.ImportType(typeof(IPPtr<>));
 			commonPPtrTypeGeneric = SharedState.Instance.Importer.ImportType(typeof(PPtr<>));
 			commonPPtrType = SharedState.Instance.Importer.ImportType(typeof(PPtr));
+			commonPPtrConstructor = SharedState.Instance.Importer.ImportConstructor<PPtr>(c => c.Parameters.Count == 2);
 			commonPPtrGetFileIDMethod = SharedState.Instance.Importer.ImportMethod<PPtr>(m => m.Name == $"get_{nameof(PPtr.FileID)}");
 			commonPPtrGetPathIDMethod = SharedState.Instance.Importer.ImportMethod<PPtr>(m => m.Name == $"get_{nameof(PPtr.PathID)}");
 			forceCreatePPtrHelper = SharedState.Instance.InjectHelperType(typeof(PPtrHelper)).Methods.Single(m => m.Name == nameof(PPtrHelper.ForceCreatePPtr));
@@ -91,9 +93,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			AddTryGetAssetMethods(parameterType, instance, instanceParameterType);
 
-			AddImplicitConversions(instance, parameterType, instanceParameterType);
-
 			instance.Type.ImplementSetAssetMethods(parameterType.ToTypeSignature(), instanceParameterType?.ToTypeSignature());
+
+			AddImplicitConversions(instance, parameterType, instanceParameterType);
 		}
 
 		private static void AddTryGetAssetMethods(TypeDefinition parameterType, GeneratedClassInstance instance, TypeDefinition? instanceParameterType)
@@ -119,6 +121,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 			instance.Type.AddImplicitConversion(parameterType.ToTypeSignature());
 			instance.Type.AddImplicitConversion<IUnityObjectBase>();
+			instance.Type.AddImplicitConversion(commonPPtrType.ToTypeSignature(), commonPPtrConstructor);
 		}
 
 		private static void AddPPtrInterfaceImplementation(this TypeDefinition type, TypeDefinition parameterType)
@@ -261,12 +264,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static bool IsInt32Type(this FieldDefinition field) => field.Signature!.FieldType is CorLibTypeSignature signature && signature.ElementType == ElementType.I4;
+		private static bool IsInt32Type(this FieldDefinition field) => field.Signature!.FieldType is CorLibTypeSignature { ElementType: ElementType.I4 };
 
 		private static MethodDefinition AddImplicitConversion(this TypeDefinition pptrType, TypeSignature parameterType)
 		{
 			GenericInstanceTypeSignature resultPPtrSignature = commonPPtrTypeGeneric.MakeGenericInstanceType(parameterType);
-			return pptrType.AddConversion(resultPPtrSignature, false);
+			IMethodDefOrRef constructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, resultPPtrSignature, 2);
+			return pptrType.AddImplicitConversion(resultPPtrSignature, constructor);
 		}
 
 		private static MethodDefinition AddImplicitConversion<T>(this TypeDefinition pptrType)
@@ -275,14 +279,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return pptrType.AddImplicitConversion(importedInterface.ToTypeSignature());
 		}
 
-		private static MethodDefinition AddConversion(this TypeDefinition pptrType, GenericInstanceTypeSignature resultTypeSignature, bool isExplicit)
+		private static MethodDefinition AddImplicitConversion(this TypeDefinition pptrType, TypeSignature resultTypeSignature, IMethodDefOrRef constructor)
 		{
-			IMethodDefOrRef constructor = MethodUtils.MakeConstructorOnGenericType(SharedState.Instance.Importer, resultTypeSignature, 2);
-
 			FieldDefinition fileID = pptrType.Fields.Single(field => field.Name == "m_FileID_");
 			FieldDefinition pathID = pptrType.Fields.Single(f => f.Name == "m_PathID_");
 
-			MethodDefinition method = pptrType.AddEmptyConversion(pptrType.ToTypeSignature(), resultTypeSignature, !isExplicit);
+			MethodDefinition method = pptrType.AddEmptyConversion(pptrType.ToTypeSignature(), resultTypeSignature, true);
 
 			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
 
