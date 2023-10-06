@@ -45,6 +45,7 @@ namespace AssetRipper.AssemblyDumper
 		public Dictionary<int, ClassGroup> ClassGroups { get; } = new();
 		public Dictionary<string, SubclassGroup> SubclassGroups { get; } = new();
 		public Dictionary<TypeDefinition, ClassGroupBase> TypesToGroups { get; } = new();
+		public Dictionary<TypeDefinition, GeneratedClassInstance> TypesToInstances { get; } = new();
 		public Dictionary<string, HashSet<int>> NameToTypeID { get; } = new();
 		public Dictionary<string, TypeDefinition> MarkerInterfaces { get; } = new();
 		private Dictionary<Type, TypeDefinition> InjectedHelperTypes { get; } = new();
