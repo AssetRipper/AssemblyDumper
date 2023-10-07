@@ -426,7 +426,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				if (node.TryGetSubNodeByName("m_StartDelay", out UniversalNode? particleSystemStartDelayNode))
 				{
 					particleSystemStartDelayNode.Name = particleSystemStartDelayNode.TypeName == "float"
-						? "m_StartDelay_float"
+						? "m_StartDelay_Single"
 						: "m_StartDelay_MinMaxCurve";
 				}
 			}
@@ -455,10 +455,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				visualEffectResourceInfosNode.Name = "m_Settings";
 			}
-			else if (node.IsPrefab(out UniversalNode? parentPrefabNode, out UniversalNode? isPrefabParentNode))
+			else if (node.TypeName == "Prefab")
 			{
-				parentPrefabNode.Name = "m_SourcePrefab";
-				isPrefabParentNode.Name = "m_IsPrefabAsset";
+				node.TryRenameSubNode("m_IsPrefabParent", "m_IsPrefabAsset");
+				node.TryRenameSubNode("m_ParentPrefab", "m_SourcePrefab");
+			}
+			else if (node.TypeName == "PrefabInstance")
+			{
+				//https://github.com/ds5678/TLD-Compass/blob/13e2dbd3a93a725d0e0bb1fc0c905ac37dd3cb84/UnityProject/Assets/Scenes/SampleScene.unity#L372
+				//The type trees for this field are wrong. It should be a PPtr_PrefabInstance, not a PPtr_Prefab.
+				UniversalNode sourcePrefabNode = node.GetSubNodeByName("m_SourcePrefab");
+				sourcePrefabNode.TypeName = "PPtr_PrefabInstance";
+				sourcePrefabNode.OriginalTypeName = "PPtr<PrefabInstance>";
 			}
 			else if (node.TypeName == "VertexData" && node.TryGetSubNodeByName("m_DataSize", out UniversalNode? vertexDataDataSizeNode))
 			{
@@ -726,20 +734,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 				? node.SubNodes.SingleOrDefault(n => n.Name == "m_ModifiedItems")?.SubNodes[0].SubNodes[1].SubNodes[1]
 				: null;
 			return modifiedItemTypeNode != null;
-		}
-
-		private static bool IsPrefab(this UniversalNode node, [NotNullWhen(true)] out UniversalNode? parentPrefabNode, [NotNullWhen(true)] out UniversalNode? isPrefabParentNode)
-		{
-			if (node.TypeName == "Prefab")
-			{
-				isPrefabParentNode = node.SubNodes.SingleOrDefault(n => n.Name == "m_IsPrefabParent");
-				parentPrefabNode = node.SubNodes.SingleOrDefault(n => n.Name == "m_ParentPrefab");
-				return isPrefabParentNode != null && parentPrefabNode != null;
-			}
-
-			isPrefabParentNode = null;
-			parentPrefabNode = null;
-			return false;
 		}
 	}
 }

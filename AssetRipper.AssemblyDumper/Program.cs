@@ -188,6 +188,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass300_NamedInterface.DoPass();
 			}
+			using (new TimingCookie("Pass 301: SourcePrefab Property"))
+			{
+				Pass301_SourcePrefabProperty.DoPass();
+			}
 			using (new TimingCookie("Pass 400: IEquatable Interface"))
 			{
 				Pass400_AddEqualityMethods.DoPass();
