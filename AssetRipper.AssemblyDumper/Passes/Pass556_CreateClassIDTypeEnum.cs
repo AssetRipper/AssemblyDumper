@@ -1,4 +1,5 @@
 ﻿using AssetRipper.AssemblyCreationTools.Types;
+using AssetRipper.AssemblyDumper.Documentation;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -34,6 +35,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 					FieldGroupDictionary.Add(field, classIdDictionary[id]);
 				}
 			}
+
+			string documentationString = $"This enum is an identifier for the {nameDictionary.Count} Unity object types.";
+			DocumentationHandler.AddTypeDefinitionLine(ClassIdTypeDefintion, documentationString);
+			DocumentationHandler.AddTypeDefinitionLine(alphabeticalEnum, documentationString);
 
 			Console.WriteLine($"\t{nameDictionary.Count} ClassIDType numbers.");
 		}
