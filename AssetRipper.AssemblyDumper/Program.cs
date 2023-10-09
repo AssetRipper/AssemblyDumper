@@ -14,7 +14,7 @@ namespace AssetRipper.AssemblyDumper
 		{
 			using (new TimingCookie("Initialization"))
 			{
-				TpkProcessor.IntitializeSharedState("uncompressed.tpk");
+				TpkProcessor.IntitializeSharedState("type_tree.tpk");
 			}
 			using (new TimingCookie("Pass 001: Merge Moved Groups"))
 			{
@@ -255,10 +255,6 @@ namespace AssetRipper.AssemblyDumper
 			using (new TimingCookie("Pass 558: Create Type to ClassIDType Dictionary"))
 			{
 				Pass558_TypeCache.DoPass();
-			}
-			using (new TimingCookie("Pass 559: Create EngineAssetsTpk Class"))
-			{
-				Pass559_CreateEngineAssetsTpkClass.DoPass();
 			}
 			using (new TimingCookie("Pass 920: Interface Inheritance"))
 			{
