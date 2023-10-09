@@ -256,6 +256,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass558_TypeCache.DoPass();
 			}
+			using (new TimingCookie("Pass 559: Create EngineAssetsTpk Class"))
+			{
+				Pass559_CreateEngineAssetsTpkClass.DoPass();
+			}
 			using (new TimingCookie("Pass 920: Interface Inheritance"))
 			{
 				Pass920_InterfaceInheritance.DoPass();

@@ -132,10 +132,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 				processor.Add(CilOpCodes.Newobj, reference);
 				processor.Add(CilOpCodes.Ret);
 			}
-
-			long value = default;
-			ReadOnlySpan<byte> span = MemoryMarshal.AsBytes(new ReadOnlySpan<long>(in value));
-			ReadOnlySpan<byte> span2 = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref value, 1));
 		}
 	}
 }
