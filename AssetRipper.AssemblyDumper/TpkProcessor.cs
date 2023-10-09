@@ -11,6 +11,7 @@ namespace AssetRipper.AssemblyDumper
 		public static void IntitializeSharedState(string tpkPath)
 		{
 			TpkTypeTreeBlob blob = ReadTpkFile(tpkPath);
+			Console.WriteLine($"\tCreation time: {blob.CreationTime.ToLocalTime()}");
 			Dictionary<UnityVersion, UnityVersion> versionRedirectDictionary = MakeVersionRedirectDictionary(blob.Versions);
 			Dictionary<int, VersionedList<UniversalClass>> classes = new();
 			foreach (TpkClassInformation classInfo in blob.ClassInformation)
