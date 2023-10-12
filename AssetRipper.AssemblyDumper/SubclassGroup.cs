@@ -6,6 +6,8 @@
 
 		public override int ID => -1;
 
+		public override bool IsSealed => true;
+
 		public override string Namespace => SharedState.GetSubclassNamespace(Name);
 
 		public override bool UniformlyNamed => true;

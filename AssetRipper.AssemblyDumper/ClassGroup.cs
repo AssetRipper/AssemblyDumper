@@ -4,6 +4,8 @@
 	{
 		public override int ID { get; }
 
+		public override bool IsSealed => Instances.All(instance => instance.Type.IsSealed);
+
 		public override string Name => Instances[Instances.Count - 1].Name;
 
 		public override string Namespace => SharedState.GetClassNamespace(ID);

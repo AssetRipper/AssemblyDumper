@@ -6,7 +6,7 @@ namespace AssetRipper.AssemblyDumper.Passes;
 
 internal static class Pass301_SourcePrefabProperty
 {
-	private const string PropertyName = "SourcePrefab_C1001P";
+	private const string PropertyName = "SourcePrefabP";
 
 	public static void DoPass()
 	{
@@ -18,7 +18,6 @@ internal static class Pass301_SourcePrefabProperty
 			property.AddNullableAttributesForMaybeNull();
 			DocumentationHandler.AddPropertyDefinitionLine(property, $"Injected in {nameof(Pass301_SourcePrefabProperty)}");
 			DocumentationHandler.AddPropertyDefinitionLine(property, "It is the source/parent prefab of this prefab instance.");
-			DocumentationHandler.AddPropertyDefinitionLine(property, "Not Absent");
 		}
 
 		foreach (GeneratedClassInstance instance in group.Instances)

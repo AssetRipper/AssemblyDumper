@@ -141,7 +141,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			foreach ((string fieldName, List<TypeSignature> fieldTypeList) in fieldTypeDictionary)
 			{
-				string propertyName = GeneratedInterfaceUtils.GetPropertyNameFromFieldName(fieldName, group.ID);
+				string propertyName = GeneratedInterfaceUtils.GetPropertyNameFromFieldName(fieldName, group);
 				if (fieldTypeList.Count == 1)
 				{
 					propertyDictionary.Add(propertyName, (fieldName, fieldTypeList[0], false));

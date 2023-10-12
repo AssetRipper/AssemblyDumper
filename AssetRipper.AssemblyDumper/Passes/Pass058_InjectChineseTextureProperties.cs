@@ -53,7 +53,7 @@ internal static class Pass058_InjectChineseTextureProperties
 		string fieldName,
 		Func<GeneratedClassInstance, TypeSignature, string, FieldDefinition> fieldDelegate)
 	{
-		string propertyName = GeneratedInterfaceUtils.GetPropertyNameFromFieldName(fieldName, group.ID);
+		string propertyName = GeneratedInterfaceUtils.GetPropertyNameFromFieldName(fieldName, group);
 
 		DataMemberHistory history = new();
 		history.Exists.Add(group.MinimumVersion, true);

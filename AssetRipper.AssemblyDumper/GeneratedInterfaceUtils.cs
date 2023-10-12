@@ -1,12 +1,20 @@
-﻿namespace AssetRipper.AssemblyDumper
+﻿using AssetRipper.Assets;
+using System.Reflection;
+using MethodAttributes = System.Reflection.MethodAttributes;
+
+namespace AssetRipper.AssemblyDumper
 {
 	internal static class GeneratedInterfaceUtils
 	{
-		private static string[] blackListedNames = new string[] { "Name" };
+		private static HashSet<string> BlackListedPropertyNamesForSubclassGroup { get; }
+			= GetPublicOrProtectedPropertyNames(typeof(UnityAssetBase)).Append("Name").ToHashSet();
 
-		public static string GetPropertyNameFromFieldName(string fieldName, int id)
+		private static HashSet<string> BlackListedPropertyNamesForClassGroup { get; }
+			= GetPublicOrProtectedPropertyNames(typeof(UnityObjectBase)).Union(BlackListedPropertyNamesForSubclassGroup).ToHashSet();
+
+		public static string GetPropertyNameFromFieldName(string fieldName, ClassGroupBase group)
 		{
-			if (blackListedNames.Contains(fieldName))
+			if (IsBlackListed(fieldName, group))
 			{
 				throw new Exception($"Field uses a blacklisted name");
 			}
@@ -30,12 +38,12 @@
 				result = $"{char.ToUpperInvariant(result[0])}{result.Substring(1)}";
 			}
 
-			if (id >= 0)
+			if (!group.IsSealed)
 			{
-				result = $"{result}_C{id}";
+				result = $"{result}_C{group.ID}";
 			}
 
-			if (blackListedNames.Contains(result))
+			if (IsBlackListed(result, group))
 			{
 				result = $"{result}_R";
 			}
@@ -74,6 +82,41 @@
 			}
 
 			processor.Add(CilOpCodes.Ret);
+		}
+
+		private static bool IsBlackListed(string name, ClassGroupBase group)
+		{
+			return group is SubclassGroup
+				? BlackListedPropertyNamesForSubclassGroup.Contains(name)
+				: BlackListedPropertyNamesForClassGroup.Contains(name);
+		}
+
+		private static IEnumerable<string> GetPublicOrProtectedPropertyNames(Type type)
+		{
+			foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+			{
+				if (property.GetIndexParameters().Length == 0 && IsPublicOrProtected(property))
+				{
+					yield return property.Name;
+				}
+			}
+
+			static bool IsPublicOrProtected(PropertyInfo property)
+			{
+				foreach (MethodInfo accessor in property.GetAccessors())
+				{
+					if (IsPublicOrProtected(accessor))
+					{
+						return true;
+					}
+				}
+				return false;
+
+				static bool IsPublicOrProtected(MethodInfo method)
+				{
+					return (method.Attributes & MethodAttributes.MemberAccessMask) is MethodAttributes.Public or MethodAttributes.Family or MethodAttributes.FamORAssem;
+				}
+			}
 		}
 	}
 }

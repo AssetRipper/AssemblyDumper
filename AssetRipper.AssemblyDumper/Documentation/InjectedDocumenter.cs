@@ -41,10 +41,10 @@ namespace AssetRipper.AssemblyDumper.Documentation
 					{
 						( "TextureRect" , "Actual sprite rectangle inside atlas texture (or in original texture for non atlas sprite)." ),
 						( "TextureRect" , "It is a retangle of cropped image if tight mode is used. Otherwise, its size matches the original size." ),
-						( "TextureRectOffset" , $"Offset of actual (cropped) sprite rectangle relative to {SeeXmlTagGenerator.MakeCRefForClassInterfaceProperty(213, "Rect_C213")}." ),
+						( "TextureRectOffset" , $"Offset of actual (cropped) sprite rectangle relative to {SeeXmlTagGenerator.MakeCRefForClassInterfaceProperty(213, "Rect")}." ),
 						( "TextureRectOffset" , "Unity crops rectangle to save atlas space if tight mode is used." ),
 						( "TextureRectOffset" , "The final atlas image is a cropped version of a rectangle that the developer specified in the original texture." ),
-						( "TextureRectOffset" , $"In other words, this value shows how much Unity cropped the {SeeXmlTagGenerator.MakeCRefForClassInterfaceProperty(213, "Rect_C213")} from the bottom-left corner." ),
+						( "TextureRectOffset" , $"In other words, this value shows how much Unity cropped the {SeeXmlTagGenerator.MakeCRefForClassInterfaceProperty(213, "Rect")} from the bottom-left corner." ),
 					}
 				},
 				{ "SubMesh" , new()

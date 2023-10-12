@@ -15,6 +15,7 @@ namespace AssetRipper.AssemblyDumper
 		public abstract string Name { get; }
 		public abstract string Namespace { get; }
 		public abstract int ID { get; }
+		public abstract bool IsSealed { get; }
 		public abstract bool UniformlyNamed { get; }
 		public virtual bool IsPPtr => false;
 		public UnityVersion MinimumVersion => Instances[0].VersionRange.Start;
