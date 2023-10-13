@@ -60,7 +60,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static bool TryGetEnumFullName(this InterfaceProperty interfaceProperty, [NotNullWhen(true)] out string? fullName)
 		{
-			if (interfaceProperty.Group is ClassGroup && interfaceProperty.Name.StartsWith("HideFlags_C", StringComparison.Ordinal))
+			if (interfaceProperty.Group is ClassGroup
+				&& (interfaceProperty.Name == "HideFlags" || interfaceProperty.Name.StartsWith("HideFlags_C", StringComparison.Ordinal)))
 			{
 				fullName = "UnityEngine.HideFlags";
 				return true;
@@ -107,12 +108,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					1 => interfaceProperty.Name switch
 					{
-						"StaticEditorFlags_C1" => "UnityEditor.StaticEditorFlags",
+						"StaticEditorFlags" => "UnityEditor.StaticEditorFlags",
 						_ => null,
 					},
 					11 => interfaceProperty.Name switch
 					{
-						"Default_Speaker_Mode_C11" => "UnityEngine.AudioSpeakerMode",
+						"Default_Speaker_Mode" => "UnityEngine.AudioSpeakerMode",
 						_ => null,
 					},
 					28 => interfaceProperty.Name switch
@@ -123,51 +124,51 @@ namespace AssetRipper.AssemblyDumper.Passes
 					},
 					30 => interfaceProperty.Name switch
 					{
-						"DefaultMobileRenderingPath_C30" => "UnityEngine.RenderingPath",
-						"DefaultRenderingPath_C30" => "UnityEngine.RenderingPath",
+						"DefaultMobileRenderingPath" => "UnityEngine.RenderingPath",
+						"DefaultRenderingPath" => "UnityEngine.RenderingPath",
 						_ => null,
 					},
 					43 => interfaceProperty.Name switch
 					{
-						"MeshCompression_C43" => "UnityEditor.ModelImporterMeshCompression",
+						"MeshCompression" => "UnityEditor.ModelImporterMeshCompression",
 						_ => null,
 					},
 					83 => interfaceProperty.Name switch
 					{
-						"CompressionFormat_C83" => "UnityEngine.AudioCompressionFormat",
+						"CompressionFormat" => "UnityEngine.AudioCompressionFormat",
 						_ => null,
 					},
 					117 => interfaceProperty.Name switch
 					{
-						"ColorSpace_C117" => "UnityEngine.ColorSpace",
-						"Dimension_C117" => "UnityEngine.Rendering.TextureDimension",
-						"LightmapFormat_C117" => "UnityEditor.TextureUsageMode",
-						"UsageMode_C117" => "UnityEditor.TextureUsageMode",
+						"ColorSpace" => "UnityEngine.ColorSpace",
+						"Dimension" => "UnityEngine.Rendering.TextureDimension",
+						"LightmapFormat" => "UnityEditor.TextureUsageMode",
+						"UsageMode" => "UnityEditor.TextureUsageMode",
 						_ => null,
 					},
 					187 => interfaceProperty.Name switch
 					{
-						"ColorSpace_C187" => "UnityEngine.ColorSpace",
-						"UsageMode_C187" => "UnityEditor.TextureUsageMode",
+						"ColorSpace" => "UnityEngine.ColorSpace",
+						"UsageMode" => "UnityEditor.TextureUsageMode",
 						_ => null,
 					},
 					188 => interfaceProperty.Name switch
 					{
-						"ColorSpace_C188" => "UnityEngine.ColorSpace",
-						"UsageMode_C188" => "UnityEditor.TextureUsageMode",
+						"ColorSpace" => "UnityEngine.ColorSpace",
+						"UsageMode" => "UnityEditor.TextureUsageMode",
 						_ => null,
 					},
 					206 => interfaceProperty.Name switch
 					{
-						"BlendType_C206_Int32" => "UnityEditor.Animations.BlendTreeType",
-						"BlendType_C206_UInt32" => "UnityEditor.Animations.BlendTreeType",
+						"BlendType_Int32" => "UnityEditor.Animations.BlendTreeType",
+						"BlendType_UInt32" => "UnityEditor.Animations.BlendTreeType",
 						_ => null,
 					},
 					1006 => interfaceProperty.Name switch
 					{
-						"Alignment_C1006" => "UnityEngine.SpriteAlignment",
-						"AlphaUsage_C1006" => "UnityEditor.TextureImporterAlphaSource",
-						"SpriteMeshType_C1006" => "UnityEngine.SpriteMeshType",
+						"Alignment" => "UnityEngine.SpriteAlignment",
+						"AlphaUsage" => "UnityEditor.TextureImporterAlphaSource",
+						"SpriteMeshType" => "UnityEngine.SpriteMeshType",
 						_ => null,
 					},
 					_ => null,

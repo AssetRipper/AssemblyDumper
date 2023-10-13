@@ -7,7 +7,7 @@ namespace AssetRipper.AssemblyDumper
 	internal static class GeneratedInterfaceUtils
 	{
 		private static HashSet<string> BlackListedPropertyNamesForSubclassGroup { get; }
-			= GetPublicOrProtectedPropertyNames(typeof(UnityAssetBase)).Append("Name").ToHashSet();
+			= GetPublicOrProtectedPropertyNames(typeof(UnityAssetBase)).Append(nameof(INamed.Name)).ToHashSet();
 
 		private static HashSet<string> BlackListedPropertyNamesForClassGroup { get; }
 			= GetPublicOrProtectedPropertyNames(typeof(UnityObjectBase)).Union(BlackListedPropertyNamesForSubclassGroup).ToHashSet();
@@ -86,9 +86,11 @@ namespace AssetRipper.AssemblyDumper
 
 		private static bool IsBlackListed(string name, ClassGroupBase group)
 		{
-			return group is SubclassGroup
+			return (group is SubclassGroup
 				? BlackListedPropertyNamesForSubclassGroup.Contains(name)
-				: BlackListedPropertyNamesForClassGroup.Contains(name);
+				: BlackListedPropertyNamesForClassGroup.Contains(name))
+				|| name == group.Interface.Name
+				|| group.Types.Any(t => t.Name == name);
 		}
 
 		private static IEnumerable<string> GetPublicOrProtectedPropertyNames(Type type)

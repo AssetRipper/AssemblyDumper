@@ -49,7 +49,7 @@ internal static partial class ValidNameGenerator
 		return result;
 	}
 
-	[GeneratedRegex("[<>\\[\\]\\s&\\(\\):\\.]", RegexOptions.Compiled)]
+	[GeneratedRegex("[<>\\[\\]\\s&\\(\\):\\.-]", RegexOptions.Compiled)]
 	private static partial Regex GetBadCharactersRegex();
 
 	private static string ReplaceBadCharacters(this string str) => GetBadCharactersRegex().Replace(str, "_");
