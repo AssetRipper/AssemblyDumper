@@ -8,11 +8,13 @@ namespace AssetRipper.AssemblyDumper.Recompiler;
 
 internal class Program
 {
-	private const bool GeneratePackageOnBuild = false;
-	private const bool GenerateDocumentationFile = false;
-	private const bool IsTrimmable = false;
+	private static int Year { get; } = DateTime.Now.Year;
+	private const bool GeneratePackageOnBuild = true;
+	private const bool GenerateDocumentationFile = true;
+	private const bool IsTrimmable = true;
 	private const string AssetRipperProjectPath = @"E:\repos\AssetRipper";
-	private readonly static string CsProjContent = $"""
+	private static string Version => "0.3.4.1";
+	private static string CsProjContent => $"""
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
@@ -23,11 +25,11 @@ internal class Program
 		<RootNamespace>AssetRipper</RootNamespace>
 
 		<AssemblyName>AssetRipper.SourceGenerated</AssemblyName>
-		<Copyright>Copyright © 2023</Copyright>
+		<Copyright>Copyright © {Year}</Copyright>
 		<Authors>ds5678</Authors>
 		<Company>AssetRipper</Company>
-		<Version>0.0.0.0</Version>
-		<AssemblyVersion>0.0.0.0</AssemblyVersion>
+		<Version>{Version}</Version>
+		<AssemblyVersion>$(Version)</AssemblyVersion>
 
 		<PackageId>AssetRipper.SourceGenerated</PackageId>
 		<PackageTags>C# unity unity3d</PackageTags>
@@ -35,8 +37,8 @@ internal class Program
 		<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
 		<RepositoryType>git</RepositoryType>
 		<PackageProjectUrl>https://github.com/AssetRipper/AssetRipper</PackageProjectUrl>
-		<Copyright>Copyright (c) 2023 ds5678</Copyright>
-		<Description>Managed library for handling Unity versions</Description>
+		<Copyright>Copyright (c) {Year} ds5678</Copyright>
+		<Description>Internal source generated library for AssetRipper</Description>
 		<GeneratePackageOnBuild>{GeneratePackageOnBuild}</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>{GenerateDocumentationFile}</GenerateDocumentationFile>
 		<DocumentationFile>bin\AssetRipper.SourceGenerated.xml</DocumentationFile>
