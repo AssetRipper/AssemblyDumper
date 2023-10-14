@@ -222,7 +222,7 @@ internal static class Pass941_MakeFieldHashes
 		HashSet<GeneratedClassInstance> fullyImplemented = new();
 		foreach (GeneratedClassInstance instance in SharedState.Instance.ClassGroups.Values.SelectMany(g => g.Instances))
 		{
-			Dictionary<uint, string> hashes = GetFieldPaths(instance.Class).Distinct().ToDictionary(Crc28Algorithm.HashUTF8, str => str);
+			Dictionary<uint, string> hashes = GetFieldPaths(instance.Class).Distinct().ToDictionary(Crc32Algorithm.HashUTF8, str => str);
 			if (!instance.Class.IsAbstract)
 			{
 				fullyImplemented.Add(instance);

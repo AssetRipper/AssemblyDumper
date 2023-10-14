@@ -1,11 +1,7 @@
-﻿using AssetRipper.AssemblyCreationTools.Attributes;
-using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.AssemblyCreationTools.Types;
+﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyDumper.InjectedTypes;
 using AssetRipper.Assets;
-using AssetRipper.Assets.Export.Dependencies;
 using AssetRipper.Assets.Metadata;
-using AssetRipper.Primitives;
 using System.Collections;
 
 namespace AssetRipper.AssemblyDumper.Passes;
