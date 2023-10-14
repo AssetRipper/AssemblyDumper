@@ -46,7 +46,7 @@
 			DocumentationHandler.AddTypeDefinitionLine(group.Interface, GetUnityVersionString(group));
 		}
 
-		private static string GetUnityVersionString(ClassGroupBase group)
+		internal static string GetUnityVersionString(ClassGroupBase group)
 		{
 			return group.Instances
 				.Select(instance => instance.VersionRange)
