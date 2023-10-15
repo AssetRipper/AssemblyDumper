@@ -325,9 +325,16 @@ internal static class Pass941_MakeFieldHashes
 				NodeType childType = child.NodeType;
 				if (childType is NodeType.Type)
 				{
-					nodeStack.Push((parent, childIndex, parentPath));
-					nodeStack.Push((child, 0, $"{parentPath}.{child.OriginalName}"));
-					break;
+					if (child.TypeName is Pass002_RenameSubnodes.Utf8StringName)
+					{
+						result.Add($"{parentPath}.{child.OriginalName}");
+					}
+					else if (IsNotPPtr(child))
+					{
+						nodeStack.Push((parent, childIndex, parentPath));
+						nodeStack.Push((child, 0, $"{parentPath}.{child.OriginalName}"));
+						break;
+					}
 				}
 				else if (childType.IsPrimitive())
 				{
