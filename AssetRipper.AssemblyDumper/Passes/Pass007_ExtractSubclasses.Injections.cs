@@ -14,6 +14,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			InjectAABBInt();
 			InjectGUIStyleState();
 			InjectGUIStyle();
+			InjectStreamedCurveKey();
+			InjectStreamedFrame();
 		}
 
 		private static void InjectLayerMask()
@@ -59,23 +61,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 			static UniversalNode MakeRootNode()
 			{
 				UniversalNode rootNode = CreateRootNode(ClassName, 2);
-				rootNode.SubNodes.Add(MakeInt32Node("m_X", "x"));
-				rootNode.SubNodes.Add(MakeInt32Node("m_Y", "y"));
-				rootNode.SubNodes.Add(MakeInt32Node("m_Width", "width"));
-				rootNode.SubNodes.Add(MakeInt32Node("m_Height", "height"));
+				rootNode.SubNodes.Add(CreateInt32Node("m_X", "x"));
+				rootNode.SubNodes.Add(CreateInt32Node("m_Y", "y"));
+				rootNode.SubNodes.Add(CreateInt32Node("m_Width", "width"));
+				rootNode.SubNodes.Add(CreateInt32Node("m_Height", "height"));
 				return rootNode;
-			}
-
-			static UniversalNode MakeInt32Node(string name, string originalName)
-			{
-				return new()
-				{
-					Name = name,
-					OriginalName = originalName,
-					TypeName = "SInt32",
-					Version = 1,
-					MetaFlag = TransferMetaFlags.NoTransferFlags,
-				};
 			}
 		}
 
@@ -92,22 +82,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 			static UniversalNode MakeRootNode()
 			{
 				UniversalNode rootNode = CreateRootNode(ClassName);
-				rootNode.SubNodes.Add(MakeInt32Node("m_Left"));
-				rootNode.SubNodes.Add(MakeInt32Node("m_Right"));
-				rootNode.SubNodes.Add(MakeInt32Node("m_Top"));
-				rootNode.SubNodes.Add(MakeInt32Node("m_Bottom"));
+				rootNode.SubNodes.Add(CreateInt32Node("m_Left"));
+				rootNode.SubNodes.Add(CreateInt32Node("m_Right"));
+				rootNode.SubNodes.Add(CreateInt32Node("m_Top"));
+				rootNode.SubNodes.Add(CreateInt32Node("m_Bottom"));
 				return rootNode;
-			}
-
-			static UniversalNode MakeInt32Node(string nodeName)
-			{
-				return new()
-				{
-					Name = nodeName,
-					TypeName = "SInt32",
-					Version = 1,
-					MetaFlag = TransferMetaFlags.NoTransferFlags,
-				};
 			}
 		}
 
@@ -207,6 +186,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 			editorRoot3.SubNodes.Add(CreateArrayNode("m_ScaledBackgrounds", pptrClass2!.EditorRootNode!.DeepClone(), false));
 			editorRoot3.SubNodes.Add(colorClass!.EditorRootNode!.DeepCloneAndChangeName("m_TextColor"));
 			classList.Add(new UnityVersion(5, 4, 0), new UniversalClass(releaseRoot3, editorRoot3));
+
+			UniversalNode releaseRoot4 = CreateRootNode(ClassName);
+			releaseRoot4.SubNodes.Add(pptrClass2!.ReleaseRootNode!.DeepCloneAndChangeName("m_Background"));
+			releaseRoot4.SubNodes.Add(colorClass!.ReleaseRootNode!.DeepCloneAndChangeName("m_TextColor"));
+			UniversalNode editorRoot4 = CreateRootNode(ClassName);
+			editorRoot4.SubNodes.Add(pptrClass2!.EditorRootNode!.DeepCloneAndChangeName("m_Background"));
+			editorRoot4.SubNodes.Add(CreateArrayNode("m_ScaledBackgrounds", pptrClass2!.EditorRootNode!.DeepClone(), true));
+			editorRoot4.SubNodes.Add(colorClass!.EditorRootNode!.DeepCloneAndChangeName("m_TextColor"));
+			classList.Add(ArrayAlignmentStartVersion, new UniversalClass(releaseRoot4, editorRoot4));
 		}
 
 		private static void InjectGUIStyle()
@@ -218,7 +206,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			VersionedList<UniversalClass> rectOffsetList = SharedState.Instance.SubclassInformation["RectOffset"];
 			VersionedList<UniversalClass> vectorList = SharedState.Instance.SubclassInformation["Vector2f"];
 			Debug.Assert(pptrFontList.Count == 2);
-			Debug.Assert(stateList.Count == 3);
+			Debug.Assert(stateList.Count == 4);
 
 			const string ClassName = "GUIStyle";
 			VersionedList<UniversalClass> classList = new();
@@ -233,6 +221,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			UnityVersion versionP2 = pptrFontList[1].Key;
 			UnityVersion versionS2 = stateList[1].Key;
 			UnityVersion versionS3 = stateList[2].Key;
+			UnityVersion versionS4 = stateList[3].Key;
 			Debug.Assert(versionS2 == versionP2);
 			Debug.Assert(versionS2 > builtInVersion);
 
@@ -242,6 +231,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				builtInVersion,
 				versionS2,
 				versionS3,
+				versionS4,
 			};
 
 			foreach (UnityVersion version in versions)
@@ -310,70 +300,58 @@ namespace AssetRipper.AssemblyDumper.Passes
 				classList.Add(version, new UniversalClass(releaseRoot, editorRoot));
 			}
 
-			static void AddSubNode(UniversalNode releaseRoot, UniversalNode editorRoot, VersionedList<UniversalClass> sourceList, UnityVersion version, string name)
-			{
-				releaseRoot.SubNodes.Add(sourceList.GetItemForVersion(version)!.ReleaseRootNode!.DeepCloneAndChangeName(name));
-				editorRoot.SubNodes.Add(sourceList.GetItemForVersion(version)!.EditorRootNode!.DeepCloneAndChangeName(name));
-			}
-
 			static void AddSubNodeClone(UniversalNode releaseRoot, UniversalNode editorRoot, UniversalNode sourceNode, string name)
 			{
 				releaseRoot.SubNodes.Add(sourceNode.DeepCloneAndChangeName(name));
 				editorRoot.SubNodes.Add(sourceNode.DeepCloneAndChangeName(name));
 			}
+		}
 
-			static void AddInt32SubNode(UniversalNode releaseRoot, UniversalNode editorRoot, string name)
-			{
-				releaseRoot.SubNodes.Add(new()
-				{
-					Name = name,
-					TypeName = "SInt32",
-					Version = 1,
-					MetaFlag = TransferMetaFlags.NoTransferFlags,
-				});
-				editorRoot.SubNodes.Add(new()
-				{
-					Name = name,
-					TypeName = "SInt32",
-					Version = 1,
-					MetaFlag = TransferMetaFlags.NoTransferFlags,
-				});
-			}
+		private static void InjectStreamedCurveKey()
+		{
+			VersionedList<UniversalClass> vectorList = SharedState.Instance.SubclassInformation["Vector3f"];
 
-			static void AddSingleSubNode(UniversalNode releaseRoot, UniversalNode editorRoot, string name)
-			{
-				releaseRoot.SubNodes.Add(new()
-				{
-					Name = name,
-					TypeName = "float",
-					Version = 1,
-					MetaFlag = TransferMetaFlags.NoTransferFlags,
-				});
-				editorRoot.SubNodes.Add(new()
-				{
-					Name = name,
-					TypeName = "float",
-					Version = 1,
-					MetaFlag = TransferMetaFlags.NoTransferFlags,
-				});
-			}
+			UnityVersion startVersion = vectorList[0].Key;
 
-			static void AddBooleanSubNode(UniversalNode releaseRoot, UniversalNode editorRoot, string name, bool align)
+			const string ClassName = "StreamedCurveKey";
+			VersionedList<UniversalClass> classList = new();
+			SharedState.Instance.SubclassInformation.Add(ClassName, classList);
+
+			UniversalNode releaseRoot = CreateRootNode(ClassName);
+			UniversalNode editorRoot = CreateRootNode(ClassName);
+
+			AddInt32SubNode(releaseRoot, editorRoot, "m_Index");
+			AddSubNode(releaseRoot, editorRoot, vectorList, startVersion, "m_Coefficient");
+			AddSingleSubNode(releaseRoot, editorRoot, "m_Value");
+
+			classList.Add(startVersion, new UniversalClass(releaseRoot, editorRoot));
+		}
+
+		private static void InjectStreamedFrame()
+		{
+			VersionedList<UniversalClass> curveKeyList = SharedState.Instance.SubclassInformation["StreamedCurveKey"];
+
+			const string ClassName = "StreamedFrame";
+			VersionedList<UniversalClass> classList = new();
+			SharedState.Instance.SubclassInformation.Add(ClassName, classList);
+
+			List<UnityVersion> versions = new()
 			{
-				releaseRoot.SubNodes.Add(new()
-				{
-					Name = name,
-					TypeName = "bool",
-					Version = 1,
-					MetaFlag = align ? TransferMetaFlags.AlignBytes : TransferMetaFlags.NoTransferFlags,
-				});
-				editorRoot.SubNodes.Add(new()
-				{
-					Name = name,
-					TypeName = "bool",
-					Version = 1,
-					MetaFlag = align ? TransferMetaFlags.AlignBytes : TransferMetaFlags.NoTransferFlags,
-				});
+				curveKeyList[0].Key,
+				ArrayAlignmentStartVersion,
+			};
+
+			foreach (UnityVersion version in versions)
+			{
+				UniversalNode releaseRoot = CreateRootNode(ClassName);
+				UniversalNode editorRoot = CreateRootNode(ClassName);
+
+				AddSingleSubNode(releaseRoot, editorRoot, "m_Time");
+
+				releaseRoot.SubNodes.Add(CreateArrayNode("m_Curves", curveKeyList[0].Value!.ReleaseRootNode!.DeepClone(), version));
+				editorRoot.SubNodes.Add(CreateArrayNode("m_Curves", curveKeyList[0].Value!.EditorRootNode!.DeepClone(), version));
+
+				classList.Add(version, new UniversalClass(releaseRoot, editorRoot));
 			}
 		}
 
@@ -392,6 +370,46 @@ namespace AssetRipper.AssemblyDumper.Passes
 				TypeName = className,
 				Version = version,
 				MetaFlag = TransferMetaFlags.NoTransferFlags,
+			};
+		}
+
+		private static UniversalNode CreateInt32Node(string name)
+		{
+			return new()
+			{
+				Name = name,
+				TypeName = "SInt32",
+				Version = 1,
+				MetaFlag = TransferMetaFlags.NoTransferFlags,
+			};
+		}
+
+		private static UniversalNode CreateInt32Node(string name, string originalName)
+		{
+			UniversalNode result = CreateInt32Node(name);
+			result.OriginalName = originalName;
+			return result;
+		}
+
+		private static UniversalNode CreateSingleNode(string name)
+		{
+			return new()
+			{
+				Name = name,
+				TypeName = "float",
+				Version = 1,
+				MetaFlag = TransferMetaFlags.NoTransferFlags,
+			};
+		}
+
+		private static UniversalNode CreateBooleanNode(string name, bool align)
+		{
+			return new()
+			{
+				Name = name,
+				TypeName = "float",
+				Version = 1,
+				MetaFlag = align ? TransferMetaFlags.AlignBytes : TransferMetaFlags.NoTransferFlags,
 			};
 		}
 
@@ -417,6 +435,35 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return arrayNode;
 		}
 
+		private static UniversalNode CreateArrayNode(string name, UniversalNode dataNode, UnityVersion version)
+		{
+			return CreateArrayNode(name, dataNode, version >= ArrayAlignmentStartVersion);
+		}
+
+		private static void AddSubNode(UniversalNode releaseRoot, UniversalNode editorRoot, VersionedList<UniversalClass> sourceList, UnityVersion version, string name)
+		{
+			releaseRoot.SubNodes.Add(sourceList.GetItemForVersion(version)!.ReleaseRootNode!.DeepCloneAndChangeName(name));
+			editorRoot.SubNodes.Add(sourceList.GetItemForVersion(version)!.EditorRootNode!.DeepCloneAndChangeName(name));
+		}
+
+		private static void AddInt32SubNode(UniversalNode releaseRoot, UniversalNode editorRoot, string name)
+		{
+			releaseRoot.SubNodes.Add(CreateInt32Node(name));
+			editorRoot.SubNodes.Add(CreateInt32Node(name));
+		}
+
+		private static void AddSingleSubNode(UniversalNode releaseRoot, UniversalNode editorRoot, string name)
+		{
+			releaseRoot.SubNodes.Add(CreateSingleNode(name));
+			editorRoot.SubNodes.Add(CreateSingleNode(name));
+		}
+
+		private static void AddBooleanSubNode(UniversalNode releaseRoot, UniversalNode editorRoot, string name, bool align)
+		{
+			releaseRoot.SubNodes.Add(CreateBooleanNode(name, align));
+			editorRoot.SubNodes.Add(CreateBooleanNode(name, align));
+		}
+
 		/// <summary>
 		/// 4.0.0 and greater
 		/// GUIStyle became builtin serializable only in v4.0.0
@@ -426,5 +473,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 		/// 3.0.0 and greater
 		/// </summary>
 		private static bool HasFontSize(UnityVersion version) => version.IsGreaterEqual(3);
+		private static UnityVersion ArrayAlignmentStartVersion { get; } = new UnityVersion(2017, 1);
 	}
 }
