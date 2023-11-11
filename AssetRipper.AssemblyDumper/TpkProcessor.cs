@@ -81,7 +81,15 @@ namespace AssetRipper.AssemblyDumper
 			{
 				UnityVersion previous = list[i - 1];
 				UnityVersion current = list[i];
-				if (current.Build != previous.Build || current.Minor != previous.Minor || current.Major != previous.Major)
+				if (current.Major != previous.Major)
+				{
+					dict.Add(current, current.StripMinor());
+				}
+				else if (current.Minor != previous.Minor)
+				{
+					dict.Add(current, current.StripBuild());
+				}
+				else if (current.Build != previous.Build)
 				{
 					dict.Add(current, current.StripType());
 				}
