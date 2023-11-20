@@ -34,28 +34,9 @@ internal static class PPtrHelper
 	{
 		return collection.ForceCreatePPtr(asset);
 	}
-	public static bool TryGetAsset<T>(AssetCollection collection, int fileID, long pathID, [NotNullWhen(true)] out T asset)
+	public static bool TryGetAsset<T>(AssetCollection collection, int fileID, long pathID, [NotNullWhen(true)] out T asset) where T : IUnityObjectBase
 	{
-		if (pathID == 0)
-		{
-			asset = default;
-			return false;
-		}
-		IUnityObjectBase @object = collection.TryGetAsset(fileID, pathID);
-		switch (@object)
-		{
-			case null:
-				asset = default;
-				return false;
-			case T t:
-				asset = t;
-				return true;
-			case NullObject:
-				asset = default;
-				return false;
-			default:
-				throw new Exception($"Object's type {@object.GetType().Name} isn't assignable from {typeof(T).Name}");
-		}
+		return collection.TryGetAsset(fileID, pathID, out asset);
 	}
 }
 

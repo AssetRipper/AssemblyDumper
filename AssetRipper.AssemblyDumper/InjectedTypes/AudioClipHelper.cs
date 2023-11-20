@@ -1,7 +1,7 @@
 ﻿using AssetRipper.Assets;
 using AssetRipper.IO.Endian;
-using AssetRipper.IO.Files.Extensions;
 using AssetRipper.IO.Files.ResourceFiles;
+using System.IO;
 
 #nullable disable
 
@@ -33,7 +33,7 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 			{
 				byte[] result = new byte[size];
 				resourceFile.Stream.Position = offset;
-				resourceFile.Stream.ReadBuffer(result, 0, result.Length);
+				resourceFile.Stream.CopyTo(new MemoryStream(result));
 				return result;
 			}
 			else
