@@ -6,14 +6,14 @@ using System.Diagnostics;
 
 namespace AssetRipper.AssemblyDumper.Recompiler;
 
-internal class Program
+internal static class Program
 {
 	private static int Year { get; } = DateTime.Now.Year;
 	private const bool GeneratePackageOnBuild = true;
 	private const bool GenerateDocumentationFile = true;
 	private const bool IsTrimmable = true;
 	private const string AssetRipperProjectPath = @"E:\repos\AssetRipper";
-	private static string Version => "0.3.4.1";
+	private static string? Version { get; set; }
 	private static string CsProjContent => $"""
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -58,6 +58,7 @@ internal class Program
 		Stopwatch stopwatch = Stopwatch.StartNew();
 		string assemblyPath = args[0];
 		string outputDirectory = args[1];
+		Version = args[2];
 		ClearOrCreateDirectory(outputDirectory);
 		UniversalAssemblyResolver resolver = new UniversalAssemblyResolver(assemblyPath, true, ".NETCoreApp, Version=7.0");
 		WholeProjectDecompiler decompiler = new WholeProjectDecompiler(resolver);

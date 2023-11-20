@@ -7,7 +7,10 @@ internal static class Program
 {
 	static void Main(string[] args)
 	{
-		string nupkgFilePath = args[0];
+		string nupkgFolder = args[0];
+		string version = args[1];
+		string nupkgFileName = $"AssetRipper.SourceGenerated.{version}.nupkg";
+		string nupkgFilePath = Path.Combine(nupkgFolder, nupkgFileName);
 
 		string tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 		Directory.CreateDirectory(tempDirectory);
@@ -24,7 +27,7 @@ internal static class Program
 
 		// Repackage the .nupkg file
 		{
-			string newNupkgFilePath = Path.Combine(AppContext.BaseDirectory, Path.GetFileName(nupkgFilePath));
+			string newNupkgFilePath = Path.Combine(AppContext.BaseDirectory, nupkgFileName);
 			if (File.Exists(newNupkgFilePath))
 			{
 				File.Delete(newNupkgFilePath);

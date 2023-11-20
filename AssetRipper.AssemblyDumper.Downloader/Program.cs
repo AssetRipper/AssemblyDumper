@@ -9,7 +9,7 @@ internal static class Program
 		const string RepositoryRootDirectory = "../../../../";
 		const string ProjectDirectory = RepositoryRootDirectory + "AssetRipper.AssemblyDumper/";
 		const string BinDirectory = ProjectDirectory + "bin/";
-		const string DotNet = "net7.0";
+		const string DotNet = "net8.0";
 		string[] outputFolders = new string[]
 		{
 			BinDirectory + $"Debug/{DotNet}/",
