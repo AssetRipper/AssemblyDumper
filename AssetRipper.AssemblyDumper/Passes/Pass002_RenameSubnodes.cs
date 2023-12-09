@@ -29,6 +29,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			{ "AvatarBodyMask" , "AvatarMask" },
 			{ "LightmapSnapshot" , "LightingDataAsset" },
+			{ "PhysicMaterial" , "PhysicsMaterial" },
 			{ "RenderManager" , "GraphicsSettings" },
 			{ "State" , "AnimatorState" },
 			{ "StateMachine" , "AnimatorStateMachine" },

@@ -50,7 +50,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void ThrowIfStringCountIsWrong()
 		{
 			int count = SharedState.Instance.CommonString.Strings.Count;
-			if (count != 109)
+			if (count != 110)
 			{
 				throw new Exception($"The size of Common String has changed! {count}");
 			}
