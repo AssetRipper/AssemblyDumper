@@ -1,43 +1,19 @@
 ﻿using AssetRipper.AssemblyCreationTools.Fields;
+using AssetRipper.AssemblyDumper.AST;
 
 namespace AssetRipper.AssemblyDumper.Passes;
 
 public static partial class Pass103_FillDependencyMethods
 {
-	private sealed class TypeDependencyNode : DependencyNode
+	private static class TypeNodeHelper
 	{
-		public TypeDependencyNode(GeneratedClassInstance classInstance, DependencyNode? parent = null) : base(parent)
+		public static void ApplyAsRoot(TypeNode node, DependencyMethodContext context)
 		{
-			ClassInstance = classInstance;
-			List<FieldDependencyNode> children = new();
-			foreach (ClassProperty property in classInstance.Properties.Where(p => p.BackingField is not null))
-			{
-				FieldDependencyNode child = new(property, this);
-				if (child.AnyPPtrs)
-				{
-					children.Add(child);
-				}
-			}
-			Children = children.Count > 0 ? children : Array.Empty<FieldDependencyNode>();
-		}
-
-		public GeneratedClassInstance ClassInstance { get; }
-
-		public override IReadOnlyList<FieldDependencyNode> Children { get; }
-
-		public override string PathContent => "";
-
-		public override char StateFieldTypeCharacter => 'T';
-
-		public override TypeSignature TypeSignature => ClassInstance.Type.ToTypeSignature();
-
-		public void ApplyAsRoot(DependencyMethodContext context)
-		{
-			if (Parent is not null)
+			if (node.Parent is not null)
 			{
 				throw new InvalidOperationException("This node is not a root node");
 			}
-			Apply(context, new ParentContext()
+			Apply(node, context, new ParentContext()
 			{
 				EmitLoad = c =>
 				{
@@ -57,12 +33,12 @@ public static partial class Pass103_FillDependencyMethods
 			});
 		}
 
-		public override void Apply(DependencyMethodContext context, ParentContext parentContext)
+		public static void Apply(TypeNode node, DependencyMethodContext context, ParentContext parentContext)
 		{
-			if (Children.Count == 1)
+			if (node.Children.Count == 1)
 			{
-				FieldDependencyNode child = Children[0];
-				child.Apply(context, new ParentContext()
+				FieldNode child = node.Children[0];
+				NodeHelper.Apply(child, context, new ParentContext()
 				{
 					EmitLoad = c =>
 					{
@@ -75,8 +51,8 @@ public static partial class Pass103_FillDependencyMethods
 				return;
 			}
 
-			FieldDefinition stateField = context.Type.AddField(context.CorLibTypeFactory.Int32, StateFieldName, visibility: FieldVisibility.Private);
-			CilInstructionLabel[] cases = new CilInstructionLabel[Children.Count];
+			FieldDefinition stateField = context.Type.AddField(context.CorLibTypeFactory.Int32, NodeHelper.GetStateFieldName(node), visibility: FieldVisibility.Private);
+			CilInstructionLabel[] cases = new CilInstructionLabel[node.Children.Count];
 			for (int i = 0; i < cases.Length; i++)
 			{
 				cases[i] = new();
@@ -90,9 +66,9 @@ public static partial class Pass103_FillDependencyMethods
 			context.Processor.Add(CilOpCodes.Br, defaultCase);
 			for (int i = 0; i < cases.Length; i++)
 			{
-				FieldDependencyNode child = Children[i];
+				FieldNode child = node.Children[i];
 				cases[i].Instruction = context.Processor.Add(CilOpCodes.Nop);
-				Children[i].Apply(context, new ParentContext()
+				NodeHelper.Apply(node.Children[i], context, new ParentContext()
 				{
 					EmitLoad = c =>
 					{

@@ -1,53 +1,41 @@
 ﻿using AssetRipper.AssemblyCreationTools;
 using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
+using AssetRipper.AssemblyDumper.AST;
 using AssetRipper.Assets.Generics;
 
 namespace AssetRipper.AssemblyDumper.Passes;
 
 public static partial class Pass103_FillDependencyMethods
 {
-	private sealed class DictionaryDependencyNode : SingleDependencyNode
+	private static class DictionaryDependencyNodeHelper
 	{
-		public DictionaryDependencyNode(GenericInstanceTypeSignature typeSignature, DependencyNode? parent = null) : base(parent)
+		public static void Apply(DictionaryNode node, DependencyMethodContext context, ParentContext parentContext)
 		{
-			TypeSignature = typeSignature;
-			GenericInstanceTypeSignature pairType = SharedState.Instance.Importer.ImportType(typeof(AssetPair<,>)).MakeGenericInstanceType(
-				typeSignature.TypeArguments[0],
-				typeSignature.TypeArguments[1]);
-			Child = new PairDependencyNode(pairType, this);
-		}
-
-		public override string PathContent => "[]";
-
-		public override char StateFieldTypeCharacter => 'D';
-
-		public override void Apply(DependencyMethodContext context, ParentContext parentContext)
-		{
-			FieldDefinition stateField = context.Type.AddField(context.CorLibTypeFactory.Int32, StateFieldName, visibility: FieldVisibility.Private);
+			FieldDefinition stateField = context.Type.AddField(context.CorLibTypeFactory.Int32, NodeHelper.GetStateFieldName(node), visibility: FieldVisibility.Private);
 
 			CilInstructionLabel gotoNextCaseLabel = new();
 			CilInstructionLabel endLabel = new();
 
 			//Store list in a local variable
-			CilLocalVariable local = context.Processor.AddLocalVariable(TypeSignature);
+			CilLocalVariable local = context.Processor.AddLocalVariable(node.TypeSignature);
 			parentContext.EmitLoad(context);
 			context.Processor.Add(CilOpCodes.Stloc, local);
 
 			context.Processor.Add(CilOpCodes.Ldarg_0);
 			context.Processor.Add(CilOpCodes.Ldfld, stateField);
 			context.Processor.Add(CilOpCodes.Ldloc, local);
-			context.Processor.Add(CilOpCodes.Callvirt, GetAssetDictionaryCountMethod());
+			context.Processor.Add(CilOpCodes.Callvirt, GetAssetDictionaryCountMethod(node));
 			context.Processor.Add(CilOpCodes.Bge, gotoNextCaseLabel);
 
-			Child.Apply(context, new ParentContext()
+			NodeHelper.Apply(node.Child, context, new ParentContext()
 			{
 				EmitLoad = c =>
 				{
 					context.Processor.Add(CilOpCodes.Ldloc, local);
 					c.Processor.Add(CilOpCodes.Ldarg_0);
 					c.Processor.Add(CilOpCodes.Ldfld, stateField);
-					context.Processor.Add(CilOpCodes.Callvirt, GetAssetDictionaryGetPairMethod());
+					context.Processor.Add(CilOpCodes.Callvirt, GetAssetDictionaryGetPairMethod(node));
 				},
 				EmitIncrementStateAndGotoNextCase = c =>
 				{
@@ -78,18 +66,16 @@ public static partial class Pass103_FillDependencyMethods
 			endLabel.Instruction = context.Processor.Add(CilOpCodes.Nop);
 		}
 
-		public override GenericInstanceTypeSignature TypeSignature { get; }
-
-		private IMethodDefOrRef GetAssetDictionaryCountMethod()
+		private static IMethodDefOrRef GetAssetDictionaryCountMethod(DictionaryNode node)
 		{
 			MethodDefinition method = SharedState.Instance.Importer.LookupMethod(typeof(AssetDictionary<,>), m => m.Name == $"get_{nameof(AssetDictionary<int, int>.Count)}");
-			return MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, TypeSignature, method);
+			return MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, node.TypeSignature, method);
 		}
 
-		private IMethodDefOrRef GetAssetDictionaryGetPairMethod()
+		private static IMethodDefOrRef GetAssetDictionaryGetPairMethod(DictionaryNode node)
 		{
 			MethodDefinition method = SharedState.Instance.Importer.LookupMethod(typeof(AssetDictionary<,>), m => m.Name == nameof(AssetDictionary<int, int>.GetPair));
-			return MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, TypeSignature, method);
+			return MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, node.TypeSignature, method);
 		}
 	}
 }

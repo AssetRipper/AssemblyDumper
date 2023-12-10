@@ -1,4 +1,5 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
+using AssetRipper.AssemblyDumper.AST;
 using AssetRipper.AssemblyDumper.InjectedTypes;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Metadata;
@@ -25,7 +26,7 @@ public static partial class Pass103_FillDependencyMethods
 		{
 			foreach (GeneratedClassInstance instance in group.Instances)
 			{
-				TypeDependencyNode rootNode = new(instance);
+				TypeNode rootNode = new(instance);
 
 				MethodDefinition method = instance.Type.AddMethod(nameof(UnityAssetBase.FetchDependencies), Pass060_CreateEmptyMethods.OverrideMethodAttributes, returnType);
 				CilInstructionCollection processor = method.GetProcessor();
@@ -45,7 +46,7 @@ public static partial class Pass103_FillDependencyMethods
 		}
 	}
 
-	private static MethodDefinition MakeEnumerableType(TypeDefinition injectedBaseType, FieldDefinition currentField, FieldDefinition thisField, GeneratedClassInstance instance, TypeDependencyNode rootNode)
+	private static MethodDefinition MakeEnumerableType(TypeDefinition injectedBaseType, FieldDefinition currentField, FieldDefinition thisField, GeneratedClassInstance instance, TypeNode rootNode)
 	{
 		ITypeDefOrRef baseType = injectedBaseType.MakeGenericInstanceType(instance.Type.ToTypeSignature()).ToTypeDefOrRef();
 		TypeDefinition enumerableType = new(
@@ -88,7 +89,7 @@ public static partial class Pass103_FillDependencyMethods
 				CurrentField = new MemberReference(baseType, currentField.Name, currentField.Signature),
 				ThisField = new MemberReference(baseType, thisField.Name, thisField.Signature),
 			};
-			rootNode.ApplyAsRoot(context);
+			TypeNodeHelper.ApplyAsRoot(rootNode, context);
 			context.Processor.OptimizeMacros();
 		}
 

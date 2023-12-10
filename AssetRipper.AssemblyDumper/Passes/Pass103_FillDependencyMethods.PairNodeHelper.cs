@@ -1,47 +1,21 @@
 ﻿using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
+using AssetRipper.AssemblyDumper.AST;
 using AssetRipper.Assets.Generics;
 
 namespace AssetRipper.AssemblyDumper.Passes;
 
 public static partial class Pass103_FillDependencyMethods
 {
-	private sealed class PairDependencyNode : DependencyNode
+	private static class PairNodeHelper
 	{
-		public PairDependencyNode(GenericInstanceTypeSignature typeSignature, DependencyNode? parent = null) : base(parent)
+		public static void Apply(PairNode node, DependencyMethodContext context, ParentContext parentContext)
 		{
-			TypeSignature = typeSignature;
-			Key = new(typeSignature.TypeArguments[0], this);
-			Value = new(typeSignature.TypeArguments[1], this);
-		}
-
-		public KeyDependencyNode Key { get; }
-		public ValueDependencyNode Value { get; }
-
-		public override string PathContent => "";
-
-		public override char StateFieldTypeCharacter => 'P';
-
-		public override IEnumerable<DependencyNode> Children
-		{
-			get
+			if (node.Key.AnyPPtrs)
 			{
-				yield return Key;
-				yield return Value;
-			}
-		}
-
-		public override bool AnyPPtrs => Key.AnyPPtrs || Value.AnyPPtrs;
-
-		public override TypeSignature TypeSignature { get; }
-
-		public override void Apply(DependencyMethodContext context, ParentContext parentContext)
-		{
-			if (Key.AnyPPtrs)
-			{
-				if (Value.AnyPPtrs)
+				if (node.Value.AnyPPtrs)
 				{
-					FieldDefinition stateField = context.Type.AddField(context.CorLibTypeFactory.Boolean, StateFieldName, visibility: FieldVisibility.Private);
+					FieldDefinition stateField = context.Type.AddField(context.CorLibTypeFactory.Boolean, NodeHelper.GetStateFieldName(node), visibility: FieldVisibility.Private);
 					CilInstructionLabel valueLabel = new();
 					CilInstructionLabel endLabel = new();
 
@@ -49,12 +23,12 @@ public static partial class Pass103_FillDependencyMethods
 					context.Processor.Add(CilOpCodes.Ldfld, stateField);
 					context.Processor.Add(CilOpCodes.Brtrue, valueLabel);
 
-					Key.Apply(context, new ParentContext()
+					NodeHelper.Apply(node.Key, context, new ParentContext()
 					{
 						EmitLoad = c =>
 						{
 							parentContext.EmitLoad(c);
-							c.Processor.Add(CilOpCodes.Callvirt, GetKeyAccessor(Key.TypeSignature, Value.TypeSignature));
+							c.Processor.Add(CilOpCodes.Callvirt, GetKeyAccessor(node.Key.TypeSignature, node.Value.TypeSignature));
 						},
 						EmitIncrementStateAndGotoNextCase = c =>
 						{
@@ -73,12 +47,12 @@ public static partial class Pass103_FillDependencyMethods
 					});
 
 					valueLabel.Instruction = context.Processor.Add(CilOpCodes.Nop);
-					Value.Apply(context, new ParentContext()
+					NodeHelper.Apply(node.Value, context, new ParentContext()
 					{
 						EmitLoad = c =>
 						{
 							parentContext.EmitLoad(c);
-							c.Processor.Add(CilOpCodes.Callvirt, GetValueAccessor(Key.TypeSignature, Value.TypeSignature));
+							c.Processor.Add(CilOpCodes.Callvirt, GetValueAccessor(node.Key.TypeSignature, node.Value.TypeSignature));
 						},
 						EmitIncrementStateAndGotoNextCase = parentContext.EmitIncrementStateAndGotoNextCase,
 						EmitIncrementStateAndReturnTrue = parentContext.EmitIncrementStateAndReturnTrue,
@@ -88,26 +62,26 @@ public static partial class Pass103_FillDependencyMethods
 				}
 				else
 				{
-					Key.Apply(context, new ParentContext()
+					NodeHelper.Apply(node.Key, context, new ParentContext()
 					{
 						EmitLoad = c =>
 						{
 							parentContext.EmitLoad(c);
-							c.Processor.Add(CilOpCodes.Callvirt, GetKeyAccessor(Key.TypeSignature, Value.TypeSignature));
+							c.Processor.Add(CilOpCodes.Callvirt, GetKeyAccessor(node.Key.TypeSignature, node.Value.TypeSignature));
 						},
 						EmitIncrementStateAndGotoNextCase = parentContext.EmitIncrementStateAndGotoNextCase,
 						EmitIncrementStateAndReturnTrue = parentContext.EmitIncrementStateAndReturnTrue,
 					});
 				}
 			}
-			else if (Value.AnyPPtrs)
+			else if (node.Value.AnyPPtrs)
 			{
-				Value.Apply(context, new ParentContext()
+				NodeHelper.Apply(node.Value, context, new ParentContext()
 				{
 					EmitLoad = c =>
 					{
 						parentContext.EmitLoad(c);
-						c.Processor.Add(CilOpCodes.Callvirt, GetValueAccessor(Key.TypeSignature, Value.TypeSignature));
+						c.Processor.Add(CilOpCodes.Callvirt, GetValueAccessor(node.Key.TypeSignature, node.Value.TypeSignature));
 					},
 					EmitIncrementStateAndGotoNextCase = parentContext.EmitIncrementStateAndGotoNextCase,
 					EmitIncrementStateAndReturnTrue = parentContext.EmitIncrementStateAndReturnTrue,
