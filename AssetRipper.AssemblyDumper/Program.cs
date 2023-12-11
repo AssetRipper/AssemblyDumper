@@ -156,6 +156,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass107_DeserializeMethods.DoPass();
 			}
+			using (new TimingCookie("Pass 108: Walk Methods"))
+			{
+				Pass108_WalkMethods.DoPass();
+			}
 			using (new TimingCookie("Pass 110: Class Name and ID Overrides"))
 			{
 				Pass110_ClassNameAndIdOverrides.DoPass();

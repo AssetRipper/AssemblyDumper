@@ -16,5 +16,5 @@ internal sealed class PairNode : Node
 
 	public override bool AnyPPtrs => Key.AnyPPtrs || Value.AnyPPtrs;
 
-	public override TypeSignature TypeSignature { get; }
+	public override GenericInstanceTypeSignature TypeSignature { get; }
 }

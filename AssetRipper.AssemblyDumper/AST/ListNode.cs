@@ -1,6 +1,6 @@
 ﻿namespace AssetRipper.AssemblyDumper.AST;
 
-internal sealed class ListNode : SingleNode
+internal sealed class ListNode : SingleNode<Node>
 {
 	public ListNode(GenericInstanceTypeSignature typeSignature, Node? parent = null) : base(parent)
 	{

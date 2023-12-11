@@ -2,7 +2,7 @@
 
 namespace AssetRipper.AssemblyDumper.AST;
 
-internal sealed class FieldNode : SingleNode
+internal sealed class FieldNode : SingleNode<Node>
 {
 	public FieldNode(ClassProperty property, Node? parent = null) : base(parent)
 	{

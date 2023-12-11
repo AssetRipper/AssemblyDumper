@@ -2,7 +2,7 @@
 
 namespace AssetRipper.AssemblyDumper.AST;
 
-internal sealed class DictionaryNode : SingleNode
+internal sealed class DictionaryNode : SingleNode<PairNode>
 {
 	public DictionaryNode(GenericInstanceTypeSignature typeSignature, Node? parent = null) : base(parent)
 	{
@@ -14,4 +14,8 @@ internal sealed class DictionaryNode : SingleNode
 	}
 
 	public override GenericInstanceTypeSignature TypeSignature { get; }
+
+	public TypeSignature KeyTypeSignature => Child.Key.TypeSignature;
+
+	public TypeSignature ValueTypeSignature => Child.Value.TypeSignature;
 }

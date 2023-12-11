@@ -1,6 +1,6 @@
 ﻿namespace AssetRipper.AssemblyDumper.AST;
 
-internal sealed class KeyNode : SingleNode
+internal sealed class KeyNode : SingleNode<Node>
 {
 	public KeyNode(TypeSignature typeSignature, Node? parent = null) : base(parent)
 	{
