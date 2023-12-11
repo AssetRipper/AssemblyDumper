@@ -37,7 +37,7 @@ internal abstract class Node
 				return (genericInstanceTypeSignature.GenericType.Name?.ToString()) switch
 				{
 					$"{nameof(AssetDictionary<int, int>)}`2" => new DictionaryNode(genericInstanceTypeSignature, parent),
-					$"{nameof(AssetList<int>)}`1" => new ArrayNode(genericInstanceTypeSignature, parent),
+					$"{nameof(AssetList<int>)}`1" => new ListNode(genericInstanceTypeSignature, parent),
 					$"{nameof(AssetPair<int, int>)}`2" => new PairNode(genericInstanceTypeSignature, parent),
 					_ => throw new NotSupportedException(),
 				};

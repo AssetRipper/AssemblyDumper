@@ -8,9 +8,9 @@ namespace AssetRipper.AssemblyDumper.Passes;
 
 public static partial class Pass103_FillDependencyMethods
 {
-	private static class ArrayNodeHelper
+	private static class ListNodeHelper
 	{
-		public static void Apply(ArrayNode node, DependencyMethodContext context, ParentContext parentContext)
+		public static void Apply(ListNode node, DependencyMethodContext context, ParentContext parentContext)
 		{
 			FieldDefinition stateField = context.Type.AddField(context.CorLibTypeFactory.Int32, NodeHelper.GetStateFieldName(node), visibility: FieldVisibility.Private);
 
@@ -66,13 +66,13 @@ public static partial class Pass103_FillDependencyMethods
 			endLabel.Instruction = context.Processor.Add(CilOpCodes.Nop);
 		}
 
-		private static IMethodDefOrRef GetAssetListCountMethod(ArrayNode node)
+		private static IMethodDefOrRef GetAssetListCountMethod(ListNode node)
 		{
 			MethodDefinition method = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == $"get_{nameof(AssetList<int>.Count)}");
 			return MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, node.TypeSignature, method);
 		}
 
-		private static IMethodDefOrRef GetAssetListGetItemMethod(ArrayNode node)
+		private static IMethodDefOrRef GetAssetListGetItemMethod(ListNode node)
 		{
 			MethodDefinition method = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == $"get_Item");
 			return MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, node.TypeSignature, method);

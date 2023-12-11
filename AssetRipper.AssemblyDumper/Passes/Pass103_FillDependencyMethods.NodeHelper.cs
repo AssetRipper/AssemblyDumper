@@ -11,7 +11,7 @@ public static partial class Pass103_FillDependencyMethods
 		private static string GetPathContent(Node node) => node switch
 		{
 			FieldNode fieldNode => fieldNode.Field.Name ?? "",
-			ArrayNode or DictionaryNode => "[]",
+			ListNode or DictionaryNode => "[]",
 			KeyNode => ".Key",
 			ValueNode => ".Value",
 			_ => "",
@@ -20,7 +20,7 @@ public static partial class Pass103_FillDependencyMethods
 		private static char GetStateFieldTypeCharacter(Node node) => node switch
 		{
 			TypeNode => 'T',
-			ArrayNode => 'A',
+			ListNode => 'L',
 			DictionaryNode => 'D',
 			PairNode => 'P',
 			_ => 'U',
@@ -36,8 +36,8 @@ public static partial class Pass103_FillDependencyMethods
 				case FieldNode fieldNode:
 					Apply(fieldNode.Child, context, parentContext);
 					break;
-				case ArrayNode arrayNode:
-					ArrayNodeHelper.Apply(arrayNode, context, parentContext);
+				case ListNode listNode:
+					ListNodeHelper.Apply(listNode, context, parentContext);
 					break;
 				case DictionaryNode dictionaryNode:
 					DictionaryNodeHelper.Apply(dictionaryNode, context, parentContext);
