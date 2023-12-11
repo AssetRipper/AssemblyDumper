@@ -8,11 +8,7 @@ internal sealed class TypeNode : Node
 		List<FieldNode> children = new();
 		foreach (ClassProperty property in classInstance.Properties.Where(p => p.BackingField is not null))
 		{
-			FieldNode child = new(property, this);
-			if (child.AnyPPtrs)
-			{
-				children.Add(child);
-			}
+			children.Add(new FieldNode(property, this));
 		}
 		Children = children.Count > 0 ? children : [];
 	}

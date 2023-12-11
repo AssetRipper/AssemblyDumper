@@ -8,7 +8,7 @@ namespace AssetRipper.AssemblyDumper.Passes;
 
 public static partial class Pass103_FillDependencyMethods
 {
-	private static class DictionaryDependencyNodeHelper
+	private static class DictionaryNodeHelper
 	{
 		public static void Apply(DictionaryNode node, DependencyMethodContext context, ParentContext parentContext)
 		{

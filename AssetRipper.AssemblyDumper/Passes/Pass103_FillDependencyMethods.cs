@@ -30,7 +30,7 @@ public static partial class Pass103_FillDependencyMethods
 
 				MethodDefinition method = instance.Type.AddMethod(nameof(UnityAssetBase.FetchDependencies), Pass060_CreateEmptyMethods.OverrideMethodAttributes, returnType);
 				CilInstructionCollection processor = method.GetProcessor();
-				if (rootNode.Children.Count > 0)
+				if (rootNode.AnyPPtrs)
 				{
 					MethodDefinition enumerableConstructor = MakeEnumerableType(injectedBaseType, currentField, thisField, instance, rootNode);
 					processor.Add(CilOpCodes.Ldarg_0);

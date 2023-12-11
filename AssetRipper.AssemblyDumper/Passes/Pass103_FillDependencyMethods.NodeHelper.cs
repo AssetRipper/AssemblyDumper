@@ -40,7 +40,7 @@ public static partial class Pass103_FillDependencyMethods
 					ArrayNodeHelper.Apply(arrayNode, context, parentContext);
 					break;
 				case DictionaryNode dictionaryNode:
-					DictionaryDependencyNodeHelper.Apply(dictionaryNode, context, parentContext);
+					DictionaryNodeHelper.Apply(dictionaryNode, context, parentContext);
 					break;
 				case KeyNode keyNode:
 					Apply(keyNode.Child, context, parentContext);
@@ -70,7 +70,7 @@ public static partial class Pass103_FillDependencyMethods
 			Node? current = node;
 			while (current != null)
 			{
-				string content = GetPathContent(node);
+				string content = GetPathContent(current);
 				for (int i = content.Length - 1; i >= 0; i--)
 				{
 					sb.Append(content[i]);

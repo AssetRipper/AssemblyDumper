@@ -35,9 +35,10 @@ public static partial class Pass103_FillDependencyMethods
 
 		public static void Apply(TypeNode node, DependencyMethodContext context, ParentContext parentContext)
 		{
-			if (node.Children.Count == 1)
+			List<FieldNode> children = node.Children.Where(c => c.AnyPPtrs).ToList();
+			if (children.Count == 1)
 			{
-				FieldNode child = node.Children[0];
+				FieldNode child = children[0];
 				NodeHelper.Apply(child, context, new ParentContext()
 				{
 					EmitLoad = c =>
@@ -52,7 +53,7 @@ public static partial class Pass103_FillDependencyMethods
 			}
 
 			FieldDefinition stateField = context.Type.AddField(context.CorLibTypeFactory.Int32, NodeHelper.GetStateFieldName(node), visibility: FieldVisibility.Private);
-			CilInstructionLabel[] cases = new CilInstructionLabel[node.Children.Count];
+			CilInstructionLabel[] cases = new CilInstructionLabel[children.Count];
 			for (int i = 0; i < cases.Length; i++)
 			{
 				cases[i] = new();
@@ -66,9 +67,9 @@ public static partial class Pass103_FillDependencyMethods
 			context.Processor.Add(CilOpCodes.Br, defaultCase);
 			for (int i = 0; i < cases.Length; i++)
 			{
-				FieldNode child = node.Children[i];
+				FieldNode child = children[i];
 				cases[i].Instruction = context.Processor.Add(CilOpCodes.Nop);
-				NodeHelper.Apply(node.Children[i], context, new ParentContext()
+				NodeHelper.Apply(children[i], context, new ParentContext()
 				{
 					EmitLoad = c =>
 					{
