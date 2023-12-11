@@ -10,7 +10,7 @@ using System.Text.Json.Nodes;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
-	public static class Pass060_CreateEmptyMethods
+	public static class Pass063_CreateEmptyMethods
 	{
 		public const MethodAttributes OverrideMethodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.ReuseSlot | MethodAttributes.HideBySig;
 

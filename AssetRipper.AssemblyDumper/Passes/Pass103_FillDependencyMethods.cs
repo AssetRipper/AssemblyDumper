@@ -28,7 +28,7 @@ public static partial class Pass103_FillDependencyMethods
 			{
 				TypeNode rootNode = new(instance);
 
-				MethodDefinition method = instance.Type.AddMethod(nameof(UnityAssetBase.FetchDependencies), Pass060_CreateEmptyMethods.OverrideMethodAttributes, returnType);
+				MethodDefinition method = instance.Type.AddMethod(nameof(UnityAssetBase.FetchDependencies), Pass063_CreateEmptyMethods.OverrideMethodAttributes, returnType);
 				CilInstructionCollection processor = method.GetProcessor();
 				if (rootNode.AnyPPtrs)
 				{

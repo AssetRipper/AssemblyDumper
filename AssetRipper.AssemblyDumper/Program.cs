@@ -104,10 +104,6 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass058_InjectChineseTextureProperties.DoPass();
 			}
-			using (new TimingCookie("Pass 060: Create Empty Methods"))
-			{
-				Pass060_CreateEmptyMethods.DoPass();
-			}
 			using (new TimingCookie("Pass 061: Add Constructors"))
 			{
 				Pass061_AddConstructors.DoPass();
@@ -115,6 +111,10 @@ namespace AssetRipper.AssemblyDumper
 			using (new TimingCookie("Pass 062: Fill Constructors"))
 			{
 				Pass062_FillConstructors.DoPass();
+			}
+			using (new TimingCookie("Pass 063: Create Empty Methods"))
+			{
+				Pass063_CreateEmptyMethods.DoPass();
 			}
 			using (new TimingCookie("Pass 080: PPtr Conversions"))
 			{
