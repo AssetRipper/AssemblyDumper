@@ -42,18 +42,26 @@ internal static class Pass108_WalkMethods
 	private static TypeSignature assetWalkerType;
 
 	private static IMethodDefOrRef enterAssetMethod;
+	private static IMethodDefOrRef divideAssetMethod;
 	private static IMethodDefOrRef exitAssetMethod;
 
 	private static IMethodDefOrRef enterFieldMethod;
 	private static IMethodDefOrRef exitFieldMethod;
 
 	private static IMethodDefOrRef enterListMethod;
+	private static IMethodDefOrRef divideListMethod;
 	private static IMethodDefOrRef exitListMethod;
 
 	private static IMethodDefOrRef enterDictionaryMethod;
+	private static IMethodDefOrRef divideDictionaryMethod;
 	private static IMethodDefOrRef exitDictionaryMethod;
 
+	private static IMethodDefOrRef enterDictionaryPairMethod;
+	private static IMethodDefOrRef divideDictionaryPairMethod;
+	private static IMethodDefOrRef exitDictionaryPairMethod;
+
 	private static IMethodDefOrRef enterPairMethod;
+	private static IMethodDefOrRef dividePairMethod;
 	private static IMethodDefOrRef exitPairMethod;
 
 	private static IMethodDefOrRef visitPrimitiveMethod;
@@ -103,9 +111,18 @@ internal static class Pass108_WalkMethods
 						processor.Add(CilOpCodes.Callvirt, enterAssetMethod.MakeGenericInstanceMethod(typeSignature));
 						processor.Add(CilOpCodes.Brfalse, returnLabel);
 
-						foreach (FieldNode fieldNode in rootNode.Children.Where(IsUsable))
+						List<FieldNode> usableChildren = rootNode.Children.Where(IsUsable).ToList();
+						for (int i = 0; i < usableChildren.Count; i++)
 						{
+							FieldNode fieldNode = usableChildren[i];
 							CilInstructionLabel finishLabel = new();
+
+							if (i > 0)
+							{
+								processor.Add(CilOpCodes.Ldarg_1);
+								processor.Add(CilOpCodes.Ldarg_0);
+								processor.Add(CilOpCodes.Callvirt, divideAssetMethod.MakeGenericInstanceMethod(typeSignature));
+							}
 
 							string fieldName = GetName(fieldNode);
 
@@ -164,6 +181,7 @@ internal static class Pass108_WalkMethods
 					CilInstructionCollection processor = method.GetProcessor();
 
 					CilInstructionLabel returnLabel = new();
+					CilInstructionLabel exitLabel = new();
 
 					processor.Add(CilOpCodes.Ldarg_1);
 					processor.Add(CilOpCodes.Ldarg_0);
@@ -180,26 +198,32 @@ internal static class Pass108_WalkMethods
 
 						//Make local and store length in it
 						CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-						processor.Add(CilOpCodes.Ldarg_0); //Load array
+						processor.Add(CilOpCodes.Ldarg_0); //Load list
 						processor.Add(CilOpCodes.Call, getCountReference); //Get count
-
 						processor.Add(CilOpCodes.Stloc, countLocal); //Store it
 
+						//Avoid the loop if count is less than 1
+						processor.Add(CilOpCodes.Ldloc, countLocal);
+						processor.Add(CilOpCodes.Ldc_I4_1);
+						processor.Add(CilOpCodes.Blt, exitLabel);
+
 						//Make an i
-						CilLocalVariable iLocal = new CilLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-						processor.Owner.LocalVariables.Add(iLocal); //Add to method
+						CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
 						processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
 						processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
-						//Create an empty, unconditional branch which will jump down to the loop condition.
-						//This converts the do..while loop into a for loop.
-						CilInstructionLabel loopConditionStartLabel = new();
-						processor.Add(CilOpCodes.Br, loopConditionStartLabel);
+						//Jump over dividing for i == 0
+						CilInstructionLabel visitItemLabel = new();
+						processor.Add(CilOpCodes.Br, visitItemLabel);
 
-						//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-						ICilLabel jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
+						//Divide List
+						ICilLabel loopStartLabel = processor.Add(CilOpCodes.Nop).CreateLabel();
+						processor.Add(CilOpCodes.Ldarg_1);
+						processor.Add(CilOpCodes.Ldarg_0);
+						processor.Add(CilOpCodes.Callvirt, divideListMethod.MakeGenericInstanceMethod([.. listNode.TypeSignature.TypeArguments]));
 
-						//Do stuff at index i
+						//Visit Item
+						visitItemLabel.Instruction = processor.Add(CilOpCodes.Nop);
 						processor.Add(CilOpCodes.Ldarg_0);
 						processor.Add(CilOpCodes.Ldloc, iLocal);
 						processor.Add(CilOpCodes.Call, getItemReference);
@@ -213,12 +237,12 @@ internal static class Pass108_WalkMethods
 						processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 						//Jump to start of loop if i < count
-						loopConditionStartLabel.Instruction = processor.Add(CilOpCodes.Nop);
-						processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
+						processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
 						processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-						processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
+						processor.Add(CilOpCodes.Blt, loopStartLabel); //Jump back up if less than
 					}
 
+					exitLabel.Instruction = processor.Add(CilOpCodes.Nop);
 					processor.Add(CilOpCodes.Ldarg_1);
 					processor.Add(CilOpCodes.Ldarg_0);
 					processor.Add(CilOpCodes.Callvirt, exitListMethod.MakeGenericInstanceMethod(listNode.Child.TypeSignature));
@@ -233,6 +257,7 @@ internal static class Pass108_WalkMethods
 					CilInstructionCollection processor = method.GetProcessor();
 
 					CilInstructionLabel returnLabel = new();
+					CilInstructionLabel exitLabel = new();
 
 					processor.Add(CilOpCodes.Ldarg_1);
 					processor.Add(CilOpCodes.Ldarg_0);
@@ -245,35 +270,74 @@ internal static class Pass108_WalkMethods
 						MethodDefinition getItemDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetDictionary<,>), m => m.Name == "GetPair");
 						IMethodDefOrRef getItemReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, dictionaryNode.TypeSignature, getItemDefinition);
 
-						IMethodDescriptor pairMethod = GetOrMakeMethod(dictionaryNode.Child);
-
 						//Make local and store length in it
 						CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-						processor.Add(CilOpCodes.Ldarg_0); //Load array
+						processor.Add(CilOpCodes.Ldarg_0); //Load collection
 						processor.Add(CilOpCodes.Call, getCountReference); //Get count
-
 						processor.Add(CilOpCodes.Stloc, countLocal); //Store it
 
+						//Avoid the loop if count is less than 1
+						processor.Add(CilOpCodes.Ldloc, countLocal);
+						processor.Add(CilOpCodes.Ldc_I4_1);
+						processor.Add(CilOpCodes.Blt, exitLabel);
+
 						//Make an i
-						CilLocalVariable iLocal = new CilLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-						processor.Owner.LocalVariables.Add(iLocal); //Add to method
+						CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
 						processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
 						processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
-						//Create an empty, unconditional branch which will jump down to the loop condition.
-						//This converts the do..while loop into a for loop.
-						CilInstructionLabel loopConditionStartLabel = new();
-						processor.Add(CilOpCodes.Br, loopConditionStartLabel);
+						//Jump over dividing for i == 0
+						CilInstructionLabel visitPairLabel = new();
+						processor.Add(CilOpCodes.Br, visitPairLabel);
 
-						//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-						ICilLabel jumpTargetLabel = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
-
-						//Do stuff at index i
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Ldloc, iLocal);
-						processor.Add(CilOpCodes.Call, getItemReference);
+						//Divide Dictionary
+						ICilLabel loopStartLabel = processor.Add(CilOpCodes.Nop).CreateLabel();
 						processor.Add(CilOpCodes.Ldarg_1);
-						processor.AddCall(pairMethod);
+						processor.Add(CilOpCodes.Ldarg_0);
+						processor.Add(CilOpCodes.Callvirt, divideDictionaryMethod.MakeGenericInstanceMethod([.. dictionaryNode.TypeSignature.TypeArguments]));
+
+						//Visit Pair
+						{
+							PairNode pairNode = dictionaryNode.Child;
+							ImportAssetPairAccessors(pairNode, out IMethodDefOrRef getKeyReference, out IMethodDefOrRef getValueReference);
+
+							IMethodDescriptor keyMethod = GetOrMakeMethod(pairNode.Key);
+							IMethodDescriptor valueMethod = GetOrMakeMethod(pairNode.Value);
+
+							visitPairLabel.Instruction = processor.Add(CilOpCodes.Nop);
+
+							CilLocalVariable pairLocal = processor.AddLocalVariable(pairNode.TypeSignature);
+							processor.Add(CilOpCodes.Ldarg_0);
+							processor.Add(CilOpCodes.Ldloc, iLocal);
+							processor.Add(CilOpCodes.Call, getItemReference);
+							processor.Add(CilOpCodes.Stloc, pairLocal);
+
+							CilInstructionLabel afterPairLabel = new();
+							processor.Add(CilOpCodes.Ldarg_1);
+							processor.Add(CilOpCodes.Ldloc, pairLocal);
+							processor.Add(CilOpCodes.Callvirt, enterDictionaryPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
+							processor.Add(CilOpCodes.Brfalse, afterPairLabel);
+
+							processor.Add(CilOpCodes.Ldloc, pairLocal);
+							processor.Add(CilOpCodes.Call, getKeyReference);
+							processor.Add(CilOpCodes.Ldarg_1);
+							processor.AddCall(keyMethod);
+
+							processor.Add(CilOpCodes.Ldarg_1);
+							processor.Add(CilOpCodes.Ldloc, pairLocal);
+							processor.Add(CilOpCodes.Callvirt, divideDictionaryPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
+
+							processor.Add(CilOpCodes.Ldloc, pairLocal);
+							processor.Add(CilOpCodes.Call, getValueReference);
+							processor.Add(CilOpCodes.Ldarg_1);
+							processor.AddCall(valueMethod);
+
+							processor.Add(CilOpCodes.Ldarg_1);
+							processor.Add(CilOpCodes.Ldloc, pairLocal);
+							processor.Add(CilOpCodes.Callvirt, exitDictionaryPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
+
+							afterPairLabel.Instruction = processor.Add(CilOpCodes.Nop);
+						}
 
 						//Increment i
 						processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
@@ -282,12 +346,12 @@ internal static class Pass108_WalkMethods
 						processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 						//Jump to start of loop if i < count
-						loopConditionStartLabel.Instruction = processor.Add(CilOpCodes.Nop);
-						processor.Add(CilOpCodes.Ldloc, iLocal).CreateLabel(); //Load i
+						processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
 						processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-						processor.Add(CilOpCodes.Blt, jumpTargetLabel); //Jump back up if less than
+						processor.Add(CilOpCodes.Blt, loopStartLabel); //Jump back up if less than
 					}
 
+					exitLabel.Instruction = processor.Add(CilOpCodes.Nop);
 					processor.Add(CilOpCodes.Ldarg_1);
 					processor.Add(CilOpCodes.Ldarg_0);
 					processor.Add(CilOpCodes.Callvirt, exitDictionaryMethod.MakeGenericInstanceMethod([.. dictionaryNode.TypeSignature.TypeArguments]));
@@ -309,10 +373,7 @@ internal static class Pass108_WalkMethods
 					processor.Add(CilOpCodes.Brfalse, returnLabel);
 
 					{
-						MethodDefinition getKeyDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetPair<,>), m => m.Name == "get_Key");
-						IMethodDefOrRef getKeyReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, pairNode.TypeSignature, getKeyDefinition);
-						MethodDefinition getValueDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetPair<,>), m => m.Name == "get_Value");
-						IMethodDefOrRef getValueReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, pairNode.TypeSignature, getValueDefinition);
+						ImportAssetPairAccessors(pairNode, out IMethodDefOrRef getKeyReference, out IMethodDefOrRef getValueReference);
 
 						IMethodDescriptor keyMethod = GetOrMakeMethod(pairNode.Key);
 						IMethodDescriptor valueMethod = GetOrMakeMethod(pairNode.Value);
@@ -321,6 +382,10 @@ internal static class Pass108_WalkMethods
 						processor.Add(CilOpCodes.Call, getKeyReference);
 						processor.Add(CilOpCodes.Ldarg_1);
 						processor.AddCall(keyMethod);
+
+						processor.Add(CilOpCodes.Ldarg_1);
+						processor.Add(CilOpCodes.Ldarg_0);
+						processor.Add(CilOpCodes.Callvirt, dividePairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
 
 						processor.Add(CilOpCodes.Ldarg_0);
 						processor.Add(CilOpCodes.Call, getValueReference);
@@ -341,13 +406,7 @@ internal static class Pass108_WalkMethods
 			case ValueNode valueNode:
 				return GetOrMakeMethod(valueNode.Child);
 			default:
-				{
-					MethodDefinition method = NewMethod(node);
-					CilInstructionCollection processor = method.GetProcessor();
-					processor.Add(CilOpCodes.Ret);
-					result = method;
-				}
-				break;
+				throw new NotSupportedException();
 		}
 		MethodDictionary.Add(node.TypeSignature, result);
 		return result;
@@ -364,23 +423,39 @@ internal static class Pass108_WalkMethods
 		}
 	}
 
+	private static void ImportAssetPairAccessors(PairNode pairNode, out IMethodDefOrRef getKeyReference, out IMethodDefOrRef getValueReference)
+	{
+		MethodDefinition getKeyDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetPair<,>), m => m.Name == "get_Key");
+		getKeyReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, pairNode.TypeSignature, getKeyDefinition);
+		MethodDefinition getValueDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetPair<,>), m => m.Name == "get_Value");
+		getValueReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, pairNode.TypeSignature, getValueDefinition);
+	}
+
 	private static void Initialize()
 	{
 		assetWalkerType = SharedState.Instance.Importer.ImportType<AssetWalker>().ToTypeSignature();
 
 		enterAssetMethod = ImportWalkerMethod(nameof(AssetWalker.EnterAsset));
+		divideAssetMethod = ImportWalkerMethod(nameof(AssetWalker.DivideAsset));
 		exitAssetMethod = ImportWalkerMethod(nameof(AssetWalker.ExitAsset));
 
 		enterFieldMethod = ImportWalkerMethod(nameof(AssetWalker.EnterField));
 		exitFieldMethod = ImportWalkerMethod(nameof(AssetWalker.ExitField));
 
 		enterListMethod = ImportWalkerMethod(nameof(AssetWalker.EnterList));
+		divideListMethod = ImportWalkerMethod(nameof(AssetWalker.DivideList));
 		exitListMethod = ImportWalkerMethod(nameof(AssetWalker.ExitList));
 
 		enterDictionaryMethod = ImportWalkerMethod(nameof(AssetWalker.EnterDictionary));
+		divideDictionaryMethod = ImportWalkerMethod(nameof(AssetWalker.DivideDictionary));
 		exitDictionaryMethod = ImportWalkerMethod(nameof(AssetWalker.ExitDictionary));
 
+		enterDictionaryPairMethod = ImportWalkerMethod(nameof(AssetWalker.EnterDictionaryPair));
+		divideDictionaryPairMethod = ImportWalkerMethod(nameof(AssetWalker.DivideDictionaryPair));
+		exitDictionaryPairMethod = ImportWalkerMethod(nameof(AssetWalker.ExitDictionaryPair));
+
 		enterPairMethod = ImportWalkerMethod(nameof(AssetWalker.EnterPair));
+		dividePairMethod = ImportWalkerMethod(nameof(AssetWalker.DividePair));
 		exitPairMethod = ImportWalkerMethod(nameof(AssetWalker.ExitPair));
 
 		visitPrimitiveMethod = ImportWalkerMethod(nameof(AssetWalker.VisitPrimitive));
