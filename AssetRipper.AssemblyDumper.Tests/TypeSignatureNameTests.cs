@@ -15,7 +15,7 @@ namespace AssetRipper.AssemblyDumper.Tests
 		public static void AsmByteArrayName()
 		{
 			TypeSignature type = module.CorLibTypeFactory.Byte.MakeSzArrayType();
-			Assert.AreEqual("Byte[]", type.Name);
+			Assert.That("Byte[]" == type.Name);
 		}
 
 		[Test]
@@ -23,22 +23,22 @@ namespace AssetRipper.AssemblyDumper.Tests
 		{
 			TypeSignature list = importer.ImportTypeSignature(typeof(List<>));
 			GenericInstanceTypeSignature stringList = list.MakeGenericInstanceType(module.CorLibTypeFactory.String);
-			Assert.AreEqual("List`1<System.String>", stringList.Name);
-			Assert.AreEqual("List`1", list.Name);
+			Assert.That("List`1<System.String>" == stringList.Name);
+			Assert.That("List`1" == list.Name);
 		}
 
 		[Test]
 		public static void ByteArrayTest()
 		{
 			TypeSignature type = module.CorLibTypeFactory.Byte.MakeSzArrayType();
-			Assert.AreEqual("Byte_Array", GetName(type));
+			Assert.That("Byte_Array" == GetName(type));
 		}
 
 		[Test]
 		public static void DictionaryTest()
 		{
 			TypeSignature dictionary = importer.ImportTypeSignature(typeof(Dictionary<,>));
-			Assert.AreEqual("Dictionary", GetName(dictionary));
+			Assert.That("Dictionary" == GetName(dictionary));
 		}
 
 		[Test]
@@ -46,7 +46,7 @@ namespace AssetRipper.AssemblyDumper.Tests
 		{
 			TypeSignature dictionary = importer.ImportTypeSignature(typeof(Dictionary<,>));
 			GenericInstanceTypeSignature intStringDictionary = dictionary.MakeGenericInstanceType(module.CorLibTypeFactory.Int32, module.CorLibTypeFactory.String);
-			Assert.AreEqual("Dictionary_Int32_String", GetName(intStringDictionary));
+			Assert.That("Dictionary_Int32_String" == GetName(intStringDictionary));
 		}
 
 		[Test]
@@ -54,7 +54,7 @@ namespace AssetRipper.AssemblyDumper.Tests
 		{
 			TypeSignature list = importer.ImportTypeSignature(typeof(List<>));
 			GenericInstanceTypeSignature stringList = list.MakeGenericInstanceType(module.CorLibTypeFactory.String);
-			Assert.AreEqual("List_String", GetName(stringList));
+			Assert.That("List_String" == GetName(stringList));
 		}
 
 		[Test]
@@ -63,7 +63,7 @@ namespace AssetRipper.AssemblyDumper.Tests
 			TypeSignature list = importer.ImportTypeSignature(typeof(List<>));
 			GenericInstanceTypeSignature stringList = list.MakeGenericInstanceType(module.CorLibTypeFactory.String);
 			GenericInstanceTypeSignature stringListList = list.MakeGenericInstanceType(stringList);
-			Assert.AreEqual("List_List_String", GetName(stringListList));
+			Assert.That("List_List_String" == GetName(stringListList));
 		}
 
 		private static string GetName(TypeSignature type)

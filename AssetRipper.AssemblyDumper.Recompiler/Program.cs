@@ -18,7 +18,7 @@ internal static class Program
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
 		<Nullable>enable</Nullable>
 		<IsTrimmable>{IsTrimmable}</IsTrimmable>
@@ -60,7 +60,7 @@ internal static class Program
 		string outputDirectory = args[1];
 		Version = args[2];
 		ClearOrCreateDirectory(outputDirectory);
-		UniversalAssemblyResolver resolver = new UniversalAssemblyResolver(assemblyPath, true, ".NETCoreApp, Version=7.0");
+		UniversalAssemblyResolver resolver = new UniversalAssemblyResolver(assemblyPath, true, ".NETCoreApp, Version=8.0");
 		WholeProjectDecompiler decompiler = new WholeProjectDecompiler(resolver);
 		decompiler.Settings.SetLanguageVersion(LanguageVersion.CSharp11_0);
 		decompiler.Settings.UseSdkStyleProjectFormat = true;

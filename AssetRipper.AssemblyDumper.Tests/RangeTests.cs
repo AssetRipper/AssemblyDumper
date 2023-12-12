@@ -14,55 +14,55 @@ namespace AssetRipper.AssemblyDumper.Tests
 		[Test]
 		public void IntersectionTest1()
 		{
-			Assert.IsTrue(OneToTen.Equals(ZeroToTen.MakeIntersection(OneToEleven)));
+			Assert.That(OneToTen.Equals(ZeroToTen.MakeIntersection(OneToEleven)));
 		}
 
 		[Test]
 		public void IntersectingUnionTest()
 		{
-			Assert.IsTrue(ZeroToEleven.Equals(ZeroToTen.MakeUnion(OneToEleven)));
+			Assert.That(ZeroToEleven.Equals(ZeroToTen.MakeUnion(OneToEleven)));
 		}
 
 		[Test]
 		public void NonintersectingUnionTest()
 		{
-			Assert.IsTrue(ZeroToTwenty.Equals(ZeroToTen.MakeUnion(TenToTwenty)));
+			Assert.That(ZeroToTwenty.Equals(ZeroToTen.MakeUnion(TenToTwenty)));
 		}
 
 		[Test]
 		public void ContainsItself()
 		{
-			Assert.IsTrue(ZeroToTen.Contains(ZeroToTen));
+			Assert.That(ZeroToTen.Contains(ZeroToTen));
 		}
 
 		[Test]
 		public void ContainsStart()
 		{
-			Assert.IsTrue(ZeroToTen.Contains(0));
+			Assert.That(ZeroToTen.Contains(0));
 		}
 
 		[Test]
 		public void ContainsMiddle()
 		{
-			Assert.IsTrue(ZeroToTen.Contains(5));
+			Assert.That(ZeroToTen.Contains(5));
 		}
 
 		[Test]
 		public void DoesNotContainEnd()
 		{
-			Assert.IsFalse(ZeroToTen.Contains(10));
+			Assert.That(!ZeroToTen.Contains(10));
 		}
 
 		[Test]
 		public void DoesNotContainLess()
 		{
-			Assert.IsFalse(ZeroToTen.Contains(-10));
+			Assert.That(!ZeroToTen.Contains(-10));
 		}
 
 		[Test]
 		public void DoesNotContainMore()
 		{
-			Assert.IsFalse(ZeroToTen.Contains(100));
+			Assert.That(!ZeroToTen.Contains(100));
 		}
 
 		[Test]

@@ -49,16 +49,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 				type.AddMethod(nameof(UnityAssetBase.ExportYamlEditor), OverrideMethodAttributes, yamlNodeRef)
 					.AddParameter(exportContainerInterfaceRef, "container");
 
-				type.AddSerializeMethod(nameof(UnityAssetBase.SerializeReleaseFields), jsonNodeRef, serializerRef, serializationOptionsRef);
+				//type.AddSerializeMethod(nameof(UnityAssetBase.SerializeReleaseFields), jsonNodeRef, serializerRef, serializationOptionsRef);
 
-				type.AddSerializeMethod(nameof(UnityAssetBase.SerializeEditorFields), jsonNodeRef, serializerRef, serializationOptionsRef);
+				//type.AddSerializeMethod(nameof(UnityAssetBase.SerializeEditorFields), jsonNodeRef, serializerRef, serializationOptionsRef);
 
-				type.AddSerializeMethod(nameof(UnityAssetBase.SerializeAllFields), jsonNodeRef, serializerRef, serializationOptionsRef);
+				//type.AddSerializeMethod(nameof(UnityAssetBase.SerializeAllFields), jsonNodeRef, serializerRef, serializationOptionsRef);
 
-				MethodDefinition deserializeMethod = type.AddMethod(nameof(UnityAssetBase.Deserialize), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
-				deserializeMethod.AddParameter(jsonNodeRef, "node");
-				deserializeMethod.AddParameter(deserializerRef, "deserializer");
-				deserializeMethod.AddParameter(deserializationOptionsRef, "options");
+				//MethodDefinition deserializeMethod = type.AddMethod(nameof(UnityAssetBase.Deserialize), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
+				//deserializeMethod.AddParameter(jsonNodeRef, "node");
+				//deserializeMethod.AddParameter(deserializerRef, "deserializer");
+				//deserializeMethod.AddParameter(deserializationOptionsRef, "options");
 
 				type.AddMethod(nameof(UnityAssetBase.Reset), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
 			}
