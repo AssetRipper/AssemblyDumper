@@ -127,6 +127,7 @@ internal static class Pass108_WalkMethods
 							string fieldName = GetName(fieldNode);
 
 							processor.Add(CilOpCodes.Ldarg_1);
+							processor.Add(CilOpCodes.Ldarg_0);
 							processor.Add(CilOpCodes.Ldstr, fieldName);
 							processor.Add(CilOpCodes.Callvirt, enterFieldMethod.MakeGenericInstanceMethod(typeSignature));
 							processor.Add(CilOpCodes.Brfalse, finishLabel);
@@ -137,6 +138,7 @@ internal static class Pass108_WalkMethods
 							processor.AddCall(GetOrMakeMethod(fieldNode.Child));
 
 							processor.Add(CilOpCodes.Ldarg_1);
+							processor.Add(CilOpCodes.Ldarg_0);
 							processor.Add(CilOpCodes.Ldstr, fieldName);
 							processor.Add(CilOpCodes.Callvirt, exitFieldMethod.MakeGenericInstanceMethod(typeSignature));
 
