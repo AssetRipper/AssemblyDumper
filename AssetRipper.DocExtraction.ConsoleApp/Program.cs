@@ -29,7 +29,7 @@ internal static class Program
 		string editorDllPath = @"C:\Users\jrpri\Documents\UnityInstallations\2020.2.0f1\Editor\Data\Managed\UnityEditor.dll";
 		UnityVersion unityVersion = new UnityVersion(2020, 2, 0, UnityVersionType.Final, 1);
 		string outputDirectory = Environment.CurrentDirectory;
-		string versionString = unityVersion.IsLess(5) ? unityVersion.ToStringWithoutType() : unityVersion.ToString();
+		string versionString = unityVersion.LessThan(5) ? unityVersion.ToStringWithoutType() : unityVersion.ToString();
 		DocumentationFile documentationFile = DocumentationExtractor.ExtractDocumentation(versionString, engineXmlPath, editorXmlPath, engineDllPath, editorDllPath);
 		documentationFile.SaveAsJson(Path.Combine(outputDirectory, $"{versionString}.json"));
 	}
@@ -128,23 +128,23 @@ internal static class Program
 			{
 				continue;
 			}
-			else if (unityVersion.IsLess(4, 5))
+			else if (unityVersion.LessThan(4, 5))
 			{
 				string infoPlistPath = Path.Combine(versionFolder, "Editor/Data/PlaybackEngines/macstandaloneplayer/UnityPlayer.app/Contents/Info.plist");
 				UnityVersion actualVersion = XmlDocumentParser.ExtractUnityVersionFromXml(infoPlistPath);
 				list.Add((actualVersion, versionFolder));
 			}
-			else if (unityVersion.IsLess(4, 6, 2))
+			else if (unityVersion.LessThan(4, 6, 2))
 			{
 				string infoPlistPath = Path.Combine(versionFolder, "Editor/Data/PlaybackEngines/macstandalonesupport/Variations/universal_development/UnityPlayer.app/Contents/Info.plist");
 				UnityVersion actualVersion = XmlDocumentParser.ExtractUnityVersionFromXml(infoPlistPath);
 				list.Add((actualVersion, versionFolder));
 			}
-			else if (unityVersion.IsEqual(4, 6, 4))//This particular version doesn't have Info.plist
+			else if (unityVersion.Equals(4, 6, 4))//This particular version doesn't have Info.plist
 			{
 				list.Add((new UnityVersion(4, 6, 4, UnityVersionType.Final, 1), versionFolder));
 			}
-			else if (unityVersion.IsLess(5))
+			else if (unityVersion.LessThan(5))
 			{
 				string infoPlistPath = Path.Combine(versionFolder, "Editor/Data/PlaybackEngines/macstandalonesupport/Variations/universal_development_mono/UnityPlayer.app/Contents/Info.plist");
 				UnityVersion actualVersion = XmlDocumentParser.ExtractUnityVersionFromXml(infoPlistPath);

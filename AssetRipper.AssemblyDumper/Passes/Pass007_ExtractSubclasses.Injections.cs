@@ -468,11 +468,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 		/// 4.0.0 and greater
 		/// GUIStyle became builtin serializable only in v4.0.0
 		/// </summary>
-		private static bool IsBuiltinFormat(UnityVersion version) => version.IsGreaterEqual(4);
+		private static bool IsBuiltinFormat(UnityVersion version) => version.GreaterThanOrEquals(4);
 		/// <summary>
 		/// 3.0.0 and greater
 		/// </summary>
-		private static bool HasFontSize(UnityVersion version) => version.IsGreaterEqual(3);
+		private static bool HasFontSize(UnityVersion version) => version.GreaterThanOrEquals(3);
 		private static UnityVersion ArrayAlignmentStartVersion { get; } = new UnityVersion(2017, 1);
 	}
 }

@@ -43,7 +43,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			abstractClassExceptionConstructor = abstractClassException.GetDefaultConstructor();
 
 			unityVersionIsGreaterEqualMethod = SharedState.Instance.Importer.ImportMethod<UnityVersion>(m =>
-				m.Name == nameof(UnityVersion.IsGreaterEqual) && m.Parameters.Count == 5);
+				m.Name == nameof(UnityVersion.GreaterThanOrEquals) && m.Parameters.Count == 5);
 			assetInfoConstructor = SharedState.Instance.Importer.ImportMethod<AssetInfo>(method =>
 				method.Name == ".ctor"
 				&& method.Parameters.Count == 3);
