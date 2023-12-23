@@ -75,7 +75,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			CilInstructionCollection processor = method.CilMethodBody.Instructions;
 			processor.Clear();
 			processor.AddLoadAllHashFields(type);
-			processor.Add(CilOpCodes.Ldarg_1);
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Callvirt, type.Methods.Single(m => m.Name == "get_SerializedVersion"));
 			processor.Add(CilOpCodes.Call, exportMethod);
 			processor.Add(CilOpCodes.Ret);
 			processor.OptimizeMacros();

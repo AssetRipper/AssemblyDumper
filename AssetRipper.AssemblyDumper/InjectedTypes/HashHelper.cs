@@ -8,20 +8,15 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 {
 	internal static class HashHelper
 	{
-		public static int ToSerializedVersion(UnityVersion version)
+		public static YamlNode ExportYaml(byte bytes__0, byte bytes__1, byte bytes__2, byte bytes__3, byte bytes__4, byte bytes__5, byte bytes__6, byte bytes__7, byte bytes__8, byte bytes__9, byte bytes_10, byte bytes_11, byte bytes_12, byte bytes_13, byte bytes_14, byte bytes_15, int serializedVersion)
 		{
-			//Unity is stupid and didn't change the type trees.
-			//To see an example of this, look at Texture3D.
-			return version.IsGreaterEqual(5) ? 2 : 1;
-		}
-
-		public static YamlNode ExportYaml(byte bytes__0, byte bytes__1, byte bytes__2, byte bytes__3, byte bytes__4, byte bytes__5, byte bytes__6, byte bytes__7, byte bytes__8, byte bytes__9, byte bytes_10, byte bytes_11, byte bytes_12, byte bytes_13, byte bytes_14, byte bytes_15, IExportContainer container)
-		{
-			int serializedVersion = ToSerializedVersion(container.ExportVersion);
 			YamlMappingNode node = new();
 			node.AddSerializedVersion(serializedVersion);
 			if (serializedVersion > 1)
 			{
+				//Unity is stupid and didn't change the type trees.
+				//To see an example of this, look at Texture3D.
+				//This change happened at the beginning of Unity 5.
 				string str = ToString(bytes__0, bytes__1, bytes__2, bytes__3, bytes__4, bytes__5, bytes__6, bytes__7, bytes__8, bytes__9, bytes_10, bytes_11, bytes_12, bytes_13, bytes_14, bytes_15);
 				node.Add(HashName, str);
 			}

@@ -28,6 +28,17 @@ namespace AssetRipper.AssemblyDumper.Passes
 					list.Divide(division);
 				}
 			}
+
+			//SerializedVersion changed for Hash128 at the beginning of Unity 5, but Unity didn't update the type trees.
+			//To see an example of this, look at Texture3D.
+			{
+				VersionedList<UniversalClass> list = SharedState.Instance.SubclassInformation["Hash128"];
+				list.Divide(new UnityVersion(5));
+				Debug.Assert(list.Count == 2);
+				UniversalClass second = list[1].Value!;
+				second.ReleaseRootNode!.Version = 2;
+				second.EditorRootNode!.Version = 2;
+			}
 		}
 
 		private static HashSet<UnityVersion> ExtractDivisions(List<List<UnityVersionRange>> rangeListList)
