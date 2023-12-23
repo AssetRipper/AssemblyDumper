@@ -1,5 +1,6 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.Assets;
+using AssetRipper.IO.Files.SerializedFiles;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -21,6 +22,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 					instance.Type.AddClassNameOverride(instance.Class.OriginalName);
 				}
 			}
+			foreach (GeneratedClassInstance instance in SharedState.Instance.AllGroups.SelectMany(g => g.Instances))
+			{
+				instance.Type.AddSerializedVersionOverride(GetSerializedVersion(instance));
+				instance.Type.AddFlowMappedInYamlOverride(GetFlowMappedInYaml(instance));
+			}
 		}
 
 		private static void AddClassNameOverride(this TypeDefinition type, string className)
@@ -29,6 +35,58 @@ namespace AssetRipper.AssemblyDumper.Passes
 			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 			processor.Add(CilOpCodes.Ldstr, className);
 			processor.Add(CilOpCodes.Ret);
+		}
+
+		private static void AddSerializedVersionOverride(this TypeDefinition type, int version)
+		{
+			PropertyDefinition property = type.AddGetterProperty(nameof(UnityAssetBase.SerializedVersion), PropertyOverrideAttributes, SharedState.Instance.Importer.Int32);
+			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
+			processor.Add(CilOpCodes.Ldc_I4, version);
+			processor.Add(CilOpCodes.Ret);
+		}
+
+		private static void AddFlowMappedInYamlOverride(this TypeDefinition type, bool flowMapped)
+		{
+			PropertyDefinition property = type.AddGetterProperty(nameof(UnityAssetBase.FlowMappedInYaml), PropertyOverrideAttributes, SharedState.Instance.Importer.Boolean);
+			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
+			processor.Add(flowMapped ? CilOpCodes.Ldc_I4_1 : CilOpCodes.Ldc_I4_0);
+			processor.Add(CilOpCodes.Ret);
+		}
+
+		private static int GetSerializedVersion(GeneratedClassInstance instance)
+		{
+			if (instance.Class.EditorRootNode is null)
+			{
+				return instance.Class.ReleaseRootNode?.Version ?? 1;
+			}
+			else if (instance.Class.ReleaseRootNode is null)
+			{
+				return instance.Class.EditorRootNode.Version;
+			}
+			else
+			{
+				int release = instance.Class.ReleaseRootNode.Version;
+				int editor = instance.Class.EditorRootNode.Version;
+				return release == editor ? release : throw new("Release and editor serialized versions were different!");
+			}
+		}
+
+		private static bool GetFlowMappedInYaml(GeneratedClassInstance instance)
+		{
+			if (instance.Class.EditorRootNode is null)
+			{
+				return instance.Class.ReleaseRootNode?.MetaFlag.IsTransferUsingFlowMappingStyle() ?? false;
+			}
+			else if (instance.Class.ReleaseRootNode is null)
+			{
+				return instance.Class.EditorRootNode.MetaFlag.IsTransferUsingFlowMappingStyle();
+			}
+			else
+			{
+				bool release = instance.Class.ReleaseRootNode.MetaFlag.IsTransferUsingFlowMappingStyle();
+				bool editor = instance.Class.EditorRootNode.MetaFlag.IsTransferUsingFlowMappingStyle();
+				return release == editor ? release : throw new("Release and editor flow mapping were different!");
+			}
 		}
 	}
 }
