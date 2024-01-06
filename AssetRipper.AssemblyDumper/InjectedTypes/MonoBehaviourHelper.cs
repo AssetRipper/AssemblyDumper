@@ -25,9 +25,10 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 		{
 			if (structure != null)
 			{
+				walker.DivideAsset(asset);
 				if (walker.EnterField(asset, FieldName))
 				{
-					asset.WalkEditor(walker);
+					structure.WalkEditor(walker);
 					walker.ExitField(asset, FieldName);
 				}
 			}
@@ -37,9 +38,10 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 		{
 			if (structure != null)
 			{
+				walker.DivideAsset(asset);
 				if (walker.EnterField(asset, FieldName))
 				{
-					asset.WalkRelease(walker);
+					structure.WalkRelease(walker);
 					walker.ExitField(asset, FieldName);
 				}
 			}
@@ -49,10 +51,10 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 		{
 			if (structure != null)
 			{
-				walker.DivideAsset(structure);
+				walker.DivideAsset(asset);
 				if (walker.EnterField(asset, FieldName))
 				{
-					asset.WalkStandard(walker);
+					structure.WalkStandard(walker);
 					walker.ExitField(asset, FieldName);
 				}
 			}
