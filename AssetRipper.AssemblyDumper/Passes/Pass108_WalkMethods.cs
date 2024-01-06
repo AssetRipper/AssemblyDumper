@@ -33,6 +33,35 @@ internal static class Pass108_WalkMethods
 		_ => true,
 	};
 
+	private static List<FieldNode> ToOrderedList(this IEnumerable<FieldNode> nodes)
+	{
+		switch (CurrentState)
+		{
+			case State.Release:
+				{
+					List<FieldNode> list = nodes.ToList();
+					if (list.Count > 0)
+					{
+						UniversalNode root = list[0].Property.Class.Class.ReleaseRootNode!;
+						list.Sort((a, b) => root.SubNodes.IndexOf(a.Property.ReleaseNode!) - root.SubNodes.IndexOf(b.Property.ReleaseNode!));
+					}
+					return list;
+				}
+			case State.Editor:
+				{
+					List<FieldNode> list = nodes.ToList();
+					if (list.Count > 0)
+					{
+						UniversalNode root = list[0].Property.Class.Class.EditorRootNode!;
+						list.Sort((a, b) => root.SubNodes.IndexOf(a.Property.EditorNode!) - root.SubNodes.IndexOf(b.Property.EditorNode!));
+					}
+					return list;
+				}
+			default:
+				return nodes.OrderBy(n => n.Field.Name?.Value).ToList();
+		}
+	}
+
 	private static string GetName(FieldNode node) => CurrentState switch
 	{
 		State.Release or State.Editor => node.Property.OriginalFieldName!,
@@ -111,7 +140,7 @@ internal static class Pass108_WalkMethods
 						processor.Add(CilOpCodes.Callvirt, enterAssetMethod);
 						processor.Add(CilOpCodes.Brfalse, returnLabel);
 
-						List<FieldNode> usableChildren = rootNode.Children.Where(IsUsable).ToList();
+						List<FieldNode> usableChildren = rootNode.Children.Where(IsUsable).ToOrderedList();
 						for (int i = 0; i < usableChildren.Count; i++)
 						{
 							FieldNode fieldNode = usableChildren[i];
