@@ -99,7 +99,7 @@ internal static class Pass108_WalkMethods
 					{
 						processor.Add(CilOpCodes.Ldarg_1);
 						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Callvirt, visitPPtrMethod.MakeGenericInstanceMethod(typeSignature, Pass080_PPtrConversions.PPtrsToParameters[type].ToTypeSignature()));
+						processor.Add(CilOpCodes.Callvirt, visitPPtrMethod.MakeGenericInstanceMethod(Pass080_PPtrConversions.PPtrsToParameters[type].ToTypeSignature()));
 						processor.Add(CilOpCodes.Ret);
 					}
 					else
@@ -108,7 +108,7 @@ internal static class Pass108_WalkMethods
 
 						processor.Add(CilOpCodes.Ldarg_1);
 						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Callvirt, enterAssetMethod.MakeGenericInstanceMethod(typeSignature));
+						processor.Add(CilOpCodes.Callvirt, enterAssetMethod);
 						processor.Add(CilOpCodes.Brfalse, returnLabel);
 
 						List<FieldNode> usableChildren = rootNode.Children.Where(IsUsable).ToList();
@@ -121,7 +121,7 @@ internal static class Pass108_WalkMethods
 							{
 								processor.Add(CilOpCodes.Ldarg_1);
 								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Callvirt, divideAssetMethod.MakeGenericInstanceMethod(typeSignature));
+								processor.Add(CilOpCodes.Callvirt, divideAssetMethod);
 							}
 
 							string fieldName = GetName(fieldNode);
@@ -129,7 +129,7 @@ internal static class Pass108_WalkMethods
 							processor.Add(CilOpCodes.Ldarg_1);
 							processor.Add(CilOpCodes.Ldarg_0);
 							processor.Add(CilOpCodes.Ldstr, fieldName);
-							processor.Add(CilOpCodes.Callvirt, enterFieldMethod.MakeGenericInstanceMethod(typeSignature));
+							processor.Add(CilOpCodes.Callvirt, enterFieldMethod);
 							processor.Add(CilOpCodes.Brfalse, finishLabel);
 
 							processor.Add(CilOpCodes.Ldarg_0);
@@ -140,14 +140,14 @@ internal static class Pass108_WalkMethods
 							processor.Add(CilOpCodes.Ldarg_1);
 							processor.Add(CilOpCodes.Ldarg_0);
 							processor.Add(CilOpCodes.Ldstr, fieldName);
-							processor.Add(CilOpCodes.Callvirt, exitFieldMethod.MakeGenericInstanceMethod(typeSignature));
+							processor.Add(CilOpCodes.Callvirt, exitFieldMethod);
 
 							finishLabel.Instruction = processor.Add(CilOpCodes.Nop);
 						}
 
 						processor.Add(CilOpCodes.Ldarg_1);
 						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Callvirt, exitAssetMethod.MakeGenericInstanceMethod(typeSignature));
+						processor.Add(CilOpCodes.Callvirt, exitAssetMethod);
 
 						returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
 					}
@@ -486,7 +486,7 @@ internal static class Pass108_WalkMethods
 	{
 		return SharedState.Instance.Importer.ImportMethod<AssetWalker>(m =>
 		{
-			return m.Name == methodName && (methodName != nameof(AssetWalker.VisitPPtr) || m.GenericParameters.Count == 2);
+			return m.Name == methodName && (methodName != nameof(AssetWalker.VisitPPtr) || !m.Parameters[0].ParameterType.IsValueType);
 		});
 	}
 
