@@ -46,6 +46,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 				DocumentationHandler.AddPropertyDefinitionLine(property, "The custom structure of this asset, based on the instance fields of its MonoScript.");
 
 				instance.Type.FixExportMethods(structureField, monoBehaviourHelperType);
+
+				instance.Type.AddWalkStructure(structureField, monoBehaviourHelperType, "Editor");
+				instance.Type.AddWalkStructure(structureField, monoBehaviourHelperType, "Release");
+				instance.Type.AddWalkStructure(structureField, monoBehaviourHelperType, "Standard");
 			}
 		}
 
@@ -71,6 +75,52 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Call, exportStructureMethod);
 			processor.Add(CilOpCodes.Ldloc_0);//mapping node
 			processor.Add(CilOpCodes.Ret);
+		}
+
+		private static void AddWalkStructure(this TypeDefinition type, FieldDefinition field, TypeDefinition monoBehaviourHelperType, string walkType)
+		{
+			string targetMethodName = walkType switch
+			{
+				"Editor" => nameof(UnityAssetBase.WalkEditor),
+				"Release" => nameof(UnityAssetBase.WalkRelease),
+				"Standard" => nameof(UnityAssetBase.WalkStandard),
+				_ => throw new ArgumentException(null, nameof(walkType)),
+			};
+
+			MethodDefinition method = type.Methods.Single(m => m.Name == targetMethodName);
+
+			string injectedMethodName = walkType switch
+			{
+				"Editor" => nameof(MonoBehaviourHelper.MaybeWalkStructureEditor),
+				"Release" => nameof(MonoBehaviourHelper.MaybeWalkStructureRelease),
+				"Standard" => nameof(MonoBehaviourHelper.MaybeWalkStructureStandard),
+				_ => throw new ArgumentException(null, nameof(walkType)),
+			};
+
+			IMethodDefOrRef walkStructureMethod = monoBehaviourHelperType.Methods.Single(m => m.Name == injectedMethodName);
+
+			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
+
+			int insertIndex = FindLastNop(processor) + 1;
+
+			//Insert the opcodes in reverse order, so that we don't have to adjust the insert index.
+			processor.Insert(insertIndex, CilOpCodes.Call, walkStructureMethod);
+			processor.Insert(insertIndex, CilOpCodes.Ldarg_1);//walker
+			processor.Insert(insertIndex, CilOpCodes.Ldfld, field);//the structure field
+			processor.Insert(insertIndex, CilOpCodes.Ldarg_0);//this
+			processor.Insert(insertIndex, CilOpCodes.Ldarg_0);//this
+
+			static int FindLastNop(CilInstructionCollection processor)
+			{
+				for (int i = processor.Count - 1; i >= 0; i--)
+				{
+					if (processor[i].OpCode == CilOpCodes.Nop)
+					{
+						return i;
+					}
+				}
+				throw new Exception("No nop found");
+			}
 		}
 	}
 }
