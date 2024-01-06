@@ -1,9 +1,8 @@
-﻿using AssetRipper.AssemblyDumper.Utils;
-
-namespace AssetRipper.AssemblyDumper.Passes
+﻿namespace AssetRipper.AssemblyDumper.Passes
 {
 	/// <summary>
-	/// This pass deliberately modifies the type tree for TextureImporter to reflect its yaml output
+	/// This pass deliberately modifies the type tree for TextureImporter to reflect its yaml output.
+	/// It also changes the base class of VideoClipImporter to AssetImporter.
 	/// </summary>
 	internal static class Pass003_FixTextureImporterNodes
 	{
@@ -21,15 +20,22 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private const string BumpMapEndFieldName2 = "m_FlipGreenChannel";//Introduced in 2022.1.0
 
 		private const int TextureImporterTypeId = 1006;
+		private const int VideoClipImporterTypeId = 1127;
 
 		public static void DoPass()
 		{
-			VersionedList<UniversalClass> classes = SharedState.Instance.ClassInformation[TextureImporterTypeId];
-			foreach (UniversalClass? universalClass in classes.Values)
+			foreach (UniversalClass? universalClass in SharedState.Instance.ClassInformation[TextureImporterTypeId].Values)
 			{
 				if (universalClass is not null)
 				{
 					DoPassOnClass(universalClass);
+				}
+			}
+			foreach (UniversalClass? universalClass in SharedState.Instance.ClassInformation[VideoClipImporterTypeId].Values)
+			{
+				if (universalClass is not null)
+				{
+					universalClass.BaseString = "AssetImporter";
 				}
 			}
 		}
