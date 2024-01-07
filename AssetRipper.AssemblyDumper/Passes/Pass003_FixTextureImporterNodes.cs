@@ -20,7 +20,6 @@
 		private const string BumpMapEndFieldName2 = "m_FlipGreenChannel";//Introduced in 2022.1.0
 
 		private const int TextureImporterTypeId = 1006;
-		private const int VideoClipImporterTypeId = 1127;
 
 		public static void DoPass()
 		{
@@ -31,11 +30,24 @@
 					DoPassOnClass(universalClass);
 				}
 			}
-			foreach (UniversalClass? universalClass in SharedState.Instance.ClassInformation[VideoClipImporterTypeId].Values)
+
+			//VideoClipImporter
+			ChangeBaseClass(1127, "AssetImporter");
+
+			//EditorSettings
+			ChangeBaseClass(159, "GlobalGameManager");
+
+			//EditorBuildSettings
+			ChangeBaseClass(1045, "GlobalGameManager");
+		}
+
+		private static void ChangeBaseClass(int classId, string baseClass)
+		{
+			foreach (UniversalClass? universalClass in SharedState.Instance.ClassInformation[classId].Values)
 			{
 				if (universalClass is not null)
 				{
-					universalClass.BaseString = "AssetImporter";
+					universalClass.BaseString = baseClass;
 				}
 			}
 		}
