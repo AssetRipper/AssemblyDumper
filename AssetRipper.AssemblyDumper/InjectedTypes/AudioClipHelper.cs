@@ -33,7 +33,7 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 			{
 				byte[] result = new byte[size];
 				resourceFile.Stream.Position = offset;
-				resourceFile.Stream.CopyTo(new MemoryStream(result));
+				resourceFile.Stream.ReadExactly(result);
 				return result;
 			}
 			else
