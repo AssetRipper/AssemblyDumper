@@ -1,6 +1,5 @@
 ﻿using AssetRipper.Assets;
 using AssetRipper.Assets.Export;
-using AssetRipper.Assets.Export.Yaml;
 using AssetRipper.Assets.Traversal;
 using AssetRipper.Yaml;
 
@@ -16,7 +15,7 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 		{
 			if (structure != null)
 			{
-				YamlMappingNode structureNode = (YamlMappingNode)structure.ExportYaml(container);
+				YamlMappingNode structureNode = (YamlMappingNode)structure.ExportYamlEditor(container);
 				node.Append(structureNode);
 			}
 		}
