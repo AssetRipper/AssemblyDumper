@@ -10,4 +10,8 @@
     <PackageReference Include="AssetRipper.Primitives" Version="2.1.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\AssetRipper\Source\AssetRipper.Numerics\AssetRipper.Numerics.csproj" />
+  </ItemGroup>
+
 </Project>

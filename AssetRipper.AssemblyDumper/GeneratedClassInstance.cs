@@ -1,5 +1,5 @@
-﻿using AssetRipper.AssemblyDumper.Utils;
-using AssetRipper.DocExtraction.DataStructures;
+﻿using AssetRipper.DocExtraction.DataStructures;
+using AssetRipper.Numerics;
 
 namespace AssetRipper.AssemblyDumper
 {

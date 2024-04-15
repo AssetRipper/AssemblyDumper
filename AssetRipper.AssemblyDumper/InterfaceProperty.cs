@@ -1,4 +1,4 @@
-﻿using AssetRipper.AssemblyDumper.Utils;
+﻿using AssetRipper.Numerics;
 
 namespace AssetRipper.AssemblyDumper
 {

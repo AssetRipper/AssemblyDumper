@@ -1,4 +1,5 @@
 ﻿using AssetRipper.AssemblyDumper.Utils;
+using AssetRipper.Numerics;
 using System.Diagnostics;
 
 namespace AssetRipper.AssemblyDumper.Passes
