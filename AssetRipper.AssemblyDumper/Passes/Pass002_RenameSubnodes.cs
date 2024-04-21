@@ -405,6 +405,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 					meshBlendShapesListNode.Name = "m_ShapesList";
 				}
 			}
+			else if (node.TypeName == "GameObject")
+			{
+				UniversalNode dataNode = node.GetSubNodeByName("m_Component").GetSubNodeByName("m_Array").GetSubNodeByName("m_Data");
+				if (dataNode.TypeName == "pair")
+				{
+					//Before 5.5
+					dataNode.TypeName = "ComponentPair";
+					dataNode.RenameSubNode("m_First", "m_ClassID");
+					dataNode.RenameSubNode("m_Second", "m_Component");
+				}
+				node.RenameSubNode("m_Component", "m_Components");
+			}
 			else if (node.TypeName == "MeshRenderer")
 			{
 				node.TryRenameSubNode("m_StitchSeams", "m_StitchLightmapSeams"); // Early 2017.2 betas
