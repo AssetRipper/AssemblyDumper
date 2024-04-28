@@ -28,9 +28,16 @@ public static partial class Pass103_FillDependencyMethods
 			{
 				TypeNode rootNode = new(instance);
 
+				bool anyPPtrs = rootNode.AnyPPtrs;
+				if (!anyPPtrs && group is SubclassGroup)
+				{
+					//No need to generate a duplicate of the method in UnityAssetBase
+					continue;
+				}
+
 				MethodDefinition method = instance.Type.AddMethod(nameof(UnityAssetBase.FetchDependencies), Pass063_CreateEmptyMethods.OverrideMethodAttributes, returnType);
 				CilInstructionCollection processor = method.GetProcessor();
-				if (rootNode.AnyPPtrs)
+				if (anyPPtrs)
 				{
 					MethodDefinition enumerableConstructor = MakeEnumerableType(injectedBaseType, currentField, thisField, instance, rootNode);
 					processor.Add(CilOpCodes.Ldarg_0);
