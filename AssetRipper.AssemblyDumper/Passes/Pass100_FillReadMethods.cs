@@ -6,7 +6,6 @@ using AssetRipper.AssemblyDumper.InjectedTypes;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Generics;
 using AssetRipper.IO.Endian;
-using AssetRipper.Primitives;
 using System.Diagnostics;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -806,7 +805,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		/// <returns></returns>
 		private static bool IsArrayOrPrimitive(this TypeSignature type)
 		{
-			return type is SzArrayTypeSignature or CorLibTypeSignature or TypeDefOrRefSignature { Namespace:"AssetRipper.Primitives", Name:nameof(Utf8String) };
+			return type is SzArrayTypeSignature or CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) };
 		}
 
 		private static bool IsTypeDefinition(this TypeSignature type)

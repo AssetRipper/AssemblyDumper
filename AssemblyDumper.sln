@@ -48,7 +48,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.Checksum", "..\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.AssemblyDumper.Downloader", "AssetRipper.AssemblyDumper.Downloader\AssetRipper.AssemblyDumper.Downloader.csproj", "{88F4C6A7-CCFC-47AF-8E58-5DE5596BE0D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetRipper.AssemblyDumper.NuGetFixer", "AssetRipper.AssemblyDumper.NuGetFixer\AssetRipper.AssemblyDumper.NuGetFixer.csproj", "{3B877294-B096-45CC-A0D6-3770E100523A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.AssemblyDumper.NuGetFixer", "AssetRipper.AssemblyDumper.NuGetFixer\AssetRipper.AssemblyDumper.NuGetFixer.csproj", "{3B877294-B096-45CC-A0D6-3770E100523A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

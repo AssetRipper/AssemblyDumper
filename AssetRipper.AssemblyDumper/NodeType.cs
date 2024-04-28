@@ -1,6 +1,4 @@
-﻿using AssetRipper.Primitives;
-
-namespace AssetRipper.AssemblyDumper
+﻿namespace AssetRipper.AssemblyDumper
 {
 	public enum NodeType
 	{
@@ -50,7 +48,7 @@ namespace AssetRipper.AssemblyDumper
 
 		public static bool IsPrimitive(this NodeType type)
 		{
-			return type is 
+			return type is
 				NodeType.Boolean or
 				NodeType.Character or
 				NodeType.Int8 or

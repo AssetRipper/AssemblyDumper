@@ -1,7 +1,6 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.Assets;
 using AssetRipper.IO.Endian;
-using System.IO;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

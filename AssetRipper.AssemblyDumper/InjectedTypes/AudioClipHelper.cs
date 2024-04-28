@@ -1,7 +1,6 @@
 ﻿using AssetRipper.Assets;
 using AssetRipper.IO.Endian;
 using AssetRipper.IO.Files.ResourceFiles;
-using System.IO;
 
 #nullable disable
 

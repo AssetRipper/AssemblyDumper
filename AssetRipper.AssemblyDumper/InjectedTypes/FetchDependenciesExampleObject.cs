@@ -45,7 +45,7 @@ internal sealed class FetchDependenciesExampleObject : UnityObjectBase
 
 		public override bool MoveNext()
 		{
-			switch(_index)
+			switch (_index)
 			{
 				case 0:
 					_current = (nameof(_this.field0), _this.field0);

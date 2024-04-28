@@ -35,12 +35,5 @@ namespace AssetRipper.AssemblyDumper.Passes
 				type.AddMethod(nameof(UnityAssetBase.Reset), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
 			}
 		}
-
-		private static void AddSerializeMethod(this TypeDefinition type, string methodName, TypeSignature jsonNodeRef, TypeSignature serializerRef, TypeSignature serializationOptionsRef)
-		{
-			MethodDefinition method = type.AddMethod(methodName, OverrideMethodAttributes, jsonNodeRef);
-			method.AddParameter(serializerRef, "serializer");
-			method.AddParameter(serializationOptionsRef, "options");
-		}
 	}
 }

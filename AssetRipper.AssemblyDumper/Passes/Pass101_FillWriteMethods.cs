@@ -6,7 +6,6 @@ using AssetRipper.Assets;
 using AssetRipper.Assets.Generics;
 using AssetRipper.Assets.IO.Writing;
 using AssetRipper.IO.Endian;
-using AssetRipper.Primitives;
 using System.Diagnostics;
 using System.IO;
 
@@ -589,7 +588,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldloc, iLocal);
 			processor.AddCall(getPairMethod);
 			processor.Add(CilOpCodes.Stloc, pairLocal);
-			
+
 			processor.Add(CilOpCodes.Ldloc, pairLocal);
 			processor.AddCall(keyMethod);
 			processor.Add(CilOpCodes.Ldarg_1);

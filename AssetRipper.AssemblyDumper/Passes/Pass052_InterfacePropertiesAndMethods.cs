@@ -330,7 +330,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				PropertyDefinition property = declaringType.AddGetterProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, propertyType);
 				FieldDefinition cacheField = declaringType
-					.AddField(propertyType, $"_{propertyName}_k__BackingField", visibility:FieldVisibility.Private)
+					.AddField(propertyType, $"_{propertyName}_k__BackingField", visibility: FieldVisibility.Private)
 					.AddNullableAttributesForMaybeNull();
 				cacheField.AddDebuggerBrowsableNeverAttribute();
 				CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;

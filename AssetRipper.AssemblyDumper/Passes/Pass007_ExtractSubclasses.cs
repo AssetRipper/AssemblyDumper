@@ -78,7 +78,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				UniversalNode mainNode = releaseField ?? editorField ?? throw new NullReferenceException();
 				NodeType nodeType = mainNode.NodeType;
-				
+
 				if (!nodeType.IsPrimitive())
 				{
 					if (nodeType == NodeType.Type)

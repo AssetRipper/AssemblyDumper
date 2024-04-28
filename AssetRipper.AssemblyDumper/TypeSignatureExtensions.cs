@@ -1,6 +1,4 @@
-﻿using AssetRipper.Primitives;
-
-namespace AssetRipper.AssemblyDumper;
+﻿namespace AssetRipper.AssemblyDumper;
 
 internal static class TypeSignatureExtensions
 {

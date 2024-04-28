@@ -2,7 +2,6 @@
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Generics;
-using AssetRipper.Primitives;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

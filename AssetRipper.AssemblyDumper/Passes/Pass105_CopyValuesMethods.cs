@@ -6,7 +6,6 @@ using AssetRipper.Assets;
 using AssetRipper.Assets.Cloning;
 using AssetRipper.Assets.Generics;
 using AssetRipper.Assets.Metadata;
-using AssetRipper.Primitives;
 using System.Diagnostics;
 
 namespace AssetRipper.AssemblyDumper.Passes
@@ -37,7 +36,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static IMethodDefOrRef accessPairBaseSetKey;
 		private static IMethodDefOrRef accessPairBaseGetValue;
 		private static IMethodDefOrRef accessPairBaseSetValue;
-		
+
 		private static ITypeDefOrRef accessListBase;
 		private static IMethodDefOrRef accessListBaseGetCount;
 		private static IMethodDefOrRef accessListBaseSetCapacity;
@@ -724,7 +723,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			return (MethodDefinition)singleTypeDictionary[type.ToTypeSignature()].Item1;
 		}
-		
+
 		private static IMethodDefOrRef MakeDictionaryGetCountMethod(TypeSignature keyTypeSignature, TypeSignature valueTypeSignature)
 		{
 			return MethodUtils.MakeMethodOnGenericType(

@@ -175,7 +175,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					}
 				}
 				SubclassCandidate? previousCandidate = default;//Always not null
-				for (int i = 0; i < orderedVersions.Count;i++)
+				for (int i = 0; i < orderedVersions.Count; i++)
 				{
 					(UnityVersion version, SubclassCandidate? candidate) = orderedVersions[i];
 					bool shouldAdd;

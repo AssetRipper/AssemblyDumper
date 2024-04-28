@@ -70,7 +70,7 @@ internal static class Program
 		DeleteBadFilesAndDirectories(outputDirectory);
 		WriteCsProjFile(outputDirectory);
 		stopwatch.Stop();
-		Console.WriteLine($"Done in {stopwatch.ElapsedMilliseconds/1000} seconds!");
+		Console.WriteLine($"Done in {stopwatch.ElapsedMilliseconds / 1000} seconds!");
 	}
 
 	private static void DeleteBadFilesAndDirectories(string outputDirectory)
@@ -98,7 +98,7 @@ internal static class Program
 		private readonly object lockObject = new();
 		public void Report(DecompilationProgress value)
 		{
-			lock(lockObject)
+			lock (lockObject)
 			{
 				Console.WriteLine($"{value.UnitsCompleted}/{value.TotalUnits} File: {value.Status}");
 			}

@@ -8,7 +8,7 @@ namespace AssetRipper.AssemblyDumper.Documentation
 	{
 		public static void AddEnumTypeDocumentation(TypeDefinition type, EnumDefinitionBase definition)
 		{
-			string fullNameList = string.Join(", ", definition.FullNames.Select(fullName => $"\"{XmlUtils.EscapeXmlInvalidCharacters(fullName)}\"" ));
+			string fullNameList = string.Join(", ", definition.FullNames.Select(fullName => $"\"{XmlUtils.EscapeXmlInvalidCharacters(fullName)}\""));
 			DocumentationHandler.AddTypeDefinitionLine(type, $"Full Names: {fullNameList}");
 			if (definition is SingleEnumDefinition singleEnumDefinition)
 			{

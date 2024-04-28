@@ -16,7 +16,7 @@ internal static class Program
 
 		//ExtractAndSaveIndividually(@"G:\TypeTreeDumps\UnityInstallations", @"E:\UnityDocumentation");
 		ExtractAndSaveConsolidated(@"G:\TypeTreeDumps\UnityInstallations", @"consolidated.json");
-		
+
 		stopwatch.Stop();
 		Console.WriteLine($"Finished in {stopwatch.ElapsedMilliseconds} ms");
 	}

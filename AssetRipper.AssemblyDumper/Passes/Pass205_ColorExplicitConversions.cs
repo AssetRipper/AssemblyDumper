@@ -82,7 +82,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_A"));
-			
+
 			processor.Add(CilOpCodes.Newobj, constructor);
 
 			processor.Add(CilOpCodes.Ret);
