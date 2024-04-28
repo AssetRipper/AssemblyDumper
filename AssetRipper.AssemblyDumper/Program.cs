@@ -132,10 +132,6 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass101_FillWriteMethods.DoPass();
 			}
-			using (new TimingCookie("Pass 102: Filling Yaml Methods"))
-			{
-				Pass102_FillYamlMethods.DoPass();
-			}
 			using (new TimingCookie("Pass 103: Filling Dependency Methods"))
 			{
 				Pass103_FillDependencyMethods.DoPass();

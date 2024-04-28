@@ -1,7 +1,5 @@
 ﻿using AssetRipper.Assets;
-using AssetRipper.Assets.Export;
 using AssetRipper.Assets.Traversal;
-using AssetRipper.Yaml;
 
 #nullable disable
 
@@ -10,15 +8,6 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 	internal static class MonoBehaviourHelper
 	{
 		private const string FieldName = "m_Structure";
-
-		public static void MaybeExportYamlForStructure(IUnityAssetBase structure, YamlMappingNode node, IExportContainer container)
-		{
-			if (structure != null)
-			{
-				YamlMappingNode structureNode = (YamlMappingNode)structure.ExportYamlEditor(container);
-				node.Append(structureNode);
-			}
-		}
 
 		public static void MaybeWalkStructureEditor(IUnityObjectBase asset, IUnityAssetBase structure, AssetWalker walker)
 		{

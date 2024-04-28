@@ -18,7 +18,6 @@
 		<ProjectReference Include="..\..\AssetRipper\Source\AssetRipper.IO.Endian\AssetRipper.IO.Endian.csproj" />
 		<ProjectReference Include="..\..\AssetRipper\Source\AssetRipper.IO.Files\AssetRipper.IO.Files.csproj" />
 		<ProjectReference Include="..\..\AssetRipper\Source\AssetRipper.Numerics\AssetRipper.Numerics.csproj" />
-		<ProjectReference Include="..\..\AssetRipper\Source\AssetRipper.Yaml\AssetRipper.Yaml.csproj" />
 		<ProjectReference Include="..\AssemblyCreationTools\AssemblyCreationTools.csproj" />
 		<ProjectReference Include="..\AssetRipper.AssemblyDumper.Utils\AssetRipper.AssemblyDumper.Utils.csproj" />
 		<ProjectReference Include="..\AssetRipper.DocExtraction\AssetRipper.DocExtraction.csproj" />

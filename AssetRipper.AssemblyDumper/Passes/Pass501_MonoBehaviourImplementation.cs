@@ -1,5 +1,4 @@
-﻿using AssetRipper.AssemblyCreationTools;
-using AssetRipper.AssemblyCreationTools.Fields;
+﻿using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.AssemblyDumper.Documentation;
@@ -45,36 +44,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 				DocumentationHandler.AddPropertyDefinitionLine(property, "The custom structure of this asset, based on the instance fields of its MonoScript.");
 
-				instance.Type.FixExportMethods(structureField, monoBehaviourHelperType);
-
 				instance.Type.AddWalkStructure(structureField, monoBehaviourHelperType, "Editor");
 				instance.Type.AddWalkStructure(structureField, monoBehaviourHelperType, "Release");
 				instance.Type.AddWalkStructure(structureField, monoBehaviourHelperType, "Standard");
 			}
-		}
-
-		private static void FixExportMethods(this TypeDefinition type, FieldDefinition field, TypeDefinition monoBehaviourHelperType)
-		{
-			MethodDefinition exportRelease = type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlRelease));
-			exportRelease.AddExportStructureYaml(field, monoBehaviourHelperType);
-			MethodDefinition exportEditor = type.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlEditor));
-			exportEditor.AddExportStructureYaml(field, monoBehaviourHelperType);
-		}
-
-		private static void AddExportStructureYaml(this MethodDefinition method, FieldDefinition field, TypeDefinition monoBehaviourHelperType)
-		{
-			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
-			processor.Pop();//Remove the return
-			processor.Pop();//Remove the mapping node load
-			IMethodDefOrRef exportStructureMethod = monoBehaviourHelperType.Methods
-				.Single(m => m.Name == nameof(MonoBehaviourHelper.MaybeExportYamlForStructure));
-			processor.Add(CilOpCodes.Ldarg_0);//this
-			processor.Add(CilOpCodes.Ldfld, field);//the structure field
-			processor.Add(CilOpCodes.Ldloc_0);//mapping node
-			processor.Add(CilOpCodes.Ldarg_1);//container
-			processor.Add(CilOpCodes.Call, exportStructureMethod);
-			processor.Add(CilOpCodes.Ldloc_0);//mapping node
-			processor.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddWalkStructure(this TypeDefinition type, FieldDefinition field, TypeDefinition monoBehaviourHelperType, string walkType)

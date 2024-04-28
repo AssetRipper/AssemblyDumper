@@ -1,10 +1,8 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.Assets;
-using AssetRipper.Assets.Export;
 using AssetRipper.Assets.IO.Writing;
 using AssetRipper.Assets.Metadata;
 using AssetRipper.IO.Endian;
-using AssetRipper.Yaml;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -19,8 +17,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			GenericInstanceTypeSignature unityObjectBasePPtrRef = commonPPtrTypeRef.MakeGenericInstanceType(unityObjectBaseInterfaceRef);
 			TypeSignature refEndianSpanReaderRef = SharedState.Instance.Importer.ImportTypeSignature(typeof(EndianSpanReader)).MakeByReferenceType();
 			TypeSignature assetWriterRef = SharedState.Instance.Importer.ImportTypeSignature<AssetWriter>();
-			TypeSignature exportContainerInterfaceRef = SharedState.Instance.Importer.ImportTypeSignature<IExportContainer>();
-			TypeSignature yamlNodeRef = SharedState.Instance.Importer.ImportTypeSignature<YamlNode>();
 
 			foreach (TypeDefinition type in SharedState.Instance.AllNonInterfaceTypes)
 			{
@@ -35,12 +31,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 				type.AddMethod(nameof(UnityAssetBase.WriteEditor), OverrideMethodAttributes, SharedState.Instance.Importer.Void)
 					.AddParameter(assetWriterRef, "writer");
-
-				type.AddMethod(nameof(UnityAssetBase.ExportYamlRelease), OverrideMethodAttributes, yamlNodeRef)
-					.AddParameter(exportContainerInterfaceRef, "container");
-
-				type.AddMethod(nameof(UnityAssetBase.ExportYamlEditor), OverrideMethodAttributes, yamlNodeRef)
-					.AddParameter(exportContainerInterfaceRef, "container");
 
 				type.AddMethod(nameof(UnityAssetBase.Reset), OverrideMethodAttributes, SharedState.Instance.Importer.Void);
 			}

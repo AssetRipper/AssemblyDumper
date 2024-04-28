@@ -2,9 +2,6 @@
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.AssemblyDumper.InjectedTypes;
-using AssetRipper.Assets;
-using AssetRipper.Primitives;
-using AssetRipper.Yaml;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {
@@ -15,36 +12,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			foreach (TypeDefinition guidType in SharedState.Instance.SubclassGroups["GUID"].Types)
 			{
 				MethodDefinition toStringMethod = guidType.AddGuidToStringOverride();
-				guidType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlRelease)).FixGuidYaml(toStringMethod);
-				guidType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlEditor)).FixGuidYaml(toStringMethod);
 			}
 			TypeDefinition helperType = SharedState.Instance.InjectHelperType(typeof(HashHelper));
 			foreach (TypeDefinition hashType in SharedState.Instance.SubclassGroups["Hash128"].Types)
 			{
-				MethodDefinition releaseMethod = hashType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlRelease));
-				MethodDefinition editorMethod = hashType.Methods.Single(m => m.Name == nameof(UnityAssetBase.ExportYamlEditor));
-				releaseMethod.FixHashYaml(helperType);
-				editorMethod.FixHashYaml(helperType);
 				hashType.AddHashToStringOverride(helperType);
 			}
-		}
-
-		private static void FixGuidYaml(this MethodDefinition method, MethodDefinition toStringMethod)
-		{
-			IMethodDefOrRef scalarNodeConstructor = SharedState.Instance.Importer.ImportMethod<YamlScalarNode>(m => 
-			{
-				return m.IsConstructor
-					&& m.Parameters.Count == 1
-					&& m.Parameters[0].ParameterType is CorLibTypeSignature signature
-					&& signature.ElementType == ElementType.String;
-			});
-			method.CilMethodBody!.LocalVariables.Clear();
-			CilInstructionCollection processor = method.CilMethodBody.Instructions;
-			processor.Clear();
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, toStringMethod);
-			processor.Add(CilOpCodes.Newobj, scalarNodeConstructor);
-			processor.Add(CilOpCodes.Ret);
 		}
 
 		private static MethodDefinition AddGuidToStringOverride(this TypeDefinition type)
@@ -65,21 +38,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.OptimizeMacros();
 
 			return method;
-		}
-
-		private static void FixHashYaml(this MethodDefinition method, TypeDefinition helperType)
-		{
-			TypeDefinition type = method.DeclaringType!;
-			IMethodDefOrRef exportMethod = helperType.Methods.Single(m => m.Name == nameof(HashHelper.ExportYaml));
-			method.CilMethodBody!.LocalVariables.Clear();
-			CilInstructionCollection processor = method.CilMethodBody.Instructions;
-			processor.Clear();
-			processor.AddLoadAllHashFields(type);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Callvirt, type.Methods.Single(m => m.Name == "get_SerializedVersion"));
-			processor.Add(CilOpCodes.Call, exportMethod);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
 		}
 
 		private static MethodDefinition AddHashToStringOverride(this TypeDefinition type, TypeDefinition helperType)
