@@ -132,6 +132,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass101_FillWriteMethods.DoPass();
 			}
+			using (new TimingCookie("Pass 102: Ignore Field In Meta Files Methods"))
+			{
+				Pass102_IgnoreFieldInMetaFilesMethods.DoPass();
+			}
 			using (new TimingCookie("Pass 103: Filling Dependency Methods"))
 			{
 				Pass103_FillDependencyMethods.DoPass();

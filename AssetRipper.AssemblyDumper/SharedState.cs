@@ -51,6 +51,7 @@ namespace AssetRipper.AssemblyDumper
 		private Dictionary<Type, TypeDefinition> InjectedHelperTypes { get; } = new();
 
 		public IEnumerable<ClassGroupBase> AllGroups => ClassGroups.Values.Union<ClassGroupBase>(SubclassGroups.Values);
+		public IEnumerable<GeneratedClassInstance> AllInstances => AllGroups.SelectMany(g => g.Instances);
 		public IEnumerable<TypeDefinition> AllTypes => TypesToGroups.Keys;
 		public IEnumerable<TypeDefinition> AllNonInterfaceTypes => AllTypes.Where(t => !t.IsInterface);
 
