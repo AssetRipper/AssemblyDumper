@@ -5,6 +5,7 @@ using AssetRipper.AssemblyDumper.AST;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Generics;
 using AssetRipper.Assets.Traversal;
+using System.Diagnostics;
 
 namespace AssetRipper.AssemblyDumper.Passes;
 
@@ -153,7 +154,47 @@ internal static class Pass108_WalkMethods
 								processor.Add(CilOpCodes.Callvirt, divideAssetMethod);
 							}
 
-							string fieldName = GetName(fieldNode);
+							string fieldName;
+							if ((CurrentState is State.Release && fieldNode.Property.ReleaseNode?.NodeType is NodeType.TypelessData)
+								|| (CurrentState is State.Editor && fieldNode.Property.ReleaseNode?.NodeType is NodeType.TypelessData))
+							{
+								//This is required for correct yaml export
+
+								Debug.Assert(fieldNode.TypeSignature is SzArrayTypeSignature);
+
+								string lengthName = GetName(fieldNode);
+
+								CilInstructionLabel lengthLabel = new();
+
+								processor.Add(CilOpCodes.Ldarg_1);
+								processor.Add(CilOpCodes.Ldarg_0);
+								processor.Add(CilOpCodes.Ldstr, lengthName);
+								processor.Add(CilOpCodes.Callvirt, enterFieldMethod);
+								processor.Add(CilOpCodes.Brfalse, lengthLabel);
+
+								processor.Add(CilOpCodes.Ldarg_1);
+								processor.Add(CilOpCodes.Ldarg_0);
+								processor.Add(CilOpCodes.Ldfld, fieldNode.Field);
+								processor.Add(CilOpCodes.Ldlen);
+								processor.Add(CilOpCodes.Callvirt, visitPrimitiveMethod.MakeGenericInstanceMethod(SharedState.Instance.Importer.Int32));
+
+								processor.Add(CilOpCodes.Ldarg_1);
+								processor.Add(CilOpCodes.Ldarg_0);
+								processor.Add(CilOpCodes.Ldstr, lengthName);
+								processor.Add(CilOpCodes.Callvirt, exitFieldMethod);
+
+								lengthLabel.Instruction = processor.Add(CilOpCodes.Nop);
+
+								processor.Add(CilOpCodes.Ldarg_1);
+								processor.Add(CilOpCodes.Ldarg_0);
+								processor.Add(CilOpCodes.Callvirt, divideAssetMethod);
+
+								fieldName = "_typelessdata";
+							}
+							else
+							{
+								fieldName = GetName(fieldNode);
+							}
 
 							processor.Add(CilOpCodes.Ldarg_1);
 							processor.Add(CilOpCodes.Ldarg_0);
