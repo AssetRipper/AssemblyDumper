@@ -556,7 +556,23 @@ internal static class Pass108_WalkMethods
 	{
 		return SharedState.Instance.Importer.ImportMethod<AssetWalker>(m =>
 		{
-			return m.Name == methodName && (methodName != nameof(AssetWalker.VisitPPtr) || !m.Parameters[0].ParameterType.IsValueType);
+			if (m.Name != methodName)
+			{
+				return false;
+			}
+			else if (methodName == nameof(AssetWalker.VisitPPtr))
+			{
+				return !m.Parameters[0].ParameterType.IsValueType;
+			}
+			else if (methodName is nameof(AssetWalker.VisitPrimitive))
+			{
+				return true;
+			}
+			else
+			{
+				TypeSignature parameterType = m.Parameters[0].ParameterType;
+				return parameterType.Namespace?.StartsWith("AssetRipper") ?? false;
+			}
 		});
 	}
 
