@@ -48,7 +48,7 @@ namespace AssetRipper.AssemblyDumper
 			UnityVersion[] usedVersions = blob.Versions.Where(v => v >= MinimumVersion).ToArray();
 			SharedState.Initialize(usedVersions, classes, commonString);
 
-			static bool IsUnacceptable(int typeId) => typeId >= 100000 && typeId <= 100011;
+			static bool IsUnacceptable(int typeId) => typeId is >= 100000 and <= 100011 || typeId is 129;
 
 			static bool HasNoDataAfterMinimumVersion(TpkClassInformation info)
 			{
