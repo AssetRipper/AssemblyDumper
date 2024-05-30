@@ -23,8 +23,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static IMethodDefOrRef pptrCommonGetFileIDMethod;
 		private static IMethodDefOrRef pptrCommonGetPathIDMethod;
 
+		private static IMethodDefOrRef ipptrGetFileIDMethod;
+		private static IMethodDefOrRef ipptrGetPathIDMethod;
+
 		private static ITypeDefOrRef pptrConverterType;
-		private static IMethodDefOrRef pptrConverterConvertMethod;
+		private static IMethodDefOrRef pptrConverterGetSourceCollectionMethod;
+		private static IMethodDefOrRef pptrConverterGetTargetCollectionMethod;
 
 		private static TypeDefinition helperType;
 		private static MethodDefinition duplicateArrayMethod;
@@ -65,8 +69,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			pptrCommonGetFileIDMethod = SharedState.Instance.Importer.ImportMethod<PPtr>(m => m.Name == $"get_{nameof(PPtr.FileID)}");
 			pptrCommonGetPathIDMethod = SharedState.Instance.Importer.ImportMethod<PPtr>(m => m.Name == $"get_{nameof(PPtr.PathID)}");
 
+			ipptrGetFileIDMethod = SharedState.Instance.Importer.ImportMethod<IPPtr>(m => m.Name == $"get_{nameof(IPPtr.FileID)}");
+			ipptrGetPathIDMethod = SharedState.Instance.Importer.ImportMethod<IPPtr>(m => m.Name == $"get_{nameof(IPPtr.PathID)}");
+
 			pptrConverterType = SharedState.Instance.Importer.ImportType<PPtrConverter>();
-			pptrConverterConvertMethod = SharedState.Instance.Importer.ImportMethod<PPtrConverter>(m => m.Name == nameof(PPtrConverter.Convert));
+			pptrConverterGetSourceCollectionMethod = SharedState.Instance.Importer.ImportMethod<PPtrConverter>(m => m.Name == "get_" + nameof(PPtrConverter.SourceCollection));
+			pptrConverterGetTargetCollectionMethod = SharedState.Instance.Importer.ImportMethod<PPtrConverter>(m => m.Name == "get_" + nameof(PPtrConverter.TargetCollection));
 			helperType = InjectHelper();
 
 			accessPairBase = SharedState.Instance.Importer.ImportType(typeof(AccessPairBase<,>));
@@ -281,41 +289,79 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					MethodDefinition method = type.AddMethod(CopyValuesName, InterfaceUtils.InterfaceMethodImplementation, SharedState.Instance.Importer.Void);
 					method.AddParameter(group.Interface.ToTypeSignature(), "source");
-					method.AddParameter(pptrConverterType.ToTypeSignature(), "converter");
+					Parameter converterParam = method.AddParameter(pptrConverterType.ToTypeSignature(), "converter");
 					method.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
 					CilInstructionCollection processor = method.GetProcessor();
 					CilInstructionLabel returnLabel = new();
 					CilInstructionLabel isNullLabel = new();
+					CilInstructionLabel isSameCollectionLabel = new();
+
+					//If other is null
 					processor.Add(CilOpCodes.Ldarg_1);
 					processor.Add(CilOpCodes.Ldnull);
 					processor.Add(CilOpCodes.Cgt_Un);
 					processor.Add(CilOpCodes.Brfalse, isNullLabel);
 
-					//Convert PPtr
-					CilLocalVariable convertedPPtr = processor.AddLocalVariable(pptrCommonType);
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Ldarg_2);
-					processor.Add(CilOpCodes.Call, pptrConvertMethod.MakeGenericInstanceMethod(GetPPtrTypeArgument(type, group.Interface)));
-					processor.Add(CilOpCodes.Stloc, convertedPPtr);
+					//If source collection == target collection
+					processor.Add(CilOpCodes.Ldarga, converterParam);
+					processor.Add(CilOpCodes.Call, pptrConverterGetSourceCollectionMethod);
+					processor.Add(CilOpCodes.Ldarga, converterParam);
+					processor.Add(CilOpCodes.Call, pptrConverterGetTargetCollectionMethod);
+					processor.Add(CilOpCodes.Ceq);
+					processor.Add(CilOpCodes.Brtrue, isSameCollectionLabel);
 
-					//Store FileID
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Ldloca, convertedPPtr);
-					processor.Add(CilOpCodes.Call, pptrCommonGetFileIDMethod);
-					processor.Add(CilOpCodes.Stfld, type.GetFieldByName("m_FileID_"));
-
-					//Store PathID
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Ldloca, convertedPPtr);
-					processor.Add(CilOpCodes.Call, pptrCommonGetPathIDMethod);
-					FieldDefinition pathIDField = type.GetFieldByName("m_PathID_");
-					if (pathIDField.Signature!.FieldType is CorLibTypeSignature { ElementType: ElementType.I4 })
+					//Not same collection
 					{
-						processor.Add(CilOpCodes.Conv_Ovf_I4);//Convert I8 to I4
-					}
-					processor.Add(CilOpCodes.Stfld, pathIDField);
+						//Convert PPtr
+						CilLocalVariable convertedPPtr = processor.AddLocalVariable(pptrCommonType);
+						processor.Add(CilOpCodes.Ldarg_1);
+						processor.Add(CilOpCodes.Ldarg_2);
+						processor.Add(CilOpCodes.Call, pptrConvertMethod.MakeGenericInstanceMethod(GetPPtrTypeArgument(type, group.Interface)));
+						processor.Add(CilOpCodes.Stloc, convertedPPtr);
 
-					processor.Add(CilOpCodes.Br, returnLabel);
+						//Store FileID
+						processor.Add(CilOpCodes.Ldarg_0);
+						processor.Add(CilOpCodes.Ldloca, convertedPPtr);
+						processor.Add(CilOpCodes.Call, pptrCommonGetFileIDMethod);
+						processor.Add(CilOpCodes.Stfld, type.GetFieldByName("m_FileID_"));
+
+						//Store PathID
+						processor.Add(CilOpCodes.Ldarg_0);
+						processor.Add(CilOpCodes.Ldloca, convertedPPtr);
+						processor.Add(CilOpCodes.Call, pptrCommonGetPathIDMethod);
+						FieldDefinition pathIDField = type.GetFieldByName("m_PathID_");
+						if (pathIDField.Signature!.FieldType is CorLibTypeSignature { ElementType: ElementType.I4 })
+						{
+							processor.Add(CilOpCodes.Conv_Ovf_I4);//Convert I8 to I4
+						}
+						processor.Add(CilOpCodes.Stfld, pathIDField);
+
+						processor.Add(CilOpCodes.Br, returnLabel);
+					}
+
+					//Same collection
+					{
+						isSameCollectionLabel.Instruction = processor.Add(CilOpCodes.Nop);
+
+						//Store FileID
+						processor.Add(CilOpCodes.Ldarg_0);
+						processor.Add(CilOpCodes.Ldarg_1);
+						processor.Add(CilOpCodes.Callvirt, ipptrGetFileIDMethod);
+						processor.Add(CilOpCodes.Stfld, type.GetFieldByName("m_FileID_"));
+
+						//Store PathID
+						processor.Add(CilOpCodes.Ldarg_0);
+						processor.Add(CilOpCodes.Ldarg_1);
+						processor.Add(CilOpCodes.Callvirt, ipptrGetPathIDMethod);
+						FieldDefinition pathIDField = type.GetFieldByName("m_PathID_");
+						if (pathIDField.Signature!.FieldType is CorLibTypeSignature { ElementType: ElementType.I4 })
+						{
+							processor.Add(CilOpCodes.Conv_Ovf_I4);//Convert I8 to I4
+						}
+						processor.Add(CilOpCodes.Stfld, pathIDField);
+
+						processor.Add(CilOpCodes.Br, returnLabel);
+					}
 
 					isNullLabel.Instruction = processor.Add(CilOpCodes.Nop);
 					processor.Add(CilOpCodes.Ldarg_0);
