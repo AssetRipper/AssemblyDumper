@@ -407,7 +407,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return new()
 			{
 				Name = name,
-				TypeName = "float",
+				TypeName = "bool",
 				Version = 1,
 				MetaFlag = align ? TransferMetaFlags.AlignBytes : TransferMetaFlags.NoTransferFlags,
 			};
