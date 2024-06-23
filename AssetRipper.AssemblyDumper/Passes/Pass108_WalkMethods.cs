@@ -375,6 +375,7 @@ internal static class Pass108_WalkMethods
 							CilInstructionLabel afterPairLabel = new();
 							processor.Add(CilOpCodes.Ldarg_1);
 							processor.Add(CilOpCodes.Ldloc, pairLocal);
+							processor.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
 							processor.Add(CilOpCodes.Callvirt, enterDictionaryPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
 							processor.Add(CilOpCodes.Brfalse, afterPairLabel);
 
@@ -385,6 +386,7 @@ internal static class Pass108_WalkMethods
 
 							processor.Add(CilOpCodes.Ldarg_1);
 							processor.Add(CilOpCodes.Ldloc, pairLocal);
+							processor.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
 							processor.Add(CilOpCodes.Callvirt, divideDictionaryPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
 
 							processor.Add(CilOpCodes.Ldloc, pairLocal);
@@ -394,6 +396,7 @@ internal static class Pass108_WalkMethods
 
 							processor.Add(CilOpCodes.Ldarg_1);
 							processor.Add(CilOpCodes.Ldloc, pairLocal);
+							processor.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
 							processor.Add(CilOpCodes.Callvirt, exitDictionaryPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
 
 							afterPairLabel.Instruction = processor.Add(CilOpCodes.Nop);
@@ -429,6 +432,7 @@ internal static class Pass108_WalkMethods
 
 					processor.Add(CilOpCodes.Ldarg_1);
 					processor.Add(CilOpCodes.Ldarg_0);
+					processor.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
 					processor.Add(CilOpCodes.Callvirt, enterPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
 					processor.Add(CilOpCodes.Brfalse, returnLabel);
 
@@ -443,6 +447,7 @@ internal static class Pass108_WalkMethods
 
 						processor.Add(CilOpCodes.Ldarg_1);
 						processor.Add(CilOpCodes.Ldarg_0);
+						processor.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
 						processor.Add(CilOpCodes.Callvirt, dividePairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
 
 						processor.Add(CilOpCodes.Ldarg_0);
@@ -453,6 +458,7 @@ internal static class Pass108_WalkMethods
 
 					processor.Add(CilOpCodes.Ldarg_1);
 					processor.Add(CilOpCodes.Ldarg_0);
+					processor.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
 					processor.Add(CilOpCodes.Callvirt, exitPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
 
 					returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
@@ -549,7 +555,7 @@ internal static class Pass108_WalkMethods
 			else
 			{
 				TypeSignature parameterType = m.Parameters[0].ParameterType;
-				return parameterType.Namespace?.StartsWith("AssetRipper") ?? false;
+				return parameterType is not GenericInstanceTypeSignature || !(parameterType.Namespace?.StartsWith("AssetRipper") ?? false);
 			}
 		});
 	}

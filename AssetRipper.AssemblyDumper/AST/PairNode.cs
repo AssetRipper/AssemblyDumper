@@ -10,6 +10,7 @@ internal sealed class PairNode : Node
 	private static readonly Lazy<IMethodDefOrRef> setKey = new(() => ImportMethod(typeof(AssetPair<,>), "set_" + nameof(AssetPair<object, object>.Key)));
 	private static readonly Lazy<IMethodDefOrRef> getValue = new(() => ImportMethod(typeof(AssetPair<,>), "get_" + nameof(AssetPair<object, object>.Value)));
 	private static readonly Lazy<IMethodDefOrRef> setValue = new(() => ImportMethod(typeof(AssetPair<,>), "set_" + nameof(AssetPair<object, object>.Value)));
+	private static readonly Lazy<IMethodDefOrRef> implicitConversion = new(() => ImportMethod(typeof(AssetPair<,>), "op_Implicit"));
 
 	public PairNode(GenericInstanceTypeSignature typeSignature, Node? parent = null) : base(parent)
 	{
@@ -32,4 +33,5 @@ internal sealed class PairNode : Node
 	public IMethodDefOrRef SetKey => MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, TypeSignature, setKey.Value);
 	public IMethodDefOrRef GetValue => MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, TypeSignature, getValue.Value);
 	public IMethodDefOrRef SetValue => MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, TypeSignature, setValue.Value);
+	public IMethodDefOrRef ImplicitConversion => MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, TypeSignature, implicitConversion.Value);
 }
