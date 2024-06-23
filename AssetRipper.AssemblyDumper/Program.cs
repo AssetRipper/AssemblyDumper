@@ -236,6 +236,10 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass508_LazySceneObjectIdentifier.DoPass();
 			}
+			using (new TimingCookie("Pass 510: Fix Component Pair Walking"))
+			{
+				Pass510_FixComponentPairWalking.DoPass();
+			}
 			using (new TimingCookie("Pass 555: Create Common String"))
 			{
 				Pass555_CreateCommonString.DoPass();
