@@ -1,4 +1,5 @@
 ﻿using AssetRipper.AssemblyDumper.Passes;
+using System.Diagnostics;
 
 namespace AssetRipper.AssemblyDumper
 {
@@ -6,15 +7,14 @@ namespace AssetRipper.AssemblyDumper
 	{
 		public static void Main(string[] args)
 		{
-			Pass052_InterfacePropertiesAndMethods.SkipPlayerSettings = !args.Contains("--include-player-settings");
 			RunGeneration();
 		}
 
 		private static void RunGeneration()
 		{
-			using (new TimingCookie("Initialization"))
+			using (new TimingCookie("Pass 000: Initialization"))
 			{
-				TpkProcessor.IntitializeSharedState("type_tree.tpk");
+				Pass000_ProcessTpk.IntitializeSharedState("type_tree.tpk");
 			}
 			using (new TimingCookie("Pass 001: Merge Moved Groups"))
 			{
@@ -271,6 +271,23 @@ namespace AssetRipper.AssemblyDumper
 			using (new TimingCookie("Pass 999: Generate Documentation"))
 			{
 				Pass999_Documentation.DoPass();
+			}
+		}
+
+		private readonly struct TimingCookie : IDisposable
+		{
+			private readonly Stopwatch stopWatch = new();
+
+			public TimingCookie(string message)
+			{
+				Console.WriteLine(message);
+				stopWatch.Start();
+			}
+
+			public void Dispose()
+			{
+				stopWatch.Stop();
+				Console.WriteLine($"\tFinished in {stopWatch.ElapsedMilliseconds} ms");
 			}
 		}
 	}

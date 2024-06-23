@@ -1,7 +1,7 @@
 ﻿using AssetRipper.DocExtraction.DataStructures;
 using System.Collections;
 
-namespace AssetRipper.AssemblyDumper;
+namespace AssetRipper.AssemblyDumper.Enums;
 
 internal abstract class EnumDefinitionBase
 {

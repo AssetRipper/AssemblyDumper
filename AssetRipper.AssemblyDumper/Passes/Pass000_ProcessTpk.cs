@@ -2,9 +2,9 @@
 using AssetRipper.Tpk;
 using AssetRipper.Tpk.TypeTrees;
 
-namespace AssetRipper.AssemblyDumper
+namespace AssetRipper.AssemblyDumper.Passes
 {
-	internal static class TpkProcessor
+	internal static class Pass000_ProcessTpk
 	{
 		private static UnityVersion MinimumVersion { get; } = new UnityVersion(3, 5, 0);
 

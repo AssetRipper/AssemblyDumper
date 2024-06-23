@@ -1,7 +1,7 @@
 ﻿using AssetRipper.AssemblyDumper.Utils;
 using AssetRipper.DocExtraction.DataStructures;
 
-namespace AssetRipper.AssemblyDumper;
+namespace AssetRipper.AssemblyDumper.Extensions;
 
 internal static class EnumMemberHistoryExtensions
 {

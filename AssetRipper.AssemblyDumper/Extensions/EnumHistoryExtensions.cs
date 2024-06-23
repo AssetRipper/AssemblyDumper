@@ -1,6 +1,6 @@
 ﻿using AssetRipper.DocExtraction.DataStructures;
 
-namespace AssetRipper.AssemblyDumper;
+namespace AssetRipper.AssemblyDumper.Extensions;
 
 internal static class EnumHistoryExtensions
 {

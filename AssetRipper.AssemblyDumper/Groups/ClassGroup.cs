@@ -1,4 +1,4 @@
-﻿namespace AssetRipper.AssemblyDumper
+﻿namespace AssetRipper.AssemblyDumper.Groups
 {
 	internal sealed class ClassGroup : ClassGroupBase
 	{

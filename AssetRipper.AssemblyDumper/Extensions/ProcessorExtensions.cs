@@ -1,6 +1,6 @@
 ﻿using AssetRipper.AssemblyCreationTools.Methods;
 
-namespace AssetRipper.AssemblyDumper
+namespace AssetRipper.AssemblyDumper.Extensions
 {
 	internal static class ProcessorExtensions
 	{

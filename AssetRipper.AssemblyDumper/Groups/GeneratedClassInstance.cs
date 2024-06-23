@@ -1,7 +1,7 @@
 ﻿using AssetRipper.DocExtraction.DataStructures;
 using AssetRipper.Numerics;
 
-namespace AssetRipper.AssemblyDumper
+namespace AssetRipper.AssemblyDumper.Groups
 {
 	internal sealed class GeneratedClassInstance
 	{

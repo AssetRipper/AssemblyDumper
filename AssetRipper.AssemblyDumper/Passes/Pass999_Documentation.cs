@@ -1,4 +1,5 @@
 ﻿using AssetRipper.AssemblyDumper.Documentation;
+using AssetRipper.AssemblyDumper.Enums;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

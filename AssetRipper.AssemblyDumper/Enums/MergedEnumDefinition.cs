@@ -1,7 +1,7 @@
 ﻿using AssetRipper.DocExtraction.DataStructures;
 using AssetRipper.DocExtraction.Extensions;
 
-namespace AssetRipper.AssemblyDumper;
+namespace AssetRipper.AssemblyDumper.Enums;
 
 internal sealed class MergedEnumDefinition : EnumDefinitionBase
 {

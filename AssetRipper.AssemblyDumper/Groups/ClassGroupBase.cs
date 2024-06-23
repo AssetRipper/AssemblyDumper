@@ -2,7 +2,7 @@
 using AssetRipper.DocExtraction.DataStructures;
 using System.Diagnostics;
 
-namespace AssetRipper.AssemblyDumper
+namespace AssetRipper.AssemblyDumper.Groups
 {
 	internal abstract class ClassGroupBase
 	{

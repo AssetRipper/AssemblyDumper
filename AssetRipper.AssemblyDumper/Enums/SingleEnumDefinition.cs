@@ -1,6 +1,6 @@
 ﻿using AssetRipper.DocExtraction.DataStructures;
 
-namespace AssetRipper.AssemblyDumper;
+namespace AssetRipper.AssemblyDumper.Enums;
 
 internal sealed class SingleEnumDefinition : EnumDefinitionBase
 {

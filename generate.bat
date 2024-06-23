@@ -7,7 +7,7 @@ dotnet build -c Debug
 
 cd ./AssetRipper.AssemblyDumper/bin/Debug/net8.0/
 
-AssetRipper.AssemblyDumper.exe --include-player-settings
+AssetRipper.AssemblyDumper.exe
 
 cd ../../../../
 

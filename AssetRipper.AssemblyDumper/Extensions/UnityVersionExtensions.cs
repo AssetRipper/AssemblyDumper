@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace AssetRipper.AssemblyDumper
+namespace AssetRipper.AssemblyDumper.Extensions
 {
 	internal static class UnityVersionExtensions
 	{

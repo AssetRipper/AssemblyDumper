@@ -1,6 +1,6 @@
 ﻿using AssetRipper.AssemblyDumper.Passes;
 
-namespace AssetRipper.AssemblyDumper
+namespace AssetRipper.AssemblyDumper.Groups
 {
 	internal sealed class SubclassGroup : ClassGroupBase
 	{
