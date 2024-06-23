@@ -16,6 +16,14 @@
 		}
 
 		/// <summary>
+		/// Imports the default constructor for a type. Throws an exception if one doesn't exist.
+		/// </summary>
+		public static IMethodDefOrRef ImportDefaultConstructor(this CachedReferenceImporter importer, Type type)
+		{
+			return importer.ImportConstructor(type, 0);
+		}
+
+		/// <summary>
 		/// Gets the static constructor for a <see cref="TypeDefinition"/>. Throws an exception if one doesn't exist.
 		/// </summary>
 		public static MethodDefinition GetStaticConstructor(this TypeDefinition _this)
@@ -47,6 +55,14 @@
 		public static IMethodDefOrRef ImportConstructor<T>(this CachedReferenceImporter importer, int numParameters)
 		{
 			return importer.ImportMethod<T>(m => !m.IsStatic && m.IsConstructor && m.Parameters.Count == numParameters);
+		}
+
+		/// <summary>
+		/// Imports the constructor with that number of parameters. Throws an exception if there's not exactly one.
+		/// </summary>
+		public static IMethodDefOrRef ImportConstructor(this CachedReferenceImporter importer, Type type, int numParameters)
+		{
+			return importer.ImportMethod(type, m => !m.IsStatic && m.IsConstructor && m.Parameters.Count == numParameters);
 		}
 
 		/// <summary>

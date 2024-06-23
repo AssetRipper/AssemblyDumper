@@ -3,7 +3,6 @@ using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.AssemblyDumper.AST;
 using AssetRipper.Assets;
-using AssetRipper.Assets.Generics;
 using AssetRipper.Assets.Traversal;
 using System.Diagnostics;
 
@@ -261,17 +260,12 @@ internal static class Pass108_WalkMethods
 					processor.Add(CilOpCodes.Brfalse, returnLabel);
 
 					{
-						MethodDefinition getCountDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == "get_Count");
-						IMethodDefOrRef getCountReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, listNode.TypeSignature, getCountDefinition);
-						MethodDefinition getItemDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == "get_Item");
-						IMethodDefOrRef getItemReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, listNode.TypeSignature, getItemDefinition);
-
 						IMethodDescriptor elementMethod = GetOrMakeMethod(listNode.Child);
 
 						//Make local and store length in it
 						CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32); //Create local
 						processor.Add(CilOpCodes.Ldarg_0); //Load list
-						processor.Add(CilOpCodes.Call, getCountReference); //Get count
+						processor.Add(CilOpCodes.Call, listNode.GetCount); //Get count
 						processor.Add(CilOpCodes.Stloc, countLocal); //Store it
 
 						//Avoid the loop if count is less than 1
@@ -298,7 +292,7 @@ internal static class Pass108_WalkMethods
 						visitItemLabel.Instruction = processor.Add(CilOpCodes.Nop);
 						processor.Add(CilOpCodes.Ldarg_0);
 						processor.Add(CilOpCodes.Ldloc, iLocal);
-						processor.Add(CilOpCodes.Call, getItemReference);
+						processor.Add(CilOpCodes.Call, listNode.GetItem);
 						processor.Add(CilOpCodes.Ldarg_1);
 						processor.AddCall(elementMethod);
 
@@ -337,15 +331,10 @@ internal static class Pass108_WalkMethods
 					processor.Add(CilOpCodes.Brfalse, returnLabel);
 
 					{
-						MethodDefinition getCountDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetDictionary<,>), m => m.Name == "get_Count");
-						IMethodDefOrRef getCountReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, dictionaryNode.TypeSignature, getCountDefinition);
-						MethodDefinition getItemDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetDictionary<,>), m => m.Name == "GetPair");
-						IMethodDefOrRef getItemReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, dictionaryNode.TypeSignature, getItemDefinition);
-
 						//Make local and store length in it
 						CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32); //Create local
 						processor.Add(CilOpCodes.Ldarg_0); //Load collection
-						processor.Add(CilOpCodes.Call, getCountReference); //Get count
+						processor.Add(CilOpCodes.Call, dictionaryNode.GetCount); //Get count
 						processor.Add(CilOpCodes.Stloc, countLocal); //Store it
 
 						//Avoid the loop if count is less than 1
@@ -371,7 +360,6 @@ internal static class Pass108_WalkMethods
 						//Visit Pair
 						{
 							PairNode pairNode = dictionaryNode.Child;
-							ImportAssetPairAccessors(pairNode, out IMethodDefOrRef getKeyReference, out IMethodDefOrRef getValueReference);
 
 							IMethodDescriptor keyMethod = GetOrMakeMethod(pairNode.Key);
 							IMethodDescriptor valueMethod = GetOrMakeMethod(pairNode.Value);
@@ -381,7 +369,7 @@ internal static class Pass108_WalkMethods
 							CilLocalVariable pairLocal = processor.AddLocalVariable(pairNode.TypeSignature);
 							processor.Add(CilOpCodes.Ldarg_0);
 							processor.Add(CilOpCodes.Ldloc, iLocal);
-							processor.Add(CilOpCodes.Call, getItemReference);
+							processor.Add(CilOpCodes.Call, dictionaryNode.GetPair);
 							processor.Add(CilOpCodes.Stloc, pairLocal);
 
 							CilInstructionLabel afterPairLabel = new();
@@ -391,7 +379,7 @@ internal static class Pass108_WalkMethods
 							processor.Add(CilOpCodes.Brfalse, afterPairLabel);
 
 							processor.Add(CilOpCodes.Ldloc, pairLocal);
-							processor.Add(CilOpCodes.Call, getKeyReference);
+							processor.Add(CilOpCodes.Call, pairNode.GetKey);
 							processor.Add(CilOpCodes.Ldarg_1);
 							processor.AddCall(keyMethod);
 
@@ -400,7 +388,7 @@ internal static class Pass108_WalkMethods
 							processor.Add(CilOpCodes.Callvirt, divideDictionaryPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
 
 							processor.Add(CilOpCodes.Ldloc, pairLocal);
-							processor.Add(CilOpCodes.Call, getValueReference);
+							processor.Add(CilOpCodes.Call, pairNode.GetValue);
 							processor.Add(CilOpCodes.Ldarg_1);
 							processor.AddCall(valueMethod);
 
@@ -445,13 +433,11 @@ internal static class Pass108_WalkMethods
 					processor.Add(CilOpCodes.Brfalse, returnLabel);
 
 					{
-						ImportAssetPairAccessors(pairNode, out IMethodDefOrRef getKeyReference, out IMethodDefOrRef getValueReference);
-
 						IMethodDescriptor keyMethod = GetOrMakeMethod(pairNode.Key);
 						IMethodDescriptor valueMethod = GetOrMakeMethod(pairNode.Value);
 
 						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Call, getKeyReference);
+						processor.Add(CilOpCodes.Call, pairNode.GetKey);
 						processor.Add(CilOpCodes.Ldarg_1);
 						processor.AddCall(keyMethod);
 
@@ -460,7 +446,7 @@ internal static class Pass108_WalkMethods
 						processor.Add(CilOpCodes.Callvirt, dividePairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
 
 						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Call, getValueReference);
+						processor.Add(CilOpCodes.Call, pairNode.GetValue);
 						processor.Add(CilOpCodes.Ldarg_1);
 						processor.AddCall(valueMethod);
 					}
@@ -493,14 +479,6 @@ internal static class Pass108_WalkMethods
 			method.AddParameter(assetWalkerType, "walker");
 			return method;
 		}
-	}
-
-	private static void ImportAssetPairAccessors(PairNode pairNode, out IMethodDefOrRef getKeyReference, out IMethodDefOrRef getValueReference)
-	{
-		MethodDefinition getKeyDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetPair<,>), m => m.Name == "get_Key");
-		getKeyReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, pairNode.TypeSignature, getKeyDefinition);
-		MethodDefinition getValueDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetPair<,>), m => m.Name == "get_Value");
-		getValueReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, pairNode.TypeSignature, getValueDefinition);
 	}
 
 	private static void Initialize()

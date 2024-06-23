@@ -45,4 +45,9 @@ internal abstract class Node
 				throw new NotImplementedException();
 		}
 	}
+
+	private protected static IMethodDefOrRef ImportMethod(Type type, string name)
+	{
+		return SharedState.Instance.Importer.ImportMethod(type, m => m.Name == name);
+	}
 }
