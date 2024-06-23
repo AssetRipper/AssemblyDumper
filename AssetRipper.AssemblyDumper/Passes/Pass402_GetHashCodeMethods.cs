@@ -12,7 +12,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef toHashCodeMethod = SharedState.Instance.Importer.ImportMethod<HashCode>(m => m.Name == nameof(HashCode.ToHashCode));
 			foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
 			{
-				if (group.Name == Pass002_RenameSubnodes.Utf8StringName)
+				if (group.IsString)
 				{
 					continue;
 				}

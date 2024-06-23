@@ -10,7 +10,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			ITypeDefOrRef equatableInterface = SharedState.Instance.Importer.ImportType(typeof(IEquatable<>));
 			foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
 			{
-				if (group.Name == Pass002_RenameSubnodes.Utf8StringName)
+				if (group.IsString)
 				{
 					continue;
 				}

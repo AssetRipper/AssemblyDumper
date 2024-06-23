@@ -18,6 +18,7 @@ namespace AssetRipper.AssemblyDumper
 		public abstract bool IsSealed { get; }
 		public abstract bool UniformlyNamed { get; }
 		public virtual bool IsPPtr => false;
+		public virtual bool IsString => false;
 		public UnityVersion MinimumVersion => Instances[0].VersionRange.Start;
 		public IEnumerable<UniversalClass> Classes => Instances.Select(x => x.Class);
 		public IEnumerable<TypeDefinition> Types => Instances.Select(x => x.Type);

@@ -1,4 +1,6 @@
-﻿namespace AssetRipper.AssemblyDumper
+﻿using AssetRipper.AssemblyDumper.Passes;
+
+namespace AssetRipper.AssemblyDumper
 {
 	internal sealed class SubclassGroup : ClassGroupBase
 	{
@@ -13,6 +15,8 @@
 		public override bool UniformlyNamed => true;
 
 		public override bool IsPPtr => Name.StartsWith("PPtr_", StringComparison.Ordinal);
+
+		public override bool IsString => Name == Pass002_RenameSubnodes.Utf8StringName;
 
 		public SubclassGroup(string name, TypeDefinition @interface) : base(@interface)
 		{

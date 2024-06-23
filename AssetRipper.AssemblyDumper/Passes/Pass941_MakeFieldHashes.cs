@@ -296,11 +296,7 @@ internal static class Pass941_MakeFieldHashes
 			NodeType childType = child.NodeType;
 			if (childType is NodeType.Type)
 			{
-				if (child.TypeName is Pass002_RenameSubnodes.Utf8StringName)
-				{
-					result.Add(child.OriginalName);
-				}
-				else if (IsNotPPtr(child))
+				if (IsNotPPtr(child))
 				{
 					nodeStack.Push((child, 0, child.OriginalName));
 				}
@@ -325,11 +321,7 @@ internal static class Pass941_MakeFieldHashes
 				NodeType childType = child.NodeType;
 				if (childType is NodeType.Type)
 				{
-					if (child.TypeName is Pass002_RenameSubnodes.Utf8StringName)
-					{
-						result.Add($"{parentPath}.{child.OriginalName}");
-					}
-					else if (IsNotPPtr(child))
+					if (IsNotPPtr(child))
 					{
 						nodeStack.Push((parent, childIndex, parentPath));
 						nodeStack.Push((child, 0, $"{parentPath}.{child.OriginalName}"));
