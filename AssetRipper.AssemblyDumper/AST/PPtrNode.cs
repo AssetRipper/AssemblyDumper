@@ -12,4 +12,6 @@ internal sealed class PPtrNode : Node
 	public override TypeSignature TypeSignature => ClassInstance.Type.ToTypeSignature();
 
 	public override bool AnyPPtrs => true;
+
+	public override bool Equatable => false;
 }

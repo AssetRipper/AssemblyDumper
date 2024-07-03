@@ -188,17 +188,9 @@ namespace AssetRipper.AssemblyDumper
 			{
 				Pass301_SourcePrefabProperty.DoPass();
 			}
-			using (new TimingCookie("Pass 400: IEquatable Interface"))
+			using (new TimingCookie("Pass 400: Equality Comparison"))
 			{
-				Pass400_AddEqualityMethods.DoPass();
-			}
-			using (new TimingCookie("Pass 401: Equality Operators"))
-			{
-				Pass401_EqualityOperators.DoPass();
-			}
-			using (new TimingCookie("Pass 402: GetHashCode Methods"))
-			{
-				Pass402_GetHashCodeMethods.DoPass();
+				Pass400_EqualityComparison.DoPass();
 			}
 			using (new TimingCookie("Pass 410: SetValues Methods"))
 			{

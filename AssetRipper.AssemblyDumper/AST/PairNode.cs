@@ -26,6 +26,8 @@ internal sealed class PairNode : Node
 
 	public override bool AnyPPtrs => Key.AnyPPtrs || Value.AnyPPtrs;
 
+	public override bool Equatable => Key.Equatable && Value.Equatable;
+
 	public override GenericInstanceTypeSignature TypeSignature { get; }
 
 	public IMethodDefOrRef DefaultConstructor => MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, TypeSignature, defaultConstructor.Value);

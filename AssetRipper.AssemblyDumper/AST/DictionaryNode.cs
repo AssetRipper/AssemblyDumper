@@ -26,6 +26,11 @@ internal sealed class DictionaryNode : SingleNode<PairNode>
 
 	public TypeSignature ValueTypeSignature => Child.Value.TypeSignature;
 
+	/// <summary>
+	/// <see cref="AssetDictionary{TKey, TValue}"/> does not implement <see cref="IEquatable{T}"/>.
+	/// </summary>
+	public override bool Equatable => false;
+
 	public IMethodDefOrRef DefaultConstructor => MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, TypeSignature, defaultConstructor.Value);
 	public IMethodDefOrRef GetCount => MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, TypeSignature, getCount.Value);
 	public IMethodDefOrRef SetCapacity => MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, TypeSignature, setCapacity.Value);

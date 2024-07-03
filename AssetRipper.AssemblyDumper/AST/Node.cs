@@ -14,6 +14,14 @@ internal abstract class Node
 	public abstract TypeSignature TypeSignature { get; }
 	public virtual IReadOnlyList<Node> Children => [];
 	public virtual bool AnyPPtrs => Children.Any(c => c.AnyPPtrs);
+	/// <summary>
+	/// If true, the <see cref="TypeSignature"/> inherits from <see cref="IEquatable{T}"/> and is suitable to evaluate equality using <see cref="IEquatable{T}.Equals(T)"/>.
+	/// </summary>
+	/// <remarks>
+	/// Even though <see cref="AssetPair{TKey, TValue}"/> inherits from <see cref="IEquatable{T}"/>, it might not be suitable to equate.
+	/// It uses <see cref="EqualityComparer{T}.Default"/> to compare the keys and values.
+	/// </remarks>
+	public virtual bool Equatable => Children.All(c => c.Equatable);
 
 	public static Node Create(TypeSignature type, Node parent)
 	{

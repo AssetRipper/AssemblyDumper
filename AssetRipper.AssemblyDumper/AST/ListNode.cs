@@ -20,6 +20,11 @@ internal sealed class ListNode : SingleNode<Node>
 	}
 
 	public override GenericInstanceTypeSignature TypeSignature { get; }
+	public TypeSignature ElementTypeSignature => TypeSignature.TypeArguments[0];
+	/// <summary>
+	/// <see cref="AssetList{T}"/> does not implement <see cref="IEquatable{T}"/>.
+	/// </summary>
+	public override bool Equatable => false;
 
 	public IMethodDefOrRef DefaultConstructor => MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, TypeSignature, defaultConstructor.Value);
 	public IMethodDefOrRef GetCount => MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, TypeSignature, getCount.Value);

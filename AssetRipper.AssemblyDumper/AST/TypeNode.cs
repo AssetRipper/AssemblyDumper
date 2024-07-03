@@ -18,4 +18,9 @@ internal sealed class TypeNode : Node
 	public override IReadOnlyList<FieldNode> Children { get; }
 
 	public override TypeSignature TypeSignature => ClassInstance.Type.ToTypeSignature();
+
+	/// <summary>
+	/// We generate the equality comparison for the type if it has no PPtrs.
+	/// </summary>
+	public override bool Equatable => !AnyPPtrs;
 }
