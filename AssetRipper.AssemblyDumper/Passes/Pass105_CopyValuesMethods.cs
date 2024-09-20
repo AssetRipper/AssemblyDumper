@@ -397,12 +397,25 @@ namespace AssetRipper.AssemblyDumper.Passes
 						if (classProperty.BackingField is not null)
 						{
 							TypeSignature fieldTypeSignature = classProperty.BackingField.Signature!.FieldType;
-							if (fieldTypeSignature is CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
+							if (fieldTypeSignature is CorLibTypeSignature)
 							{
 								processor.Add(CilOpCodes.Ldarg_0);
 								processor.Add(CilOpCodes.Ldarg_1);
 								processor.Add(CilOpCodes.Callvirt, classProperty.Base.Definition.GetMethod!);
 								processor.Add(CilOpCodes.Stfld, classProperty.BackingField);
+							}
+							else if (fieldTypeSignature is TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
+							{
+								// m_Field = source.Property ?? Utf8String.Empty;
+								CilInstructionLabel stfldLabel = new();
+								processor.Add(CilOpCodes.Ldarg_0);
+								processor.Add(CilOpCodes.Ldarg_1);
+								processor.Add(CilOpCodes.Callvirt, classProperty.Base.Definition.GetMethod!);
+								processor.Add(CilOpCodes.Dup);
+								processor.Add(CilOpCodes.Brtrue, stfldLabel);
+								processor.Add(CilOpCodes.Pop);
+								processor.Add(CilOpCodes.Call, new MemberReference(fieldTypeSignature.ToTypeDefOrRef(), "get_Empty", MethodSignature.CreateStatic(fieldTypeSignature)));
+								stfldLabel.Instruction = processor.Add(CilOpCodes.Stfld, classProperty.BackingField);
 							}
 							else if (fieldTypeSignature is SzArrayTypeSignature arrayTypeSignature)
 							{
