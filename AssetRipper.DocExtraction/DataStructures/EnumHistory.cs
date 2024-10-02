@@ -1,4 +1,4 @@
-﻿using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
+﻿using AsmResolver.PE.DotNet.Metadata.Tables;
 using AssetRipper.AssemblyDumper.Utils;
 using AssetRipper.DocExtraction.Extensions;
 using AssetRipper.DocExtraction.MetaData;

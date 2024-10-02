@@ -1,5 +1,5 @@
 ﻿using AsmResolver.DotNet;
-using AsmResolver.DotNet.Signatures.Types;
+using AsmResolver.DotNet.Signatures;
 using AssetRipper.DocExtraction.Extensions;
 using AssetRipper.DocExtraction.MetaData;
 

@@ -68,7 +68,7 @@ namespace AssetRipper.AssemblyDumper
 			referenceDirectory = "";
 			for (int i = 50; i >= 0; i--)
 			{
-				string path = @$"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.{i}\ref\net8.0\";
+				string path = @$"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\9.0.{i}\ref\net9.0\";
 				if (Directory.Exists(path))
 				{
 					referenceDirectory = path;
@@ -85,7 +85,7 @@ namespace AssetRipper.AssemblyDumper
 			UnityVersion[] sourceVersions,
 			Dictionary<int, VersionedList<UniversalClass>> classes,
 			UniversalCommonString commonString)
-			: base(AssemblyName, new Version(0, 0, 0, 0), KnownCorLibs.SystemRuntime_v8_0_0_0)
+			: base(AssemblyName, new Version(0, 0, 0, 0), KnownCorLibs.SystemRuntime_v9_0_0_0)
 		{
 			SourceVersions = sourceVersions;
 			CommonString = commonString;
@@ -119,7 +119,7 @@ namespace AssetRipper.AssemblyDumper
 			UniversalCommonString commonString)
 		{
 			_instance = new SharedState(sourceVersions, classes, commonString);
-			_instance.AddTargetFrameworkAttribute(".NET 8.0");
+			_instance.AddTargetFrameworkAttribute(".NET 9.0");
 		}
 
 		private void AddReferenceModules()
