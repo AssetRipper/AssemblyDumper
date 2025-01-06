@@ -76,6 +76,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 					{
 						property.AddDebuggerBrowsableNeverAttribute();//Dummy properties should not be visible in the debugger.
 					}
+					else if (classProperty.Name == "Name_R")
+					{
+						property.AddDebuggerBrowsableNeverAttribute();//Name_R is redundant in the debugger because a Name property exists.
+					}
 				}
 			}
 		}

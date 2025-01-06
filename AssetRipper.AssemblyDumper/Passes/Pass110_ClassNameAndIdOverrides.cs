@@ -35,6 +35,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 			processor.Add(CilOpCodes.Ldstr, className);
 			processor.Add(CilOpCodes.Ret);
+			property.AddDebuggerBrowsableNeverAttribute();
 		}
 
 		private static void AddSerializedVersionOverride(this TypeDefinition type, int version)
@@ -43,6 +44,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 			processor.Add(CilOpCodes.Ldc_I4, version);
 			processor.Add(CilOpCodes.Ret);
+			property.AddDebuggerBrowsableNeverAttribute();
 		}
 
 		private static void AddFlowMappedInYamlOverride(this TypeDefinition type, bool flowMapped)
@@ -51,6 +53,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
 			processor.Add(flowMapped ? CilOpCodes.Ldc_I4_1 : CilOpCodes.Ldc_I4_0);
 			processor.Add(CilOpCodes.Ret);
+			property.AddDebuggerBrowsableNeverAttribute();
 		}
 
 		private static int GetSerializedVersion(GeneratedClassInstance instance)
