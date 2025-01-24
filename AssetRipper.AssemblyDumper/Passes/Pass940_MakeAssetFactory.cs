@@ -99,6 +99,30 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					processor.AddThrowAbstractClassException();
 				}
+				else if (tuple.ClassID == 194) // Old nav mesh
+				{
+					// See pass 1 for more information.
+
+					CilInstructionLabel ldNullLabel = new();
+					CilInstructionLabel returnLabel = new();
+
+					processor.AddIsGreaterOrEqualToVersion(versionParameter, new UnityVersion(5));
+					processor.Add(CilOpCodes.Brtrue, ldNullLabel);
+
+					processor.Add(CilOpCodes.Ldarg, assetInfoParameter);
+
+					if (tuple.HasVersionParameter)
+					{
+						processor.Add(CilOpCodes.Ldarg, versionParameter);
+					}
+
+					processor.Add(CilOpCodes.Call, tuple.AssetInfoMethod);
+					processor.Add(CilOpCodes.Br, returnLabel);
+
+					ldNullLabel.Instruction = processor.Add(CilOpCodes.Ldnull);
+
+					returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+				}
 				else
 				{
 					processor.Add(CilOpCodes.Ldarg, assetInfoParameter);
