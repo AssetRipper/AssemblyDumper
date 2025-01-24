@@ -2,7 +2,7 @@
 {
 	public static class MethodCreator
 	{
-		public static MethodDefinition AddMethod(this TypeDefinition type, string methodName, MethodAttributes methodAttributes, TypeSignature returnType)
+		public static MethodDefinition AddMethod(this TypeDefinition type, string? methodName, MethodAttributes methodAttributes, TypeSignature returnType)
 		{
 			MethodDefinition method = CreateMethod(methodName, methodAttributes, returnType);
 			type.Methods.Add(method);
@@ -41,7 +41,7 @@
 		/// <param name="moduleReference">The native module this method references</param>
 		/// <param name="attributes">The implementation attributes for this method</param>
 		/// <returns></returns>
-		public static MethodDefinition AddExternalMethod(this TypeDefinition declaringType, TypeSignature returnType, string name, ModuleReference moduleReference, ImplementationMapAttributes attributes)
+		public static MethodDefinition AddExternalMethod(this TypeDefinition declaringType, TypeSignature returnType, string? name, ModuleReference moduleReference, ImplementationMapAttributes attributes)
 		{
 			MethodSignature signature = MethodSignature.CreateStatic(returnType);
 			MethodDefinition method = new MethodDefinition(
@@ -57,7 +57,7 @@
 			return method;
 		}
 
-		public static MethodDefinition CreateMethod(string methodName, MethodAttributes methodAttributes, TypeSignature returnType)
+		public static MethodDefinition CreateMethod(string? methodName, MethodAttributes methodAttributes, TypeSignature returnType)
 		{
 			bool isStatic = (methodAttributes & MethodAttributes.Static) != 0;
 			MethodSignature methodSignature = isStatic
@@ -70,12 +70,12 @@
 			return result;
 		}
 
-		public static Parameter AddParameter(this MethodDefinition method, TypeSignature parameterSignature, string parameterName)
+		public static Parameter AddParameter(this MethodDefinition method, TypeSignature parameterSignature, string? parameterName)
 		{
 			return method.AddParameter(parameterSignature, parameterName, out _);
 		}
 
-		public static Parameter AddParameter(this MethodDefinition method, TypeSignature parameterSignature, string parameterName, out ParameterDefinition parameterDefinition)
+		public static Parameter AddParameter(this MethodDefinition method, TypeSignature parameterSignature, string? parameterName, out ParameterDefinition parameterDefinition)
 		{
 			parameterDefinition = new ParameterDefinition((ushort)(method.Signature!.ParameterTypes.Count + 1), parameterName, default);
 			method.Signature.ParameterTypes.Add(parameterSignature);

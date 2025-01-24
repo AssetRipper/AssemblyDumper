@@ -10,7 +10,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 {
 	public static class Pass940_MakeAssetFactory
 	{
-		private const string MethodName = "Create";
 		private const MethodAttributes CreateAssetAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static;
 #nullable disable
 		private static TypeSignature iunityObjectBase;
@@ -54,8 +53,50 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			TypeDefinition factoryDefinition = CreateFactoryDefinition();
 			List<GeneratedMethodInformation> assetInfoMethods = AddAllClassCreationMethods();
-			MethodDefinition creationMethod = factoryDefinition.AddAssetInfoCreationMethod(assetInfoMethods);
+			MethodDefinition creationMethod = factoryDefinition.AddAssetInfoCreationMethod("Create", assetInfoMethods);
 			AddMethodWithoutVersionParameter(creationMethod);
+
+			// CreateSerialized
+			{
+				// On Unity 5 and later, we want to return null for ClassID 194 (NavMesh).
+				// It was made obsolete and contains no data, so it's safe to ignore.
+				// This is done in CreateSerialized so that version changing can still use the Create method.
+				// See pass 1 for more information.
+				MethodDefinition method = factoryDefinition.AddMethod("CreateSerialized", CreateAssetAttributes, iunityObjectBase);
+				Parameter assetInfoParameter = method.AddParameter(assetInfoType, "info");
+				Parameter versionParameter = method.AddParameter(unityVersionType, "version");
+
+				CilInstructionCollection processor = method.GetProcessor();
+
+				CilLocalVariable switchCondition = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+				processor.Add(CilOpCodes.Ldarga, assetInfoParameter);
+				IMethodDefOrRef propertyRef = SharedState.Instance.Importer.ImportMethod<AssetInfo>(m => m.Name == $"get_{nameof(AssetInfo.ClassID)}");
+				processor.Add(CilOpCodes.Call, propertyRef);
+				processor.Add(CilOpCodes.Stloc, switchCondition);
+
+				CilInstructionLabel defaultLabel = new();
+				CilInstructionLabel returnLabel = new();
+
+				processor.Add(CilOpCodes.Ldloc, switchCondition);
+				processor.Add(CilOpCodes.Ldc_I4, 194);
+				processor.Add(CilOpCodes.Ceq);
+				processor.Add(CilOpCodes.Brfalse, defaultLabel);
+
+				processor.AddIsGreaterOrEqualToVersion(versionParameter, new UnityVersion(5));
+				processor.Add(CilOpCodes.Brfalse, defaultLabel);
+
+				processor.Add(CilOpCodes.Ldnull);
+				processor.Add(CilOpCodes.Br, returnLabel);
+
+				defaultLabel.Instruction = processor.Add(CilOpCodes.Nop);
+				processor.Add(CilOpCodes.Ldarg_0);
+				processor.Add(CilOpCodes.Ldarg_1);
+				processor.Add(CilOpCodes.Call, creationMethod);
+
+				returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+
+				AddMethodWithoutVersionParameter(method);
+			}
 		}
 
 		private static TypeDefinition CreateFactoryDefinition()
@@ -63,9 +104,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.RootNamespace, "AssetFactory");
 		}
 
-		private static MethodDefinition AddAssetInfoCreationMethod(this TypeDefinition factoryDefinition, List<GeneratedMethodInformation> constructors)
+		private static MethodDefinition AddAssetInfoCreationMethod(this TypeDefinition factoryDefinition, string methodName, List<GeneratedMethodInformation> constructors)
 		{
-			MethodDefinition method = factoryDefinition.AddMethod(MethodName, CreateAssetAttributes, iunityObjectBase);
+			MethodDefinition method = factoryDefinition.AddMethod(methodName, CreateAssetAttributes, iunityObjectBase);
 			Parameter assetInfoParameter = method.AddParameter(assetInfoType, "info");
 			Parameter versionParameter = method.AddParameter(unityVersionType, "version");
 			method.GetProcessor().EmitIdSwitchStatement(assetInfoParameter, versionParameter, constructors);
@@ -99,30 +140,6 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					processor.AddThrowAbstractClassException();
 				}
-				else if (tuple.ClassID == 194) // Old nav mesh
-				{
-					// See pass 1 for more information.
-
-					CilInstructionLabel ldNullLabel = new();
-					CilInstructionLabel returnLabel = new();
-
-					processor.AddIsGreaterOrEqualToVersion(versionParameter, new UnityVersion(5));
-					processor.Add(CilOpCodes.Brtrue, ldNullLabel);
-
-					processor.Add(CilOpCodes.Ldarg, assetInfoParameter);
-
-					if (tuple.HasVersionParameter)
-					{
-						processor.Add(CilOpCodes.Ldarg, versionParameter);
-					}
-
-					processor.Add(CilOpCodes.Call, tuple.AssetInfoMethod);
-					processor.Add(CilOpCodes.Br, returnLabel);
-
-					ldNullLabel.Instruction = processor.Add(CilOpCodes.Ldnull);
-
-					returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
-				}
 				else
 				{
 					processor.Add(CilOpCodes.Ldarg, assetInfoParameter);
@@ -147,7 +164,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			//The main method has two parameters: UnityVersion and AssetInfo.
 			//This generates a second method with one parameter: AssetInfo.
 			//UnityVersion is pulled from AssetInfo.Collection.Version.
-			MethodDefinition method = mainMethod.DeclaringType!.AddMethod(MethodName, mainMethod.Attributes, mainMethod.Signature!.ReturnType);
+			MethodDefinition method = mainMethod.DeclaringType!.AddMethod(mainMethod.Name, mainMethod.Attributes, mainMethod.Signature!.ReturnType);
 			Parameter parameter = method.AddParameter(assetInfoType, "info");
 			CilInstructionCollection processor = method.GetProcessor();
 
@@ -245,7 +262,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static MethodDefinition ImplementSingleCreationMethod(ClassGroupBase group, TypeDefinition factoryClass)
 		{
-			MethodDefinition method = factoryClass.AddMethod(MethodName, CreateAssetAttributes, group.GetSingularTypeOrInterface().ToTypeSignature());
+			MethodDefinition method = factoryClass.AddMethod("Create", CreateAssetAttributes, group.GetSingularTypeOrInterface().ToTypeSignature());
 			CilInstructionCollection processor = method.GetProcessor();
 			Parameter? assetInfoParameter = group is SubclassGroup ? null : method.AddParameter(assetInfoType, "info");
 			processor.AddReturnNewConstructedObject(group.Instances[0].Type, assetInfoParameter);
@@ -254,7 +271,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static MethodDefinition ImplementNormalCreationMethod(ClassGroupBase group, TypeDefinition factoryClass)
 		{
-			MethodDefinition method = factoryClass.AddMethod(MethodName, CreateAssetAttributes, group.GetSingularTypeOrInterface().ToTypeSignature());
+			MethodDefinition method = factoryClass.AddMethod("Create", CreateAssetAttributes, group.GetSingularTypeOrInterface().ToTypeSignature());
 			Parameter? assetInfoParameter = group is SubclassGroup ? null : method.AddParameter(assetInfoType, "info");
 			Parameter versionParameter = method.AddParameter(unityVersionType, "version");
 			CilInstructionCollection processor = method.GetProcessor();
@@ -264,7 +281,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static MethodDefinition ImplementImporterCreationMethod(ClassGroupBase group, TypeDefinition factoryClass, MethodDefinition assetInfoMethod, bool hasVersion)
 		{
-			MethodDefinition method = factoryClass.AddMethod(MethodName,
+			MethodDefinition method = factoryClass.AddMethod("Create",
 				CreateAssetAttributes,
 				group.GetSingularTypeOrInterface().ToTypeSignature());
 
