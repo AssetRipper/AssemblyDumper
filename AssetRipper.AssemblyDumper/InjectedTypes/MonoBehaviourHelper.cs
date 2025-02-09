@@ -59,5 +59,30 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 		{
 			structure?.Reset();
 		}
+
+		public static void CopyStructureValues(ref IUnityAssetBase structure, IUnityAssetBase source, PPtrConverter converter)
+		{
+			if (structure != null)
+			{
+				structure.CopyValues(source, converter);
+			}
+			else if (source is null)
+			{
+				// Both are null, so everything is fine.
+			}
+			else if (source is ICloneable cloneable)
+			{
+				structure = (IUnityAssetBase)cloneable.Clone();
+				if (converter.SourceCollection != converter.TargetCollection)
+				{
+					// We do this copy because we need to fix any PPtrs.
+					structure.CopyValues(source, converter);
+				}
+			}
+			else
+			{
+				throw new NotSupportedException("Structure is not cloneable");
+			}
+		}
 	}
 }

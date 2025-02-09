@@ -30,7 +30,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			const string propertyName = "Structure";
 			const string fieldName = "m_" + propertyName;
 
-			group.Interface.AddFullProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType)
+			PropertyDefinition interfaceProperty = group.Interface.AddFullProperty(propertyName, InterfaceUtils.InterfacePropertyDeclaration, propertyType)
 				.AddNullableAttributesForMaybeNull();
 
 			foreach (GeneratedClassInstance instance in group.Instances)
@@ -52,6 +52,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 				instance.Type.AddStructureFetchDependencies(structureField, monoBehaviourHelperType);
 
 				instance.Type.AddStructureReset(structureField, monoBehaviourHelperType);
+
+				instance.Type.AddStructureCopyValues(structureField, interfaceProperty, monoBehaviourHelperType);
 			}
 		}
 
@@ -122,6 +124,21 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldarg_0);//this
 			processor.Add(CilOpCodes.Ldfld, field);//the structure field
 			processor.Add(CilOpCodes.Call, resetMethod);
+			processor.Add(CilOpCodes.Ret);
+		}
+
+		private static void AddStructureCopyValues(this TypeDefinition type, FieldDefinition field, PropertyDefinition interfaceProperty, TypeDefinition monoBehaviourHelperType)
+		{
+			MethodDefinition method = type.Methods.Single(m => m.Name == nameof(UnityAssetBase.CopyValues) && m.IsFinal && m.Parameters.Count == 2);
+			IMethodDefOrRef copyValuesMethod = monoBehaviourHelperType.Methods.Single(m => m.Name == nameof(MonoBehaviourHelper.CopyStructureValues));
+			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
+			processor.Pop(); //pop the return value
+			processor.Add(CilOpCodes.Ldarg_0);//this
+			processor.Add(CilOpCodes.Ldflda, field);//the structure field
+			processor.Add(CilOpCodes.Ldarg_1);//source
+			processor.Add(CilOpCodes.Callvirt, interfaceProperty.GetMethod!);//the Structure property
+			processor.Add(CilOpCodes.Ldarg_2);//converter
+			processor.Add(CilOpCodes.Call, copyValuesMethod);
 			processor.Add(CilOpCodes.Ret);
 		}
 	}
