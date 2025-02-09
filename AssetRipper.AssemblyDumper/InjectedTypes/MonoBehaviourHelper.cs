@@ -1,4 +1,5 @@
 ﻿using AssetRipper.Assets;
+using AssetRipper.Assets.Metadata;
 using AssetRipper.Assets.Traversal;
 
 #nullable disable
@@ -46,6 +47,11 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 					walker.ExitField(asset, FieldName);
 				}
 			}
+		}
+
+		public static IEnumerable<(string, PPtr)> MaybeAppendStructureDependencies(IEnumerable<(string, PPtr)> dependencies, IUnityAssetBase structure)
+		{
+			return structure == null ? dependencies : dependencies.Concat(structure.FetchDependencies());
 		}
 	}
 }

@@ -1,4 +1,5 @@
-﻿using AssetRipper.AssemblyCreationTools.Fields;
+﻿using AssetRipper.AssemblyCreationTools;
+using AssetRipper.AssemblyCreationTools.Fields;
 using AssetRipper.AssemblyCreationTools.Methods;
 using AssetRipper.AssemblyCreationTools.Types;
 using AssetRipper.AssemblyDumper.Documentation;
@@ -47,6 +48,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 				instance.Type.AddWalkStructure(structureField, monoBehaviourHelperType, "Editor");
 				instance.Type.AddWalkStructure(structureField, monoBehaviourHelperType, "Release");
 				instance.Type.AddWalkStructure(structureField, monoBehaviourHelperType, "Standard");
+
+				instance.Type.AddStructureFetchDependencies(structureField, monoBehaviourHelperType);
 			}
 		}
 
@@ -94,6 +97,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 				}
 				throw new Exception("No nop found");
 			}
+		}
+
+		private static void AddStructureFetchDependencies(this TypeDefinition type, FieldDefinition field, TypeDefinition monoBehaviourHelperType)
+		{
+			MethodDefinition method = type.Methods.Single(m => m.Name == nameof(UnityAssetBase.FetchDependencies));
+			IMethodDefOrRef fetchDependenciesMethod = monoBehaviourHelperType.Methods.Single(m => m.Name == nameof(MonoBehaviourHelper.MaybeAppendStructureDependencies));
+			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
+			processor.Pop(); //pop the return value
+			processor.Add(CilOpCodes.Ldarg_0);//this
+			processor.Add(CilOpCodes.Ldfld, field);//the structure field
+			processor.Add(CilOpCodes.Call, fetchDependenciesMethod);
+			processor.Add(CilOpCodes.Ret);
 		}
 	}
 }
