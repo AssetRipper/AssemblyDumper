@@ -1,4 +1,5 @@
 ﻿using AssetRipper.Assets;
+using AssetRipper.Assets.Cloning;
 using AssetRipper.Assets.Metadata;
 using AssetRipper.Assets.Traversal;
 
@@ -52,6 +53,11 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 		public static IEnumerable<(string, PPtr)> MaybeAppendStructureDependencies(IEnumerable<(string, PPtr)> dependencies, IUnityAssetBase structure)
 		{
 			return structure == null ? dependencies : dependencies.Concat(structure.FetchDependencies());
+		}
+
+		public static void ResetStructure(IUnityAssetBase structure)
+		{
+			structure?.Reset();
 		}
 	}
 }

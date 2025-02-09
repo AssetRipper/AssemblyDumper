@@ -50,6 +50,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 				instance.Type.AddWalkStructure(structureField, monoBehaviourHelperType, "Standard");
 
 				instance.Type.AddStructureFetchDependencies(structureField, monoBehaviourHelperType);
+
+				instance.Type.AddStructureReset(structureField, monoBehaviourHelperType);
 			}
 		}
 
@@ -108,6 +110,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 			processor.Add(CilOpCodes.Ldarg_0);//this
 			processor.Add(CilOpCodes.Ldfld, field);//the structure field
 			processor.Add(CilOpCodes.Call, fetchDependenciesMethod);
+			processor.Add(CilOpCodes.Ret);
+		}
+
+		private static void AddStructureReset(this TypeDefinition type, FieldDefinition field, TypeDefinition monoBehaviourHelperType)
+		{
+			MethodDefinition method = type.Methods.Single(m => m.Name == nameof(UnityAssetBase.Reset));
+			IMethodDefOrRef resetMethod = monoBehaviourHelperType.Methods.Single(m => m.Name == nameof(MonoBehaviourHelper.ResetStructure));
+			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
+			processor.Pop(); //pop the return value
+			processor.Add(CilOpCodes.Ldarg_0);//this
+			processor.Add(CilOpCodes.Ldfld, field);//the structure field
+			processor.Add(CilOpCodes.Call, resetMethod);
 			processor.Add(CilOpCodes.Ret);
 		}
 	}
