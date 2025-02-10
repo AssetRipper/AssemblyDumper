@@ -146,6 +146,13 @@ internal static class Pass400_EqualityComparison
 		method.AddParameter(iunityAssetBase.ToTypeSignature(), "other");
 		method.AddParameter(assetEqualityComparer.ToTypeSignature(), "comparer");
 
+		MethodDefinition getTrueMethod = equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.GetTrue));
+		MethodDefinition getFalseMethod = equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.GetFalse));
+		MethodDefinition getNullMethod = equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.GetNull));
+
+		MethodDefinition isFalseMethod = equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.IsFalse));
+		MethodDefinition isNullMethod = equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.IsNull));
+
 		CilInstructionCollection processor = method.GetProcessor();
 
 		CilLocalVariable otherLocal = processor.AddLocalVariable(type.ToTypeSignature());
@@ -154,22 +161,23 @@ internal static class Pass400_EqualityComparison
 		processor.Add(CilOpCodes.Stloc, otherLocal);
 
 		CilLocalVariable resultLocal = processor.AddLocalVariable(trileanTypeSignature);
-		processor.Add(CilOpCodes.Call, equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.GetTrue)));
+		processor.Add(CilOpCodes.Call, getTrueMethod);
 		processor.Add(CilOpCodes.Stloc, resultLocal);
-
-		CilInstructionLabel returnLabel = new();
-		CilInstructionLabel falseLabel = new();
 
 		foreach (FieldNode field in root.Children)
 		{
 			if (!field.AnyPPtrs)
 			{
+				CilInstructionLabel nextFieldLabel = new();
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Ldfld, field.Field);
 				processor.Add(CilOpCodes.Ldloc, otherLocal);
 				processor.Add(CilOpCodes.Ldfld, field.Field);
 				processor.Add(CilOpCodes.Call, GetEqualsMethod(equalityComparisonHelper, field));
-				processor.Add(CilOpCodes.Brfalse, falseLabel);
+				processor.Add(CilOpCodes.Brtrue, nextFieldLabel);
+				processor.Add(CilOpCodes.Call, getFalseMethod);
+				processor.Add(CilOpCodes.Ret);
+				nextFieldLabel.Instruction = processor.Add(CilOpCodes.Nop);
 			}
 			else
 			{
@@ -183,25 +191,26 @@ internal static class Pass400_EqualityComparison
 				processor.Add(CilOpCodes.Call, GetAddToEqualityComparerMethod(equalityComparisonHelper, field));
 				processor.Add(CilOpCodes.Stloc, fieldResultLocal);
 
+				CilInstructionLabel notFalseLabel = new();
 				processor.Add(CilOpCodes.Ldloc, fieldResultLocal);
-				processor.Add(CilOpCodes.Call, equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.IsFalse)));
-				processor.Add(CilOpCodes.Brtrue, falseLabel);
+				processor.Add(CilOpCodes.Call, isFalseMethod);
+				processor.Add(CilOpCodes.Brfalse, notFalseLabel);
+				processor.Add(CilOpCodes.Call, getFalseMethod);
+				processor.Add(CilOpCodes.Ret);
+				notFalseLabel.Instruction = processor.Add(CilOpCodes.Nop);
 
 				CilInstructionLabel nextFieldLabel = new();
 				processor.Add(CilOpCodes.Ldloc, fieldResultLocal);
-				processor.Add(CilOpCodes.Call, equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.IsNull)));
+				processor.Add(CilOpCodes.Call, isNullMethod);
 				processor.Add(CilOpCodes.Brfalse, nextFieldLabel);
-				processor.Add(CilOpCodes.Call, equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.GetNull)));
+				processor.Add(CilOpCodes.Call, getNullMethod);
 				processor.Add(CilOpCodes.Stloc, resultLocal);
 				nextFieldLabel.Instruction = processor.Add(CilOpCodes.Nop);
 			}
 		}
 
 		processor.Add(CilOpCodes.Ldloc, resultLocal);
-		processor.Add(CilOpCodes.Br, returnLabel);
-
-		falseLabel.Instruction = processor.Add(CilOpCodes.Call, equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.GetFalse)));
-		returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+		processor.Add(CilOpCodes.Ret);
 	}
 
 	private static void OverrideAddToEqualityComparer(GeneratedClassInstance instance, MethodDefinition objectEqualsMethod, ITypeDefOrRef iunityAssetBase, ITypeDefOrRef assetEqualityComparer, TypeDefinition equalityComparisonHelper)

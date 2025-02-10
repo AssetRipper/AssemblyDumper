@@ -20,19 +20,19 @@ internal static class EqualityComparisonHelper
 	public static bool? GetFalse() => false;
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static bool IsNull(bool? value) => value == null;
+	public static bool IsNull(this bool? value) => value == null;
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static bool IsNotNull(bool? value) => value != null;
+	public static bool IsNotNull(this bool? value) => value != null;
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static bool IsTrue(bool? value) => value == true;
+	public static bool IsTrue(this bool? value) => value == true;
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static bool IsFalse(bool? value) => value == false;
+	public static bool IsFalse(this bool? value) => value == false;
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static bool? ToTrilean(bool value) => value;
+	public static bool? ToTrilean(this bool value) => value;
 
 	public static bool ByteArrayEquals(byte[] x, byte[] y)
 	{
