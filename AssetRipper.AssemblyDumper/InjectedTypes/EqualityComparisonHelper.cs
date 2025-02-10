@@ -10,20 +10,28 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes;
 
 internal static class EqualityComparisonHelper
 {
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static bool? GetNull() => null;
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static bool? GetTrue() => true;
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static bool? GetFalse() => false;
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static bool IsNull(bool? value) => value == null;
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static bool IsNotNull(bool? value) => value != null;
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static bool IsTrue(bool? value) => value == true;
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static bool IsFalse(bool? value) => value == false;
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static bool? ToTrilean(bool value) => value;
 
 	public static bool ByteArrayEquals(byte[] x, byte[] y)
@@ -103,6 +111,7 @@ internal static class EqualityComparisonHelper
 		return true;
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static bool? AssetEquals<T>(T x, T y, AssetEqualityComparer comparer) where T : IUnityAssetBase
 	{
 		return x.AddToEqualityComparer(y, comparer);
@@ -278,6 +287,7 @@ internal static class EqualityComparisonHelper
 		}
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static bool? MaybeAddDependentComparison(IPPtr x, IPPtr y, AssetEqualityComparer comparer)
 	{
 		return comparer.MaybeAddDependentComparison(x, y);
