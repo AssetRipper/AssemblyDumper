@@ -209,6 +209,40 @@ internal static class Pass400_EqualityComparison
 			}
 		}
 
+		if (root.ClassInstance.Group.ID is 114 or 2089858483) // MonoBehaviour or ScriptedImporter
+		{
+			MethodDefinition structureEqualsMethod = equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.MonoBehaviourStructureEquals));
+
+			// The structure field doesn't exist yet, so we work around that by creating a MemberReference.
+			MemberReference structureField = new MemberReference(type, "m_Structure", new FieldSignature(structureEqualsMethod.Signature!.ParameterTypes[0]));
+
+			CilLocalVariable fieldResultLocal = processor.AddLocalVariable(trileanTypeSignature);
+
+			processor.Add(CilOpCodes.Ldarg_0);
+			processor.Add(CilOpCodes.Ldfld, structureField);
+			processor.Add(CilOpCodes.Ldloc, otherLocal);
+			processor.Add(CilOpCodes.Ldfld, structureField);
+			processor.Add(CilOpCodes.Ldarg_2);
+			processor.Add(CilOpCodes.Call, structureEqualsMethod);
+			processor.Add(CilOpCodes.Stloc, fieldResultLocal);
+
+			CilInstructionLabel notFalseLabel = new();
+			processor.Add(CilOpCodes.Ldloc, fieldResultLocal);
+			processor.Add(CilOpCodes.Call, isFalseMethod);
+			processor.Add(CilOpCodes.Brfalse, notFalseLabel);
+			processor.Add(CilOpCodes.Call, getFalseMethod);
+			processor.Add(CilOpCodes.Ret);
+			notFalseLabel.Instruction = processor.Add(CilOpCodes.Nop);
+
+			CilInstructionLabel nextFieldLabel = new();
+			processor.Add(CilOpCodes.Ldloc, fieldResultLocal);
+			processor.Add(CilOpCodes.Call, isNullMethod);
+			processor.Add(CilOpCodes.Brfalse, nextFieldLabel);
+			processor.Add(CilOpCodes.Call, getNullMethod);
+			processor.Add(CilOpCodes.Stloc, resultLocal);
+			nextFieldLabel.Instruction = processor.Add(CilOpCodes.Nop);
+		}
+
 		processor.Add(CilOpCodes.Ldloc, resultLocal);
 		processor.Add(CilOpCodes.Ret);
 	}

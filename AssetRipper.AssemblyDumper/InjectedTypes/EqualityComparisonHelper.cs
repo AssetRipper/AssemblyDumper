@@ -292,6 +292,16 @@ internal static class EqualityComparisonHelper
 	{
 		return comparer.MaybeAddDependentComparison(x, y);
 	}
+
+	public static bool? MonoBehaviourStructureEquals(IUnityAssetBase x, IUnityAssetBase y, AssetEqualityComparer comparer)
+	{
+		return (x, y) switch
+		{
+			(not null, not null) => x.AddToEqualityComparer(y, comparer),
+			(null, null) => true,
+			_ => false,
+		};
+	}
 }
 
 #nullable enable
