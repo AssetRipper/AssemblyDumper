@@ -70,14 +70,9 @@ namespace AssetRipper.AssemblyDumper.InjectedTypes
 			{
 				// Both are null, so everything is fine.
 			}
-			else if (source is ICloneable cloneable)
+			else if (source is IDeepCloneable cloneable)
 			{
-				structure = (IUnityAssetBase)cloneable.Clone();
-				if (converter.SourceCollection != converter.TargetCollection)
-				{
-					// We do this copy because we need to fix any PPtrs.
-					structure.CopyValues(source, converter);
-				}
+				structure = cloneable.DeepClone(converter);
 			}
 			else
 			{
