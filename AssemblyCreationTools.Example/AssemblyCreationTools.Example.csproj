@@ -8,14 +8,6 @@
 		<RootNamespace>AssetRipper.AssemblyCreationTools.Example</RootNamespace>
 	</PropertyGroup>
 
-	<ItemGroup Condition="false">
-		<ProjectReference Include="..\..\AsmResolver\src\AsmResolver.DotNet\AsmResolver.DotNet.csproj" />
-	</ItemGroup>
-
-	<ItemGroup Condition="true">
-		<PackageReference Include="AsmResolver.DotNet" Version="6.0.0-beta.1" />
-	</ItemGroup>
-
 	<ItemGroup>
 	  <ProjectReference Include="..\AssemblyCreationTools\AssemblyCreationTools.csproj" />
 	</ItemGroup>

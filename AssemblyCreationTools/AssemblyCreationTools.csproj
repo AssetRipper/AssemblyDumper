@@ -5,13 +5,14 @@
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<RootNamespace>AssetRipper.AssemblyCreationTools</RootNamespace>
+		<UseLocalAsmResolver>false</UseLocalAsmResolver>
 	</PropertyGroup>
 
-	<ItemGroup Condition="false">
+	<ItemGroup Condition="$(UseLocalAsmResolver) == 'true'">
 		<ProjectReference Include="..\..\AsmResolver\src\AsmResolver.DotNet\AsmResolver.DotNet.csproj" />
 	</ItemGroup>
 
-	<ItemGroup Condition="true">
+	<ItemGroup Condition="$(UseLocalAsmResolver) == 'false'">
 		<PackageReference Include="AsmResolver.DotNet" Version="6.0.0-beta.1" />
 	</ItemGroup>
 
