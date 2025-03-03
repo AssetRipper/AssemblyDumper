@@ -7,8 +7,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 	{
 		public const string GuidName = "GUID";
 		public const string Utf8StringName = "Utf8String";
-		public const string NestedStringName = "NestedString";
-		public const string IntegerStringName = "IntegerString";
+		private const string PropertyNameName = "PropertyName";
 		private const string OffsetPtrName = "OffsetPtr";
 		private const string KeyframeName = "Keyframe";
 		private const string AnimationCurveName = "AnimationCurve";
@@ -648,12 +647,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			else if (subnode.TypeName == Utf8StringName)
 			{
 				//ExposedReferenceTable on late 2019 and after
-				node.TypeName = NestedStringName;
+				node.TypeName = PropertyNameName;
 			}
 			else if (subnode.TypeName == "SInt32")
 			{
 				//ExposedReferenceTable on 2017 - early 2019
-				node.TypeName = IntegerStringName;
+				node.TypeName = PropertyNameName;
 			}
 			else
 			{
