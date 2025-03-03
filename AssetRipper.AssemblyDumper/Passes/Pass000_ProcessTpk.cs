@@ -10,15 +10,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		public static void IntitializeSharedState(string tpkPath)
 		{
-			TpkTypeTreeBlob blob = ReadTpkFile(tpkPath);
+			TpkTypeTreeBlob blob = ReadAndProcessTpkFile(tpkPath);
 			Console.WriteLine($"\tCreation time: {blob.CreationTime.ToLocalTime()}");
-			Dictionary<UnityVersion, UnityVersion> versionRedirectDictionary = MakeVersionRedirectDictionary(blob.Versions);
 			Dictionary<int, VersionedList<UniversalClass>> classes = new();
 			foreach (TpkClassInformation classInfo in blob.ClassInformation)
 			{
 				int id = classInfo.ID;
 
-				if (IsUnacceptable(id) || HasNoDataAfterMinimumVersion(classInfo))
+				if (id is 129) // PlayerSettings
 				{
 					continue;
 				}
@@ -28,27 +27,62 @@ namespace AssetRipper.AssemblyDumper.Passes
 				for (int i = 0; i < classInfo.Classes.Count; i++)
 				{
 					KeyValuePair<UnityVersion, TpkUnityClass?> pair = classInfo.Classes[i];
-					UnityVersion version = versionRedirectDictionary[pair.Key];
-					if (version == MinimumVersion && i < classInfo.Classes.Count - 1 && versionRedirectDictionary[classInfo.Classes[i + 1].Key] == MinimumVersion)
-					{
-						//Skip. This TpkUnityClass conflicts with the next one because they're both redirected to the minimum version.
-					}
-					else if (pair.Value is not null)
+					if (pair.Value is not null)
 					{
 						UniversalClass universalClass = UniversalClass.FromTpkUnityClass(pair.Value, id, blob.StringBuffer, blob.NodeBuffer);
-						classList.Add(version, universalClass);
+						classList.Add(pair.Key, universalClass);
 					}
-					else if (classList.Count is not 0)
+					else
 					{
-						classList.Add(version, null);
+						classList.Add(pair.Key, null);
 					}
 				}
 			}
 			UniversalCommonString commonString = UniversalCommonString.FromBlob(blob);
 			UnityVersion[] usedVersions = blob.Versions.Where(v => v >= MinimumVersion).ToArray();
-			SharedState.Initialize(usedVersions, classes, commonString);
+			SharedState.Initialize(usedVersions, classes, commonString, WriteTpkFile(blob));
+		}
 
-			static bool IsUnacceptable(int typeId) => typeId is >= 100000 and <= 100011 || typeId is 129;
+		private static TpkTypeTreeBlob ReadAndProcessTpkFile(string tpkPath)
+		{
+			TpkTypeTreeBlob blob = ReadTpkFile(tpkPath);
+			Dictionary<UnityVersion, UnityVersion> versionRedirectDictionary = MakeVersionRedirectDictionary(blob.Versions);
+			for (int i = blob.ClassInformation.Count - 1; i >= 0; i--)
+			{
+				TpkClassInformation classInfo = blob.ClassInformation[i];
+
+				if (IsUnacceptable(classInfo.ID) || HasNoDataAfterMinimumVersion(classInfo))
+				{
+					blob.ClassInformation.RemoveAt(i);
+				}
+			}
+			foreach (TpkClassInformation classInfo in blob.ClassInformation)
+			{
+				int i = 0;
+				while (i < classInfo.Classes.Count)
+				{
+					KeyValuePair<UnityVersion, TpkUnityClass?> pair = classInfo.Classes[i];
+					UnityVersion version = versionRedirectDictionary[pair.Key];
+					if (version == MinimumVersion && i < classInfo.Classes.Count - 1 && versionRedirectDictionary[classInfo.Classes[i + 1].Key] == MinimumVersion)
+					{
+						//Delete. This TpkUnityClass conflicts with the next one because they're both redirected to the minimum version.
+						classInfo.Classes.RemoveAt(i);
+					}
+					else
+					{
+						classInfo.Classes[i] = new(version, pair.Value);
+						i++;
+					}
+				}
+
+				while (classInfo.Classes[0].Value is null)
+				{
+					classInfo.Classes.RemoveAt(0);
+				}
+			}
+			return blob;
+
+			static bool IsUnacceptable(int typeId) => typeId is >= 100000 and <= 100011;
 
 			static bool HasNoDataAfterMinimumVersion(TpkClassInformation info)
 			{
@@ -63,6 +97,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return blob is TpkTypeTreeBlob typeTreeBlob
 				? typeTreeBlob
 				: throw new NotSupportedException($"Blob cannot be type {blob.GetType()}");
+		}
+
+		private static byte[] WriteTpkFile(TpkTypeTreeBlob blob)
+		{
+			return TpkFile.FromBlob(blob, TpkCompressionType.Brotli).WriteToMemory();
 		}
 
 		private static Dictionary<UnityVersion, UnityVersion> MakeVersionRedirectDictionary(List<UnityVersion> list)

@@ -38,6 +38,13 @@ namespace AssetRipper.AssemblyDumper
 		public UnityVersion MinSourceVersion => SourceVersions[0];
 		public UnityVersion MaxVersion { get; }
 		public UnityVersion[] SourceVersions { get; }
+		/// <summary>
+		/// The processed type tree data
+		/// </summary>
+		/// <remarks>
+		/// This is different from the original type tree data. In particular, it removes unnecessary types and moves versions to the inferred boundaries.
+		/// </remarks>
+		public byte[] TpkData { get; }
 		public UniversalCommonString CommonString { get; }
 		public HistoryFile HistoryFile { get; }
 		public Dictionary<int, VersionedList<UniversalClass>> ClassInformation { get; }
@@ -84,12 +91,14 @@ namespace AssetRipper.AssemblyDumper
 		private SharedState(
 			UnityVersion[] sourceVersions,
 			Dictionary<int, VersionedList<UniversalClass>> classes,
-			UniversalCommonString commonString)
+			UniversalCommonString commonString,
+			byte[] tpkData)
 			: base(AssemblyName, new Version(0, 0, 0, 0), KnownCorLibs.SystemRuntime_v9_0_0_0)
 		{
 			SourceVersions = sourceVersions;
 			CommonString = commonString;
 			ClassInformation = classes;
+			TpkData = tpkData;
 			HistoryFile = HistoryFile.FromFile("consolidated.json");
 
 			//input array is sequentially ordered
@@ -111,15 +120,18 @@ namespace AssetRipper.AssemblyDumper
 			PrivateImplementationDetails = new TypeDefinition(null, "<PrivateImplementationDetails>", TypeAttributes.NotPublic | TypeAttributes.AutoLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed);
 			Module.TopLevelTypes.Add(PrivateImplementationDetails);
 			PrivateImplementationDetails.AddCompilerGeneratedAttribute(Importer);
+			TpkData = tpkData;
 		}
 
 		public static void Initialize(
 			UnityVersion[] sourceVersions,
 			Dictionary<int, VersionedList<UniversalClass>> classes,
-			UniversalCommonString commonString)
+			UniversalCommonString commonString,
+			byte[] tpkData)
 		{
-			_instance = new SharedState(sourceVersions, classes, commonString);
+			_instance = new SharedState(sourceVersions, classes, commonString, tpkData);
 			_instance.AddTargetFrameworkAttribute(".NET 9.0");
+			File.WriteAllBytes("processed.tpk", tpkData);
 		}
 
 		private void AddReferenceModules()

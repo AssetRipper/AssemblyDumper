@@ -18,7 +18,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			//Type Tree
 			{
 				TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.RootNamespace, "SourceTpk");
-				FieldDefinition field = CreateInternalStorageClass("SourceTpkData", File.ReadAllBytes("type_tree.tpk"));
+				FieldDefinition field = CreateInternalStorageClass("SourceTpkData", SharedState.Instance.TpkData);
 				AddGetStreamMethod(type, field);
 				AddDataProperty(type, field);
 				AddVersionsProperty(type, SharedState.Instance.SourceVersions);
