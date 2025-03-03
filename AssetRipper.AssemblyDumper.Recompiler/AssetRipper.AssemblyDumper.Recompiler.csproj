@@ -9,7 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="ICSharpCode.Decompiler" Version="9.0.0.7660-preview2" />
+		<PackageReference Include="ICSharpCode.Decompiler" Version="9.0.0.7889" />
 	</ItemGroup>
 
 </Project>
