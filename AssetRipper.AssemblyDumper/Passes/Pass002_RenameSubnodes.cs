@@ -611,6 +611,17 @@ namespace AssetRipper.AssemblyDumper.Passes
 					radiusNode.Name = "m_RadiusParameter";
 				}
 			}
+
+			if (node.Name.StartsWith("m_Dst", StringComparison.Ordinal) && char.IsUpper(node.Name[5]))
+			{
+				string suffix = node.Name.Substring(5);
+				node.Name = "m_Destination" + suffix;
+			}
+			else if (node.Name.StartsWith("m_Src", StringComparison.Ordinal) && char.IsUpper(node.Name[5]))
+			{
+				string suffix = node.Name.Substring(5);
+				node.Name = "m_Source" + suffix;
+			}
 		}
 
 		private static bool TryRenameSubNode(this UniversalNode node, string currentName, string newName)
