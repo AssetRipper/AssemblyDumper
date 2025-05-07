@@ -39,6 +39,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 				DocumentationHandler.AddTypeDefinitionLine(type, $"This data is sourced from many versions of Unity.");
 				DocumentationHandler.AddTypeDefinitionLine(type, $"See: {SeeXmlTagGenerator.MakeHRef(@"https://github.com/AssetRipper/DocumentationDumps")}");
 			}
+
+			//Assemblies
+			{
+				TypeDefinition type = StaticClassCreator.CreateEmptyStaticClass(SharedState.Instance.Module, SharedState.RootNamespace, "ReferenceAssembliesJson");
+				FieldDefinition field = CreateInternalStorageClass("ReferenceAssembliesJsonData", File.ReadAllBytes("assemblies.json"));
+				AddGetStreamMethod(type, field);
+				AddDataProperty(type, field);
+			}
 		}
 
 		private static void AddVersionsProperty(TypeDefinition type, IReadOnlyCollection<UnityVersion> versions)
