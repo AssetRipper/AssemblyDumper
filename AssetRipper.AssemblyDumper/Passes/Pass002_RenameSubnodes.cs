@@ -617,6 +617,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 				string suffix = node.Name.Substring(5);
 				node.Name = "m_Destination" + suffix;
 			}
+			else if (node.Name.StartsWith("m_Dest", StringComparison.Ordinal) && char.IsUpper(node.Name[6]))
+			{
+				string suffix = node.Name.Substring(6);
+				node.Name = "m_Destination" + suffix;
+			}
 			else if (node.Name.StartsWith("m_Src", StringComparison.Ordinal) && char.IsUpper(node.Name[5]))
 			{
 				string suffix = node.Name.Substring(5);
