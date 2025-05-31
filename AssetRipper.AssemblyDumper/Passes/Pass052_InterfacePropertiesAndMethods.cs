@@ -39,27 +39,87 @@ namespace AssetRipper.AssemblyDumper.Passes
 					ClassProperty classProperty;
 					if (hasConflictingTypes || missingOnSomeVersions)
 					{
-						TypeSignature? fieldType = field?.Signature?.FieldType;
-						bool presentAndMatchesType = fieldType is not null && instance.Class.ContainsField(fieldName) &&
-							(!hasConflictingTypes || signatureComparer.Equals(fieldType, propertyTypeSignature));
-
-						if (presentAndMatchesType)
+						if (field is not { Signature.FieldType: { } fieldType } || !instance.Class.ContainsField(fieldName))
+						{
+							// Field either:
+							// * doesn't exist
+							// * exists in a base class, but isn't present in this derived class
+							property = instance.ImplementInterfaceProperty(interfaceProperty, null);
+							classProperty = new ClassProperty(property, null, interfaceProperty, instance);
+						}
+						else if (!hasConflictingTypes || signatureComparer.Equals(fieldType, propertyTypeSignature))
 						{
 							property = instance.ImplementInterfaceProperty(interfaceProperty, field);
 							classProperty = new ClassProperty(property, field, interfaceProperty, instance);
+
+							if (propertyTypeSignature is SzArrayTypeSignature)
+							{
+								property.FixNullableArraySetMethod(field);
+							}
+						}
+						else if (interfaceProperty.HasSetAccessor && fieldType.IsIntegerPrimitive(out ElementType fieldPrimitive) && propertyTypeSignature.IsIntegerPrimitive(out ElementType propertyPrimitive))
+						{
+							// Field exists, but is the wrong primitive type, so we convert.
+							// Because we check HasSetAccessor, this does not run on PPtrs, which is fine.
+							property = instance.Type.AddFullProperty(propertyName, InterfaceUtils.InterfacePropertyImplementation, propertyTypeSignature);
+
+							// get
+							{
+								CilInstructionCollection instructions = property.GetMethod!.CilMethodBody!.Instructions;
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Ldfld, field);
+								instructions.Add(propertyPrimitive switch
+								{
+									ElementType.U1 => CilOpCodes.Conv_U1,
+									ElementType.U2 => CilOpCodes.Conv_U2,
+									ElementType.U4 => CilOpCodes.Conv_U4,
+									ElementType.U => CilOpCodes.Conv_U,
+									ElementType.U8 => CilOpCodes.Conv_U8,
+									ElementType.I1 => CilOpCodes.Conv_I1,
+									ElementType.I2 => CilOpCodes.Conv_I2,
+									ElementType.I4 => CilOpCodes.Conv_I4,
+									ElementType.I => CilOpCodes.Conv_I,
+									ElementType.I8 => CilOpCodes.Conv_I8,
+									_ => throw new NotSupportedException(),
+								});
+								instructions.Add(CilOpCodes.Ret);
+							}
+
+							// set
+							{
+								CilInstructionCollection instructions = property.SetMethod!.CilMethodBody!.Instructions;
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Ldarg_1);
+								instructions.Add(fieldPrimitive switch
+								{
+									ElementType.U1 => CilOpCodes.Conv_U1,
+									ElementType.U2 => CilOpCodes.Conv_U2,
+									ElementType.U4 => CilOpCodes.Conv_U4,
+									ElementType.U => CilOpCodes.Conv_U,
+									ElementType.U8 => CilOpCodes.Conv_U8,
+									ElementType.I1 => CilOpCodes.Conv_I1,
+									ElementType.I2 => CilOpCodes.Conv_I2,
+									ElementType.I4 => CilOpCodes.Conv_I4,
+									ElementType.I => CilOpCodes.Conv_I,
+									ElementType.I8 => CilOpCodes.Conv_I8,
+									_ => throw new NotSupportedException(),
+								});
+								instructions.Add(CilOpCodes.Stfld, field);
+								instructions.Add(CilOpCodes.Ret);
+							}
+
+							// We give a null backing field here because it doesn't actually have one.
+							// The other property is the one that actually has a backing field.
+							classProperty = new ClassProperty(property, null, interfaceProperty, instance);
 						}
 						else
 						{
+							// Field is not compatible with the property
 							property = instance.ImplementInterfaceProperty(interfaceProperty, null);
 							classProperty = new ClassProperty(property, null, interfaceProperty, instance);
 						}
 
 						instance.Properties.Add(classProperty);
-
-						if (!isValueType && presentAndMatchesType && propertyTypeSignature is SzArrayTypeSignature && field is not null)
-						{
-							property.FixNullableArraySetMethod(field);
-						}
 					}
 					else
 					{
@@ -358,6 +418,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 		}
 
+		/// <summary>
+		/// Ensures that the <paramref name="field"/> is set to <see cref="Array.Empty{T}"/> instead of null.
+		/// </summary>
 		private static void FixNullableArraySetMethod(this PropertyDefinition property, FieldDefinition field)
 		{
 			TypeSignature elementType = ((SzArrayTypeSignature)field.Signature!.FieldType).BaseType;
