@@ -128,7 +128,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						instance.Properties.Add(classProperty);
 					}
 
-					if (instance.Type.IsAbstract)
+					if (instance.Type.IsAbstract || instance.Group.ID is 2)
 					{
 						property.AddDebuggerBrowsableNeverAttribute();//Properties in base classes are redundant in the debugger.
 					}
