@@ -381,6 +381,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 					node.Name = "m_PrefabAsset";
 				}*/
 			}
+			else if (node.TypeName == "Texture3D")
+			{
+				node.TryRenameSubNode("m_DataSize", "m_CompleteImageSize");
+				node.TryRenameSubNode("m_ImageCount", "m_Depth");
+			}
 			else if (node.Name == "m_Image_data")
 			{
 				node.Name = "m_ImageData";
