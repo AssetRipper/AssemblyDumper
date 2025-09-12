@@ -8,7 +8,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AssetRipper.Checksum" Version="1.0.0" />
+		<PackageReference Include="AssetRipper.Checksum" Version="1.1.0" />
 		<PackageReference Include="AssetRipper.Tpk.TypeTrees.Json" Version="1.1.0" />
 	</ItemGroup>
 
