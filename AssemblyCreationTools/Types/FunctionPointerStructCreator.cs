@@ -30,9 +30,9 @@ namespace AssetRipper.AssemblyCreationTools.Types
 				MethodAttributes.HideBySig |
 				MethodAttributes.SpecialName |
 				MethodAttributes.RuntimeSpecialName,
-				type.Module!.CorLibTypeFactory.Void);
+				type.DeclaringModule!.CorLibTypeFactory.Void);
 
-			constructor.AddParameter(type.Module.CorLibTypeFactory.IntPtr, "address");
+			constructor.AddParameter(type.DeclaringModule.CorLibTypeFactory.IntPtr, "address");
 
 			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
 			processor.Add(CilOpCodes.Ldarg_0);

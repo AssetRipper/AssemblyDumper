@@ -30,7 +30,7 @@ namespace AssetRipper.AssemblyDumper.Groups
 
 		public TypeDefinition GetOrCreateMainClass()
 		{
-			mainClass ??= Instances.Count == 1 ? Instances[0].Type : StaticClassCreator.CreateEmptyStaticClass(Interface.Module!, Namespace, Name);
+			mainClass ??= Instances.Count == 1 ? Instances[0].Type : StaticClassCreator.CreateEmptyStaticClass(Interface.DeclaringModule!, Namespace, Name);
 			return mainClass;
 		}
 

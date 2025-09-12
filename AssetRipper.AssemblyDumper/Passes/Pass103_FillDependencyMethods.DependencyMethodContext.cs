@@ -20,7 +20,7 @@ public static partial class Pass103_FillDependencyMethods
 		public required TypeDefinition Type { get; init; }
 		public required IFieldDescriptor CurrentField { get; init; }
 		public required IFieldDescriptor ThisField { get; init; }
-		public CorLibTypeFactory CorLibTypeFactory => Type.Module!.CorLibTypeFactory;
+		public CorLibTypeFactory CorLibTypeFactory => Type.DeclaringModule!.CorLibTypeFactory;
 		public IMethodDescriptor TupleConstructor { get; }
 		public void EmitReturnTrue()
 		{

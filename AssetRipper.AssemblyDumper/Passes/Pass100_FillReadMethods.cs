@@ -840,7 +840,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				MethodSignature methodSignature = MethodSignature.CreateStatic(parameter);
 				MethodDefinition method = new MethodDefinition($"{ReadMethod}_{uniqueName}", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, methodSignature);
-				method.CilMethodBody = new CilMethodBody(method);
+				method.CilMethodBody = new CilMethodBody();
 				method.AddParameter(endianSpanReaderReference, "reader");
 				method.AddExtensionAttribute(SharedState.Instance.Importer);
 				return method;
@@ -849,7 +849,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			{
 				MethodSignature methodSignature = MethodSignature.CreateStatic(SharedState.Instance.Importer.Void);
 				MethodDefinition method = new MethodDefinition($"{ReadMethod}_{uniqueName}", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, methodSignature);
-				method.CilMethodBody = new CilMethodBody(method);
+				method.CilMethodBody = new CilMethodBody();
 				method.AddParameter(parameter, "value");
 				method.AddParameter(endianSpanReaderReference, "reader");
 				method.AddExtensionAttribute(SharedState.Instance.Importer);

@@ -63,9 +63,10 @@
 			MethodSignature methodSignature = isStatic
 				? MethodSignature.CreateStatic(returnType)
 				: MethodSignature.CreateInstance(returnType);
-			MethodDefinition result = new MethodDefinition(methodName, methodAttributes, methodSignature);
-
-			result.CilMethodBody = new CilMethodBody(result);
+			MethodDefinition result = new MethodDefinition(methodName, methodAttributes, methodSignature)
+			{
+				CilMethodBody = new CilMethodBody()
+			};
 
 			return result;
 		}

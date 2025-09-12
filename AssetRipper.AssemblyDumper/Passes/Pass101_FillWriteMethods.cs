@@ -672,7 +672,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			MethodSignature methodSignature = MethodSignature.CreateStatic(SharedState.Instance.Importer.Void);
 			MethodDefinition method = new MethodDefinition($"{WriteMethod}_{uniqueName}", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, methodSignature);
-			method.CilMethodBody = new CilMethodBody(method);
+			method.CilMethodBody = new CilMethodBody();
 			method.AddParameter(parameter, "value");
 			method.AddParameter(assetWriterReference!.ToTypeSignature(), "writer");
 			method.AddExtensionAttribute(SharedState.Instance.Importer);

@@ -32,10 +32,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static TypeDefinition GetResolvedBaseType(this TypeDefinition type)
 		{
-			if (type == null)
-			{
-				throw new ArgumentNullException(nameof(type));
-			}
+			ArgumentNullException.ThrowIfNull(type);
 			if (type.BaseType == null)
 			{
 				throw new ArgumentException(null, nameof(type));
@@ -46,7 +43,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				return baseTypeDefinition;
 			}
 			TypeDefinition? resolvedBaseType = SharedState.Instance.Importer.LookupType(type.BaseType.FullName);
-			return resolvedBaseType ?? throw new Exception($"Could not resolve base type {type.BaseType} of derived type {type} from module {type.Module} in assembly {type.Module!.Assembly}");
+			return resolvedBaseType ?? throw new Exception($"Could not resolve base type {type.BaseType} of derived type {type} from module {type.DeclaringModule} in assembly {type.DeclaringModule!.Assembly}");
 		}
 
 		private static IMethodDefOrRef GetDefaultConstructor(this GenericInstanceTypeSignature type)

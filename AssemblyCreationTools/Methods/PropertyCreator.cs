@@ -71,7 +71,7 @@ namespace AssetRipper.AssemblyCreationTools.Methods
 			}
 
 			TypeDefinition declaringType = property.DeclaringType!;
-			MethodDefinition setter = declaringType.AddMethod($"set_{propertyName}", methodAttributes, declaringType.Module!.CorLibTypeFactory.Void);
+			MethodDefinition setter = declaringType.AddMethod($"set_{propertyName}", methodAttributes, declaringType.DeclaringModule!.CorLibTypeFactory.Void);
 			setter.AddParameter(returnType, "value");
 			property.Semantics.Add(new MethodSemantics(setter, MethodSemanticsAttributes.Setter));
 			return setter;

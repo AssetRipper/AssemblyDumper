@@ -22,7 +22,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static MethodDefinition AddGuidToStringOverride(this TypeDefinition type)
 		{
-			MethodDefinition method = type.AddMethod(nameof(object.ToString), MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual, type.Module!.CorLibTypeFactory.String);
+			MethodDefinition method = type.AddMethod(nameof(object.ToString), MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual, type.DeclaringModule!.CorLibTypeFactory.String);
 			MethodDefinition conversionMethod = type.Methods.Single(m => m.Name == "op_Implicit");
 			ITypeDefOrRef commonRef = SharedState.Instance.Importer.ImportType<UnityGuid>();
 			IMethodDefOrRef toStringMethod = SharedState.Instance.Importer.ImportMethod<UnityGuid>(m => m.Name == nameof(UnityGuid.ToString) && m.Parameters.Count == 0);
@@ -42,7 +42,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static MethodDefinition AddHashToStringOverride(this TypeDefinition type, TypeDefinition helperType)
 		{
-			MethodDefinition method = type.AddMethod(nameof(object.ToString), MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual, type.Module!.CorLibTypeFactory.String);
+			MethodDefinition method = type.AddMethod(nameof(object.ToString), MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual, type.DeclaringModule!.CorLibTypeFactory.String);
 			IMethodDefOrRef helperMethod = helperType.Methods.Single(m => m.Name == nameof(HashHelper.ToString));
 
 			CilInstructionCollection processor = method.GetProcessor();

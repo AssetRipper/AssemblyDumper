@@ -42,8 +42,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			const MethodAttributes attributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.ReuseSlot | MethodAttributes.HideBySig;
 
-			CorLibTypeSignature stringType = type.Module!.CorLibTypeFactory.String;
-			ITypeDefOrRef objectType = type.Module.CorLibTypeFactory.Object.ToTypeDefOrRef();
+			CorLibTypeSignature stringType = type.DeclaringModule!.CorLibTypeFactory.String;
+			ITypeDefOrRef objectType = type.DeclaringModule.CorLibTypeFactory.Object.ToTypeDefOrRef();
 
 			MethodDefinition toStringMethod = type.AddMethod(nameof(ToString), attributes, stringType);
 

@@ -79,11 +79,11 @@
 				? typeDefinition.AddMethod(
 					".cctor",
 					MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RuntimeSpecialName | MethodAttributes.Static,
-					typeDefinition.Module!.CorLibTypeFactory.Void)
+					typeDefinition.DeclaringModule!.CorLibTypeFactory.Void)
 				: typeDefinition.AddMethod(
 					".ctor",
 					MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RuntimeSpecialName,
-					typeDefinition.Module!.CorLibTypeFactory.Void);
+					typeDefinition.DeclaringModule!.CorLibTypeFactory.Void);
 		}
 
 		/// <summary>
