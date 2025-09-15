@@ -122,7 +122,7 @@ internal static class Pass108_WalkMethods
 					TypeDefinition type = instance.Type;
 					TypeSignature typeSignature = type.ToTypeSignature();
 
-					CilInstructionCollection processor = type.GetMethodByName(MethodName).GetProcessor();
+					CilInstructionCollection processor = type.GetMethodByName(MethodName).GetInstructions();
 
 					if (group.IsPPtr)
 					{
@@ -238,7 +238,7 @@ internal static class Pass108_WalkMethods
 			case PrimitiveNode:
 				{
 					MethodDefinition method = NewMethod(node);
-					CilInstructionCollection processor = method.GetProcessor();
+					CilInstructionCollection processor = method.GetInstructions();
 					processor.Add(CilOpCodes.Ldarg_1);
 					processor.Add(CilOpCodes.Ldarg_0);
 					processor.Add(CilOpCodes.Callvirt, visitPrimitiveMethod.MakeGenericInstanceMethod(node.TypeSignature));
@@ -249,7 +249,7 @@ internal static class Pass108_WalkMethods
 			case ListNode listNode:
 				{
 					MethodDefinition method = NewMethod(node);
-					CilInstructionCollection processor = method.GetProcessor();
+					CilInstructionCollection processor = method.GetInstructions();
 
 					CilInstructionLabel returnLabel = new();
 					CilInstructionLabel exitLabel = new();
@@ -320,7 +320,7 @@ internal static class Pass108_WalkMethods
 			case DictionaryNode dictionaryNode:
 				{
 					MethodDefinition method = NewMethod(node);
-					CilInstructionCollection processor = method.GetProcessor();
+					CilInstructionCollection processor = method.GetInstructions();
 
 					CilInstructionLabel returnLabel = new();
 					CilInstructionLabel exitLabel = new();
@@ -426,7 +426,7 @@ internal static class Pass108_WalkMethods
 			case PairNode pairNode:
 				{
 					MethodDefinition method = NewMethod(node);
-					CilInstructionCollection processor = method.GetProcessor();
+					CilInstructionCollection processor = method.GetInstructions();
 
 					CilInstructionLabel returnLabel = new();
 

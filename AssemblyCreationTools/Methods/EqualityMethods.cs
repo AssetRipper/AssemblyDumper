@@ -39,7 +39,7 @@
 
 			MakeEqualityComparerGenericMethods(type.ToTypeSignature(), importer, out IMethodDefOrRef defaultReference, out IMethodDefOrRef equalsReference);
 
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			processor.Add(CilOpCodes.Call, defaultReference);
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldarg_1);
@@ -57,7 +57,7 @@
 			method.AddParameter(type.ToTypeSignature(), "left");
 			method.AddParameter(type.ToTypeSignature(), "right");
 
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldarg_1);
 			processor.Add(CilOpCodes.Call, equalityMethod);

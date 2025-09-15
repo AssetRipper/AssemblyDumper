@@ -156,7 +156,7 @@ namespace AssetRipper.AssemblyCreationTools.Methods
 
 		private static FieldDefinition CreateBackingField(TypeDefinition declaringType, string propertyName, TypeSignature fieldType, CachedReferenceImporter importer)
 		{
-			FieldDefinition field = declaringType.AddField(fieldType, $"<{propertyName}>k__BackingField", false, FieldVisibility.Private);
+			FieldDefinition field = declaringType.AddField($"<{propertyName}>k__BackingField", fieldType, false, Visibility.Private);
 			field.AddCompilerGeneratedAttribute(importer);
 			return field;
 		}

@@ -20,12 +20,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef addMethod = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, uintStringDictionary, SharedState.Instance.Importer.LookupMethod(typeof(Dictionary<,>), m => m.Name == "Add"));
 
 			const string propertyName = "Dictionary";
-			FieldDefinition field = newTypeDef.AddField(readOnlyUintStringDictionary, $"<{propertyName}>k__BackingField", true, FieldVisibility.Private);
+			FieldDefinition field = newTypeDef.AddField($"<{propertyName}>k__BackingField", readOnlyUintStringDictionary, true, Visibility.Private);
 			field.Attributes |= FieldAttributes.InitOnly;
 			field.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 
 			MethodDefinition staticConstructor = newTypeDef.AddEmptyConstructor(true);
-			CilInstructionCollection processor = staticConstructor.GetProcessor();
+			CilInstructionCollection processor = staticConstructor.GetInstructions();
 			processor.Add(CilOpCodes.Newobj, dictionaryConstructor);
 			foreach ((uint index, string str) in SharedState.Instance.CommonString.Strings)
 			{

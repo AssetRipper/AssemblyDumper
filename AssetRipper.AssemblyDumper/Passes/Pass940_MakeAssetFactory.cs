@@ -66,7 +66,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				Parameter assetInfoParameter = method.AddParameter(assetInfoType, "info");
 				Parameter versionParameter = method.AddParameter(unityVersionType, "version");
 
-				CilInstructionCollection processor = method.GetProcessor();
+				CilInstructionCollection processor = method.GetInstructions();
 
 				CilLocalVariable switchCondition = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
 				processor.Add(CilOpCodes.Ldarga, assetInfoParameter);
@@ -109,7 +109,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition method = factoryDefinition.AddMethod(methodName, CreateAssetAttributes, iunityObjectBase);
 			Parameter assetInfoParameter = method.AddParameter(assetInfoType, "info");
 			Parameter versionParameter = method.AddParameter(unityVersionType, "version");
-			method.GetProcessor().EmitIdSwitchStatement(assetInfoParameter, versionParameter, constructors);
+			method.GetInstructions().EmitIdSwitchStatement(assetInfoParameter, versionParameter, constructors);
 			return method;
 		}
 
@@ -166,7 +166,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			//UnityVersion is pulled from AssetInfo.Collection.Version.
 			MethodDefinition method = mainMethod.DeclaringType!.AddMethod(mainMethod.Name, mainMethod.Attributes, mainMethod.Signature!.ReturnType);
 			Parameter parameter = method.AddParameter(assetInfoType, "info");
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			//Load Parameter 1
 			processor.Add(CilOpCodes.Ldarg_0);
@@ -263,7 +263,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static MethodDefinition ImplementSingleCreationMethod(ClassGroupBase group, TypeDefinition factoryClass)
 		{
 			MethodDefinition method = factoryClass.AddMethod("Create", CreateAssetAttributes, group.GetSingularTypeOrInterface().ToTypeSignature());
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			Parameter? assetInfoParameter = group is SubclassGroup ? null : method.AddParameter(assetInfoType, "info");
 			processor.AddReturnNewConstructedObject(group.Instances[0].Type, assetInfoParameter);
 			return method;
@@ -274,7 +274,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition method = factoryClass.AddMethod("Create", CreateAssetAttributes, group.GetSingularTypeOrInterface().ToTypeSignature());
 			Parameter? assetInfoParameter = group is SubclassGroup ? null : method.AddParameter(assetInfoType, "info");
 			Parameter versionParameter = method.AddParameter(unityVersionType, "version");
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			processor.FillNormalCreationMethod(group, versionParameter, assetInfoParameter);
 			return method;
 		}
@@ -287,7 +287,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			DocumentationHandler.AddMethodDefinitionLine(method, $"This is a special factory method for creating a temporary {SeeXmlTagGenerator.MakeCRef(group.Interface)} with no PathID.");
 
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			method.AddParameter(assetCollectionType, "collection");
 			processor.Add(CilOpCodes.Ldarg_0);

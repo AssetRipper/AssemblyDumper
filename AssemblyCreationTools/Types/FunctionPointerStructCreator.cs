@@ -9,7 +9,7 @@ namespace AssetRipper.AssemblyCreationTools.Types
 		public static TypeDefinition Create(AssemblyBuilder builder, string @namespace, string name, TypeSignature returnType, Dictionary<string, TypeSignature> parameters)
 		{
 			TypeDefinition type = StructCreator.CreateEmptyStruct(builder, @namespace, name);
-			FieldDefinition field = type.AddField(builder.Importer.IntPtr, "address");
+			FieldDefinition field = type.AddField("address", builder.Importer.IntPtr);
 			MethodDefinition constructor = type.AddConstructor(field);
 			FunctionPointerTypeSignature functionPointerSignature = FunctionPointerCreator.CreateUnmanaged(returnType, parameters.Values);
 			TypeSignature managedDelegateSignature = ResolveManagedDelegateSignature(builder.Importer, returnType, parameters.Values.ToArray());

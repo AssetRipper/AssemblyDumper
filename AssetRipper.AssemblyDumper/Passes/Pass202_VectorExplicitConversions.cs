@@ -50,7 +50,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef constructor = SharedState.Instance.Importer.ImportConstructor<T>(size);
 
 			MethodDefinition method = type.AddEmptyConversion(type.ToTypeSignature(), commonType, true);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldfld, type.Fields.Single(field => field.Name == "m_X"));
@@ -80,7 +80,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition constructor = type.GetDefaultConstructor();
 
 			MethodDefinition method = type.AddEmptyConversion(commonType, type.ToTypeSignature(), false);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			processor.Add(CilOpCodes.Newobj, constructor);
 

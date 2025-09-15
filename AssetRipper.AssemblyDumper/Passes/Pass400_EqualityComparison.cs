@@ -85,7 +85,7 @@ internal static class Pass400_EqualityComparison
 					method.AddParameter(iunityAssetBase.ToTypeSignature(), "other");
 					method.AddParameter(assetEqualityComparer.ToTypeSignature(), "comparer");
 
-					CilInstructionCollection processor = method.GetProcessor();
+					CilInstructionCollection processor = method.GetInstructions();
 
 					processor.Add(CilOpCodes.Ldarg_0);
 					processor.Add(CilOpCodes.Ldarg_1);
@@ -153,7 +153,7 @@ internal static class Pass400_EqualityComparison
 		MethodDefinition isFalseMethod = equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.IsFalse));
 		MethodDefinition isNullMethod = equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.IsNull));
 
-		CilInstructionCollection processor = method.GetProcessor();
+		CilInstructionCollection processor = method.GetInstructions();
 
 		CilLocalVariable otherLocal = processor.AddLocalVariable(type.ToTypeSignature());
 		processor.Add(CilOpCodes.Ldarg_1);
@@ -256,7 +256,7 @@ internal static class Pass400_EqualityComparison
 			equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.GetTrue)).Signature!.ReturnType);
 		method.AddParameter(iunityAssetBase.ToTypeSignature(), "other");
 		method.AddParameter(assetEqualityComparer.ToTypeSignature(), "comparer");
-		CilInstructionCollection processor = method.GetProcessor();
+		CilInstructionCollection processor = method.GetInstructions();
 
 		processor.Add(CilOpCodes.Ldarg_0);
 		processor.Add(CilOpCodes.Ldarg_1);
@@ -273,7 +273,7 @@ internal static class Pass400_EqualityComparison
 			InterfaceUtils.InterfaceMethodImplementation,
 			SharedState.Instance.Importer.Boolean);
 		method.AddParameter(type.ToTypeSignature(), "other");
-		CilInstructionCollection processor = method.GetProcessor();
+		CilInstructionCollection processor = method.GetInstructions();
 
 		CilInstructionLabel falseLabel = new();
 
@@ -469,7 +469,7 @@ internal static class Pass400_EqualityComparison
 			MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual,
 			SharedState.Instance.Importer.Boolean);
 		method.AddParameter(SharedState.Instance.Importer.Object, "obj");
-		CilInstructionCollection processor = method.GetProcessor();
+		CilInstructionCollection processor = method.GetInstructions();
 
 		processor.Add(CilOpCodes.Ldarg_0);
 		processor.Add(CilOpCodes.Ldarg_1);
@@ -487,7 +487,7 @@ internal static class Pass400_EqualityComparison
 			nameof(object.GetHashCode),
 			MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual,
 			SharedState.Instance.Importer.Int32);
-		CilInstructionCollection processor = method.GetProcessor();
+		CilInstructionCollection processor = method.GetInstructions();
 
 		CilLocalVariable variable = processor.AddLocalVariable(hashCodeType.ToTypeSignature());
 

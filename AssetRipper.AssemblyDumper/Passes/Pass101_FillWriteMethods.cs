@@ -107,7 +107,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void FillEditorWriteMethod(this TypeDefinition type, UniversalClass klass, UnityVersion version)
 		{
 			MethodDefinition method = type.Methods.First(m => m.Name == WriteEditor);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			if (throwNotSupported)
 			{
@@ -135,7 +135,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void FillReleaseWriteMethod(this TypeDefinition type, UniversalClass klass, UnityVersion version)
 		{
 			MethodDefinition method = type.Methods.First(m => m.Name == WriteRelease);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			if (throwNotSupported)
 			{
@@ -267,7 +267,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef writeMethod = SharedState.Instance.Importer.ImportMethod<UnityAssetBase>(m => m.Name == WriteMethod);
 			MethodDefinition method = NewWriteMethod(uniqueName, elementType);
 
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldarg_1);
 			processor.Add(CilOpCodes.Callvirt, writeMethod);
@@ -294,7 +294,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					&& corLibTypeSignature.ElementType == ElementType.U1;
 			});
 			MethodDefinition method = NewWriteMethod(uniqueName, SharedState.Instance.Importer.UInt8.MakeSzArrayType());
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			processor.Add(CilOpCodes.Ldarg_1);
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldlen);
@@ -316,7 +316,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			IMethodDescriptor primitiveMethod = GetPrimitiveMethod(node);
 			MethodDefinition method = NewWriteMethod(uniqueName, primitiveMethod.Signature!.ParameterTypes[0]);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			processor.Add(CilOpCodes.Ldarg_1);
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.AddCall(primitiveMethod);
@@ -347,7 +347,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				keyValuePairDefinition!.Methods.Single(m => m.Name == $"get_{nameof(AssetPair<int, int>.Value)}"));
 
 			MethodDefinition method = NewWriteMethod(uniqueName, genericPairType);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.AddCall(keyMethod);
 			processor.Add(CilOpCodes.Ldarg_1);
@@ -372,7 +372,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			SzArrayTypeSignature arrayTypeSignature = elementType.MakeSzArrayType();
 
 			MethodDefinition method = NewWriteMethod(uniqueName, arrayTypeSignature);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			//Read length of array
 			processor.Add(CilOpCodes.Ldarg_0); //Load array
@@ -471,7 +471,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				assetListDefinition!.Methods.Single(m => m.Name == "get_Item"));
 
 			MethodDefinition method = NewWriteMethod(uniqueName, genericListType);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			//Load Count
 			processor.Add(CilOpCodes.Ldarg_0); //Load list
@@ -555,7 +555,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				assetDictionaryDefinition!.Methods.Single(m => m.Name == nameof(AssetDictionary<int, int>.GetPair)));
 
 			MethodDefinition method = NewWriteMethod(uniqueName, genericDictionaryType);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			//Load Count
 			processor.Add(CilOpCodes.Ldarg_0); //Load dictionary

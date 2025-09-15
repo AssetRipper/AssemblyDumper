@@ -36,7 +36,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			foreach (GeneratedClassInstance instance in group.Instances)
 			{
 				MethodDefinition method = instance.Type.AddMethod(SetValuesName, InterfaceUtils.InterfaceMethodImplementation, SharedState.Instance.Importer.Void);
-				CilInstructionCollection processor = method.GetProcessor();
+				CilInstructionCollection processor = method.GetInstructions();
 				IEnumerable<PropertyDefinition> properties = group.IsVector4()
 					? new Vector4PropertyEnumerable_Instance(instance)
 					: group.IsColorRGBAf()

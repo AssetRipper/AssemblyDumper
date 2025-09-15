@@ -19,7 +19,7 @@ internal static class Pass102_IgnoreFieldInMetaFilesMethods
 			{
 				MethodDefinition method = instance.Type.AddMethod(nameof(UnityAssetBase.IgnoreFieldInMetaFiles), Pass063_CreateEmptyMethods.OverrideMethodAttributes, SharedState.Instance.Importer.Boolean);
 				method.AddParameter(SharedState.Instance.Importer.String, "fieldName");
-				CilInstructionCollection instructions = method.GetProcessor();
+				CilInstructionCollection instructions = method.GetInstructions();
 				if (ClassesWithFields.TryGetValue(instance, out string[]? fields))
 				{
 					CilInstructionLabel trueLabel = new();

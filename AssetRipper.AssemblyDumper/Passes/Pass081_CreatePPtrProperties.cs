@@ -51,7 +51,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 								//Get method
 								{
-									CilInstructionCollection processor = classProperty.SpecialDefinition.GetMethod!.GetProcessor();
+									CilInstructionCollection processor = classProperty.SpecialDefinition.GetMethod!.GetInstructions();
 									if (classProperty.BackingField is null)
 									{
 										processor.Add(CilOpCodes.Ldnull);
@@ -73,7 +73,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 								}
 								//Set method
 								{
-									CilInstructionCollection processor = classProperty.SpecialDefinition.SetMethod!.GetProcessor();
+									CilInstructionCollection processor = classProperty.SpecialDefinition.SetMethod!.GetInstructions();
 									if (classProperty.BackingField is not null)
 									{
 										processor.Add(CilOpCodes.Ldarg_0);
@@ -116,7 +116,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 								//Get method
 								{
-									CilInstructionCollection processor = classProperty.SpecialDefinition.GetMethod!.GetProcessor();
+									CilInstructionCollection processor = classProperty.SpecialDefinition.GetMethod!.GetInstructions();
 									if (classProperty.BackingField is null)
 									{
 										processor.Add(CilOpCodes.Call, emptyMethod);

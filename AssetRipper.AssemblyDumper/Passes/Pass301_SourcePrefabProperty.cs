@@ -29,7 +29,7 @@ internal static class Pass301_SourcePrefabProperty
 			//Get method
 			{
 				MethodDefinition method = property.GetMethod!;
-				CilInstructionCollection processor = method.GetProcessor();
+				CilInstructionCollection processor = method.GetInstructions();
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Call, existingProperty.GetMethod!);
 				processor.Add(CilOpCodes.Ret);
@@ -38,7 +38,7 @@ internal static class Pass301_SourcePrefabProperty
 			//Set method
 			{
 				MethodDefinition method = property.SetMethod!;
-				CilInstructionCollection processor = method.GetProcessor();
+				CilInstructionCollection processor = method.GetInstructions();
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Ldarg_1);
 				processor.Add(CilOpCodes.Call, existingProperty.SetMethod!);

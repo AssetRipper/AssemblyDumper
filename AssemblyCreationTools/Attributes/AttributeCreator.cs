@@ -29,8 +29,8 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 		public static void AddAttributeTargetsAttribute(this TypeDefinition attributeDefinition, CachedReferenceImporter importer, AttributeTargets targets, bool allowMultiple, bool inherited)
 		{
 			CustomAttribute customAttribute = attributeDefinition.AddAttributeTargetsAttribute(importer, targets);
-			customAttribute.AddNamedArgument(importer.Boolean, "AllowMultiple", importer.Boolean, allowMultiple, true);
-			customAttribute.AddNamedArgument(importer.Boolean, "Inherited", importer.Boolean, inherited, true);
+			customAttribute.AddNamedArgument(importer.Boolean, "AllowMultiple", importer.Boolean, allowMultiple, CustomAttributeArgumentMemberType.Property);
+			customAttribute.AddNamedArgument(importer.Boolean, "Inherited", importer.Boolean, inherited, CustomAttributeArgumentMemberType.Property);
 		}
 
 		public static TypeDefinition CreateSingleValueAttribute(CachedReferenceImporter importer, string @namespace, string name, string fieldName, TypeSignature fieldType, bool hasDefaultConstructor, out MethodDefinition singleParamConstructor)

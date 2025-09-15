@@ -27,7 +27,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void FixMethod(MethodDefinition readMethod, MethodDefinition helperMethod, FieldDefinition dataField, FieldDefinition streamField)
 		{
-			CilInstructionCollection processor = readMethod.GetProcessor();
+			CilInstructionCollection processor = readMethod.GetInstructions();
 
 			//remove bad instructions
 			while (processor.Count > 0)

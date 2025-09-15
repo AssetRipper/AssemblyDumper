@@ -36,7 +36,7 @@ public static partial class Pass103_FillDependencyMethods
 				}
 
 				MethodDefinition method = instance.Type.AddMethod(nameof(UnityAssetBase.FetchDependencies), Pass063_CreateEmptyMethods.OverrideMethodAttributes, returnType);
-				CilInstructionCollection processor = method.GetProcessor();
+				CilInstructionCollection processor = method.GetInstructions();
 				if (anyPPtrs)
 				{
 					MethodDefinition enumerableConstructor = MakeEnumerableType(injectedBaseType, currentField, thisField, instance, rootNode);
@@ -66,7 +66,7 @@ public static partial class Pass103_FillDependencyMethods
 		MethodDefinition enumerableConstructor = enumerableType.AddEmptyConstructor();
 		enumerableConstructor.AddParameter(instance.Type.ToTypeSignature(), "_this");
 		{
-			CilInstructionCollection processor = enumerableConstructor.GetProcessor();
+			CilInstructionCollection processor = enumerableConstructor.GetInstructions();
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldarg_1);
 			IMethodDefOrRef baseConstructor = new MemberReference(baseType, ".ctor", injectedBaseType.GetConstructor(1).Signature);
@@ -78,7 +78,7 @@ public static partial class Pass103_FillDependencyMethods
 		{
 			MethodDefinition createNewMethod = enumerableType.AddMethod("CreateNew", MethodAttributes.FamilyAndAssembly | MethodAttributes.Virtual | MethodAttributes.HideBySig, enumerableType.ToTypeSignature());
 			{
-				CilInstructionCollection processor = createNewMethod.GetProcessor();
+				CilInstructionCollection processor = createNewMethod.GetInstructions();
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.Add(CilOpCodes.Ldfld, new MemberReference(baseType, thisField.Name, thisField.Signature));
 				processor.Add(CilOpCodes.Newobj, enumerableConstructor);
@@ -91,7 +91,7 @@ public static partial class Pass103_FillDependencyMethods
 			MethodDefinition moveNextMethod = enumerableType.AddMethod(nameof(IEnumerator.MoveNext), MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig, SharedState.Instance.Importer.Boolean);
 			DependencyMethodContext context = new()
 			{
-				Processor = moveNextMethod.GetProcessor(),
+				Processor = moveNextMethod.GetInstructions(),
 				Type = enumerableType,
 				CurrentField = new MemberReference(baseType, currentField.Name, currentField.Signature),
 				ThisField = new MemberReference(baseType, thisField.Name, thisField.Signature),

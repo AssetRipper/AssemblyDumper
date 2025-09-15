@@ -31,7 +31,7 @@ internal static class Pass510_FixComponentPairWalking
 
 	private static void FixWalkMethod(this MethodDefinition method, MethodDefinition injectedMethod, FieldDefinition classIDField, FieldDefinition componentField)
 	{
-		CilInstructionCollection instructions = method.GetProcessor();
+		CilInstructionCollection instructions = method.GetInstructions();
 		instructions.Clear();
 		instructions.Add(CilOpCodes.Ldarg_0);
 		instructions.Add(CilOpCodes.Ldfld, classIDField);

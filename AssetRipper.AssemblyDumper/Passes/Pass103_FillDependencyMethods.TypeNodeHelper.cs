@@ -52,7 +52,7 @@ public static partial class Pass103_FillDependencyMethods
 				return;
 			}
 
-			FieldDefinition stateField = context.Type.AddField(context.CorLibTypeFactory.Int32, NodeHelper.GetStateFieldName(node), visibility: FieldVisibility.Private);
+			FieldDefinition stateField = context.Type.AddField(NodeHelper.GetStateFieldName(node), context.CorLibTypeFactory.Int32, visibility: Visibility.Private);
 			CilInstructionLabel[] cases = new CilInstructionLabel[children.Count];
 			for (int i = 0; i < cases.Length; i++)
 			{

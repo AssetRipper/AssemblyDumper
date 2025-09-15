@@ -6,6 +6,7 @@ global using AsmResolver.PE.DotNet.Cil;
 global using AsmResolver.PE.DotNet.Metadata.Tables;
 global using AssetRipper.AssemblyDumper.Extensions;
 global using AssetRipper.AssemblyDumper.Groups;
+global using AssetRipper.CIL;
 global using AssetRipper.Primitives;
 global using System;
 global using System.Collections.Generic;

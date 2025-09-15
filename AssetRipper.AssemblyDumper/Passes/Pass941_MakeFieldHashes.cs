@@ -48,7 +48,7 @@ internal static class Pass941_MakeFieldHashes
 			outParameterDefinition.AddNullableAttribute(NullableAnnotation.MaybeNull);
 			outParameterDefinition.AddCustomAttribute(SharedState.Instance.Importer.ImportConstructor<NotNullWhenAttribute>(1), SharedState.Instance.Importer.Boolean, true);
 
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			processor.EmitIdSwitchStatement(groupMethods, nullHelperMethod);
 		}
 
@@ -103,7 +103,7 @@ internal static class Pass941_MakeFieldHashes
 		outParameterDefinition.AddNullableAttribute(NullableAnnotation.MaybeNull);
 		outParameterDefinition.AddCustomAttribute(SharedState.Instance.Importer.ImportConstructor<NotNullWhenAttribute>(1), SharedState.Instance.Importer.Boolean, true);
 
-		CilInstructionCollection processor = nullHelperMethod.GetProcessor();
+		CilInstructionCollection processor = nullHelperMethod.GetInstructions();
 		processor.Add(CilOpCodes.Ldarg_0);
 		processor.Add(CilOpCodes.Initobj, SharedState.Instance.Importer.String.ToTypeDefOrRef());
 		processor.Add(CilOpCodes.Ldc_I4_0);
@@ -121,14 +121,14 @@ internal static class Pass941_MakeFieldHashes
 		IMethodDefOrRef addMethod = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, uintStringDictionary, SharedState.Instance.Importer.LookupMethod(typeof(Dictionary<,>), m => m.Name == "Add"));
 		IMethodDefOrRef tryGetValue = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, uintStringDictionary, SharedState.Instance.Importer.LookupMethod(typeof(Dictionary<,>), m => m.Name == "TryGetValue"));
 
-		FieldDefinition field = type.AddField(uintStringDictionary, "s_FieldPathDictionary", true, FieldVisibility.Private);
+		FieldDefinition field = type.AddField("s_FieldPathDictionary", uintStringDictionary, true, Visibility.Private);
 		field.Attributes |= FieldAttributes.InitOnly;
 		DocumentationHandler.AddFieldDefinitionLine(field, $"CRC32 field path hashes for {SeeXmlTagGenerator.MakeCRef(group.Interface)} classes.");
 
 		//Static constructor
 		{
 			MethodDefinition staticConstructor = type.GetOrCreateStaticConstructor();
-			CilInstructionCollection processor = staticConstructor.GetProcessor();
+			CilInstructionCollection processor = staticConstructor.GetInstructions();
 			processor.Pop();//The return instruction.
 			processor.Add(CilOpCodes.Newobj, dictionaryConstructor);
 			foreach ((uint hash, string str) in hashes)
@@ -154,7 +154,7 @@ internal static class Pass941_MakeFieldHashes
 			outParameterDefinition.AddNullableAttribute(NullableAnnotation.MaybeNull);
 			outParameterDefinition.AddCustomAttribute(SharedState.Instance.Importer.ImportConstructor<NotNullWhenAttribute>(1), SharedState.Instance.Importer.Boolean, true);
 
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			processor.Add(CilOpCodes.Ldsfld, field);
 			processor.Add(CilOpCodes.Ldarg_0);//hash
 			processor.Add(CilOpCodes.Ldarg_1);//path
@@ -179,12 +179,12 @@ internal static class Pass941_MakeFieldHashes
 		IMethodDefOrRef addMethod = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, stringList, SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == "Add"));
 
 		const string propertyName = "FieldPaths";//Not currently in use by any subclasses.
-		FieldDefinition field = type.AddField(readonlyStringList, $"<{propertyName}>k__BackingField", true, FieldVisibility.Private);
+		FieldDefinition field = type.AddField($"<{propertyName}>k__BackingField", readonlyStringList, true, Visibility.Private);
 		field.Attributes |= FieldAttributes.InitOnly;
 		field.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 
 		MethodDefinition staticConstructor = type.GetOrCreateStaticConstructor();
-		CilInstructionCollection processor = staticConstructor.GetProcessor();
+		CilInstructionCollection processor = staticConstructor.GetInstructions();
 		processor.Pop();//The return instruction.
 		bool emittedListConstructor = false;
 		foreach (string str in group.GetOrderedFieldPaths())

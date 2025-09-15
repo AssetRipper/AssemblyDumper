@@ -17,7 +17,7 @@ namespace AssetRipper.AssemblyCreationTools.Fields
 		{
 			uint size = (uint)(length * GetSize(arrayElementType));
 			TypeDefinition nestedType = MakeNestedType(declaringType, builder, arrayElementType, fieldName, size);
-			FieldDefinition field = declaringType.AddField(nestedType.ToTypeSignature(), fieldName);
+			FieldDefinition field = declaringType.AddField(fieldName, nestedType.ToTypeSignature());
 			IMethodDefOrRef attributeConstructor = builder.Importer.ImportMethod<FixedBufferAttribute>(m => m.IsConstructor && !m.IsStatic && m.Parameters.Count == 2);
 			field.AddCustomAttribute(attributeConstructor,
 				(builder.Importer.ImportTypeSignature<Type>(), arrayElementType),
@@ -31,7 +31,7 @@ namespace AssetRipper.AssemblyCreationTools.Fields
 		{
 			TypeDefinition nestedType = StructCreator.CreateEmptyStruct(builder, parentType, GetNestedTypeName(fieldName));
 			nestedType.ClassLayout = new ClassLayout(0, size);
-			nestedType.AddField(arrayElementType, "FixedElementField");
+			nestedType.AddField("FixedElementField", arrayElementType);
 			nestedType.AddCustomAttribute(builder.Importer.ImportDefaultConstructor<CompilerGeneratedAttribute>());
 			nestedType.AddCustomAttribute(builder.Importer.ImportDefaultConstructor<UnsafeValueTypeAttribute>());
 			return nestedType;

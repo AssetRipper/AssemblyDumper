@@ -124,7 +124,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					MethodDefinition copyValuesMethod = GetPrimaryCopyValuesMethod(type);
 					MethodDefinition method = type.AddMethod(DeepCloneName, InterfaceUtils.InterfaceMethodImplementation, group.Interface.ToTypeSignature());
-					CilInstructionCollection processor = method.GetProcessor();
+					CilInstructionCollection processor = method.GetInstructions();
 					processor.Add(CilOpCodes.Newobj, type.GetDefaultConstructor());
 					processor.Add(CilOpCodes.Dup);
 					processor.Add(CilOpCodes.Ldarg_0);
@@ -156,7 +156,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 						MethodDefinition originalCopyValuesMethod = GetPrimaryCopyValuesMethod(type);
 						MethodDefinition method = type.AddMethod(CopyValuesName, InterfaceUtils.InterfaceMethodImplementation, SharedState.Instance.Importer.Void);
 						method.AddParameter(group.Interface.ToTypeSignature(), "source");
-						CilInstructionCollection processor = method.GetProcessor();
+						CilInstructionCollection processor = method.GetInstructions();
 
 						processor.Add(CilOpCodes.Ldarg_0);
 						processor.Add(CilOpCodes.Ldarg_1);
@@ -193,7 +193,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					MethodDefinition primaryMethod = GetPrimaryCopyValuesMethod(instance.Type);
 					MethodDefinition thisMethod = overridenMethods[instance.Type];
 					MethodDefinition? baseMethod = instance.Base is null ? null : overridenMethods[instance.Base.Type];
-					CilInstructionCollection processor = thisMethod.GetProcessor();
+					CilInstructionCollection processor = thisMethod.GetInstructions();
 
 					if (group is SubclassGroup)//Optimization for subclasses since 2 null checks is unnecessary
 					{
@@ -291,7 +291,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					method.AddParameter(group.Interface.ToTypeSignature(), "source");
 					Parameter converterParam = method.AddParameter(pptrConverterType.ToTypeSignature(), "converter");
 					method.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
-					CilInstructionCollection processor = method.GetProcessor();
+					CilInstructionCollection processor = method.GetInstructions();
 					CilInstructionLabel returnLabel = new();
 					CilInstructionLabel isNullLabel = new();
 					CilInstructionLabel isSameCollectionLabel = new();
@@ -380,7 +380,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					MethodDefinition method = instance.Type.AddMethod(CopyValuesName, InterfaceUtils.InterfaceMethodImplementation, SharedState.Instance.Importer.Void);
 					method.AddParameter(group.Interface.ToTypeSignature(), "source");
-					CilInstructionCollection processor = method.GetProcessor();
+					CilInstructionCollection processor = method.GetInstructions();
 					CilInstructionLabel returnLabel = new();
 					CilInstructionLabel isNullLabel = new();
 					if (needsNullCheck)
@@ -517,7 +517,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 							SharedState.Instance.Importer.Void);
 						method.AddParameter(targetSignature, "target");
 						method.AddParameter(sourceSignature, "source");
-						CilInstructionCollection processor = method.GetProcessor();
+						CilInstructionCollection processor = method.GetInstructions();
 						switch (targetGenericSignature.GenericType.Name?.ToString())
 						{
 							case $"{nameof(AssetDictionary<int, int>)}`2":

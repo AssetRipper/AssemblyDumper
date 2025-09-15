@@ -156,7 +156,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void FillMethod(this TypeDefinition type, string methodName, UniversalNode? rootNode, UnityVersion version)
 		{
 			MethodDefinition method = type.Methods.First(m => m.Name == methodName);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			if (rootNode is not null)
 			{
@@ -285,7 +285,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef readMethod = SharedState.Instance.Importer.ImportMethod<UnityAssetBase>(m => m.Name == ReadMethod && m.Parameters[0].ParameterType is ByReferenceTypeSignature);
 			MethodDefinition method = NewMethod(uniqueName, elementType);
 
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Ldarg_1);
 			processor.Add(CilOpCodes.Callvirt, readMethod);
@@ -345,7 +345,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef clearMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictionaryType, clearMethodDefinition);
 
 			MethodDefinition method = NewMethod(uniqueName, genericDictionaryType);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
 			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
@@ -440,7 +440,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			GenericInstanceTypeSignature genericPairType = assetPairReference.MakeGenericInstanceType(keySignature, valueSignature);
 
 			MethodDefinition method = NewMethod(uniqueName, genericPairType);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			if (keySignature.IsArrayOrPrimitive())
 			{
@@ -506,7 +506,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			CorLibTypeSignature elementType = SharedState.Instance.Importer.UInt8;
 			SzArrayTypeSignature arrayType = elementType.MakeSzArrayType();
 			MethodDefinition method = NewMethod(uniqueName, arrayType);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
 			CilLocalVariable arrayLocal = processor.AddLocalVariable(arrayType);
@@ -570,7 +570,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef clearMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericListType, clearMethodDefinition);
 
 			MethodDefinition method = NewMethod(uniqueName, genericListType);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
 			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
@@ -655,7 +655,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			SzArrayTypeSignature arrayType = elementType.MakeSzArrayType();
 			GenericInstanceTypeSignature listType = SharedState.Instance.Importer.ImportType(typeof(List<>)).MakeGenericInstanceType(elementType);
 			MethodDefinition method = NewMethod(uniqueName, arrayType);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
 			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
@@ -780,7 +780,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			if (align)
 			{
 				MethodDefinition method = NewMethod(uniqueName, primitiveMethod.Signature!.ReturnType);
-				CilInstructionCollection processor = method.GetProcessor();
+				CilInstructionCollection processor = method.GetInstructions();
 				processor.Add(CilOpCodes.Ldarg_0);
 				processor.AddCall(primitiveMethod);
 				if (align)

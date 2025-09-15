@@ -35,7 +35,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			foreach (GeneratedClassInstance instance in group.Instances)
 			{
-				FieldDefinition structureField = instance.Type.AddField(propertyType, fieldName, visibility: FieldVisibility.Internal);
+				FieldDefinition structureField = instance.Type.AddField(fieldName, propertyType, visibility: Visibility.Internal);
 				structureField
 					.AddNullableAttributesForMaybeNull()
 					.AddDebuggerBrowsableNeverAttribute();

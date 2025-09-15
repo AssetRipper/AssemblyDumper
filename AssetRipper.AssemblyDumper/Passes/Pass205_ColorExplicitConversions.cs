@@ -25,7 +25,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			TypeSignature commonType = SharedState.Instance.Importer.ImportTypeSignature<Color32>();
 
 			MethodDefinition method = type.AddEmptyConversion(type.ToTypeSignature(), commonType, false);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_Rgba"));
@@ -41,7 +41,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition constructor = type.GetDefaultConstructor();
 
 			MethodDefinition method = type.AddEmptyConversion(commonType, type.ToTypeSignature(), false);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			processor.Add(CilOpCodes.Newobj, constructor);
 
@@ -69,7 +69,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef constructor = SharedState.Instance.Importer.ImportConstructor<ColorFloat>(4);
 
 			MethodDefinition method = type.AddEmptyConversion(type.ToTypeSignature(), commonType, true);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_R"));
@@ -95,7 +95,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition constructor = type.GetDefaultConstructor();
 
 			MethodDefinition method = type.AddEmptyConversion(commonType, type.ToTypeSignature(), false);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			processor.Add(CilOpCodes.Newobj, constructor);
 

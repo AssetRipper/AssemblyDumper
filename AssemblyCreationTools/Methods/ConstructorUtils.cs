@@ -3,11 +3,6 @@
 	public static class ConstructorUtils
 	{
 		/// <summary>
-		/// Gets the default constructor for a <see cref="TypeDefinition"/>. Throws an exception if one doesn't exist.
-		/// </summary>
-		public static MethodDefinition GetDefaultConstructor(this TypeDefinition _this) => _this.GetConstructor(0);
-
-		/// <summary>
 		/// Imports the default constructor for a type. Throws an exception if one doesn't exist.
 		/// </summary>
 		public static IMethodDefOrRef ImportDefaultConstructor<T>(this CachedReferenceImporter importer)
@@ -21,24 +16,6 @@
 		public static IMethodDefOrRef ImportDefaultConstructor(this CachedReferenceImporter importer, Type type)
 		{
 			return importer.ImportConstructor(type, 0);
-		}
-
-		/// <summary>
-		/// Gets the static constructor for a <see cref="TypeDefinition"/>. Throws an exception if one doesn't exist.
-		/// </summary>
-		public static MethodDefinition GetStaticConstructor(this TypeDefinition _this)
-		{
-			return _this.Methods.Single(m => m.IsConstructor && m.IsStatic);
-		}
-
-		/// <summary>
-		/// Get all the instance constructors for a type
-		/// </summary>
-		/// <param name="type">The definition for the type</param>
-		/// <returns>All the instance constructors</returns>
-		public static IEnumerable<MethodDefinition> GetInstanceConstructors(this TypeDefinition type)
-		{
-			return type.Methods.Where(m => !m.IsStatic && m.IsConstructor);
 		}
 
 		/// <summary>

@@ -2,13 +2,6 @@
 {
 	public static class MethodCreator
 	{
-		public static MethodDefinition AddMethod(this TypeDefinition type, string? methodName, MethodAttributes methodAttributes, TypeSignature returnType)
-		{
-			MethodDefinition method = CreateMethod(methodName, methodAttributes, returnType);
-			type.Methods.Add(method);
-			return method;
-		}
-
 		/// <summary>
 		/// Creates an empty conversion method
 		/// </summary>
@@ -55,42 +48,6 @@
 				attributes);
 			declaringType.Methods.Add(method);
 			return method;
-		}
-
-		public static MethodDefinition CreateMethod(string? methodName, MethodAttributes methodAttributes, TypeSignature returnType)
-		{
-			bool isStatic = (methodAttributes & MethodAttributes.Static) != 0;
-			MethodSignature methodSignature = isStatic
-				? MethodSignature.CreateStatic(returnType)
-				: MethodSignature.CreateInstance(returnType);
-			MethodDefinition result = new MethodDefinition(methodName, methodAttributes, methodSignature)
-			{
-				CilMethodBody = new CilMethodBody()
-			};
-
-			return result;
-		}
-
-		public static Parameter AddParameter(this MethodDefinition method, TypeSignature parameterSignature, string? parameterName)
-		{
-			return method.AddParameter(parameterSignature, parameterName, out _);
-		}
-
-		public static Parameter AddParameter(this MethodDefinition method, TypeSignature parameterSignature, string? parameterName, out ParameterDefinition parameterDefinition)
-		{
-			parameterDefinition = new ParameterDefinition((ushort)(method.Signature!.ParameterTypes.Count + 1), parameterName, default);
-			method.Signature.ParameterTypes.Add(parameterSignature);
-			method.ParameterDefinitions.Add(parameterDefinition);
-
-			method.Parameters.PullUpdatesFromMethodSignature();
-			return method.Parameters.Single(parameter => parameter.Name == parameterName && parameter.ParameterType == parameterSignature);
-		}
-
-		public static Parameter AddParameter(this MethodDefinition method, TypeSignature parameterSignature)
-		{
-			method.Signature!.ParameterTypes.Add(parameterSignature);
-			method.Parameters.PullUpdatesFromMethodSignature();
-			return method.Parameters[method.Parameters.Count - 1];
 		}
 
 		public static ParameterDefinition GetOrAddReturnTypeParameterDefinition(this MethodDefinition method)

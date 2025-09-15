@@ -40,8 +40,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 						propertyName,
 						InterfaceUtils.InterfacePropertyImplementation,
 						enumType.ToTypeSignature());
-					classProperty.SpecialDefinition.GetMethod!.GetProcessor().FillGetter(classProperty.BackingField, fieldTypeSignature.ElementType, enumElementType);
-					classProperty.SpecialDefinition.SetMethod!.GetProcessor().FillSetter(classProperty.BackingField, fieldTypeSignature.ElementType, enumElementType);
+					classProperty.SpecialDefinition.GetMethod!.GetInstructions().FillGetter(classProperty.BackingField, fieldTypeSignature.ElementType, enumElementType);
+					classProperty.SpecialDefinition.SetMethod!.GetInstructions().FillSetter(classProperty.BackingField, fieldTypeSignature.ElementType, enumElementType);
 					if (classProperty.Class.Type.IsAbstract)
 					{
 						classProperty.SpecialDefinition.AddDebuggerBrowsableNeverAttribute();//Properties in base classes are redundant in the debugger.

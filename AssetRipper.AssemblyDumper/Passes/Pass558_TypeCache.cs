@@ -20,12 +20,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef getTypeFromHandleMethod = SharedState.Instance.Importer.ImportMethod(typeof(Type), m => m.Name == nameof(Type.GetTypeFromHandle));
 
 			const string propertyName = "Dictionary";
-			FieldDefinition field = newTypeDef.AddField(readOnlyDictionarySignature, $"<{propertyName}>k__BackingField", true, FieldVisibility.Private);
+			FieldDefinition field = newTypeDef.AddField($"<{propertyName}>k__BackingField", readOnlyDictionarySignature, true, Visibility.Private);
 			field.Attributes |= FieldAttributes.InitOnly;
 			field.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 
 			MethodDefinition staticConstructor = newTypeDef.AddEmptyConstructor(true);
-			CilInstructionCollection processor = staticConstructor.GetProcessor();
+			CilInstructionCollection processor = staticConstructor.GetInstructions();
 			processor.Add(CilOpCodes.Newobj, dictionaryConstructor);
 			foreach ((int id, ClassGroup group) in SharedState.Instance.ClassGroups)
 			{

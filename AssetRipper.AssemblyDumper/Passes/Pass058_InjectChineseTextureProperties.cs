@@ -37,7 +37,7 @@ internal static class Pass058_InjectChineseTextureProperties
 	{
 		AddProperty(textureGroup, fieldType, fieldName, static (instance, fieldType, fieldName) =>
 		{
-			FieldDefinition field = instance.Type.AddField(fieldType, fieldName, visibility: FieldVisibility.Internal);
+			FieldDefinition field = instance.Type.AddField(fieldName, fieldType, visibility: Visibility.Internal);
 			field.AddDebuggerBrowsableNeverAttribute();
 			return field;
 		});

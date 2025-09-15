@@ -20,7 +20,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void FixMethod(MethodDefinition method)
 		{
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			InsertInstructions(processor, FindInsertionPoint(processor));
 		}
 

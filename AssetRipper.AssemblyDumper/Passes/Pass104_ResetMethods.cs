@@ -18,7 +18,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
 					MethodDefinition method = instance.Type.GetMethodByName(nameof(UnityAssetBase.Reset));
-					CilInstructionCollection processor = method.GetProcessor();
+					CilInstructionCollection processor = method.GetInstructions();
 					processor.FillProcessor(instance);
 				}
 			}

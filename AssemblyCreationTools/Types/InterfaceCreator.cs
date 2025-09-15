@@ -19,7 +19,5 @@
 
 			return emptyInterface;
 		}
-
-
 	}
 }

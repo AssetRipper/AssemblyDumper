@@ -75,7 +75,7 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 				nameof(RuntimeCompatibilityAttribute.WrapNonExceptionThrows),
 				builder.Importer.Boolean,
 				wrapNonExceptionThrows,
-				true);
+				CustomAttributeArgumentMemberType.Property);
 			return attribute;
 		}
 
@@ -93,7 +93,7 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 		public static CustomAttribute AddTargetFrameworkAttribute(this AssemblyBuilder builder, string displayName)
 		{
 			CustomAttribute attribute = builder.AddTargetFrameworkAttribute();
-			attribute.AddNamedArgument(builder.Importer.String, nameof(TargetFrameworkAttribute.FrameworkDisplayName), builder.Importer.String, displayName);
+			attribute.AddNamedArgument(builder.Importer.String, nameof(TargetFrameworkAttribute.FrameworkDisplayName), builder.Importer.String, displayName, CustomAttributeArgumentMemberType.Property);
 			return attribute;
 		}
 

@@ -64,7 +64,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef unityVersionConstructor = SharedState.Instance.Importer.ImportConstructor<UnityVersion>(5);
 
 			const string propertyName = "Versions";
-			FieldDefinition field = type.AddField(readOnlySet, $"<{propertyName}>k__BackingField", true, FieldVisibility.Private);
+			FieldDefinition field = type.AddField($"<{propertyName}>k__BackingField", readOnlySet, true, Visibility.Private);
 
 			field.Attributes |= FieldAttributes.InitOnly;
 			field.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
@@ -108,7 +108,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			PropertyDefinition property = type.AddGetterProperty("Data", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, propertySignature);
 
 			MethodDefinition method = property.GetMethod!;
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			MemberReference reference = new MemberReference(propertySignature.ToTypeDefOrRef(), ".ctor", SharedState.Instance.Importer.ImportMethod(typeof(ReadOnlySpan<>),
 				m => m.IsConstructor && m.Parameters.Count == 1 && m.Parameters[0].ParameterType is SzArrayTypeSignature).Signature);
@@ -122,7 +122,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			ITypeDefOrRef returnType = SharedState.Instance.Importer.ImportType(typeof(MemoryStream));
 
 			MethodDefinition method = type.AddMethod("GetStream", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, returnType.ToTypeSignature());
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			MemberReference reference = new MemberReference(returnType, ".ctor", SharedState.Instance.Importer.ImportMethod(typeof(MemoryStream), m =>
 			{
@@ -146,7 +146,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			FieldDefinition privateImplementationField = AddStoredDataField(data);
 
-			field = internalType.AddField(SharedState.Instance.Importer.UInt8.MakeSzArrayType(), "data", true, FieldVisibility.Internal);
+			field = internalType.AddField("data", SharedState.Instance.Importer.UInt8.MakeSzArrayType(), true, Visibility.Internal);
 			field.IsInitOnly = true;
 
 			//Static Constructor
@@ -176,7 +176,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			TypeDefinition nestedType = GetOrCreateStaticArrayInitType(data.Length);
 
-			FieldDefinition privateImplementationField = SharedState.Instance.PrivateImplementationDetails.AddField(nestedType.ToTypeSignature(), HashDataToBase64(data), true, FieldVisibility.Internal);
+			FieldDefinition privateImplementationField = SharedState.Instance.PrivateImplementationDetails.AddField(HashDataToBase64(data), nestedType.ToTypeSignature(), true, Visibility.Internal);
 			privateImplementationField.IsInitOnly = true;
 			privateImplementationField.FieldRva = new DataSegment(data);
 			privateImplementationField.HasFieldRva = true;

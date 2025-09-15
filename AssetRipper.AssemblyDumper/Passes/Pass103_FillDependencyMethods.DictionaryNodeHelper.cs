@@ -10,7 +10,7 @@ public static partial class Pass103_FillDependencyMethods
 	{
 		public static void Apply(DictionaryNode node, DependencyMethodContext context, ParentContext parentContext)
 		{
-			FieldDefinition stateField = context.Type.AddField(context.CorLibTypeFactory.Int32, NodeHelper.GetStateFieldName(node), visibility: FieldVisibility.Private);
+			FieldDefinition stateField = context.Type.AddField(NodeHelper.GetStateFieldName(node), context.CorLibTypeFactory.Int32, visibility: Visibility.Private);
 
 			CilInstructionLabel gotoNextCaseLabel = new();
 			CilInstructionLabel endLabel = new();

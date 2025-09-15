@@ -27,7 +27,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			ITypeDefOrRef commonRef = SharedState.Instance.Importer.ImportType<UnityGuid>();
 			IMethodDefOrRef toStringMethod = SharedState.Instance.Importer.ImportMethod<UnityGuid>(m => m.Name == nameof(UnityGuid.ToString) && m.Parameters.Count == 0);
 
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			CilLocalVariable local = processor.AddLocalVariable(commonRef.ToTypeSignature());
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Call, conversionMethod);
@@ -45,7 +45,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition method = type.AddMethod(nameof(object.ToString), MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual, type.DeclaringModule!.CorLibTypeFactory.String);
 			IMethodDefOrRef helperMethod = helperType.Methods.Single(m => m.Name == nameof(HashHelper.ToString));
 
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 			processor.AddLoadAllHashFields(type);
 			processor.Add(CilOpCodes.Call, helperMethod);
 			processor.Add(CilOpCodes.Ret);

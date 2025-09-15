@@ -26,7 +26,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef constructor = SharedState.Instance.Importer.ImportConstructor<BoneWeight4>(8);
 
 			MethodDefinition method = type.AddEmptyConversion(type.ToTypeSignature(), commonType, true);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			processor.Add(CilOpCodes.Ldarg_0);
 			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_Weight_0_"));
@@ -64,7 +64,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition constructor = type.GetDefaultConstructor();
 
 			MethodDefinition method = type.AddEmptyConversion(commonType, type.ToTypeSignature(), false);
-			CilInstructionCollection processor = method.GetProcessor();
+			CilInstructionCollection processor = method.GetInstructions();
 
 			processor.Add(CilOpCodes.Newobj, constructor);
 

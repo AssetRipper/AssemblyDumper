@@ -13,7 +13,7 @@ public static partial class Pass103_FillDependencyMethods
 			{
 				if (node.Value.AnyPPtrs)
 				{
-					FieldDefinition stateField = context.Type.AddField(context.CorLibTypeFactory.Boolean, NodeHelper.GetStateFieldName(node), visibility: FieldVisibility.Private);
+					FieldDefinition stateField = context.Type.AddField(NodeHelper.GetStateFieldName(node), context.CorLibTypeFactory.Boolean, visibility: Visibility.Private);
 					CilInstructionLabel valueLabel = new();
 					CilInstructionLabel endLabel = new();
 
