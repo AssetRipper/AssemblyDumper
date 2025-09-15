@@ -1,6 +1,5 @@
-﻿using AssetRipper.AssemblyCreationTools.Attributes;
-using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.AssemblyCreationTools.Types;
+﻿using AssetRipper.AssemblyDumper.Attributes;
+using AssetRipper.AssemblyDumper.Types;
 using AssetRipper.DocExtraction.Extensions;
 
 namespace AssetRipper.AssemblyDumper.Passes

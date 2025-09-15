@@ -1,6 +1,4 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
-
-namespace AssetRipper.AssemblyDumper.Passes
+﻿namespace AssetRipper.AssemblyDumper.Passes
 {
 	/// <summary>
 	/// Adds implicit conversion and ToString override to OffsetPtr types.

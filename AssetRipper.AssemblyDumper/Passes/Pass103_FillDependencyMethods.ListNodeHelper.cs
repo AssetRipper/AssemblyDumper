@@ -1,6 +1,4 @@
-﻿using AssetRipper.AssemblyCreationTools;
-using AssetRipper.AssemblyCreationTools.Fields;
-using AssetRipper.AssemblyDumper.AST;
+﻿using AssetRipper.AssemblyDumper.AST;
 
 namespace AssetRipper.AssemblyDumper.Passes;
 

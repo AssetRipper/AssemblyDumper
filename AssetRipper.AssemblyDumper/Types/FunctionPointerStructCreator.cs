@@ -1,8 +1,7 @@
-﻿using AssetRipper.AssemblyCreationTools.Fields;
-using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyDumper.Methods;
 using System.Runtime.InteropServices;
 
-namespace AssetRipper.AssemblyCreationTools.Types
+namespace AssetRipper.AssemblyDumper.Types
 {
 	public static class FunctionPointerStructCreator
 	{
@@ -64,7 +63,7 @@ namespace AssetRipper.AssemblyCreationTools.Types
 			CilLocalVariable local = new CilLocalVariable(functionPointerSignature);
 			conversion.CilMethodBody!.LocalVariables.Add(local);
 
-			IMethodDefOrRef intPtrConversionMethod = importer.ImportMethod(typeof(IntPtr), m => m.Name == "op_Explicit" && m.Signature!.ReturnType is PointerTypeSignature);
+			IMethodDefOrRef intPtrConversionMethod = importer.ImportMethod(typeof(nint), m => m.Name == "op_Explicit" && m.Signature!.ReturnType is PointerTypeSignature);
 
 			CilInstructionCollection instructions = conversion.CilMethodBody!.Instructions;
 			instructions.Add(CilOpCodes.Ldarg_0);
@@ -83,7 +82,7 @@ namespace AssetRipper.AssemblyCreationTools.Types
 			//CilLocalVariable local = new CilLocalVariable(type.ToTypeSignature());
 			//conversion.CilMethodBody!.LocalVariables.Add(local);
 
-			IMethodDefOrRef intPtrConversionMethod = importer.ImportMethod(typeof(IntPtr), m => m.Name == "op_Explicit" && m.Parameters.Count == 1 && m.Parameters[0].ParameterType is PointerTypeSignature);
+			IMethodDefOrRef intPtrConversionMethod = importer.ImportMethod(typeof(nint), m => m.Name == "op_Explicit" && m.Parameters.Count == 1 && m.Parameters[0].ParameterType is PointerTypeSignature);
 
 			CilInstructionCollection instructions = conversion.CilMethodBody!.Instructions;
 			instructions.Add(CilOpCodes.Ldarg_0);

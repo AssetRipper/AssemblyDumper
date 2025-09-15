@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace AssetRipper.AssemblyCreationTools.Types
+﻿namespace AssetRipper.AssemblyDumper.Types
 {
 	public static class TypeDefinitionExtensions
 	{

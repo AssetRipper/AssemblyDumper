@@ -1,5 +1,5 @@
-﻿using AssetRipper.AssemblyCreationTools.Types;
-using AssetRipper.AssemblyDumper.Documentation;
+﻿using AssetRipper.AssemblyDumper.Documentation;
+using AssetRipper.AssemblyDumper.Types;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

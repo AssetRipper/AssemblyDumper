@@ -1,8 +1,8 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyDumper.Methods;
 
 namespace AssetRipper.AssemblyDumper.Extensions
 {
-	internal static class ProcessorExtensions
+	internal static class CilInstructionCollectionExtensions
 	{
 		public static void AddNotSupportedException(this CilInstructionCollection instructions)
 		{

@@ -1,4 +1,4 @@
-﻿namespace AssetRipper.AssemblyCreationTools
+﻿namespace AssetRipper.AssemblyDumper
 {
 	public class AssemblyBuilder
 	{

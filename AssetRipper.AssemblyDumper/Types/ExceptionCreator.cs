@@ -1,6 +1,6 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyDumper.Methods;
 
-namespace AssetRipper.AssemblyCreationTools.Types
+namespace AssetRipper.AssemblyDumper.Types
 {
 	public static class ExceptionCreator
 	{

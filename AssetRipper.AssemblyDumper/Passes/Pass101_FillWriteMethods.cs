@@ -1,7 +1,6 @@
-﻿using AssetRipper.AssemblyCreationTools;
-using AssetRipper.AssemblyCreationTools.Attributes;
-using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.AssemblyCreationTools.Types;
+﻿using AssetRipper.AssemblyDumper.Attributes;
+using AssetRipper.AssemblyDumper.Methods;
+using AssetRipper.AssemblyDumper.Types;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Generics;
 using AssetRipper.Assets.IO.Writing;

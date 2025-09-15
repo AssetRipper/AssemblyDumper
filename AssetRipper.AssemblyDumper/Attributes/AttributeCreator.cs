@@ -1,6 +1,7 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyDumper.Attributes;
+using AssetRipper.AssemblyDumper.Methods;
 
-namespace AssetRipper.AssemblyCreationTools.Attributes
+namespace AssetRipper.AssemblyDumper.Attributes
 {
 	public static class AttributeCreator
 	{

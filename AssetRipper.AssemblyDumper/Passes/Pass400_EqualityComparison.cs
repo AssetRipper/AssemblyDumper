@@ -1,8 +1,7 @@
-﻿using AssetRipper.AssemblyCreationTools;
-using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.AssemblyCreationTools.Types;
-using AssetRipper.AssemblyDumper.AST;
+﻿using AssetRipper.AssemblyDumper.AST;
 using AssetRipper.AssemblyDumper.InjectedTypes;
+using AssetRipper.AssemblyDumper.Methods;
+using AssetRipper.AssemblyDumper.Types;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Cloning;
 using System.Diagnostics;

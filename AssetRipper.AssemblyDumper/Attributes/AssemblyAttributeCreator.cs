@@ -1,9 +1,9 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyDumper.Methods;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 
-namespace AssetRipper.AssemblyCreationTools.Attributes
+namespace AssetRipper.AssemblyDumper.Attributes
 {
 	public static class AssemblyAttributeCreator
 	{

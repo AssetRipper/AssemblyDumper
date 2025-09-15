@@ -1,7 +1,6 @@
 ﻿using AsmResolver.DotNet.Cloning;
-using AssetRipper.AssemblyCreationTools;
-using AssetRipper.AssemblyCreationTools.Attributes;
-using AssetRipper.AssemblyCreationTools.Methods;
+using AssetRipper.AssemblyDumper.Attributes;
+using AssetRipper.AssemblyDumper.Methods;
 using AssetRipper.AssemblyDumper.Utils;
 using AssetRipper.DocExtraction.DataStructures;
 using System.IO;

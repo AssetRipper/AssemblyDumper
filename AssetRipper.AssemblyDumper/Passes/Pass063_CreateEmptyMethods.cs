@@ -1,5 +1,4 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.Assets;
+﻿using AssetRipper.Assets;
 using AssetRipper.Assets.IO.Writing;
 using AssetRipper.Assets.Metadata;
 using AssetRipper.IO.Endian;

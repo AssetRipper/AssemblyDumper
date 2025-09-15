@@ -1,7 +1,6 @@
-﻿using AssetRipper.AssemblyCreationTools;
-using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.AssemblyCreationTools.Types;
-using AssetRipper.AssemblyDumper.Documentation;
+﻿using AssetRipper.AssemblyDumper.Documentation;
+using AssetRipper.AssemblyDumper.Methods;
+using AssetRipper.AssemblyDumper.Types;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Collections;
 using AssetRipper.Assets.Metadata;

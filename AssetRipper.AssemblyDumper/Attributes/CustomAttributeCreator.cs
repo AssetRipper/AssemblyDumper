@@ -1,4 +1,6 @@
-﻿namespace AssetRipper.AssemblyCreationTools.Attributes
+﻿using AssetRipper.AssemblyDumper.Attributes;
+
+namespace AssetRipper.AssemblyDumper.Attributes
 {
 	public static class CustomAttributeCreator
 	{

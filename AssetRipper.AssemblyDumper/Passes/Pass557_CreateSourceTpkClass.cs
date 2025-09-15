@@ -1,10 +1,8 @@
 ﻿using AsmResolver;
-using AssetRipper.AssemblyCreationTools;
-using AssetRipper.AssemblyCreationTools.Attributes;
-using AssetRipper.AssemblyCreationTools.Fields;
-using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.AssemblyCreationTools.Types;
+using AssetRipper.AssemblyDumper.Attributes;
 using AssetRipper.AssemblyDumper.Documentation;
+using AssetRipper.AssemblyDumper.Methods;
+using AssetRipper.AssemblyDumper.Types;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;

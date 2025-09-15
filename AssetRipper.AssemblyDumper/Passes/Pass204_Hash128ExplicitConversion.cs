@@ -1,6 +1,4 @@
-﻿using AssetRipper.AssemblyCreationTools;
-using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.AssemblyCreationTools.Types;
+﻿using AssetRipper.AssemblyDumper.Types;
 using AssetRipper.IO.Files.BundleFiles;
 
 namespace AssetRipper.AssemblyDumper.Passes

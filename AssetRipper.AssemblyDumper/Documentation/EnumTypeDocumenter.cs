@@ -1,5 +1,5 @@
-﻿using AssetRipper.AssemblyCreationTools.Types;
-using AssetRipper.AssemblyDumper.Enums;
+﻿using AssetRipper.AssemblyDumper.Enums;
+using AssetRipper.AssemblyDumper.Types;
 using AssetRipper.AssemblyDumper.Utils;
 using AssetRipper.DocExtraction.DataStructures;
 

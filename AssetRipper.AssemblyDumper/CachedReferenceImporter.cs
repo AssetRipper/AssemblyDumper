@@ -1,7 +1,6 @@
-﻿using AssetRipper.AssemblyCreationTools.Types;
-using System.Diagnostics.CodeAnalysis;
+﻿using AssetRipper.AssemblyDumper.Types;
 
-namespace AssetRipper.AssemblyCreationTools
+namespace AssetRipper.AssemblyDumper
 {
 	public sealed class CachedReferenceImporter
 	{

@@ -1,8 +1,8 @@
-﻿using AssetRipper.AssemblyCreationTools.Attributes;
-using AssetRipper.AssemblyCreationTools.Types;
+﻿using AssetRipper.AssemblyDumper.Attributes;
+using AssetRipper.AssemblyDumper.Types;
 using System.Runtime.CompilerServices;
 
-namespace AssetRipper.AssemblyCreationTools.Fields
+namespace AssetRipper.AssemblyDumper.Fields
 {
 	/// <summary>
 	/// Helper class for creating fixed size buffer fields<br/>

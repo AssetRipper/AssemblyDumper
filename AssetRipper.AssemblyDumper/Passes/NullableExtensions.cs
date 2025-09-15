@@ -1,6 +1,5 @@
-﻿using AssetRipper.AssemblyCreationTools.Attributes;
-using AssetRipper.AssemblyCreationTools.Fields;
-using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyDumper.Attributes;
+using AssetRipper.AssemblyDumper.Methods;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

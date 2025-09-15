@@ -1,7 +1,6 @@
-﻿using AssetRipper.AssemblyCreationTools.Attributes;
-using AssetRipper.AssemblyCreationTools.Fields;
+﻿using AssetRipper.AssemblyDumper.Attributes;
 
-namespace AssetRipper.AssemblyCreationTools.Methods
+namespace AssetRipper.AssemblyDumper.Methods
 {
 	public static class PropertyCreator
 	{

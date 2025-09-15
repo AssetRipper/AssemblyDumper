@@ -1,6 +1,6 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.AssemblyDumper.AST;
+﻿using AssetRipper.AssemblyDumper.AST;
 using AssetRipper.AssemblyDumper.InjectedTypes;
+using AssetRipper.AssemblyDumper.Methods;
 using AssetRipper.Assets;
 using AssetRipper.Assets.Metadata;
 using System.Collections;

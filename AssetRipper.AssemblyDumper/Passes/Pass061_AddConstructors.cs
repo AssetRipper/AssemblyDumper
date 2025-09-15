@@ -1,5 +1,4 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.Assets.Metadata;
+﻿using AssetRipper.Assets.Metadata;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

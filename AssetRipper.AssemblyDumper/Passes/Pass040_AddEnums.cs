@@ -1,7 +1,6 @@
-﻿using AssetRipper.AssemblyCreationTools.Attributes;
-using AssetRipper.AssemblyCreationTools.Methods;
-using AssetRipper.AssemblyCreationTools.Types;
-using AssetRipper.AssemblyDumper.Enums;
+﻿using AssetRipper.AssemblyDumper.Enums;
+using AssetRipper.AssemblyDumper.Methods;
+using AssetRipper.AssemblyDumper.Types;
 
 namespace AssetRipper.AssemblyDumper.Passes
 {

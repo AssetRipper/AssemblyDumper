@@ -1,4 +1,4 @@
-﻿namespace AssetRipper.AssemblyCreationTools.Methods
+﻿namespace AssetRipper.AssemblyDumper.Methods
 {
 	public static class EqualityMethods
 	{

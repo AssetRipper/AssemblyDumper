@@ -1,7 +1,7 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyDumper.Methods;
 using System.Security;
 
-namespace AssetRipper.AssemblyCreationTools.Attributes
+namespace AssetRipper.AssemblyDumper.Attributes
 {
 	public static class ModuleAttributeCreator
 	{

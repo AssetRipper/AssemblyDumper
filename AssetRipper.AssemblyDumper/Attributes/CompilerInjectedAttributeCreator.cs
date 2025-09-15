@@ -1,6 +1,6 @@
-﻿using AssetRipper.AssemblyCreationTools.Methods;
+﻿using AssetRipper.AssemblyDumper.Methods;
 
-namespace AssetRipper.AssemblyCreationTools.Attributes
+namespace AssetRipper.AssemblyDumper.Attributes
 {
 	public static class CompilerInjectedAttributeCreator
 	{
@@ -8,7 +8,7 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 		public static TypeDefinition CreateEmbeddedAttribute(CachedReferenceImporter importer, out MethodDefinition constructor)
 		{
 			TypeDefinition type = AttributeCreator.CreateDefaultAttribute(importer, "Microsoft.CodeAnalysis", "EmbeddedAttribute");
-			type.Attributes = (type.Attributes & ~TypeAttributes.VisibilityMask) | TypeAttributes.NotPublic | TypeAttributes.Sealed;
+			type.Attributes = type.Attributes & ~TypeAttributes.VisibilityMask | TypeAttributes.NotPublic | TypeAttributes.Sealed;
 			constructor = type.GetDefaultConstructor();
 			type.AddCompilerGeneratedAttribute(importer);
 			type.AddCustomAttribute(constructor);//The embedded attribute is attributed with itself
@@ -25,7 +25,7 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 				importer.UInt8,
 				false,
 				out _);
-			type.Attributes = (type.Attributes & ~TypeAttributes.VisibilityMask) | TypeAttributes.NotPublic | TypeAttributes.Sealed;
+			type.Attributes = type.Attributes & ~TypeAttributes.VisibilityMask | TypeAttributes.NotPublic | TypeAttributes.Sealed;
 			type.AddCompilerGeneratedAttribute(importer);
 			type.AddCustomAttribute(embeddedAttributeConstructor);
 			type.AddAttributeTargetsAttribute(
@@ -46,7 +46,7 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 				importer.UInt8.MakeSzArrayType(),
 				false,
 				out _);
-			type.Attributes = (type.Attributes & ~TypeAttributes.VisibilityMask) | TypeAttributes.NotPublic | TypeAttributes.Sealed;
+			type.Attributes = type.Attributes & ~TypeAttributes.VisibilityMask | TypeAttributes.NotPublic | TypeAttributes.Sealed;
 			type.AddCompilerGeneratedAttribute(importer);
 			type.AddCustomAttribute(embeddedAttributeConstructor);
 			type.AddAttributeTargetsAttribute(
@@ -106,7 +106,7 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 
 		public static CustomAttribute AddMemberNotNullWhenAttribute(this IHasCustomAttribute _this, CachedReferenceImporter importer, bool returnValue, string memberName)
 		{
-			IMethodDefOrRef constructor = importer.ImportConstructor<System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute>(
+			IMethodDefOrRef constructor = importer.ImportConstructor<MemberNotNullWhenAttribute>(
 				m => m.Parameters.Count == 2 && m.Parameters[1].ParameterType is CorLibTypeSignature);
 			CustomAttribute attribute = _this.AddCustomAttribute(constructor);
 			attribute.AddFixedArgument(importer.Boolean, returnValue);
@@ -116,7 +116,7 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 
 		public static CustomAttribute AddNotNullWhenAttribute(this IHasCustomAttribute _this, CachedReferenceImporter importer, bool returnValue)
 		{
-			IMethodDefOrRef constructor = importer.ImportConstructor<System.Diagnostics.CodeAnalysis.NotNullWhenAttribute>(1);
+			IMethodDefOrRef constructor = importer.ImportConstructor<NotNullWhenAttribute>(1);
 			CustomAttribute attribute = _this.AddCustomAttribute(constructor);
 			attribute.AddFixedArgument(importer.Boolean, returnValue);
 			return attribute;
