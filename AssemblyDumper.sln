@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.AssemblyDumper"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AssetRipper", "AssetRipper", "{01351761-6949-4784-B493-478F9886273B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AssemblyCreation", "AssemblyCreation", "{8459F9B6-733D-466B-9076-4B4576AC572D}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyCreationTools", "AssemblyCreationTools\AssemblyCreationTools.csproj", "{3060C500-2EC8-4DA3-8C4D-49C26EEE1F3A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BF4F464E-6F57-48E2-AAC5-08D1AD1F56FE}"
@@ -39,16 +37,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.AssemblyDumper.Downloader", "AssetRipper.AssemblyDumper.Downloader\AssetRipper.AssemblyDumper.Downloader.csproj", "{88F4C6A7-CCFC-47AF-8E58-5DE5596BE0D4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetRipper.AssemblyDumper.NuGetFixer", "AssetRipper.AssemblyDumper.NuGetFixer\AssetRipper.AssemblyDumper.NuGetFixer.csproj", "{3B877294-B096-45CC-A0D6-3770E100523A}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AsmResolver", "AsmResolver", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsmResolver", "..\AsmResolver\src\AsmResolver\AsmResolver.csproj", "{C4A9A004-77DA-3360-27EE-8CF8D1D1EE9F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsmResolver.PE.File", "..\AsmResolver\src\AsmResolver.PE.File\AsmResolver.PE.File.csproj", "{5142BBB1-308A-4FBC-7C77-BFCB1A3E78A2}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsmResolver.PE", "..\AsmResolver\src\AsmResolver.PE\AsmResolver.PE.csproj", "{76FB60A4-B2C9-255D-BD2A-388BFEA85CBF}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsmResolver.DotNet", "..\AsmResolver\src\AsmResolver.DotNet\AsmResolver.DotNet.csproj", "{EA8372B4-9878-C358-5822-50EA3135A218}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -104,35 +92,14 @@ Global
 		{3B877294-B096-45CC-A0D6-3770E100523A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3B877294-B096-45CC-A0D6-3770E100523A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3B877294-B096-45CC-A0D6-3770E100523A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C4A9A004-77DA-3360-27EE-8CF8D1D1EE9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C4A9A004-77DA-3360-27EE-8CF8D1D1EE9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C4A9A004-77DA-3360-27EE-8CF8D1D1EE9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C4A9A004-77DA-3360-27EE-8CF8D1D1EE9F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5142BBB1-308A-4FBC-7C77-BFCB1A3E78A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5142BBB1-308A-4FBC-7C77-BFCB1A3E78A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5142BBB1-308A-4FBC-7C77-BFCB1A3E78A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5142BBB1-308A-4FBC-7C77-BFCB1A3E78A2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{76FB60A4-B2C9-255D-BD2A-388BFEA85CBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{76FB60A4-B2C9-255D-BD2A-388BFEA85CBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{76FB60A4-B2C9-255D-BD2A-388BFEA85CBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{76FB60A4-B2C9-255D-BD2A-388BFEA85CBF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EA8372B4-9878-C358-5822-50EA3135A218}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EA8372B4-9878-C358-5822-50EA3135A218}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EA8372B4-9878-C358-5822-50EA3135A218}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EA8372B4-9878-C358-5822-50EA3135A218}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{3060C500-2EC8-4DA3-8C4D-49C26EEE1F3A} = {8459F9B6-733D-466B-9076-4B4576AC572D}
 		{002CDA91-A6DD-48CE-9C97-C433BB4DAB39} = {01351761-6949-4784-B493-478F9886273B}
 		{7AA82E00-DE13-47E8-A263-BE28E8171ED7} = {01351761-6949-4784-B493-478F9886273B}
 		{E4CDB120-28B8-491F-A22F-6595BCEF0707} = {01351761-6949-4784-B493-478F9886273B}
-		{C4A9A004-77DA-3360-27EE-8CF8D1D1EE9F} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{5142BBB1-308A-4FBC-7C77-BFCB1A3E78A2} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{76FB60A4-B2C9-255D-BD2A-388BFEA85CBF} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{EA8372B4-9878-C358-5822-50EA3135A218} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {75198E33-4C14-4946-8786-781402305986}
