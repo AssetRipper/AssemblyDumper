@@ -1,9 +1,8 @@
-﻿namespace AssetRipper.AssemblyDumper.Passes
+﻿namespace AssetRipper.AssemblyDumper.Passes;
+
+public enum NullableAnnotation : byte
 {
-	public enum NullableAnnotation : byte
-	{
-		Oblivious,
-		NotNull,
-		MaybeNull,
-	}
+	Oblivious,
+	NotNull,
+	MaybeNull,
 }

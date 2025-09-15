@@ -1,7 +1,6 @@
-﻿namespace AssetRipper.AssemblyDumper.Utils
+﻿namespace AssetRipper.AssemblyDumper.Utils;
+
+public interface IDeepCloneable<T>
 {
-	public interface IDeepCloneable<T>
-	{
-		T DeepClone();
-	}
+	T DeepClone();
 }

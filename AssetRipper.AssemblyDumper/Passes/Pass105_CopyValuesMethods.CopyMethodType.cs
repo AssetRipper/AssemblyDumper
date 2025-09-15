@@ -1,13 +1,12 @@
-﻿namespace AssetRipper.AssemblyDumper.Passes
+﻿namespace AssetRipper.AssemblyDumper.Passes;
+
+internal static partial class Pass105_CopyValuesMethods
 {
-	internal static partial class Pass105_CopyValuesMethods
+	[Flags]
+	private enum CopyMethodType
 	{
-		[Flags]
-		private enum CopyMethodType
-		{
-			None = 0,
-			Callvirt = 1,
-			HasConverter = 2,
-		}
+		None = 0,
+		Callvirt = 1,
+		HasConverter = 2,
 	}
 }

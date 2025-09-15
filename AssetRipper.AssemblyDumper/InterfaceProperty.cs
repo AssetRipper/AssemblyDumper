@@ -1,94 +1,93 @@
 ﻿using AssetRipper.Numerics;
 
-namespace AssetRipper.AssemblyDumper
+namespace AssetRipper.AssemblyDumper;
+
+internal class InterfaceProperty : PropertyBase
 {
-	internal class InterfaceProperty : PropertyBase
+	private readonly List<ClassProperty> implementations = new();
+	private DiscontinuousRange<UnityVersion>? presentRange;
+	private DiscontinuousRange<UnityVersion>? absentRange;
+	private DiscontinuousRange<UnityVersion>? releaseOnlyRange;
+	private DiscontinuousRange<UnityVersion>? editorOnlyRange;
+	private DiscontinuousRange<UnityVersion>? notReleaseOnlyRange;
+	private DiscontinuousRange<UnityVersion>? notEditorOnlyRange;
+
+	public InterfaceProperty(PropertyDefinition definition, ClassGroupBase group) : base(definition)
 	{
-		private readonly List<ClassProperty> implementations = new();
-		private DiscontinuousRange<UnityVersion>? presentRange;
-		private DiscontinuousRange<UnityVersion>? absentRange;
-		private DiscontinuousRange<UnityVersion>? releaseOnlyRange;
-		private DiscontinuousRange<UnityVersion>? editorOnlyRange;
-		private DiscontinuousRange<UnityVersion>? notReleaseOnlyRange;
-		private DiscontinuousRange<UnityVersion>? notEditorOnlyRange;
+		Group = group;
+	}
 
-		public InterfaceProperty(PropertyDefinition definition, ClassGroupBase group) : base(definition)
+	public DiscontinuousRange<UnityVersion> PresentRange
+	{
+		get
 		{
-			Group = group;
+			presentRange ??= CalculateRange(p => p.IsPresent);
+			return presentRange.Value;
 		}
+	}
 
-		public DiscontinuousRange<UnityVersion> PresentRange
+	public DiscontinuousRange<UnityVersion> AbsentRange
+	{
+		get
 		{
-			get
-			{
-				presentRange ??= CalculateRange(p => p.IsPresent);
-				return presentRange.Value;
-			}
+			absentRange ??= CalculateRange(p => p.IsAbsent);
+			return absentRange.Value;
 		}
+	}
 
-		public DiscontinuousRange<UnityVersion> AbsentRange
+	public IReadOnlyList<ClassProperty> Implementations => implementations;
+
+	public ClassGroupBase Group { get; }
+
+	public DiscontinuousRange<UnityVersion> ReleaseOnlyRange
+	{
+		get
 		{
-			get
-			{
-				absentRange ??= CalculateRange(p => p.IsAbsent);
-				return absentRange.Value;
-			}
+			releaseOnlyRange ??= CalculateRange(p => p.IsReleaseOnly);
+			return releaseOnlyRange.Value;
 		}
+	}
 
-		public IReadOnlyList<ClassProperty> Implementations => implementations;
-
-		public ClassGroupBase Group { get; }
-
-		public DiscontinuousRange<UnityVersion> ReleaseOnlyRange
+	public DiscontinuousRange<UnityVersion> EditorOnlyRange
+	{
+		get
 		{
-			get
-			{
-				releaseOnlyRange ??= CalculateRange(p => p.IsReleaseOnly);
-				return releaseOnlyRange.Value;
-			}
+			editorOnlyRange ??= CalculateRange(p => p.IsEditorOnly);
+			return editorOnlyRange.Value;
 		}
+	}
 
-		public DiscontinuousRange<UnityVersion> EditorOnlyRange
+	public DiscontinuousRange<UnityVersion> NotReleaseOnlyRange
+	{
+		get
 		{
-			get
-			{
-				editorOnlyRange ??= CalculateRange(p => p.IsEditorOnly);
-				return editorOnlyRange.Value;
-			}
+			notReleaseOnlyRange ??= CalculateRange(p => !p.IsReleaseOnly);
+			return notReleaseOnlyRange.Value;
 		}
+	}
 
-		public DiscontinuousRange<UnityVersion> NotReleaseOnlyRange
+	public DiscontinuousRange<UnityVersion> NotEditorOnlyRange
+	{
+		get
 		{
-			get
-			{
-				notReleaseOnlyRange ??= CalculateRange(p => !p.IsReleaseOnly);
-				return notReleaseOnlyRange.Value;
-			}
+			notEditorOnlyRange ??= CalculateRange(p => !p.IsEditorOnly);
+			return notEditorOnlyRange.Value;
 		}
+	}
 
-		public DiscontinuousRange<UnityVersion> NotEditorOnlyRange
-		{
-			get
-			{
-				notEditorOnlyRange ??= CalculateRange(p => !p.IsEditorOnly);
-				return notEditorOnlyRange.Value;
-			}
-		}
+	internal void AddImplementation(ClassProperty implementation)
+	{
+		implementations.Add(implementation);
+		presentRange = null;
+		absentRange = null;
+		releaseOnlyRange = null;
+		editorOnlyRange = null;
+		notReleaseOnlyRange = null;
+		notEditorOnlyRange = null;
+	}
 
-		internal void AddImplementation(ClassProperty implementation)
-		{
-			implementations.Add(implementation);
-			presentRange = null;
-			absentRange = null;
-			releaseOnlyRange = null;
-			editorOnlyRange = null;
-			notReleaseOnlyRange = null;
-			notEditorOnlyRange = null;
-		}
-
-		private DiscontinuousRange<UnityVersion> CalculateRange(Func<ClassProperty, bool> predicate)
-		{
-			return new DiscontinuousRange<UnityVersion>(implementations.Where(predicate).Select(static p => p.Class.VersionRange));
-		}
+	private DiscontinuousRange<UnityVersion> CalculateRange(Func<ClassProperty, bool> predicate)
+	{
+		return new DiscontinuousRange<UnityVersion>(implementations.Where(predicate).Select(static p => p.Class.VersionRange));
 	}
 }

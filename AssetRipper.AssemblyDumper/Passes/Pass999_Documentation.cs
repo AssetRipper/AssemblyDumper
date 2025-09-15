@@ -1,32 +1,31 @@
 ﻿using AssetRipper.AssemblyDumper.Documentation;
 using AssetRipper.AssemblyDumper.Enums;
 
-namespace AssetRipper.AssemblyDumper.Passes
+namespace AssetRipper.AssemblyDumper.Passes;
+
+internal static class Pass999_Documentation
 {
-	internal static class Pass999_Documentation
+	public static void DoPass()
 	{
-		public static void DoPass()
+		InjectedDocumenter.AddDocumentation();
+
+		foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
 		{
-			InjectedDocumenter.AddDocumentation();
+			InterfaceDocumenter.AddInterfaceDocumentation(group);
 
-			foreach (ClassGroupBase group in SharedState.Instance.AllGroups)
+			foreach (GeneratedClassInstance instance in group.Instances)
 			{
-				InterfaceDocumenter.AddInterfaceDocumentation(group);
-
-				foreach (GeneratedClassInstance instance in group.Instances)
-				{
-					ClassDocumenter.AddClassDocumentation(instance);
-				}
+				ClassDocumenter.AddClassDocumentation(instance);
 			}
-
-			IdEnumDocumenter.AddIdEnumDocumentation();
-
-			foreach ((TypeDefinition type, EnumDefinitionBase definition) in Pass040_AddEnums.EnumDictionary.Values.Distinct())
-			{
-				EnumTypeDocumenter.AddEnumTypeDocumentation(type, definition);
-			}
-
-			DocumentationHandler.MakeDocumentationFile();
 		}
+
+		IdEnumDocumenter.AddIdEnumDocumentation();
+
+		foreach ((TypeDefinition type, EnumDefinitionBase definition) in Pass040_AddEnums.EnumDictionary.Values.Distinct())
+		{
+			EnumTypeDocumenter.AddEnumTypeDocumentation(type, definition);
+		}
+
+		DocumentationHandler.MakeDocumentationFile();
 	}
 }
