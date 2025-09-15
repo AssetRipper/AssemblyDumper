@@ -387,29 +387,29 @@ namespace AssetRipper.AssemblyDumper.Passes
 					.AddField($"_{propertyName}_k__BackingField", propertyType, visibility: Visibility.Private)
 					.AddNullableAttributesForMaybeNull();
 				cacheField.AddDebuggerBrowsableNeverAttribute();
-				CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
+				CilInstructionCollection instructions = property.GetMethod!.CilMethodBody!.Instructions;
 
 				CilInstructionLabel afterAssignmentLabel = new();
 
 				//if accessValue is null
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldfld, cacheField);
-				processor.Add(CilOpCodes.Ldnull);
-				processor.Add(CilOpCodes.Ceq);
-				processor.Add(CilOpCodes.Brfalse_S, afterAssignmentLabel);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldfld, cacheField);
+				instructions.Add(CilOpCodes.Ldnull);
+				instructions.Add(CilOpCodes.Ceq);
+				instructions.Add(CilOpCodes.Brfalse_S, afterAssignmentLabel);
 
 				//accessValue = new(referenceValue);
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldfld, field);
-				processor.Add(CilOpCodes.Newobj, constructor);
-				processor.Add(CilOpCodes.Stfld, cacheField);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldfld, field);
+				instructions.Add(CilOpCodes.Newobj, constructor);
+				instructions.Add(CilOpCodes.Stfld, cacheField);
 
 				//return accessValue
-				afterAssignmentLabel.Instruction = processor.Add(CilOpCodes.Nop);
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldfld, cacheField);
-				processor.Add(CilOpCodes.Ret);
+				afterAssignmentLabel.Instruction = instructions.Add(CilOpCodes.Nop);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldfld, cacheField);
+				instructions.Add(CilOpCodes.Ret);
 				return property;
 			}
 			else
@@ -428,20 +428,20 @@ namespace AssetRipper.AssemblyDumper.Passes
 				.ImportMethod(typeof(Array), m => m.Name == nameof(Array.Empty))
 				.MakeGenericInstanceMethod(elementType);
 
-			CilInstructionCollection processor = property.SetMethod!.CilMethodBody!.Instructions;
-			processor.Clear();
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldarg_1); //value
+			CilInstructionCollection instructions = property.SetMethod!.CilMethodBody!.Instructions;
+			instructions.Clear();
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldarg_1); //value
 
 			CilInstructionLabel label = new();
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Brtrue, label);
-			processor.Add(CilOpCodes.Pop);
-			processor.Add(CilOpCodes.Call, emptyArrayMethod);
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Brtrue, label);
+			instructions.Add(CilOpCodes.Pop);
+			instructions.Add(CilOpCodes.Call, emptyArrayMethod);
 
-			label.Instruction = processor.Add(CilOpCodes.Stfld, field);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			label.Instruction = instructions.Add(CilOpCodes.Stfld, field);
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 		}
 
 		private static IEnumerable<string> GetFieldNames(this UniversalClass universalClass)

@@ -156,7 +156,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void FillMethod(this TypeDefinition type, string methodName, UniversalNode? rootNode, UnityVersion version)
 		{
 			MethodDefinition method = type.Methods.First(m => m.Name == methodName);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
 			if (rootNode is not null)
 			{
@@ -166,22 +166,22 @@ namespace AssetRipper.AssemblyDumper.Passes
 					IMethodDescriptor fieldReadMethod = GetOrMakeMethod(unityNode, field.Signature!.FieldType, version);
 					if (field.Signature.FieldType.IsArrayOrPrimitive())
 					{
-						processor.Add(CilOpCodes.Ldarg_0);//this
-						processor.Add(CilOpCodes.Ldarg_1);//reader
-						processor.AddCall(fieldReadMethod);
-						processor.Add(CilOpCodes.Stfld, field);
+						instructions.Add(CilOpCodes.Ldarg_0);//this
+						instructions.Add(CilOpCodes.Ldarg_1);//reader
+						instructions.AddCall(fieldReadMethod);
+						instructions.Add(CilOpCodes.Stfld, field);
 					}
 					else
 					{
-						processor.Add(CilOpCodes.Ldarg_0);//this
-						processor.Add(CilOpCodes.Ldfld, field);
-						processor.Add(CilOpCodes.Ldarg_1);//reader
-						processor.AddCall(fieldReadMethod);
+						instructions.Add(CilOpCodes.Ldarg_0);//this
+						instructions.Add(CilOpCodes.Ldfld, field);
+						instructions.Add(CilOpCodes.Ldarg_1);//reader
+						instructions.AddCall(fieldReadMethod);
 					}
 				}
 			}
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 		}
 
 		private static IMethodDescriptor GetOrMakeMethod(UniversalNode node, TypeSignature type, UnityVersion version)
@@ -285,13 +285,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef readMethod = SharedState.Instance.Importer.ImportMethod<UnityAssetBase>(m => m.Name == ReadMethod && m.Parameters[0].ParameterType is ByReferenceTypeSignature);
 			MethodDefinition method = NewMethod(uniqueName, elementType);
 
-			CilInstructionCollection processor = method.GetInstructions();
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.Add(CilOpCodes.Callvirt, readMethod);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.AddCall(alignStreamMethod);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = method.GetInstructions();
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldarg_1);
+			instructions.Add(CilOpCodes.Callvirt, readMethod);
+			instructions.Add(CilOpCodes.Ldarg_1);
+			instructions.AddCall(alignStreamMethod);
+			instructions.Add(CilOpCodes.Ret);
 
 			GenericParameter genericParameter = new GenericParameter("T");
 			genericParameter.Constraints.Add(new GenericParameterConstraint(SharedState.Instance.Importer.ImportType<UnityAssetBase>()));
@@ -345,58 +345,58 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef clearMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictionaryType, clearMethodDefinition);
 
 			MethodDefinition method = NewMethod(uniqueName, genericDictionaryType);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
-			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable countLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable iLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
 
 			CilInstructionLabel loopConditionStartList = new();
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, clearMethodReference);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, clearMethodReference);
 
 			//Read count
-			processor.Add(CilOpCodes.Ldarg_1);//reader
-			processor.AddCall(readInt32Method);
-			processor.Add(CilOpCodes.Stloc, countLocal);
+			instructions.Add(CilOpCodes.Ldarg_1);//reader
+			instructions.AddCall(readInt32Method);
+			instructions.Add(CilOpCodes.Stloc, countLocal);
 
-			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
+			instructions.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			instructions.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			processor.Add(CilOpCodes.Br, loopConditionStartList);
+			instructions.Add(CilOpCodes.Br, loopConditionStartList);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			ICilLabel jumpTargetList = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
+			ICilLabel jumpTargetList = instructions.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			MethodDefinition addNewMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetDictionary<,>), m => m.Name == nameof(AssetDictionary<int, int>.AddNew));
 			IMethodDefOrRef addNewMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericDictionaryType, addNewMethodDefinition);
 
 			//Add new and read pair
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.AddCall(addNewMethodReference);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.AddCall(pairReadMethod);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.AddCall(addNewMethodReference);
+			instructions.Add(CilOpCodes.Ldarg_1);
+			instructions.AddCall(pairReadMethod);
 
 			//Increment i
-			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Add(CilOpCodes.Add); //Add 
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
+			instructions.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			instructions.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			instructions.Add(CilOpCodes.Add); //Add 
+			instructions.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			loopConditionStartList.Instruction = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
-			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Blt, jumpTargetList); //Jump back up if less than
+			loopConditionStartList.Instruction = instructions.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			instructions.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			instructions.Add(CilOpCodes.Blt, jumpTargetList); //Jump back up if less than
 
 			if (align)
 			{
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.AddCall(alignStreamMethod);
+				instructions.Add(CilOpCodes.Ldarg_1);
+				instructions.AddCall(alignStreamMethod);
 			}
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 			return method;
 		}
 
@@ -440,7 +440,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			GenericInstanceTypeSignature genericPairType = assetPairReference.MakeGenericInstanceType(keySignature, valueSignature);
 
 			MethodDefinition method = NewMethod(uniqueName, genericPairType);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
 			if (keySignature.IsArrayOrPrimitive())
 			{
@@ -449,10 +449,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 					genericPairType,
 					assetPairDefinition.Methods.Single(m => m.Name == $"set_{nameof(AssetPair<int, int>.Key)}"));
 
-				processor.Add(CilOpCodes.Ldarg_0);//pair
-				processor.Add(CilOpCodes.Ldarg_1);//reader
-				processor.AddCall(keyReadMethod);
-				processor.AddCall(setKeyMethod);
+				instructions.Add(CilOpCodes.Ldarg_0);//pair
+				instructions.Add(CilOpCodes.Ldarg_1);//reader
+				instructions.AddCall(keyReadMethod);
+				instructions.AddCall(setKeyMethod);
 			}
 			else
 			{
@@ -461,10 +461,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 					genericPairType,
 					assetPairDefinition.Methods.Single(m => m.Name == $"get_{nameof(AssetPair<int, int>.Key)}"));
 
-				processor.Add(CilOpCodes.Ldarg_0);//pair
-				processor.AddCall(getKeyMethod);
-				processor.Add(CilOpCodes.Ldarg_1);//reader
-				processor.AddCall(keyReadMethod);
+				instructions.Add(CilOpCodes.Ldarg_0);//pair
+				instructions.AddCall(getKeyMethod);
+				instructions.Add(CilOpCodes.Ldarg_1);//reader
+				instructions.AddCall(keyReadMethod);
 			}
 
 			if (valueSignature.IsArrayOrPrimitive())
@@ -474,10 +474,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 					genericPairType,
 					assetPairDefinition.Methods.Single(m => m.Name == $"set_{nameof(AssetPair<int, int>.Value)}"));
 
-				processor.Add(CilOpCodes.Ldarg_0);//pair
-				processor.Add(CilOpCodes.Ldarg_1);//reader
-				processor.AddCall(valueReadMethod);
-				processor.AddCall(setValueMethod);
+				instructions.Add(CilOpCodes.Ldarg_0);//pair
+				instructions.Add(CilOpCodes.Ldarg_1);//reader
+				instructions.AddCall(valueReadMethod);
+				instructions.AddCall(setValueMethod);
 			}
 			else
 			{
@@ -486,18 +486,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 					genericPairType,
 					assetPairDefinition.Methods.Single(m => m.Name == $"get_{nameof(AssetPair<int, int>.Value)}"));
 
-				processor.Add(CilOpCodes.Ldarg_0);//pair
-				processor.AddCall(getValueMethod);
-				processor.Add(CilOpCodes.Ldarg_1);//reader
-				processor.AddCall(valueReadMethod);
+				instructions.Add(CilOpCodes.Ldarg_0);//pair
+				instructions.AddCall(getValueMethod);
+				instructions.Add(CilOpCodes.Ldarg_1);//reader
+				instructions.AddCall(valueReadMethod);
 			}
 
 			if (align)
 			{
-				processor.Add(CilOpCodes.Ldarg_1);//reader
-				processor.AddCall(alignStreamMethod);
+				instructions.Add(CilOpCodes.Ldarg_1);//reader
+				instructions.AddCall(alignStreamMethod);
 			}
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 			return method;
 		}
 
@@ -506,29 +506,29 @@ namespace AssetRipper.AssemblyDumper.Passes
 			CorLibTypeSignature elementType = SharedState.Instance.Importer.UInt8;
 			SzArrayTypeSignature arrayType = elementType.MakeSzArrayType();
 			MethodDefinition method = NewMethod(uniqueName, arrayType);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
-			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-			CilLocalVariable arrayLocal = processor.AddLocalVariable(arrayType);
+			CilLocalVariable countLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable arrayLocal = instructions.AddLocalVariable(arrayType);
 
 			//Read count
-			processor.Add(CilOpCodes.Ldarg_0);//reader
-			processor.AddCall(readInt32Method);
-			processor.Add(CilOpCodes.Stloc, countLocal);
+			instructions.Add(CilOpCodes.Ldarg_0);//reader
+			instructions.AddCall(readInt32Method);
+			instructions.Add(CilOpCodes.Stloc, countLocal);
 
-			processor.Add(CilOpCodes.Ldarg_0);//reader
-			processor.Add(CilOpCodes.Ldloc, countLocal);
-			processor.AddCall(readBytesMethod);
-			processor.Add(CilOpCodes.Stloc, arrayLocal);
+			instructions.Add(CilOpCodes.Ldarg_0);//reader
+			instructions.Add(CilOpCodes.Ldloc, countLocal);
+			instructions.AddCall(readBytesMethod);
+			instructions.Add(CilOpCodes.Stloc, arrayLocal);
 
 			if (align)
 			{
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.AddCall(alignStreamMethod);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.AddCall(alignStreamMethod);
 			}
-			processor.Add(CilOpCodes.Ldloc, arrayLocal);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			instructions.Add(CilOpCodes.Ldloc, arrayLocal);
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 			return method;
 		}
 
@@ -570,69 +570,69 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef clearMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericListType, clearMethodDefinition);
 
 			MethodDefinition method = NewMethod(uniqueName, genericListType);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
-			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable countLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable iLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
 
 			CilInstructionLabel loopConditionStartList = new();
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, clearMethodReference);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, clearMethodReference);
 
 			//Read count
-			processor.Add(CilOpCodes.Ldarg_1);//reader
-			processor.AddCall(readInt32Method);
-			processor.Add(CilOpCodes.Stloc, countLocal);
+			instructions.Add(CilOpCodes.Ldarg_1);//reader
+			instructions.AddCall(readInt32Method);
+			instructions.Add(CilOpCodes.Stloc, countLocal);
 
-			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
+			instructions.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			instructions.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			processor.Add(CilOpCodes.Br, loopConditionStartList);
+			instructions.Add(CilOpCodes.Br, loopConditionStartList);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			ICilLabel jumpTargetList = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
+			ICilLabel jumpTargetList = instructions.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			//Read and add to list
 			if (elementType.IsArrayOrPrimitive())
 			{
 				MethodDefinition addMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == nameof(AssetList<int>.Add));
 				IMethodDefOrRef addMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericListType, addMethodDefinition);
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.AddCall(elementReadMethod);
-				processor.AddCall(addMethodReference);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldarg_1);
+				instructions.AddCall(elementReadMethod);
+				instructions.AddCall(addMethodReference);
 			}
 			else
 			{
 				MethodDefinition addNewMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(AssetList<>), m => m.Name == nameof(AssetList<int>.AddNew));
 				IMethodDefOrRef addNewMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, genericListType, addNewMethodDefinition);
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.AddCall(addNewMethodReference);
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.AddCall(elementReadMethod);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.AddCall(addNewMethodReference);
+				instructions.Add(CilOpCodes.Ldarg_1);
+				instructions.AddCall(elementReadMethod);
 			}
 
 			//Increment i
-			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Add(CilOpCodes.Add); //Add 
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
+			instructions.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			instructions.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			instructions.Add(CilOpCodes.Add); //Add 
+			instructions.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			loopConditionStartList.Instruction = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
-			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Blt, jumpTargetList); //Jump back up if less than
+			loopConditionStartList.Instruction = instructions.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			instructions.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			instructions.Add(CilOpCodes.Blt, jumpTargetList); //Jump back up if less than
 
 			if (align)
 			{
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.AddCall(alignStreamMethod);
+				instructions.Add(CilOpCodes.Ldarg_1);
+				instructions.AddCall(alignStreamMethod);
 			}
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 
 			return method;
 		}
@@ -655,17 +655,17 @@ namespace AssetRipper.AssemblyDumper.Passes
 			SzArrayTypeSignature arrayType = elementType.MakeSzArrayType();
 			GenericInstanceTypeSignature listType = SharedState.Instance.Importer.ImportType(typeof(List<>)).MakeGenericInstanceType(elementType);
 			MethodDefinition method = NewMethod(uniqueName, arrayType);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
-			CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-			CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-			CilLocalVariable arrayLocal = processor.AddLocalVariable(arrayType);
-			CilLocalVariable listLocal = processor.AddLocalVariable(listType);
+			CilLocalVariable countLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable iLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			CilLocalVariable arrayLocal = instructions.AddLocalVariable(arrayType);
+			CilLocalVariable listLocal = instructions.AddLocalVariable(listType);
 
 			//Read count
-			processor.Add(CilOpCodes.Ldarg_0);//reader
-			processor.AddCall(readInt32Method);
-			processor.Add(CilOpCodes.Stloc, countLocal);
+			instructions.Add(CilOpCodes.Ldarg_0);//reader
+			instructions.AddCall(readInt32Method);
+			instructions.Add(CilOpCodes.Stloc, countLocal);
 
 			CilInstructionLabel readAsListInstruction = new();
 			CilInstructionLabel loopConditionStartArray = new();
@@ -673,44 +673,44 @@ namespace AssetRipper.AssemblyDumper.Passes
 			CilInstructionLabel returnInstruction = new();
 
 			//Check size of count
-			processor.Add(CilOpCodes.Ldloc, countLocal);
-			processor.Add(CilOpCodes.Ldc_I4, MaxArraySize);
-			processor.Add(CilOpCodes.Bgt, readAsListInstruction);
+			instructions.Add(CilOpCodes.Ldloc, countLocal);
+			instructions.Add(CilOpCodes.Ldc_I4, MaxArraySize);
+			instructions.Add(CilOpCodes.Bgt, readAsListInstruction);
 
 			//Read into array
-			processor.Add(CilOpCodes.Ldloc, countLocal);
-			processor.Add(CilOpCodes.Newarr, elementType.ToTypeDefOrRef());
-			processor.Add(CilOpCodes.Stloc, arrayLocal);
+			instructions.Add(CilOpCodes.Ldloc, countLocal);
+			instructions.Add(CilOpCodes.Newarr, elementType.ToTypeDefOrRef());
+			instructions.Add(CilOpCodes.Stloc, arrayLocal);
 
-			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
+			instructions.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			instructions.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			processor.Add(CilOpCodes.Br, loopConditionStartArray);
+			instructions.Add(CilOpCodes.Br, loopConditionStartArray);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			ICilLabel jumpTargetArray = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
+			ICilLabel jumpTargetArray = instructions.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			//Read and add to array
-			processor.Add(CilOpCodes.Ldloc, arrayLocal);
-			processor.Add(CilOpCodes.Ldloc, iLocal);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.AddCall(elementReadMethod);
-			processor.AddStoreElement(elementType);
+			instructions.Add(CilOpCodes.Ldloc, arrayLocal);
+			instructions.Add(CilOpCodes.Ldloc, iLocal);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.AddCall(elementReadMethod);
+			instructions.AddStoreElement(elementType);
 
 			//Increment i
-			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Add(CilOpCodes.Add); //Add 
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
+			instructions.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			instructions.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			instructions.Add(CilOpCodes.Add); //Add 
+			instructions.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			loopConditionStartArray.Instruction = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
-			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Blt, jumpTargetArray); //Jump back up if less than
+			loopConditionStartArray.Instruction = instructions.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			instructions.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			instructions.Add(CilOpCodes.Blt, jumpTargetArray); //Jump back up if less than
 
-			processor.Add(CilOpCodes.Br, returnInstruction);//Jump to return statement
+			instructions.Add(CilOpCodes.Br, returnInstruction);//Jump to return statement
 
 			//Read into list (because we don't trust large counts)
 
@@ -727,50 +727,50 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition toArrayMethodDefinition = SharedState.Instance.Importer.LookupMethod(typeof(List<>), m => m.Name == nameof(List<int>.ToArray));
 			IMethodDefOrRef toArrayMethodReference = MethodUtils.MakeMethodOnGenericType(SharedState.Instance.Importer, listType, toArrayMethodDefinition);
 
-			readAsListInstruction.Instruction = processor.Add(CilOpCodes.Ldc_I4, MaxArraySize);
-			processor.Add(CilOpCodes.Newobj, listConstructorReference);
-			processor.Add(CilOpCodes.Stloc, listLocal);
+			readAsListInstruction.Instruction = instructions.Add(CilOpCodes.Ldc_I4, MaxArraySize);
+			instructions.Add(CilOpCodes.Newobj, listConstructorReference);
+			instructions.Add(CilOpCodes.Stloc, listLocal);
 
-			processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
+			instructions.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+			instructions.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
 			//Create an empty, unconditional branch which will jump down to the loop condition.
 			//This converts the do..while loop into a for loop.
-			processor.Add(CilOpCodes.Br, loopConditionStartList);
+			instructions.Add(CilOpCodes.Br, loopConditionStartList);
 
 			//Now we just read pair, increment i, compare against count, and jump back to here if it's less
-			ICilLabel jumpTargetList = processor.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
+			ICilLabel jumpTargetList = instructions.Add(CilOpCodes.Nop).CreateLabel(); //Create a dummy instruction to jump back to
 
 			//Read byte and add to list
-			processor.Add(CilOpCodes.Ldloc, listLocal);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.AddCall(elementReadMethod);
-			processor.AddCall(addMethodReference);
+			instructions.Add(CilOpCodes.Ldloc, listLocal);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.AddCall(elementReadMethod);
+			instructions.AddCall(addMethodReference);
 
 			//Increment i
-			processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-			processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
-			processor.Add(CilOpCodes.Add); //Add 
-			processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
+			instructions.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+			instructions.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+			instructions.Add(CilOpCodes.Add); //Add 
+			instructions.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 			//Jump to start of loop if i < count
-			loopConditionStartList.Instruction = processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
-			processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-			processor.Add(CilOpCodes.Blt, jumpTargetList); //Jump back up if less than
+			loopConditionStartList.Instruction = instructions.Add(CilOpCodes.Ldloc, iLocal); //Load i
+			instructions.Add(CilOpCodes.Ldloc, countLocal); //Load count
+			instructions.Add(CilOpCodes.Blt, jumpTargetList); //Jump back up if less than
 
-			processor.Add(CilOpCodes.Ldloc, listLocal);
-			processor.AddCall(toArrayMethodReference);
-			processor.Add(CilOpCodes.Stloc, arrayLocal);
+			instructions.Add(CilOpCodes.Ldloc, listLocal);
+			instructions.AddCall(toArrayMethodReference);
+			instructions.Add(CilOpCodes.Stloc, arrayLocal);
 
-			returnInstruction.Instruction = processor.Add(CilOpCodes.Nop);
+			returnInstruction.Instruction = instructions.Add(CilOpCodes.Nop);
 			if (align)
 			{
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.AddCall(alignStreamMethod);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.AddCall(alignStreamMethod);
 			}
-			processor.Add(CilOpCodes.Ldloc, arrayLocal);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			instructions.Add(CilOpCodes.Ldloc, arrayLocal);
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 			return method;
 		}
 
@@ -780,15 +780,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 			if (align)
 			{
 				MethodDefinition method = NewMethod(uniqueName, primitiveMethod.Signature!.ReturnType);
-				CilInstructionCollection processor = method.GetInstructions();
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.AddCall(primitiveMethod);
+				CilInstructionCollection instructions = method.GetInstructions();
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.AddCall(primitiveMethod);
 				if (align)
 				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.AddCall(alignStreamMethod);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.AddCall(alignStreamMethod);
 				}
-				processor.Add(CilOpCodes.Ret);
+				instructions.Add(CilOpCodes.Ret);
 				return method;
 			}
 			else
@@ -857,11 +857,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 			}
 		}
 
-		private static CilInstruction AddCall(this CilInstructionCollection processor, IMethodDescriptor method)
+		private static CilInstruction AddCall(this CilInstructionCollection instructions, IMethodDescriptor method)
 		{
 			return method is MethodDefinition definition && definition.IsStatic
-				? processor.Add(CilOpCodes.Call, method)
-				: processor.Add(CilOpCodes.Callvirt, method);
+				? instructions.Add(CilOpCodes.Call, method)
+				: instructions.Add(CilOpCodes.Callvirt, method);
 		}
 
 		private static IMethodDefOrRef GetDefaultConstructor(this TypeSignature type)

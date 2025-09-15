@@ -48,8 +48,8 @@ internal static class Pass941_MakeFieldHashes
 			outParameterDefinition.AddNullableAttribute(NullableAnnotation.MaybeNull);
 			outParameterDefinition.AddCustomAttribute(SharedState.Instance.Importer.ImportConstructor<NotNullWhenAttribute>(1), SharedState.Instance.Importer.Boolean, true);
 
-			CilInstructionCollection processor = method.GetInstructions();
-			processor.EmitIdSwitchStatement(groupMethods, nullHelperMethod);
+			CilInstructionCollection instructions = method.GetInstructions();
+			instructions.EmitIdSwitchStatement(groupMethods, nullHelperMethod);
 		}
 
 		foreach (SubclassGroup group in SharedState.Instance.SubclassGroups.Values)
@@ -58,40 +58,40 @@ internal static class Pass941_MakeFieldHashes
 		}
 	}
 
-	private static void EmitIdSwitchStatement(this CilInstructionCollection processor, List<(int, MethodDefinition)> groupMethods, MethodDefinition nullHelperMethod)
+	private static void EmitIdSwitchStatement(this CilInstructionCollection instructions, List<(int, MethodDefinition)> groupMethods, MethodDefinition nullHelperMethod)
 	{
 		GenericInstanceTypeSignature uintStringDictionary = SharedState.Instance.Importer.ImportType(typeof(Dictionary<,>))
 			.MakeGenericInstanceType(SharedState.Instance.Importer.UInt32, SharedState.Instance.Importer.String);
 		int count = groupMethods.Count;
 
-		CilLocalVariable switchCondition = processor.AddLocalVariable(Pass556_CreateClassIDTypeEnum.ClassIdTypeDefintion!.ToTypeSignature());
+		CilLocalVariable switchCondition = instructions.AddLocalVariable(Pass556_CreateClassIDTypeEnum.ClassIdTypeDefintion!.ToTypeSignature());
 
-		processor.Add(CilOpCodes.Ldarg_0);//classID
-		processor.Add(CilOpCodes.Stloc, switchCondition);
+		instructions.Add(CilOpCodes.Ldarg_0);//classID
+		instructions.Add(CilOpCodes.Stloc, switchCondition);
 
 		CilInstructionLabel[] nopInstructions = Enumerable.Range(0, count).Select(i => new CilInstructionLabel()).ToArray();
 		CilInstructionLabel defaultNop = new CilInstructionLabel();
 		for (int i = 0; i < count; i++)
 		{
-			processor.Add(CilOpCodes.Ldloc, switchCondition);
-			processor.Add(CilOpCodes.Ldc_I4, groupMethods[i].Item1);
-			processor.Add(CilOpCodes.Beq, nopInstructions[i]);
+			instructions.Add(CilOpCodes.Ldloc, switchCondition);
+			instructions.Add(CilOpCodes.Ldc_I4, groupMethods[i].Item1);
+			instructions.Add(CilOpCodes.Beq, nopInstructions[i]);
 		}
-		processor.Add(CilOpCodes.Br, defaultNop);
+		instructions.Add(CilOpCodes.Br, defaultNop);
 		for (int i = 0; i < count; i++)
 		{
-			nopInstructions[i].Instruction = processor.Add(CilOpCodes.Nop);
+			nopInstructions[i].Instruction = instructions.Add(CilOpCodes.Nop);
 
-			processor.Add(CilOpCodes.Ldarg_1);//hash
-			processor.Add(CilOpCodes.Ldarg_2);//path
-			processor.Add(CilOpCodes.Call, groupMethods[i].Item2);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ldarg_1);//hash
+			instructions.Add(CilOpCodes.Ldarg_2);//path
+			instructions.Add(CilOpCodes.Call, groupMethods[i].Item2);
+			instructions.Add(CilOpCodes.Ret);
 		}
-		defaultNop.Instruction = processor.Add(CilOpCodes.Nop);
-		processor.Add(CilOpCodes.Ldarg_2);//path
-		processor.Add(CilOpCodes.Call, nullHelperMethod);
-		processor.Add(CilOpCodes.Ret);
-		processor.OptimizeMacros();
+		defaultNop.Instruction = instructions.Add(CilOpCodes.Nop);
+		instructions.Add(CilOpCodes.Ldarg_2);//path
+		instructions.Add(CilOpCodes.Call, nullHelperMethod);
+		instructions.Add(CilOpCodes.Ret);
+		instructions.OptimizeMacros();
 	}
 
 	private static MethodDefinition MakeNullHelperMethod(TypeDefinition type)
@@ -103,11 +103,11 @@ internal static class Pass941_MakeFieldHashes
 		outParameterDefinition.AddNullableAttribute(NullableAnnotation.MaybeNull);
 		outParameterDefinition.AddCustomAttribute(SharedState.Instance.Importer.ImportConstructor<NotNullWhenAttribute>(1), SharedState.Instance.Importer.Boolean, true);
 
-		CilInstructionCollection processor = nullHelperMethod.GetInstructions();
-		processor.Add(CilOpCodes.Ldarg_0);
-		processor.Add(CilOpCodes.Initobj, SharedState.Instance.Importer.String.ToTypeDefOrRef());
-		processor.Add(CilOpCodes.Ldc_I4_0);
-		processor.Add(CilOpCodes.Ret);
+		CilInstructionCollection instructions = nullHelperMethod.GetInstructions();
+		instructions.Add(CilOpCodes.Ldarg_0);
+		instructions.Add(CilOpCodes.Initobj, SharedState.Instance.Importer.String.ToTypeDefOrRef());
+		instructions.Add(CilOpCodes.Ldc_I4_0);
+		instructions.Add(CilOpCodes.Ret);
 		return nullHelperMethod;
 	}
 
@@ -128,20 +128,20 @@ internal static class Pass941_MakeFieldHashes
 		//Static constructor
 		{
 			MethodDefinition staticConstructor = type.GetOrCreateStaticConstructor();
-			CilInstructionCollection processor = staticConstructor.GetInstructions();
-			processor.Pop();//The return instruction.
-			processor.Add(CilOpCodes.Newobj, dictionaryConstructor);
+			CilInstructionCollection instructions = staticConstructor.GetInstructions();
+			instructions.Pop();//The return instruction.
+			instructions.Add(CilOpCodes.Newobj, dictionaryConstructor);
 			foreach ((uint hash, string str) in hashes)
 			{
-				processor.Add(CilOpCodes.Dup);
-				processor.Add(CilOpCodes.Ldc_I4, (int)hash);
-				processor.Add(CilOpCodes.Ldstr, str);
-				processor.Add(CilOpCodes.Call, addMethod);
+				instructions.Add(CilOpCodes.Dup);
+				instructions.Add(CilOpCodes.Ldc_I4, (int)hash);
+				instructions.Add(CilOpCodes.Ldstr, str);
+				instructions.Add(CilOpCodes.Call, addMethod);
 			}
-			processor.Add(CilOpCodes.Stsfld, field);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Stsfld, field);
+			instructions.Add(CilOpCodes.Ret);
 
-			processor.OptimizeMacros();
+			instructions.OptimizeMacros();
 		}
 
 		//Method
@@ -154,12 +154,12 @@ internal static class Pass941_MakeFieldHashes
 			outParameterDefinition.AddNullableAttribute(NullableAnnotation.MaybeNull);
 			outParameterDefinition.AddCustomAttribute(SharedState.Instance.Importer.ImportConstructor<NotNullWhenAttribute>(1), SharedState.Instance.Importer.Boolean, true);
 
-			CilInstructionCollection processor = method.GetInstructions();
-			processor.Add(CilOpCodes.Ldsfld, field);
-			processor.Add(CilOpCodes.Ldarg_0);//hash
-			processor.Add(CilOpCodes.Ldarg_1);//path
-			processor.Add(CilOpCodes.Callvirt, tryGetValue);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = method.GetInstructions();
+			instructions.Add(CilOpCodes.Ldsfld, field);
+			instructions.Add(CilOpCodes.Ldarg_0);//hash
+			instructions.Add(CilOpCodes.Ldarg_1);//path
+			instructions.Add(CilOpCodes.Callvirt, tryGetValue);
+			instructions.Add(CilOpCodes.Ret);
 
 			DocumentationHandler.AddMethodDefinitionLine(method, $"Try get field path from a {SeeXmlTagGenerator.MakeCRef(group.Interface)} class for a CRC32 hash.");
 
@@ -184,28 +184,28 @@ internal static class Pass941_MakeFieldHashes
 		field.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 
 		MethodDefinition staticConstructor = type.GetOrCreateStaticConstructor();
-		CilInstructionCollection processor = staticConstructor.GetInstructions();
-		processor.Pop();//The return instruction.
+		CilInstructionCollection instructions = staticConstructor.GetInstructions();
+		instructions.Pop();//The return instruction.
 		bool emittedListConstructor = false;
 		foreach (string str in group.GetOrderedFieldPaths())
 		{
 			if (!emittedListConstructor)
 			{
-				processor.Add(CilOpCodes.Newobj, listConstructor);
+				instructions.Add(CilOpCodes.Newobj, listConstructor);
 				emittedListConstructor = true;
 			}
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldstr, str);
-			processor.Add(CilOpCodes.Call, addMethod);
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldstr, str);
+			instructions.Add(CilOpCodes.Call, addMethod);
 		}
 		if (!emittedListConstructor)
 		{
 			MethodSpecification emptyStringArray = SharedState.Instance.Importer.ImportMethod<Array>(method => method.Name == nameof(Array.Empty))
 				.MakeGenericInstanceMethod(SharedState.Instance.Importer.String);
-			processor.Add(CilOpCodes.Call, emptyStringArray);
+			instructions.Add(CilOpCodes.Call, emptyStringArray);
 		}
-		processor.Add(CilOpCodes.Stsfld, field);
-		processor.Add(CilOpCodes.Ret);
+		instructions.Add(CilOpCodes.Stsfld, field);
+		instructions.Add(CilOpCodes.Ret);
 
 		PropertyDefinition property = type.ImplementGetterProperty(
 				propertyName,

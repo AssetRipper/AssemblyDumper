@@ -31,11 +31,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition implicitMethod = type.AddMethod("op_Implicit", ConversionAttributes, field.Signature!.FieldType);
 			implicitMethod.AddParameter(type.ToTypeSignature(), "value");
 
-			CilInstructionCollection processor = implicitMethod.CilMethodBody!.Instructions;
+			CilInstructionCollection instructions = implicitMethod.CilMethodBody!.Instructions;
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, field);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, field);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddToStringOverride(this TypeDefinition type)
@@ -47,11 +47,11 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			MethodDefinition toStringMethod = type.AddMethod(nameof(ToString), attributes, stringType);
 
-			CilInstructionCollection processor = toStringMethod.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, type.GetField());
-			processor.Add(CilOpCodes.Callvirt, new MemberReference(objectType, nameof(ToString), MethodSignature.CreateInstance(stringType)));
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = toStringMethod.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, type.GetField());
+			instructions.Add(CilOpCodes.Callvirt, new MemberReference(objectType, nameof(ToString), MethodSignature.CreateInstance(stringType)));
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static FieldDefinition GetField(this TypeDefinition type)

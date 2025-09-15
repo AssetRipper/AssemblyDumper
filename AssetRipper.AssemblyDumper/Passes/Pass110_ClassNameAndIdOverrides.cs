@@ -32,27 +32,27 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void AddClassNameOverride(this TypeDefinition type, string className)
 		{
 			PropertyDefinition property = type.AddGetterProperty(nameof(UnityObjectBase.ClassName), PropertyOverrideAttributes, SharedState.Instance.Importer.String);
-			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldstr, className);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = property.GetMethod!.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldstr, className);
+			instructions.Add(CilOpCodes.Ret);
 			property.AddDebuggerBrowsableNeverAttribute();
 		}
 
 		private static void AddSerializedVersionOverride(this TypeDefinition type, int version)
 		{
 			PropertyDefinition property = type.AddGetterProperty(nameof(UnityAssetBase.SerializedVersion), PropertyOverrideAttributes, SharedState.Instance.Importer.Int32);
-			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldc_I4, version);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = property.GetMethod!.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldc_I4, version);
+			instructions.Add(CilOpCodes.Ret);
 			property.AddDebuggerBrowsableNeverAttribute();
 		}
 
 		private static void AddFlowMappedInYamlOverride(this TypeDefinition type, bool flowMapped)
 		{
 			PropertyDefinition property = type.AddGetterProperty(nameof(UnityAssetBase.FlowMappedInYaml), PropertyOverrideAttributes, SharedState.Instance.Importer.Boolean);
-			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
-			processor.Add(flowMapped ? CilOpCodes.Ldc_I4_1 : CilOpCodes.Ldc_I4_0);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = property.GetMethod!.CilMethodBody!.Instructions;
+			instructions.Add(flowMapped ? CilOpCodes.Ldc_I4_1 : CilOpCodes.Ldc_I4_0);
+			instructions.Add(CilOpCodes.Ret);
 			property.AddDebuggerBrowsableNeverAttribute();
 		}
 

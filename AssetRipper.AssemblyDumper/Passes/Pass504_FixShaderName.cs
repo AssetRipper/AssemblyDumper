@@ -48,16 +48,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 			FieldDefinition parsedFormField,
 			FieldDefinition parsedFormNameField)
 		{
-			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
-			processor.Pop();//Remove the return
-			processor.Add(CilOpCodes.Ldarg_0);
+			CilInstructionCollection instructions = method.CilMethodBody!.Instructions;
+			instructions.Pop();//Remove the return
+			instructions.Add(CilOpCodes.Ldarg_0);
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, parsedFormField);
-			processor.Add(CilOpCodes.Ldfld, parsedFormNameField);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, parsedFormField);
+			instructions.Add(CilOpCodes.Ldfld, parsedFormNameField);
 
-			processor.Add(CilOpCodes.Stfld, nameField);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Stfld, nameField);
+			instructions.Add(CilOpCodes.Ret);
 		}
 	}
 }

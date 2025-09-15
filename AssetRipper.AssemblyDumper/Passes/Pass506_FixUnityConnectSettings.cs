@@ -20,15 +20,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void FixMethod(MethodDefinition method)
 		{
-			CilInstructionCollection processor = method.GetInstructions();
-			InsertInstructions(processor, FindInsertionPoint(processor));
+			CilInstructionCollection instructions = method.GetInstructions();
+			InsertInstructions(instructions, FindInsertionPoint(instructions));
 		}
 
-		private static int FindInsertionPoint(CilInstructionCollection processor)
+		private static int FindInsertionPoint(CilInstructionCollection instructions)
 		{
-			for (int i = 0; i < processor.Count; i++)
+			for (int i = 0; i < instructions.Count; i++)
 			{
-				CilInstruction instruction = processor[i];
+				CilInstruction instruction = instructions[i];
 				if (instruction.OpCode == CilOpCodes.Ldfld
 					&& instruction.Operand is FieldDefinition field
 					&& (field.Name == "m_UnityPurchasingSettings" || field.Name == "m_CrashReportingSettings"))
@@ -44,22 +44,22 @@ namespace AssetRipper.AssemblyDumper.Passes
 			throw new Exception("Could not determine the insertion point");
 		}
 
-		private static void InsertInstructions(CilInstructionCollection processor, int insertionPoint)
+		private static void InsertInstructions(CilInstructionCollection instructions, int insertionPoint)
 		{
-			ICilLabel returnLabel = processor[processor.Count - 1].CreateLabel();
-			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Brtrue, returnLabel));
-			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Ceq));
+			ICilLabel returnLabel = instructions[instructions.Count - 1].CreateLabel();
+			instructions.Insert(insertionPoint, new CilInstruction(CilOpCodes.Brtrue, returnLabel));
+			instructions.Insert(insertionPoint, new CilInstruction(CilOpCodes.Ceq));
 
 			IMethodDefOrRef getLength = SharedState.Instance.Importer.ImportMethod(typeof(EndianSpanReader), m => m.Name == $"get_{nameof(EndianSpanReader.Length)}");
 			IMethodDefOrRef getPosition = SharedState.Instance.Importer.ImportMethod(typeof(EndianSpanReader), m => m.Name == $"get_{nameof(EndianSpanReader.Position)}");
 
-			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Call, getLength));
-			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Ldarg_1));
+			instructions.Insert(insertionPoint, new CilInstruction(CilOpCodes.Call, getLength));
+			instructions.Insert(insertionPoint, new CilInstruction(CilOpCodes.Ldarg_1));
 
-			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Call, getPosition));
-			processor.Insert(insertionPoint, new CilInstruction(CilOpCodes.Ldarg_1));
+			instructions.Insert(insertionPoint, new CilInstruction(CilOpCodes.Call, getPosition));
+			instructions.Insert(insertionPoint, new CilInstruction(CilOpCodes.Ldarg_1));
 
-			processor.OptimizeMacros();
+			instructions.OptimizeMacros();
 		}
 	}
 }

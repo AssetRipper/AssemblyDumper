@@ -66,34 +66,34 @@ namespace AssetRipper.AssemblyDumper.Passes
 				Parameter assetInfoParameter = method.AddParameter(assetInfoType, "info");
 				Parameter versionParameter = method.AddParameter(unityVersionType, "version");
 
-				CilInstructionCollection processor = method.GetInstructions();
+				CilInstructionCollection instructions = method.GetInstructions();
 
-				CilLocalVariable switchCondition = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-				processor.Add(CilOpCodes.Ldarga, assetInfoParameter);
+				CilLocalVariable switchCondition = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
+				instructions.Add(CilOpCodes.Ldarga, assetInfoParameter);
 				IMethodDefOrRef propertyRef = SharedState.Instance.Importer.ImportMethod<AssetInfo>(m => m.Name == $"get_{nameof(AssetInfo.ClassID)}");
-				processor.Add(CilOpCodes.Call, propertyRef);
-				processor.Add(CilOpCodes.Stloc, switchCondition);
+				instructions.Add(CilOpCodes.Call, propertyRef);
+				instructions.Add(CilOpCodes.Stloc, switchCondition);
 
 				CilInstructionLabel defaultLabel = new();
 				CilInstructionLabel returnLabel = new();
 
-				processor.Add(CilOpCodes.Ldloc, switchCondition);
-				processor.Add(CilOpCodes.Ldc_I4, 194);
-				processor.Add(CilOpCodes.Ceq);
-				processor.Add(CilOpCodes.Brfalse, defaultLabel);
+				instructions.Add(CilOpCodes.Ldloc, switchCondition);
+				instructions.Add(CilOpCodes.Ldc_I4, 194);
+				instructions.Add(CilOpCodes.Ceq);
+				instructions.Add(CilOpCodes.Brfalse, defaultLabel);
 
-				processor.AddIsGreaterOrEqualToVersion(versionParameter, new UnityVersion(5));
-				processor.Add(CilOpCodes.Brfalse, defaultLabel);
+				instructions.AddIsGreaterOrEqualToVersion(versionParameter, new UnityVersion(5));
+				instructions.Add(CilOpCodes.Brfalse, defaultLabel);
 
-				processor.Add(CilOpCodes.Ldnull);
-				processor.Add(CilOpCodes.Br, returnLabel);
+				instructions.Add(CilOpCodes.Ldnull);
+				instructions.Add(CilOpCodes.Br, returnLabel);
 
-				defaultLabel.Instruction = processor.Add(CilOpCodes.Nop);
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.Add(CilOpCodes.Call, creationMethod);
+				defaultLabel.Instruction = instructions.Add(CilOpCodes.Nop);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldarg_1);
+				instructions.Add(CilOpCodes.Call, creationMethod);
 
-				returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+				returnLabel.Instruction = instructions.Add(CilOpCodes.Ret);
 
 				AddMethodWithoutVersionParameter(method);
 			}
@@ -113,50 +113,50 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return method;
 		}
 
-		private static void EmitIdSwitchStatement(this CilInstructionCollection processor, Parameter assetInfoParameter, Parameter versionParameter, List<GeneratedMethodInformation> constructors)
+		private static void EmitIdSwitchStatement(this CilInstructionCollection instructions, Parameter assetInfoParameter, Parameter versionParameter, List<GeneratedMethodInformation> constructors)
 		{
 			int count = constructors.Count;
 
-			CilLocalVariable switchCondition = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-			processor.Add(CilOpCodes.Ldarga, assetInfoParameter);
+			CilLocalVariable switchCondition = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
+			instructions.Add(CilOpCodes.Ldarga, assetInfoParameter);
 			IMethodDefOrRef propertyRef = SharedState.Instance.Importer.ImportMethod<AssetInfo>(m => m.Name == $"get_{nameof(AssetInfo.ClassID)}");
-			processor.Add(CilOpCodes.Call, propertyRef);
-			processor.Add(CilOpCodes.Stloc, switchCondition);
+			instructions.Add(CilOpCodes.Call, propertyRef);
+			instructions.Add(CilOpCodes.Stloc, switchCondition);
 
 			CilInstructionLabel[] nopInstructions = Enumerable.Range(0, count).Select(i => new CilInstructionLabel()).ToArray();
 			CilInstructionLabel defaultNop = new CilInstructionLabel();
 			for (int i = 0; i < count; i++)
 			{
-				processor.Add(CilOpCodes.Ldloc, switchCondition);
-				processor.Add(CilOpCodes.Ldc_I4, constructors[i].ClassID);
-				processor.Add(CilOpCodes.Beq, nopInstructions[i]);
+				instructions.Add(CilOpCodes.Ldloc, switchCondition);
+				instructions.Add(CilOpCodes.Ldc_I4, constructors[i].ClassID);
+				instructions.Add(CilOpCodes.Beq, nopInstructions[i]);
 			}
-			processor.Add(CilOpCodes.Br, defaultNop);
+			instructions.Add(CilOpCodes.Br, defaultNop);
 			for (int i = 0; i < count; i++)
 			{
-				nopInstructions[i].Instruction = processor.Add(CilOpCodes.Nop);
+				nopInstructions[i].Instruction = instructions.Add(CilOpCodes.Nop);
 				GeneratedMethodInformation tuple = constructors[i];
 				if (tuple.AssetInfoMethod is null)
 				{
-					processor.AddThrowAbstractClassException();
+					instructions.AddThrowAbstractClassException();
 				}
 				else
 				{
-					processor.Add(CilOpCodes.Ldarg, assetInfoParameter);
+					instructions.Add(CilOpCodes.Ldarg, assetInfoParameter);
 
 					if (tuple.HasVersionParameter)
 					{
-						processor.Add(CilOpCodes.Ldarg, versionParameter);
+						instructions.Add(CilOpCodes.Ldarg, versionParameter);
 					}
 
-					processor.Add(CilOpCodes.Call, tuple.AssetInfoMethod);
-					processor.Add(CilOpCodes.Ret);
+					instructions.Add(CilOpCodes.Call, tuple.AssetInfoMethod);
+					instructions.Add(CilOpCodes.Ret);
 				}
 			}
-			defaultNop.Instruction = processor.Add(CilOpCodes.Nop);
-			processor.Add(CilOpCodes.Ldnull);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			defaultNop.Instruction = instructions.Add(CilOpCodes.Nop);
+			instructions.Add(CilOpCodes.Ldnull);
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 		}
 
 		private static void AddMethodWithoutVersionParameter(MethodDefinition mainMethod)
@@ -166,19 +166,19 @@ namespace AssetRipper.AssemblyDumper.Passes
 			//UnityVersion is pulled from AssetInfo.Collection.Version.
 			MethodDefinition method = mainMethod.DeclaringType!.AddMethod(mainMethod.Name, mainMethod.Attributes, mainMethod.Signature!.ReturnType);
 			Parameter parameter = method.AddParameter(assetInfoType, "info");
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
 			//Load Parameter 1
-			processor.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldarg_0);
 
 			//Load Parameter 2
-			processor.Add(CilOpCodes.Ldarga, parameter);
-			processor.Add(CilOpCodes.Call, assetInfoCollectionGetMethod);
-			processor.Add(CilOpCodes.Call, assetCollectionVersionGetMethod);
+			instructions.Add(CilOpCodes.Ldarga, parameter);
+			instructions.Add(CilOpCodes.Call, assetInfoCollectionGetMethod);
+			instructions.Add(CilOpCodes.Call, assetCollectionVersionGetMethod);
 
 			//Call main method and return
-			processor.Add(CilOpCodes.Call, mainMethod);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Call, mainMethod);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static List<GeneratedMethodInformation> AddAllClassCreationMethods()
@@ -263,9 +263,9 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static MethodDefinition ImplementSingleCreationMethod(ClassGroupBase group, TypeDefinition factoryClass)
 		{
 			MethodDefinition method = factoryClass.AddMethod("Create", CreateAssetAttributes, group.GetSingularTypeOrInterface().ToTypeSignature());
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 			Parameter? assetInfoParameter = group is SubclassGroup ? null : method.AddParameter(assetInfoType, "info");
-			processor.AddReturnNewConstructedObject(group.Instances[0].Type, assetInfoParameter);
+			instructions.AddReturnNewConstructedObject(group.Instances[0].Type, assetInfoParameter);
 			return method;
 		}
 
@@ -274,8 +274,8 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition method = factoryClass.AddMethod("Create", CreateAssetAttributes, group.GetSingularTypeOrInterface().ToTypeSignature());
 			Parameter? assetInfoParameter = group is SubclassGroup ? null : method.AddParameter(assetInfoType, "info");
 			Parameter versionParameter = method.AddParameter(unityVersionType, "version");
-			CilInstructionCollection processor = method.GetInstructions();
-			processor.FillNormalCreationMethod(group, versionParameter, assetInfoParameter);
+			CilInstructionCollection instructions = method.GetInstructions();
+			instructions.FillNormalCreationMethod(group, versionParameter, assetInfoParameter);
 			return method;
 		}
 
@@ -287,25 +287,25 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			DocumentationHandler.AddMethodDefinitionLine(method, $"This is a special factory method for creating a temporary {SeeXmlTagGenerator.MakeCRef(group.Interface)} with no PathID.");
 
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
 			method.AddParameter(assetCollectionType, "collection");
-			processor.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldarg_0);
 
-			processor.Add(CilOpCodes.Ldc_I4_0);//PathID
-			processor.Add(CilOpCodes.Conv_I8);
-			processor.Add(CilOpCodes.Ldc_I4, group.ID);//ClassID
-			processor.Add(CilOpCodes.Newobj, assetInfoConstructor);
+			instructions.Add(CilOpCodes.Ldc_I4_0);//PathID
+			instructions.Add(CilOpCodes.Conv_I8);
+			instructions.Add(CilOpCodes.Ldc_I4, group.ID);//ClassID
+			instructions.Add(CilOpCodes.Newobj, assetInfoConstructor);
 
 			if (hasVersion)
 			{
 				method.AddParameter(unityVersionType, "version");
-				processor.Add(CilOpCodes.Ldarg_1);
+				instructions.Add(CilOpCodes.Ldarg_1);
 			}
 
-			processor.Add(CilOpCodes.Call, assetInfoMethod);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			instructions.Add(CilOpCodes.Call, assetInfoMethod);
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 			return method;
 		}
 
@@ -314,62 +314,62 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return group.Types.All(t => t.IsAbstract);
 		}
 
-		private static void AddThrowExceptionOrReturnNewObject(this CilInstructionCollection processor, TypeDefinition objectType, Parameter? assetInfoParameter)
+		private static void AddThrowExceptionOrReturnNewObject(this CilInstructionCollection instructions, TypeDefinition objectType, Parameter? assetInfoParameter)
 		{
 			if (objectType.IsAbstract)
 			{
-				processor.AddThrowAbstractClassException();
+				instructions.AddThrowAbstractClassException();
 			}
 			else
 			{
-				processor.AddReturnNewConstructedObject(objectType, assetInfoParameter);
+				instructions.AddReturnNewConstructedObject(objectType, assetInfoParameter);
 			}
 		}
 
-		private static void AddThrowAbstractClassException(this CilInstructionCollection processor)
+		private static void AddThrowAbstractClassException(this CilInstructionCollection instructions)
 		{
-			processor.Add(CilOpCodes.Newobj, abstractClassExceptionConstructor);
-			processor.Add(CilOpCodes.Throw);
+			instructions.Add(CilOpCodes.Newobj, abstractClassExceptionConstructor);
+			instructions.Add(CilOpCodes.Throw);
 		}
 
-		private static void AddReturnNewConstructedObject(this CilInstructionCollection processor, TypeDefinition objectType, Parameter? assetInfoParameter)
+		private static void AddReturnNewConstructedObject(this CilInstructionCollection instructions, TypeDefinition objectType, Parameter? assetInfoParameter)
 		{
 			if (assetInfoParameter is not null)
 			{
-				processor.Add(CilOpCodes.Ldarg, assetInfoParameter);
-				processor.Add(CilOpCodes.Newobj, objectType.GetAssetInfoConstructor());
+				instructions.Add(CilOpCodes.Ldarg, assetInfoParameter);
+				instructions.Add(CilOpCodes.Newobj, objectType.GetAssetInfoConstructor());
 			}
 			else
 			{
-				processor.Add(CilOpCodes.Newobj, objectType.GetDefaultConstructor());
+				instructions.Add(CilOpCodes.Newobj, objectType.GetDefaultConstructor());
 			}
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
-		private static void AddIsGreaterOrEqualToVersion(this CilInstructionCollection processor, Parameter versionParameter, UnityVersion versionToCompareWith)
+		private static void AddIsGreaterOrEqualToVersion(this CilInstructionCollection instructions, Parameter versionParameter, UnityVersion versionToCompareWith)
 		{
-			processor.Add(CilOpCodes.Ldarga, versionParameter);
-			processor.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.Major);
-			processor.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.Minor);
-			processor.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.Build);
-			processor.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.Type);
-			processor.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.TypeNumber);
-			processor.Add(CilOpCodes.Call, unityVersionIsGreaterEqualMethod);
+			instructions.Add(CilOpCodes.Ldarga, versionParameter);
+			instructions.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.Major);
+			instructions.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.Minor);
+			instructions.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.Build);
+			instructions.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.Type);
+			instructions.Add(CilOpCodes.Ldc_I4, (int)versionToCompareWith.TypeNumber);
+			instructions.Add(CilOpCodes.Call, unityVersionIsGreaterEqualMethod);
 		}
 
-		private static void FillNormalCreationMethod(this CilInstructionCollection processor, ClassGroupBase group, Parameter versionParameter, Parameter? assetInfoParameter)
+		private static void FillNormalCreationMethod(this CilInstructionCollection instructions, ClassGroupBase group, Parameter versionParameter, Parameter? assetInfoParameter)
 		{
 			for (int i = group.Instances.Count - 1; i > 0; i--)
 			{
 				CilInstructionLabel label = new();
 				UnityVersion startVersion = group.Instances[i].VersionRange.Start;
-				processor.AddIsGreaterOrEqualToVersion(versionParameter, startVersion);
-				processor.Add(CilOpCodes.Brfalse, label);
-				processor.AddThrowExceptionOrReturnNewObject(group.Instances[i].Type, assetInfoParameter);
-				label.Instruction = processor.Add(CilOpCodes.Nop);
+				instructions.AddIsGreaterOrEqualToVersion(versionParameter, startVersion);
+				instructions.Add(CilOpCodes.Brfalse, label);
+				instructions.AddThrowExceptionOrReturnNewObject(group.Instances[i].Type, assetInfoParameter);
+				label.Instruction = instructions.Add(CilOpCodes.Nop);
 			}
-			processor.AddThrowExceptionOrReturnNewObject(group.Instances[0].Type, assetInfoParameter);
-			processor.OptimizeMacros();
+			instructions.AddThrowExceptionOrReturnNewObject(group.Instances[0].Type, assetInfoParameter);
+			instructions.OptimizeMacros();
 		}
 
 		private static MethodDefinition GetAssetInfoConstructor(this TypeDefinition typeDefinition)

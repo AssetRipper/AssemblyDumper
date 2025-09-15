@@ -27,15 +27,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 			ITypeDefOrRef commonRef = SharedState.Instance.Importer.ImportType<UnityGuid>();
 			IMethodDefOrRef toStringMethod = SharedState.Instance.Importer.ImportMethod<UnityGuid>(m => m.Name == nameof(UnityGuid.ToString) && m.Parameters.Count == 0);
 
-			CilInstructionCollection processor = method.GetInstructions();
-			CilLocalVariable local = processor.AddLocalVariable(commonRef.ToTypeSignature());
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, conversionMethod);
-			processor.Add(CilOpCodes.Stloc, local);
-			processor.Add(CilOpCodes.Ldloca, local);
-			processor.Add(CilOpCodes.Call, toStringMethod);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			CilInstructionCollection instructions = method.GetInstructions();
+			CilLocalVariable local = instructions.AddLocalVariable(commonRef.ToTypeSignature());
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, conversionMethod);
+			instructions.Add(CilOpCodes.Stloc, local);
+			instructions.Add(CilOpCodes.Ldloca, local);
+			instructions.Add(CilOpCodes.Call, toStringMethod);
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 
 			return method;
 		}
@@ -45,22 +45,22 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition method = type.AddMethod(nameof(object.ToString), MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual, type.DeclaringModule!.CorLibTypeFactory.String);
 			IMethodDefOrRef helperMethod = helperType.Methods.Single(m => m.Name == nameof(HashHelper.ToString));
 
-			CilInstructionCollection processor = method.GetInstructions();
-			processor.AddLoadAllHashFields(type);
-			processor.Add(CilOpCodes.Call, helperMethod);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			CilInstructionCollection instructions = method.GetInstructions();
+			instructions.AddLoadAllHashFields(type);
+			instructions.Add(CilOpCodes.Call, helperMethod);
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 
 			return method;
 		}
 
-		private static void AddLoadAllHashFields(this CilInstructionCollection processor, TypeDefinition type)
+		private static void AddLoadAllHashFields(this CilInstructionCollection instructions, TypeDefinition type)
 		{
 			for (int i = 0; i < 16; i++)
 			{
 				FieldDefinition field = type.GetFieldByName(GetHashFieldName(i));
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldfld, field);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldfld, field);
 			}
 		}
 

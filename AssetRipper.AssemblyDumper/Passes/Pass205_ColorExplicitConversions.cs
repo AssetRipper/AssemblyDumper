@@ -25,13 +25,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 			TypeSignature commonType = SharedState.Instance.Importer.ImportTypeSignature<Color32>();
 
 			MethodDefinition method = type.AddEmptyConversion(type.ToTypeSignature(), commonType, false);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_Rgba"));
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<Color32>(m => m.Name == nameof(Color32.FromRgba)));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_Rgba"));
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<Color32>(m => m.Name == nameof(Color32.FromRgba)));
 
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddReverseConversion32(TypeDefinition type)
@@ -41,16 +41,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition constructor = type.GetDefaultConstructor();
 
 			MethodDefinition method = type.AddEmptyConversion(commonType, type.ToTypeSignature(), false);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
-			processor.Add(CilOpCodes.Newobj, constructor);
+			instructions.Add(CilOpCodes.Newobj, constructor);
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<Color32>(m => m.Name == $"get_{nameof(Color32.Rgba)}"));
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_Rgba"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<Color32>(m => m.Name == $"get_{nameof(Color32.Rgba)}"));
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_Rgba"));
 
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddConversionF(SubclassGroup group)
@@ -69,23 +69,23 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef constructor = SharedState.Instance.Importer.ImportConstructor<ColorFloat>(4);
 
 			MethodDefinition method = type.AddEmptyConversion(type.ToTypeSignature(), commonType, true);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_R"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_R"));
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_G"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_G"));
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_B"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_B"));
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_A"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_A"));
 
-			processor.Add(CilOpCodes.Newobj, constructor);
+			instructions.Add(CilOpCodes.Newobj, constructor);
 
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddReverseConversionF(TypeDefinition type)
@@ -95,31 +95,31 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition constructor = type.GetDefaultConstructor();
 
 			MethodDefinition method = type.AddEmptyConversion(commonType, type.ToTypeSignature(), false);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
-			processor.Add(CilOpCodes.Newobj, constructor);
+			instructions.Add(CilOpCodes.Newobj, constructor);
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<ColorFloat>(m => m.Name == $"get_{nameof(ColorFloat.R)}"));
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_R"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<ColorFloat>(m => m.Name == $"get_{nameof(ColorFloat.R)}"));
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_R"));
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<ColorFloat>(m => m.Name == $"get_{nameof(ColorFloat.G)}"));
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_G"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<ColorFloat>(m => m.Name == $"get_{nameof(ColorFloat.G)}"));
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_G"));
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<ColorFloat>(m => m.Name == $"get_{nameof(ColorFloat.B)}"));
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_B"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<ColorFloat>(m => m.Name == $"get_{nameof(ColorFloat.B)}"));
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_B"));
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<ColorFloat>(m => m.Name == $"get_{nameof(ColorFloat.A)}"));
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_A"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<ColorFloat>(m => m.Name == $"get_{nameof(ColorFloat.A)}"));
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_A"));
 
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 		}
 	}
 }

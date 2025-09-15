@@ -69,7 +69,7 @@
 		public static MethodDefinition AddDefaultConstructor(this TypeDefinition typeDefinition, CachedReferenceImporter importer)
 		{
 			MethodDefinition defaultConstructor = typeDefinition.AddEmptyConstructor();
-			CilInstructionCollection processor = defaultConstructor.CilMethodBody!.Instructions;
+			CilInstructionCollection instructions = defaultConstructor.CilMethodBody!.Instructions;
 
 			IMethodDefOrRef baseConstructor;
 			if (typeDefinition.BaseType is null)
@@ -90,11 +90,11 @@
 				}
 			}
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, baseConstructor);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, baseConstructor);
+			instructions.Add(CilOpCodes.Ret);
 
-			processor.OptimizeMacros();
+			instructions.OptimizeMacros();
 
 			return defaultConstructor;
 		}

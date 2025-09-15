@@ -28,18 +28,18 @@ namespace AssetRipper.AssemblyDumper.Passes
 			implicitMethod.AddParameter(guidType.ToTypeSignature(), "value");
 
 			implicitMethod.CilMethodBody!.InitializeLocals = true;
-			CilInstructionCollection processor = implicitMethod.CilMethodBody.Instructions;
+			CilInstructionCollection instructions = implicitMethod.CilMethodBody.Instructions;
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, data0);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, data1);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, data2);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, data3);
-			processor.Add(CilOpCodes.Newobj, constructor);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, data0);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, data1);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, data2);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, data3);
+			instructions.Add(CilOpCodes.Newobj, constructor);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddExplicitConversion(TypeDefinition guidType)
@@ -60,26 +60,26 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition explicitMethod = guidType.AddMethod("op_Explicit", ConversionAttributes, guidType.ToTypeSignature());
 			Parameter parameter = explicitMethod.AddParameter(commonGuidType.ToTypeSignature(), "value");
 
-			CilInstructionCollection processor = explicitMethod.CilMethodBody!.Instructions;
+			CilInstructionCollection instructions = explicitMethod.CilMethodBody!.Instructions;
 
-			processor.Add(CilOpCodes.Newobj, constructor);
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga, parameter);
-			processor.Add(CilOpCodes.Call, getData0);
-			processor.Add(CilOpCodes.Stfld, data0);
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga, parameter);
-			processor.Add(CilOpCodes.Call, getData1);
-			processor.Add(CilOpCodes.Stfld, data1);
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga, parameter);
-			processor.Add(CilOpCodes.Call, getData2);
-			processor.Add(CilOpCodes.Stfld, data2);
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga, parameter);
-			processor.Add(CilOpCodes.Call, getData3);
-			processor.Add(CilOpCodes.Stfld, data3);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Newobj, constructor);
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga, parameter);
+			instructions.Add(CilOpCodes.Call, getData0);
+			instructions.Add(CilOpCodes.Stfld, data0);
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga, parameter);
+			instructions.Add(CilOpCodes.Call, getData1);
+			instructions.Add(CilOpCodes.Stfld, data1);
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga, parameter);
+			instructions.Add(CilOpCodes.Call, getData2);
+			instructions.Add(CilOpCodes.Stfld, data2);
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga, parameter);
+			instructions.Add(CilOpCodes.Call, getData3);
+			instructions.Add(CilOpCodes.Stfld, data3);
+			instructions.Add(CilOpCodes.Ret);
 		}
 	}
 }

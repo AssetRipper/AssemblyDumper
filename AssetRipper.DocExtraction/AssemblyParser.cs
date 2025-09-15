@@ -18,7 +18,7 @@ public static class AssemblyParser
 		"UnityEditor.Build.BuildPlayerProcessor",
 		"UnityEditor.Experimental.AssetsModifiedProcessor",
 		"UnityEditor.AssetModificationProcessor",
-		"UnityEditor.AssetPostprocessor",
+		"UnityEditor.AssetPostinstructions",
 		"UnityEditor.Editor",
 		"UnityEditor.EditorWindow",
 		"UnityEditor.Joint2DEditor",

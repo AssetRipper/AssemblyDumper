@@ -36,18 +36,18 @@ public static partial class Pass103_FillDependencyMethods
 				}
 
 				MethodDefinition method = instance.Type.AddMethod(nameof(UnityAssetBase.FetchDependencies), Pass063_CreateEmptyMethods.OverrideMethodAttributes, returnType);
-				CilInstructionCollection processor = method.GetInstructions();
+				CilInstructionCollection instructions = method.GetInstructions();
 				if (anyPPtrs)
 				{
 					MethodDefinition enumerableConstructor = MakeEnumerableType(injectedBaseType, currentField, thisField, instance, rootNode);
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Newobj, enumerableConstructor);
-					processor.Add(CilOpCodes.Ret);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Newobj, enumerableConstructor);
+					instructions.Add(CilOpCodes.Ret);
 				}
 				else
 				{
-					processor.Add(CilOpCodes.Call, emptyEnumerableMethod);
-					processor.Add(CilOpCodes.Ret);
+					instructions.Add(CilOpCodes.Call, emptyEnumerableMethod);
+					instructions.Add(CilOpCodes.Ret);
 				}
 			}
 		}
@@ -66,23 +66,23 @@ public static partial class Pass103_FillDependencyMethods
 		MethodDefinition enumerableConstructor = enumerableType.AddEmptyConstructor();
 		enumerableConstructor.AddParameter(instance.Type.ToTypeSignature(), "_this");
 		{
-			CilInstructionCollection processor = enumerableConstructor.GetInstructions();
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldarg_1);
+			CilInstructionCollection instructions = enumerableConstructor.GetInstructions();
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldarg_1);
 			IMethodDefOrRef baseConstructor = new MemberReference(baseType, ".ctor", injectedBaseType.GetConstructor(1).Signature);
-			processor.Add(CilOpCodes.Call, baseConstructor);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Call, baseConstructor);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		// CreateNew
 		{
 			MethodDefinition createNewMethod = enumerableType.AddMethod("CreateNew", MethodAttributes.FamilyAndAssembly | MethodAttributes.Virtual | MethodAttributes.HideBySig, enumerableType.ToTypeSignature());
 			{
-				CilInstructionCollection processor = createNewMethod.GetInstructions();
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldfld, new MemberReference(baseType, thisField.Name, thisField.Signature));
-				processor.Add(CilOpCodes.Newobj, enumerableConstructor);
-				processor.Add(CilOpCodes.Ret);
+				CilInstructionCollection instructions = createNewMethod.GetInstructions();
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldfld, new MemberReference(baseType, thisField.Name, thisField.Signature));
+				instructions.Add(CilOpCodes.Newobj, enumerableConstructor);
+				instructions.Add(CilOpCodes.Ret);
 			}
 		}
 

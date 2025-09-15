@@ -29,20 +29,20 @@ internal static class Pass301_SourcePrefabProperty
 			//Get method
 			{
 				MethodDefinition method = property.GetMethod!;
-				CilInstructionCollection processor = method.GetInstructions();
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Call, existingProperty.GetMethod!);
-				processor.Add(CilOpCodes.Ret);
+				CilInstructionCollection instructions = method.GetInstructions();
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Call, existingProperty.GetMethod!);
+				instructions.Add(CilOpCodes.Ret);
 			}
 
 			//Set method
 			{
 				MethodDefinition method = property.SetMethod!;
-				CilInstructionCollection processor = method.GetInstructions();
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.Add(CilOpCodes.Call, existingProperty.SetMethod!);
-				processor.Add(CilOpCodes.Ret);
+				CilInstructionCollection instructions = method.GetInstructions();
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldarg_1);
+				instructions.Add(CilOpCodes.Call, existingProperty.SetMethod!);
+				instructions.Add(CilOpCodes.Ret);
 			}
 
 			property.AddNullableAttributesForMaybeNull();

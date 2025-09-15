@@ -63,13 +63,13 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 			singleParamConstructor = attributeDefinition.AddEmptyConstructor();
 			singleParamConstructor.AddParameter(fieldType);
 
-			var processor = singleParamConstructor.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, defaultAttributeConstructor);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.Add(CilOpCodes.Stfld, field);
-			processor.Add(CilOpCodes.Ret);
+			var instructions = singleParamConstructor.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, defaultAttributeConstructor);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldarg_1);
+			instructions.Add(CilOpCodes.Stfld, field);
+			instructions.Add(CilOpCodes.Ret);
 
 			return attributeDefinition;
 		}

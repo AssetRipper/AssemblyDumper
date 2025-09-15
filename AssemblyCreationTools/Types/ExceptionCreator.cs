@@ -11,11 +11,11 @@ namespace AssetRipper.AssemblyCreationTools.Types
 			importer.TargetModule.TopLevelTypes.Add(type);
 			IMethodDefOrRef exceptionConstructor = importer.ImportConstructor<Exception>(1);
 			MethodDefinition constructor = type.AddEmptyConstructor();
-			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldstr, errorMessage);
-			processor.Add(CilOpCodes.Call, exceptionConstructor);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = constructor.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldstr, errorMessage);
+			instructions.Add(CilOpCodes.Call, exceptionConstructor);
+			instructions.Add(CilOpCodes.Ret);
 			return type;
 		}
 	}

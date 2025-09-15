@@ -62,18 +62,18 @@ namespace AssetRipper.AssemblyCreationTools.Attributes
 
 			FieldDefinition field = type.Fields.Single();//byte[]
 
-			var processor = singleByteConstructor.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, defaultAttributeConstructor);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldc_I4_1);
-			processor.Add(CilOpCodes.Newarr, importer.UInt8.ToTypeDefOrRef());
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldc_I4_0);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.Add(CilOpCodes.Stelem_I1);
-			processor.Add(CilOpCodes.Stfld, field);
-			processor.Add(CilOpCodes.Ret);
+			var instructions = singleByteConstructor.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, defaultAttributeConstructor);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldc_I4_1);
+			instructions.Add(CilOpCodes.Newarr, importer.UInt8.ToTypeDefOrRef());
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldc_I4_0);
+			instructions.Add(CilOpCodes.Ldarg_1);
+			instructions.Add(CilOpCodes.Stelem_I1);
+			instructions.Add(CilOpCodes.Stfld, field);
+			instructions.Add(CilOpCodes.Ret);
 
 			return type;
 		}

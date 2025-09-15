@@ -39,12 +39,12 @@
 
 			MakeEqualityComparerGenericMethods(type.ToTypeSignature(), importer, out IMethodDefOrRef defaultReference, out IMethodDefOrRef equalsReference);
 
-			CilInstructionCollection processor = method.GetInstructions();
-			processor.Add(CilOpCodes.Call, defaultReference);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.Add(CilOpCodes.Callvirt, equalsReference);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = method.GetInstructions();
+			instructions.Add(CilOpCodes.Call, defaultReference);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldarg_1);
+			instructions.Add(CilOpCodes.Callvirt, equalsReference);
+			instructions.Add(CilOpCodes.Ret);
 			return method;
 		}
 
@@ -57,13 +57,13 @@
 			method.AddParameter(type.ToTypeSignature(), "left");
 			method.AddParameter(type.ToTypeSignature(), "right");
 
-			CilInstructionCollection processor = method.GetInstructions();
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.Add(CilOpCodes.Call, equalityMethod);
-			processor.Add(CilOpCodes.Ldc_I4_0);
-			processor.Add(CilOpCodes.Ceq);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = method.GetInstructions();
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldarg_1);
+			instructions.Add(CilOpCodes.Call, equalityMethod);
+			instructions.Add(CilOpCodes.Ldc_I4_0);
+			instructions.Add(CilOpCodes.Ceq);
+			instructions.Add(CilOpCodes.Ret);
 			return method;
 		}
 	}

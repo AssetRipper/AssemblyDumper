@@ -51,39 +51,39 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 								//Get method
 								{
-									CilInstructionCollection processor = classProperty.SpecialDefinition.GetMethod!.GetInstructions();
+									CilInstructionCollection instructions = classProperty.SpecialDefinition.GetMethod!.GetInstructions();
 									if (classProperty.BackingField is null)
 									{
-										processor.Add(CilOpCodes.Ldnull);
+										instructions.Add(CilOpCodes.Ldnull);
 									}
 									else
 									{
-										CilLocalVariable local = processor.AddLocalVariable(parameterType.ToTypeSignature());
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Callvirt, classProperty.Definition.GetMethod!);
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Callvirt, getCollectionMethod);
-										processor.Add(CilOpCodes.Ldloca, local);
-										processor.Add(CilOpCodes.Callvirt, Pass080_PPtrConversions.PPtrsToTryGetAssetMethods[pptrType]);
-										processor.Add(CilOpCodes.Pop);
-										processor.Add(CilOpCodes.Ldloc, local);
+										CilLocalVariable local = instructions.AddLocalVariable(parameterType.ToTypeSignature());
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Callvirt, classProperty.Definition.GetMethod!);
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Callvirt, getCollectionMethod);
+										instructions.Add(CilOpCodes.Ldloca, local);
+										instructions.Add(CilOpCodes.Callvirt, Pass080_PPtrConversions.PPtrsToTryGetAssetMethods[pptrType]);
+										instructions.Add(CilOpCodes.Pop);
+										instructions.Add(CilOpCodes.Ldloc, local);
 									}
-									processor.Add(CilOpCodes.Ret);
-									processor.OptimizeMacros();
+									instructions.Add(CilOpCodes.Ret);
+									instructions.OptimizeMacros();
 								}
 								//Set method
 								{
-									CilInstructionCollection processor = classProperty.SpecialDefinition.SetMethod!.GetInstructions();
+									CilInstructionCollection instructions = classProperty.SpecialDefinition.SetMethod!.GetInstructions();
 									if (classProperty.BackingField is not null)
 									{
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Callvirt, classProperty.Definition.GetMethod!);
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Callvirt, getCollectionMethod);
-										processor.Add(CilOpCodes.Ldarg_1);
-										processor.Add(CilOpCodes.Callvirt, Pass080_PPtrConversions.PPtrsToSetAssetMethods[pptrType]);
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Callvirt, classProperty.Definition.GetMethod!);
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Callvirt, getCollectionMethod);
+										instructions.Add(CilOpCodes.Ldarg_1);
+										instructions.Add(CilOpCodes.Callvirt, Pass080_PPtrConversions.PPtrsToSetAssetMethods[pptrType]);
 									}
-									processor.Add(CilOpCodes.Ret);
+									instructions.Add(CilOpCodes.Ret);
 								}
 								//Debugger attribute
 								if (classProperty.Class.Type.IsAbstract)
@@ -116,19 +116,19 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 								//Get method
 								{
-									CilInstructionCollection processor = classProperty.SpecialDefinition.GetMethod!.GetInstructions();
+									CilInstructionCollection instructions = classProperty.SpecialDefinition.GetMethod!.GetInstructions();
 									if (classProperty.BackingField is null)
 									{
-										processor.Add(CilOpCodes.Call, emptyMethod);
+										instructions.Add(CilOpCodes.Call, emptyMethod);
 									}
 									else
 									{
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Callvirt, classProperty.Definition.GetMethod!);
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Newobj, constructor);
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Callvirt, classProperty.Definition.GetMethod!);
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Newobj, constructor);
 									}
-									processor.Add(CilOpCodes.Ret);
+									instructions.Add(CilOpCodes.Ret);
 								}
 								//Debugger attribute
 								if (classProperty.Class.Type.IsAbstract)

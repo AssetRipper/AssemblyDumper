@@ -27,31 +27,31 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 		private static void FixMethod(MethodDefinition readMethod, MethodDefinition helperMethod, FieldDefinition dataField, FieldDefinition streamField)
 		{
-			CilInstructionCollection processor = readMethod.GetInstructions();
+			CilInstructionCollection instructions = readMethod.GetInstructions();
 
 			//remove bad instructions
-			while (processor.Count > 0)
+			while (instructions.Count > 0)
 			{
-				int index = processor.Count - 1;
-				CilInstruction instruction = processor[index];
-				processor.RemoveAt(index);
+				int index = instructions.Count - 1;
+				CilInstruction instruction = instructions[index];
+				instructions.RemoveAt(index);
 				if (instruction.OpCode == CilOpCodes.Ldarg_0)
 				{
 					break;
 				}
 			}
 
-			processor.Add(CilOpCodes.Ldarg_0);//for the store field
+			instructions.Add(CilOpCodes.Ldarg_0);//for the store field
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, streamField);
-			processor.Add(CilOpCodes.Call, helperMethod);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldarg_1);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, streamField);
+			instructions.Add(CilOpCodes.Call, helperMethod);
 
-			processor.Add(CilOpCodes.Stfld, dataField);
+			instructions.Add(CilOpCodes.Stfld, dataField);
 
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static bool TryGetStreamField(this GeneratedClassInstance instance, [NotNullWhen(true)] out FieldDefinition? streamField)

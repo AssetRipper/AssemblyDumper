@@ -26,35 +26,35 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef constructor = SharedState.Instance.Importer.ImportConstructor<BoneWeight4>(8);
 
 			MethodDefinition method = type.AddEmptyConversion(type.ToTypeSignature(), commonType, true);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_Weight_0_"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_Weight_0_"));
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_Weight_1_"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_Weight_1_"));
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_Weight_2_"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_Weight_2_"));
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_Weight_3_"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_Weight_3_"));
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_BoneIndex_0_"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_BoneIndex_0_"));
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_BoneIndex_1_"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_BoneIndex_1_"));
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_BoneIndex_2_"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_BoneIndex_2_"));
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_BoneIndex_3_"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "get_BoneIndex_3_"));
 
-			processor.Add(CilOpCodes.Newobj, constructor);
+			instructions.Add(CilOpCodes.Newobj, constructor);
 
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddReverseConversion(TypeDefinition type)
@@ -64,51 +64,51 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition constructor = type.GetDefaultConstructor();
 
 			MethodDefinition method = type.AddEmptyConversion(commonType, type.ToTypeSignature(), false);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
-			processor.Add(CilOpCodes.Newobj, constructor);
+			instructions.Add(CilOpCodes.Newobj, constructor);
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Index0)}"));
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_BoneIndex_0_"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Index0)}"));
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_BoneIndex_0_"));
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Index1)}"));
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_BoneIndex_1_"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Index1)}"));
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_BoneIndex_1_"));
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Index2)}"));
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_BoneIndex_2_"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Index2)}"));
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_BoneIndex_2_"));
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Index3)}"));
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_BoneIndex_3_"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Index3)}"));
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_BoneIndex_3_"));
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Weight0)}"));
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_Weight_0_"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Weight0)}"));
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_Weight_0_"));
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Weight1)}"));
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_Weight_1_"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Weight1)}"));
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_Weight_1_"));
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Weight2)}"));
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_Weight_2_"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Weight2)}"));
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_Weight_2_"));
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
-			processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Weight3)}"));
-			processor.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_Weight_3_"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarga_S, method.Parameters[0]);
+			instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod<BoneWeight4>(m => m.Name == $"get_{nameof(BoneWeight4.Weight3)}"));
+			instructions.Add(CilOpCodes.Call, type.Methods.Single(m => m.Name == "set_Weight_3_"));
 
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 		}
 	}
 }

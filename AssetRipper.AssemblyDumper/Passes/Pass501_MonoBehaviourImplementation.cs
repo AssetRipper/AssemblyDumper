@@ -79,22 +79,22 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			IMethodDefOrRef walkStructureMethod = monoBehaviourHelperType.Methods.Single(m => m.Name == injectedMethodName);
 
-			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
+			CilInstructionCollection instructions = method.CilMethodBody!.Instructions;
 
-			int insertIndex = FindLastNop(processor) + 1;
+			int insertIndex = FindLastNop(instructions) + 1;
 
 			//Insert the opcodes in reverse order, so that we don't have to adjust the insert index.
-			processor.Insert(insertIndex, CilOpCodes.Call, walkStructureMethod);
-			processor.Insert(insertIndex, CilOpCodes.Ldarg_1);//walker
-			processor.Insert(insertIndex, CilOpCodes.Ldfld, field);//the structure field
-			processor.Insert(insertIndex, CilOpCodes.Ldarg_0);//this
-			processor.Insert(insertIndex, CilOpCodes.Ldarg_0);//this
+			instructions.Insert(insertIndex, CilOpCodes.Call, walkStructureMethod);
+			instructions.Insert(insertIndex, CilOpCodes.Ldarg_1);//walker
+			instructions.Insert(insertIndex, CilOpCodes.Ldfld, field);//the structure field
+			instructions.Insert(insertIndex, CilOpCodes.Ldarg_0);//this
+			instructions.Insert(insertIndex, CilOpCodes.Ldarg_0);//this
 
-			static int FindLastNop(CilInstructionCollection processor)
+			static int FindLastNop(CilInstructionCollection instructions)
 			{
-				for (int i = processor.Count - 1; i >= 0; i--)
+				for (int i = instructions.Count - 1; i >= 0; i--)
 				{
-					if (processor[i].OpCode == CilOpCodes.Nop)
+					if (instructions[i].OpCode == CilOpCodes.Nop)
 					{
 						return i;
 					}
@@ -107,39 +107,39 @@ namespace AssetRipper.AssemblyDumper.Passes
 		{
 			MethodDefinition method = type.Methods.Single(m => m.Name == nameof(UnityAssetBase.FetchDependencies));
 			IMethodDefOrRef fetchDependenciesMethod = monoBehaviourHelperType.Methods.Single(m => m.Name == nameof(MonoBehaviourHelper.MaybeAppendStructureDependencies));
-			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
-			processor.Pop(); //pop the return value
-			processor.Add(CilOpCodes.Ldarg_0);//this
-			processor.Add(CilOpCodes.Ldfld, field);//the structure field
-			processor.Add(CilOpCodes.Call, fetchDependenciesMethod);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = method.CilMethodBody!.Instructions;
+			instructions.Pop(); //pop the return value
+			instructions.Add(CilOpCodes.Ldarg_0);//this
+			instructions.Add(CilOpCodes.Ldfld, field);//the structure field
+			instructions.Add(CilOpCodes.Call, fetchDependenciesMethod);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddStructureReset(this TypeDefinition type, FieldDefinition field, TypeDefinition monoBehaviourHelperType)
 		{
 			MethodDefinition method = type.Methods.Single(m => m.Name == nameof(UnityAssetBase.Reset));
 			IMethodDefOrRef resetMethod = monoBehaviourHelperType.Methods.Single(m => m.Name == nameof(MonoBehaviourHelper.ResetStructure));
-			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
-			processor.Pop(); //pop the return value
-			processor.Add(CilOpCodes.Ldarg_0);//this
-			processor.Add(CilOpCodes.Ldfld, field);//the structure field
-			processor.Add(CilOpCodes.Call, resetMethod);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = method.CilMethodBody!.Instructions;
+			instructions.Pop(); //pop the return value
+			instructions.Add(CilOpCodes.Ldarg_0);//this
+			instructions.Add(CilOpCodes.Ldfld, field);//the structure field
+			instructions.Add(CilOpCodes.Call, resetMethod);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddStructureCopyValues(this TypeDefinition type, FieldDefinition field, PropertyDefinition interfaceProperty, TypeDefinition monoBehaviourHelperType)
 		{
 			MethodDefinition method = type.Methods.Single(m => m.Name == nameof(UnityAssetBase.CopyValues) && m.IsFinal && m.Parameters.Count == 2);
 			IMethodDefOrRef copyValuesMethod = monoBehaviourHelperType.Methods.Single(m => m.Name == nameof(MonoBehaviourHelper.CopyStructureValues));
-			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
-			processor.Pop(); //pop the return value
-			processor.Add(CilOpCodes.Ldarg_0);//this
-			processor.Add(CilOpCodes.Ldflda, field);//the structure field
-			processor.Add(CilOpCodes.Ldarg_1);//source
-			processor.Add(CilOpCodes.Callvirt, interfaceProperty.GetMethod!);//the Structure property
-			processor.Add(CilOpCodes.Ldarg_2);//converter
-			processor.Add(CilOpCodes.Call, copyValuesMethod);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = method.CilMethodBody!.Instructions;
+			instructions.Pop(); //pop the return value
+			instructions.Add(CilOpCodes.Ldarg_0);//this
+			instructions.Add(CilOpCodes.Ldflda, field);//the structure field
+			instructions.Add(CilOpCodes.Ldarg_1);//source
+			instructions.Add(CilOpCodes.Callvirt, interfaceProperty.GetMethod!);//the Structure property
+			instructions.Add(CilOpCodes.Ldarg_2);//converter
+			instructions.Add(CilOpCodes.Call, copyValuesMethod);
+			instructions.Add(CilOpCodes.Ret);
 		}
 	}
 }

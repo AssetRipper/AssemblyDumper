@@ -25,19 +25,19 @@ namespace AssetRipper.AssemblyDumper.Passes
 			field.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 
 			MethodDefinition staticConstructor = newTypeDef.AddEmptyConstructor(true);
-			CilInstructionCollection processor = staticConstructor.GetInstructions();
-			processor.Add(CilOpCodes.Newobj, dictionaryConstructor);
+			CilInstructionCollection instructions = staticConstructor.GetInstructions();
+			instructions.Add(CilOpCodes.Newobj, dictionaryConstructor);
 			foreach ((uint index, string str) in SharedState.Instance.CommonString.Strings)
 			{
-				processor.Add(CilOpCodes.Dup);
-				processor.Add(CilOpCodes.Ldc_I4, (int)index);
-				processor.Add(CilOpCodes.Ldstr, str);
-				processor.Add(CilOpCodes.Call, addMethod);
+				instructions.Add(CilOpCodes.Dup);
+				instructions.Add(CilOpCodes.Ldc_I4, (int)index);
+				instructions.Add(CilOpCodes.Ldstr, str);
+				instructions.Add(CilOpCodes.Call, addMethod);
 			}
-			processor.Add(CilOpCodes.Stsfld, field);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Stsfld, field);
+			instructions.Add(CilOpCodes.Ret);
 
-			processor.OptimizeMacros();
+			instructions.OptimizeMacros();
 
 			newTypeDef.ImplementGetterProperty(
 					propertyName,

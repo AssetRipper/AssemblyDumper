@@ -140,14 +140,14 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			FieldDefinition pathidField = pptrType.GetFieldByName("m_PathID_");
 			PropertyDefinition property = pptrType.AddGetterProperty(nameof(IPPtr.PathID), InterfaceUtils.InterfacePropertyImplementation, SharedState.Instance.Importer.Int64);
-			CilInstructionCollection processor = property.GetMethod!.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, pathidField);
+			CilInstructionCollection instructions = property.GetMethod!.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, pathidField);
 			if (pathidField.IsInt32Type())
 			{
-				processor.Add(CilOpCodes.Conv_I8);
+				instructions.Add(CilOpCodes.Conv_I8);
 			}
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static void ImplementSetAssetMethods(this TypeDefinition pptrType, TypeSignature groupParameterType, TypeSignature? instanceParameterType)
@@ -159,34 +159,34 @@ namespace AssetRipper.AssemblyDumper.Passes
 				MethodDefinition method = mainMethod = pptrType.AddMethod(nameof(IPPtr<IUnityObjectBase>.SetAsset), InterfaceUtils.InterfaceMethodImplementation, SharedState.Instance.Importer.Void);
 				method.AddParameter(SharedState.Instance.Importer.ImportType<AssetCollection>().ToTypeSignature(), "collection");
 				method.AddParameter(parameterType, "asset").Definition!.AddNullableAttribute(NullableAnnotation.MaybeNull);
-				CilInstructionCollection processor = method.CilMethodBody!.Instructions;
+				CilInstructionCollection instructions = method.CilMethodBody!.Instructions;
 
 				//Convert PPtr
-				CilLocalVariable convertedPPtr = processor.AddLocalVariable(commonPPtrType.ToTypeSignature());
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.Add(CilOpCodes.Ldarg_2);
-				processor.Add(CilOpCodes.Call, forceCreatePPtrHelper);
-				processor.Add(CilOpCodes.Stloc, convertedPPtr);
+				CilLocalVariable convertedPPtr = instructions.AddLocalVariable(commonPPtrType.ToTypeSignature());
+				instructions.Add(CilOpCodes.Ldarg_1);
+				instructions.Add(CilOpCodes.Ldarg_2);
+				instructions.Add(CilOpCodes.Call, forceCreatePPtrHelper);
+				instructions.Add(CilOpCodes.Stloc, convertedPPtr);
 
 				//Store FileID
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldloca, convertedPPtr);
-				processor.Add(CilOpCodes.Call, commonPPtrGetFileIDMethod);
-				processor.Add(CilOpCodes.Stfld, pptrType.GetFieldByName("m_FileID_"));
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldloca, convertedPPtr);
+				instructions.Add(CilOpCodes.Call, commonPPtrGetFileIDMethod);
+				instructions.Add(CilOpCodes.Stfld, pptrType.GetFieldByName("m_FileID_"));
 
 				//Store PathID
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldloca, convertedPPtr);
-				processor.Add(CilOpCodes.Call, commonPPtrGetPathIDMethod);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldloca, convertedPPtr);
+				instructions.Add(CilOpCodes.Call, commonPPtrGetPathIDMethod);
 				FieldDefinition pathIDField = pptrType.GetFieldByName("m_PathID_");
 				if (pathIDField.Signature!.FieldType is CorLibTypeSignature { ElementType: ElementType.I4 })
 				{
-					processor.Add(CilOpCodes.Conv_Ovf_I4);//Convert I8 to I4
+					instructions.Add(CilOpCodes.Conv_Ovf_I4);//Convert I8 to I4
 				}
-				processor.Add(CilOpCodes.Stfld, pathIDField);
+				instructions.Add(CilOpCodes.Stfld, pathIDField);
 
 				//Return
-				processor.Add(CilOpCodes.Ret);
+				instructions.Add(CilOpCodes.Ret);
 			}
 
 			pptrsToSetAssetMethods.Add(pptrType, mainMethod);
@@ -197,32 +197,32 @@ namespace AssetRipper.AssemblyDumper.Passes
 				MethodDefinition method = pptrType.AddMethod(nameof(IPPtr<IUnityObjectBase>.SetAsset), InterfaceUtils.InterfaceMethodImplementation, SharedState.Instance.Importer.Void);
 				method.AddParameter(SharedState.Instance.Importer.ImportType<AssetCollection>().ToTypeSignature(), "collection");
 				method.AddParameter(groupParameterType, "asset").Definition!.AddNullableAttribute(NullableAnnotation.MaybeNull);
-				CilInstructionCollection processor = method.CilMethodBody!.Instructions;
+				CilInstructionCollection instructions = method.CilMethodBody!.Instructions;
 
 				CilInstructionLabel returnLabel = new();
 				CilInstructionLabel isNullLabel = new();
 
-				processor.Add(CilOpCodes.Ldarg_2);
-				processor.Add(CilOpCodes.Ldnull);
-				processor.Add(CilOpCodes.Cgt_Un);
-				processor.Add(CilOpCodes.Brfalse, isNullLabel);
+				instructions.Add(CilOpCodes.Ldarg_2);
+				instructions.Add(CilOpCodes.Ldnull);
+				instructions.Add(CilOpCodes.Cgt_Un);
+				instructions.Add(CilOpCodes.Brfalse, isNullLabel);
 
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldarg_1);
-				processor.Add(CilOpCodes.Ldarg_2);
-				processor.Add(CilOpCodes.Castclass, instanceParameterType.ToTypeDefOrRef());
-				processor.Add(CilOpCodes.Callvirt, mainMethod);
-				processor.Add(CilOpCodes.Br, returnLabel);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldarg_1);
+				instructions.Add(CilOpCodes.Ldarg_2);
+				instructions.Add(CilOpCodes.Castclass, instanceParameterType.ToTypeDefOrRef());
+				instructions.Add(CilOpCodes.Callvirt, mainMethod);
+				instructions.Add(CilOpCodes.Br, returnLabel);
 
-				isNullLabel.Instruction = processor.Add(CilOpCodes.Nop);
+				isNullLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Callvirt, pptrType.GetMethodByName(nameof(IUnityAssetBase.Reset)));
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Callvirt, pptrType.GetMethodByName(nameof(IUnityAssetBase.Reset)));
 
-				returnLabel.Instruction = processor.Add(CilOpCodes.Nop);
+				returnLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 
 				//Return
-				processor.Add(CilOpCodes.Ret);
+				instructions.Add(CilOpCodes.Ret);
 			}
 		}
 
@@ -234,32 +234,32 @@ namespace AssetRipper.AssemblyDumper.Passes
 			outParameter.IsOut = true;
 			outParameter.AddNullableAttribute(NullableAnnotation.MaybeNull);
 			outParameter.AddNotNullWhenAttribute(SharedState.Instance.Importer, true);
-			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
+			CilInstructionCollection instructions = method.CilMethodBody!.Instructions;
 
 			//Load container
-			processor.Add(CilOpCodes.Ldarg_1);
+			instructions.Add(CilOpCodes.Ldarg_1);
 
 			//Load FileID
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, pptrType.GetFieldByName("m_FileID_"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, pptrType.GetFieldByName("m_FileID_"));
 
 			//Load PathID
-			processor.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldarg_0);
 			FieldDefinition pathIDField = pptrType.GetFieldByName("m_PathID_");
-			processor.Add(CilOpCodes.Ldfld, pathIDField);
+			instructions.Add(CilOpCodes.Ldfld, pathIDField);
 			if (pathIDField.Signature!.FieldType is CorLibTypeSignature { ElementType: ElementType.I4 })
 			{
-				processor.Add(CilOpCodes.Conv_I8);//Convert I4 to I8
+				instructions.Add(CilOpCodes.Conv_I8);//Convert I4 to I8
 			}
 
 			//Load out parameter
-			processor.Add(CilOpCodes.Ldarg_2);
+			instructions.Add(CilOpCodes.Ldarg_2);
 
 			//Call TryGetAsset helper
-			processor.Add(CilOpCodes.Call, tryGetAssetHelper.MakeGenericInstanceMethod(parameterType));
+			instructions.Add(CilOpCodes.Call, tryGetAssetHelper.MakeGenericInstanceMethod(parameterType));
 
 			//Return
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 
 			return method;
 		}
@@ -286,19 +286,19 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 			MethodDefinition method = pptrType.AddEmptyConversion(pptrType.ToTypeSignature(), resultTypeSignature, true);
 
-			CilInstructionCollection processor = method.CilMethodBody!.Instructions;
+			CilInstructionCollection instructions = method.CilMethodBody!.Instructions;
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, fileID);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, pathID);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, fileID);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, pathID);
 			if (pathID.IsInt32Type())
 			{
-				processor.Add(CilOpCodes.Conv_I8);
+				instructions.Add(CilOpCodes.Conv_I8);
 			}
 
-			processor.Add(CilOpCodes.Newobj, constructor);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Newobj, constructor);
+			instructions.Add(CilOpCodes.Ret);
 
 			return method;
 		}

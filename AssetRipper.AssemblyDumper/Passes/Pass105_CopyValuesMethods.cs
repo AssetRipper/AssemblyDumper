@@ -124,17 +124,17 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					MethodDefinition copyValuesMethod = GetPrimaryCopyValuesMethod(type);
 					MethodDefinition method = type.AddMethod(DeepCloneName, InterfaceUtils.InterfaceMethodImplementation, group.Interface.ToTypeSignature());
-					CilInstructionCollection processor = method.GetInstructions();
-					processor.Add(CilOpCodes.Newobj, type.GetDefaultConstructor());
-					processor.Add(CilOpCodes.Dup);
-					processor.Add(CilOpCodes.Ldarg_0);
+					CilInstructionCollection instructions = method.GetInstructions();
+					instructions.Add(CilOpCodes.Newobj, type.GetDefaultConstructor());
+					instructions.Add(CilOpCodes.Dup);
+					instructions.Add(CilOpCodes.Ldarg_0);
 					if (needsConverter)
 					{
 						method.AddParameter(pptrConverterType.ToTypeSignature(), "converter");
-						processor.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Ldarg_1);
 					}
-					processor.Add(CilOpCodes.Call, copyValuesMethod);
-					processor.Add(CilOpCodes.Ret);
+					instructions.Add(CilOpCodes.Call, copyValuesMethod);
+					instructions.Add(CilOpCodes.Ret);
 				}
 			}
 
@@ -156,16 +156,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 						MethodDefinition originalCopyValuesMethod = GetPrimaryCopyValuesMethod(type);
 						MethodDefinition method = type.AddMethod(CopyValuesName, InterfaceUtils.InterfaceMethodImplementation, SharedState.Instance.Importer.Void);
 						method.AddParameter(group.Interface.ToTypeSignature(), "source");
-						CilInstructionCollection processor = method.GetInstructions();
+						CilInstructionCollection instructions = method.GetInstructions();
 
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Newobj, pptrConverterConstructor);
-						processor.Add(CilOpCodes.Call, originalCopyValuesMethod);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Newobj, pptrConverterConstructor);
+						instructions.Add(CilOpCodes.Call, originalCopyValuesMethod);
 
-						processor.Add(CilOpCodes.Ret);
+						instructions.Add(CilOpCodes.Ret);
 					}
 				}
 			}
@@ -193,60 +193,60 @@ namespace AssetRipper.AssemblyDumper.Passes
 					MethodDefinition primaryMethod = GetPrimaryCopyValuesMethod(instance.Type);
 					MethodDefinition thisMethod = overridenMethods[instance.Type];
 					MethodDefinition? baseMethod = instance.Base is null ? null : overridenMethods[instance.Base.Type];
-					CilInstructionCollection processor = thisMethod.GetInstructions();
+					CilInstructionCollection instructions = thisMethod.GetInstructions();
 
 					if (group is SubclassGroup)//Optimization for subclasses since 2 null checks is unnecessary
 					{
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Isinst, group.Interface);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Isinst, group.Interface);
 						if (primaryMethod.Parameters.Count == 2)
 						{
-							processor.Add(CilOpCodes.Ldarg_2);//Converter is needed
+							instructions.Add(CilOpCodes.Ldarg_2);//Converter is needed
 						}
-						processor.Add(CilOpCodes.Callvirt, primaryMethod);
-						processor.Add(CilOpCodes.Ret);
+						instructions.Add(CilOpCodes.Callvirt, primaryMethod);
+						instructions.Add(CilOpCodes.Ret);
 					}
 					else
 					{
 						CilInstructionLabel returnLabel = new();
 						CilInstructionLabel isNullLabel = new();
-						CilLocalVariable castedArgumentLocal = processor.AddLocalVariable(group.Interface.ToTypeSignature());
+						CilLocalVariable castedArgumentLocal = instructions.AddLocalVariable(group.Interface.ToTypeSignature());
 
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Isinst, group.Interface);
-						processor.Add(CilOpCodes.Stloc, castedArgumentLocal);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Isinst, group.Interface);
+						instructions.Add(CilOpCodes.Stloc, castedArgumentLocal);
 
-						processor.Add(CilOpCodes.Ldloc, castedArgumentLocal);
-						processor.Add(CilOpCodes.Ldnull);
-						processor.Add(CilOpCodes.Cgt_Un);
-						processor.Add(CilOpCodes.Brfalse, isNullLabel);
+						instructions.Add(CilOpCodes.Ldloc, castedArgumentLocal);
+						instructions.Add(CilOpCodes.Ldnull);
+						instructions.Add(CilOpCodes.Cgt_Un);
+						instructions.Add(CilOpCodes.Brfalse, isNullLabel);
 
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Ldloc, castedArgumentLocal);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Ldloc, castedArgumentLocal);
 						if (primaryMethod.Parameters.Count == 2)
 						{
-							processor.Add(CilOpCodes.Ldarg_2);//Converter is needed
+							instructions.Add(CilOpCodes.Ldarg_2);//Converter is needed
 						}
-						processor.Add(CilOpCodes.Callvirt, primaryMethod);
-						processor.Add(CilOpCodes.Br, returnLabel);
+						instructions.Add(CilOpCodes.Callvirt, primaryMethod);
+						instructions.Add(CilOpCodes.Br, returnLabel);
 
-						isNullLabel.Instruction = processor.Add(CilOpCodes.Nop);
+						isNullLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 
 						if (baseMethod is null)//Object
 						{
-							processor.Add(CilOpCodes.Ldarg_0);
-							processor.Add(CilOpCodes.Callvirt, instance.Type.GetMethodByName(nameof(IUnityAssetBase.Reset)));
+							instructions.Add(CilOpCodes.Ldarg_0);
+							instructions.Add(CilOpCodes.Callvirt, instance.Type.GetMethodByName(nameof(IUnityAssetBase.Reset)));
 						}
 						else
 						{
-							processor.Add(CilOpCodes.Ldarg_0);
-							processor.Add(CilOpCodes.Ldarg_1);
-							processor.Add(CilOpCodes.Ldarg_2);
-							processor.Add(CilOpCodes.Call, baseMethod);
+							instructions.Add(CilOpCodes.Ldarg_0);
+							instructions.Add(CilOpCodes.Ldarg_1);
+							instructions.Add(CilOpCodes.Ldarg_2);
+							instructions.Add(CilOpCodes.Call, baseMethod);
 						}
 
-						returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+						returnLabel.Instruction = instructions.Add(CilOpCodes.Ret);
 					}
 				}
 			}
@@ -291,83 +291,83 @@ namespace AssetRipper.AssemblyDumper.Passes
 					method.AddParameter(group.Interface.ToTypeSignature(), "source");
 					Parameter converterParam = method.AddParameter(pptrConverterType.ToTypeSignature(), "converter");
 					method.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
-					CilInstructionCollection processor = method.GetInstructions();
+					CilInstructionCollection instructions = method.GetInstructions();
 					CilInstructionLabel returnLabel = new();
 					CilInstructionLabel isNullLabel = new();
 					CilInstructionLabel isSameCollectionLabel = new();
 
 					//If other is null
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Ldnull);
-					processor.Add(CilOpCodes.Cgt_Un);
-					processor.Add(CilOpCodes.Brfalse, isNullLabel);
+					instructions.Add(CilOpCodes.Ldarg_1);
+					instructions.Add(CilOpCodes.Ldnull);
+					instructions.Add(CilOpCodes.Cgt_Un);
+					instructions.Add(CilOpCodes.Brfalse, isNullLabel);
 
 					//If source collection == target collection
-					processor.Add(CilOpCodes.Ldarga, converterParam);
-					processor.Add(CilOpCodes.Call, pptrConverterGetSourceCollectionMethod);
-					processor.Add(CilOpCodes.Ldarga, converterParam);
-					processor.Add(CilOpCodes.Call, pptrConverterGetTargetCollectionMethod);
-					processor.Add(CilOpCodes.Ceq);
-					processor.Add(CilOpCodes.Brtrue, isSameCollectionLabel);
+					instructions.Add(CilOpCodes.Ldarga, converterParam);
+					instructions.Add(CilOpCodes.Call, pptrConverterGetSourceCollectionMethod);
+					instructions.Add(CilOpCodes.Ldarga, converterParam);
+					instructions.Add(CilOpCodes.Call, pptrConverterGetTargetCollectionMethod);
+					instructions.Add(CilOpCodes.Ceq);
+					instructions.Add(CilOpCodes.Brtrue, isSameCollectionLabel);
 
 					//Not same collection
 					{
 						//Convert PPtr
-						CilLocalVariable convertedPPtr = processor.AddLocalVariable(pptrCommonType);
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Ldarg_2);
-						processor.Add(CilOpCodes.Call, pptrConvertMethod.MakeGenericInstanceMethod(GetPPtrTypeArgument(type, group.Interface)));
-						processor.Add(CilOpCodes.Stloc, convertedPPtr);
+						CilLocalVariable convertedPPtr = instructions.AddLocalVariable(pptrCommonType);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Ldarg_2);
+						instructions.Add(CilOpCodes.Call, pptrConvertMethod.MakeGenericInstanceMethod(GetPPtrTypeArgument(type, group.Interface)));
+						instructions.Add(CilOpCodes.Stloc, convertedPPtr);
 
 						//Store FileID
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Ldloca, convertedPPtr);
-						processor.Add(CilOpCodes.Call, pptrCommonGetFileIDMethod);
-						processor.Add(CilOpCodes.Stfld, type.GetFieldByName("m_FileID_"));
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Ldloca, convertedPPtr);
+						instructions.Add(CilOpCodes.Call, pptrCommonGetFileIDMethod);
+						instructions.Add(CilOpCodes.Stfld, type.GetFieldByName("m_FileID_"));
 
 						//Store PathID
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Ldloca, convertedPPtr);
-						processor.Add(CilOpCodes.Call, pptrCommonGetPathIDMethod);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Ldloca, convertedPPtr);
+						instructions.Add(CilOpCodes.Call, pptrCommonGetPathIDMethod);
 						FieldDefinition pathIDField = type.GetFieldByName("m_PathID_");
 						if (pathIDField.Signature!.FieldType is CorLibTypeSignature { ElementType: ElementType.I4 })
 						{
-							processor.Add(CilOpCodes.Conv_Ovf_I4);//Convert I8 to I4
+							instructions.Add(CilOpCodes.Conv_Ovf_I4);//Convert I8 to I4
 						}
-						processor.Add(CilOpCodes.Stfld, pathIDField);
+						instructions.Add(CilOpCodes.Stfld, pathIDField);
 
-						processor.Add(CilOpCodes.Br, returnLabel);
+						instructions.Add(CilOpCodes.Br, returnLabel);
 					}
 
 					//Same collection
 					{
-						isSameCollectionLabel.Instruction = processor.Add(CilOpCodes.Nop);
+						isSameCollectionLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 
 						//Store FileID
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Callvirt, ipptrGetFileIDMethod);
-						processor.Add(CilOpCodes.Stfld, type.GetFieldByName("m_FileID_"));
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Callvirt, ipptrGetFileIDMethod);
+						instructions.Add(CilOpCodes.Stfld, type.GetFieldByName("m_FileID_"));
 
 						//Store PathID
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Callvirt, ipptrGetPathIDMethod);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Callvirt, ipptrGetPathIDMethod);
 						FieldDefinition pathIDField = type.GetFieldByName("m_PathID_");
 						if (pathIDField.Signature!.FieldType is CorLibTypeSignature { ElementType: ElementType.I4 })
 						{
-							processor.Add(CilOpCodes.Conv_Ovf_I4);//Convert I8 to I4
+							instructions.Add(CilOpCodes.Conv_Ovf_I4);//Convert I8 to I4
 						}
-						processor.Add(CilOpCodes.Stfld, pathIDField);
+						instructions.Add(CilOpCodes.Stfld, pathIDField);
 
-						processor.Add(CilOpCodes.Br, returnLabel);
+						instructions.Add(CilOpCodes.Br, returnLabel);
 					}
 
-					isNullLabel.Instruction = processor.Add(CilOpCodes.Nop);
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Callvirt, type.GetMethodByName(nameof(IUnityAssetBase.Reset)));
+					isNullLabel.Instruction = instructions.Add(CilOpCodes.Nop);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Callvirt, type.GetMethodByName(nameof(IUnityAssetBase.Reset)));
 
-					returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+					returnLabel.Instruction = instructions.Add(CilOpCodes.Ret);
 					singleTypeDictionary.Add(type.ToTypeSignature(), (method, CopyMethodType.HasConverter));
 				}
 			}
@@ -380,16 +380,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 				{
 					MethodDefinition method = instance.Type.AddMethod(CopyValuesName, InterfaceUtils.InterfaceMethodImplementation, SharedState.Instance.Importer.Void);
 					method.AddParameter(group.Interface.ToTypeSignature(), "source");
-					CilInstructionCollection processor = method.GetInstructions();
+					CilInstructionCollection instructions = method.GetInstructions();
 					CilInstructionLabel returnLabel = new();
 					CilInstructionLabel isNullLabel = new();
 					if (needsNullCheck)
 					{
 						method.AddNullableContextAttribute(NullableAnnotation.MaybeNull);
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Ldnull);
-						processor.Add(CilOpCodes.Cgt_Un);
-						processor.Add(CilOpCodes.Brfalse, isNullLabel);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Ldnull);
+						instructions.Add(CilOpCodes.Cgt_Un);
+						instructions.Add(CilOpCodes.Brfalse, isNullLabel);
 					}
 
 					foreach (ClassProperty classProperty in instance.Properties)
@@ -399,61 +399,61 @@ namespace AssetRipper.AssemblyDumper.Passes
 							TypeSignature fieldTypeSignature = classProperty.BackingField.Signature!.FieldType;
 							if (fieldTypeSignature is CorLibTypeSignature)
 							{
-								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Ldarg_1);
-								processor.Add(CilOpCodes.Callvirt, classProperty.Base.Definition.GetMethod!);
-								processor.Add(CilOpCodes.Stfld, classProperty.BackingField);
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Ldarg_1);
+								instructions.Add(CilOpCodes.Callvirt, classProperty.Base.Definition.GetMethod!);
+								instructions.Add(CilOpCodes.Stfld, classProperty.BackingField);
 							}
 							else if (fieldTypeSignature is TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
 							{
 								// m_Field = source.Property ?? Utf8String.Empty;
 								CilInstructionLabel stfldLabel = new();
-								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Ldarg_1);
-								processor.Add(CilOpCodes.Callvirt, classProperty.Base.Definition.GetMethod!);
-								processor.Add(CilOpCodes.Dup);
-								processor.Add(CilOpCodes.Brtrue, stfldLabel);
-								processor.Add(CilOpCodes.Pop);
-								processor.Add(CilOpCodes.Call, new MemberReference(fieldTypeSignature.ToTypeDefOrRef(), "get_Empty", MethodSignature.CreateStatic(fieldTypeSignature)));
-								stfldLabel.Instruction = processor.Add(CilOpCodes.Stfld, classProperty.BackingField);
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Ldarg_1);
+								instructions.Add(CilOpCodes.Callvirt, classProperty.Base.Definition.GetMethod!);
+								instructions.Add(CilOpCodes.Dup);
+								instructions.Add(CilOpCodes.Brtrue, stfldLabel);
+								instructions.Add(CilOpCodes.Pop);
+								instructions.Add(CilOpCodes.Call, new MemberReference(fieldTypeSignature.ToTypeDefOrRef(), "get_Empty", MethodSignature.CreateStatic(fieldTypeSignature)));
+								stfldLabel.Instruction = instructions.Add(CilOpCodes.Stfld, classProperty.BackingField);
 							}
 							else if (fieldTypeSignature is SzArrayTypeSignature arrayTypeSignature)
 							{
-								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Ldarg_1);
-								processor.Add(CilOpCodes.Callvirt, classProperty.Base.Definition.GetMethod!);
-								processor.Add(CilOpCodes.Call, MakeDuplicateArrayMethod(arrayTypeSignature));
-								processor.Add(CilOpCodes.Stfld, classProperty.BackingField);
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Ldarg_1);
+								instructions.Add(CilOpCodes.Callvirt, classProperty.Base.Definition.GetMethod!);
+								instructions.Add(CilOpCodes.Call, MakeDuplicateArrayMethod(arrayTypeSignature));
+								instructions.Add(CilOpCodes.Stfld, classProperty.BackingField);
 							}
 							else
 							{
 								(IMethodDescriptor fieldCopyMethod, CopyMethodType copyMethodType) = GetOrMakeMethod(
 									fieldTypeSignature,
 									classProperty.Base.Definition.Signature!.ReturnType);
-								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Ldfld, classProperty.BackingField);
-								processor.Add(CilOpCodes.Ldarg_1);
-								processor.Add(CilOpCodes.Callvirt, classProperty.Base.Definition.GetMethod!);
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Ldfld, classProperty.BackingField);
+								instructions.Add(CilOpCodes.Ldarg_1);
+								instructions.Add(CilOpCodes.Callvirt, classProperty.Base.Definition.GetMethod!);
 								if (HasConverter(copyMethodType))
 								{
-									processor.Add(CilOpCodes.Ldarg_2);
+									instructions.Add(CilOpCodes.Ldarg_2);
 									needsConverter = true;
 								}
-								processor.Add(GetCallOpCode(copyMethodType), fieldCopyMethod);
+								instructions.Add(GetCallOpCode(copyMethodType), fieldCopyMethod);
 							}
 						}
 					}
 
 					if (needsNullCheck)
 					{
-						processor.Add(CilOpCodes.Br, returnLabel);
+						instructions.Add(CilOpCodes.Br, returnLabel);
 
-						isNullLabel.Instruction = processor.Add(CilOpCodes.Nop);
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Callvirt, instance.Type.GetMethodByName(nameof(IUnityAssetBase.Reset)));
+						isNullLabel.Instruction = instructions.Add(CilOpCodes.Nop);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Callvirt, instance.Type.GetMethodByName(nameof(IUnityAssetBase.Reset)));
 					}
 
-					returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+					returnLabel.Instruction = instructions.Add(CilOpCodes.Ret);
 					instanceMethods.Add(instance.Type, method);
 				}
 
@@ -517,7 +517,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 							SharedState.Instance.Importer.Void);
 						method.AddParameter(targetSignature, "target");
 						method.AddParameter(sourceSignature, "source");
-						CilInstructionCollection processor = method.GetInstructions();
+						CilInstructionCollection instructions = method.GetInstructions();
 						switch (targetGenericSignature.GenericType.Name?.ToString())
 						{
 							case $"{nameof(AssetDictionary<int, int>)}`2":
@@ -534,65 +534,65 @@ namespace AssetRipper.AssemblyDumper.Passes
 									CilInstructionLabel returnLabel = new();
 									CilInstructionLabel isNullLabel = new();
 
-									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Callvirt, MakeAssetDictionaryClearMethod(targetKeyTypeSignature, targetValueTypeSignature));
+									instructions.Add(CilOpCodes.Ldarg_0);
+									instructions.Add(CilOpCodes.Callvirt, MakeAssetDictionaryClearMethod(targetKeyTypeSignature, targetValueTypeSignature));
 
-									processor.Add(CilOpCodes.Ldarg_1);
-									processor.Add(CilOpCodes.Ldnull);
-									processor.Add(CilOpCodes.Cgt_Un);
-									processor.Add(CilOpCodes.Brfalse, isNullLabel);
+									instructions.Add(CilOpCodes.Ldarg_1);
+									instructions.Add(CilOpCodes.Ldnull);
+									instructions.Add(CilOpCodes.Cgt_Un);
+									instructions.Add(CilOpCodes.Brfalse, isNullLabel);
 
-									CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-									processor.Add(CilOpCodes.Ldarg_1);
-									processor.Add(CilOpCodes.Callvirt, MakeDictionaryGetCountMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
-									processor.Add(CilOpCodes.Stloc, countLocal);
+									CilLocalVariable countLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
+									instructions.Add(CilOpCodes.Ldarg_1);
+									instructions.Add(CilOpCodes.Callvirt, MakeDictionaryGetCountMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
+									instructions.Add(CilOpCodes.Stloc, countLocal);
 
-									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Ldloc, countLocal);
-									processor.Add(CilOpCodes.Callvirt, MakeDictionarySetCapacityMethod(targetKeyTypeSignature, targetValueTypeSignature));
+									instructions.Add(CilOpCodes.Ldarg_0);
+									instructions.Add(CilOpCodes.Ldloc, countLocal);
+									instructions.Add(CilOpCodes.Callvirt, MakeDictionarySetCapacityMethod(targetKeyTypeSignature, targetValueTypeSignature));
 
-									CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-									processor.Add(CilOpCodes.Ldc_I4_0);
-									processor.Add(CilOpCodes.Stloc, iLocal);
+									CilLocalVariable iLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
+									instructions.Add(CilOpCodes.Ldc_I4_0);
+									instructions.Add(CilOpCodes.Stloc, iLocal);
 
 									CilInstructionLabel conditionLabel = new();
-									processor.Add(CilOpCodes.Br, conditionLabel);
+									instructions.Add(CilOpCodes.Br, conditionLabel);
 
 									CilInstructionLabel forStartLabel = new();
-									forStartLabel.Instruction = processor.Add(CilOpCodes.Nop);
+									forStartLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 
 									(IMethodDescriptor copyMethod, CopyMethodType copyMethodType) = GetOrMakeMethod(targetPairTypeSignature, sourcePairTypeSignature);
-									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Callvirt, MakeAssetDictionaryAddNewMethod(targetKeyTypeSignature, targetValueTypeSignature));
-									processor.Add(CilOpCodes.Ldarg_1);
-									processor.Add(CilOpCodes.Ldloc, iLocal);
-									processor.Add(CilOpCodes.Callvirt, MakeDictionaryGetPairMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
+									instructions.Add(CilOpCodes.Ldarg_0);
+									instructions.Add(CilOpCodes.Callvirt, MakeAssetDictionaryAddNewMethod(targetKeyTypeSignature, targetValueTypeSignature));
+									instructions.Add(CilOpCodes.Ldarg_1);
+									instructions.Add(CilOpCodes.Ldloc, iLocal);
+									instructions.Add(CilOpCodes.Callvirt, MakeDictionaryGetPairMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
 									if (HasConverter(copyMethodType))
 									{
-										processor.Add(CilOpCodes.Ldarg_2);
+										instructions.Add(CilOpCodes.Ldarg_2);
 										needsConverter = true;
 									}
-									processor.Add(GetCallOpCode(copyMethodType), copyMethod);
+									instructions.Add(GetCallOpCode(copyMethodType), copyMethod);
 
-									processor.Add(CilOpCodes.Ldloc, iLocal);
-									processor.Add(CilOpCodes.Ldc_I4_1);
-									processor.Add(CilOpCodes.Add);
-									processor.Add(CilOpCodes.Stloc, iLocal);
+									instructions.Add(CilOpCodes.Ldloc, iLocal);
+									instructions.Add(CilOpCodes.Ldc_I4_1);
+									instructions.Add(CilOpCodes.Add);
+									instructions.Add(CilOpCodes.Stloc, iLocal);
 
-									conditionLabel.Instruction = processor.Add(CilOpCodes.Nop);
-									processor.Add(CilOpCodes.Ldloc, iLocal);
-									processor.Add(CilOpCodes.Ldloc, countLocal);
-									processor.Add(CilOpCodes.Clt);
-									processor.Add(CilOpCodes.Brtrue, forStartLabel);
+									conditionLabel.Instruction = instructions.Add(CilOpCodes.Nop);
+									instructions.Add(CilOpCodes.Ldloc, iLocal);
+									instructions.Add(CilOpCodes.Ldloc, countLocal);
+									instructions.Add(CilOpCodes.Clt);
+									instructions.Add(CilOpCodes.Brtrue, forStartLabel);
 
-									processor.Add(CilOpCodes.Br, returnLabel);
+									instructions.Add(CilOpCodes.Br, returnLabel);
 
-									isNullLabel.Instruction = processor.Add(CilOpCodes.Nop);
-									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Ldc_I4_0);
-									processor.Add(CilOpCodes.Callvirt, MakeDictionarySetCapacityMethod(targetKeyTypeSignature, targetValueTypeSignature));
+									isNullLabel.Instruction = instructions.Add(CilOpCodes.Nop);
+									instructions.Add(CilOpCodes.Ldarg_0);
+									instructions.Add(CilOpCodes.Ldc_I4_0);
+									instructions.Add(CilOpCodes.Callvirt, MakeDictionarySetCapacityMethod(targetKeyTypeSignature, targetValueTypeSignature));
 
-									returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+									returnLabel.Instruction = instructions.Add(CilOpCodes.Ret);
 								}
 								break;
 							case $"{nameof(AssetList<int>)}`1":
@@ -605,40 +605,40 @@ namespace AssetRipper.AssemblyDumper.Passes
 									CilInstructionLabel returnLabel = new();
 									CilInstructionLabel isNullLabel = new();
 
-									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Callvirt, MakeAssetListClearMethod(targetElementTypeSignature));
+									instructions.Add(CilOpCodes.Ldarg_0);
+									instructions.Add(CilOpCodes.Callvirt, MakeAssetListClearMethod(targetElementTypeSignature));
 
-									processor.Add(CilOpCodes.Ldarg_1);
-									processor.Add(CilOpCodes.Ldnull);
-									processor.Add(CilOpCodes.Cgt_Un);
-									processor.Add(CilOpCodes.Brfalse, isNullLabel);
+									instructions.Add(CilOpCodes.Ldarg_1);
+									instructions.Add(CilOpCodes.Ldnull);
+									instructions.Add(CilOpCodes.Cgt_Un);
+									instructions.Add(CilOpCodes.Brfalse, isNullLabel);
 
-									CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-									processor.Add(CilOpCodes.Ldarg_1);
-									processor.Add(CilOpCodes.Callvirt, MakeListGetCountMethod(sourceElementTypeSignature));
-									processor.Add(CilOpCodes.Stloc, countLocal);
+									CilLocalVariable countLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
+									instructions.Add(CilOpCodes.Ldarg_1);
+									instructions.Add(CilOpCodes.Callvirt, MakeListGetCountMethod(sourceElementTypeSignature));
+									instructions.Add(CilOpCodes.Stloc, countLocal);
 
-									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Ldloc, countLocal);
-									processor.Add(CilOpCodes.Callvirt, MakeListSetCapacityMethod(targetElementTypeSignature));
+									instructions.Add(CilOpCodes.Ldarg_0);
+									instructions.Add(CilOpCodes.Ldloc, countLocal);
+									instructions.Add(CilOpCodes.Callvirt, MakeListSetCapacityMethod(targetElementTypeSignature));
 
-									CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-									processor.Add(CilOpCodes.Ldc_I4_0);
-									processor.Add(CilOpCodes.Stloc, iLocal);
+									CilLocalVariable iLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
+									instructions.Add(CilOpCodes.Ldc_I4_0);
+									instructions.Add(CilOpCodes.Stloc, iLocal);
 
 									CilInstructionLabel conditionLabel = new();
-									processor.Add(CilOpCodes.Br, conditionLabel);
+									instructions.Add(CilOpCodes.Br, conditionLabel);
 
 									CilInstructionLabel forStartLabel = new();
-									forStartLabel.Instruction = processor.Add(CilOpCodes.Nop);
+									forStartLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 
 									if (targetElementTypeSignature is CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
 									{
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Ldarg_1);
-										processor.Add(CilOpCodes.Ldloc, iLocal);
-										processor.Add(CilOpCodes.Callvirt, MakeListGetItemMethod(sourceElementTypeSignature));
-										processor.Add(CilOpCodes.Callvirt, MakeAssetListAddMethod(targetElementTypeSignature));
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Ldarg_1);
+										instructions.Add(CilOpCodes.Ldloc, iLocal);
+										instructions.Add(CilOpCodes.Callvirt, MakeListGetItemMethod(sourceElementTypeSignature));
+										instructions.Add(CilOpCodes.Callvirt, MakeAssetListAddMethod(targetElementTypeSignature));
 									}
 									else if (targetElementTypeSignature is SzArrayTypeSignature keyArrayTypeSignature)
 									{
@@ -648,38 +648,38 @@ namespace AssetRipper.AssemblyDumper.Passes
 									{
 										(IMethodDescriptor copyMethod, CopyMethodType copyMethodType) = GetOrMakeMethod(targetElementTypeSignature, sourceElementTypeSignature);
 
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Callvirt, MakeAssetListAddNewMethod(targetElementTypeSignature));
-										processor.Add(CilOpCodes.Ldarg_1);
-										processor.Add(CilOpCodes.Ldloc, iLocal);
-										processor.Add(CilOpCodes.Callvirt, MakeListGetItemMethod(sourceElementTypeSignature));
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Callvirt, MakeAssetListAddNewMethod(targetElementTypeSignature));
+										instructions.Add(CilOpCodes.Ldarg_1);
+										instructions.Add(CilOpCodes.Ldloc, iLocal);
+										instructions.Add(CilOpCodes.Callvirt, MakeListGetItemMethod(sourceElementTypeSignature));
 										if (HasConverter(copyMethodType))
 										{
-											processor.Add(CilOpCodes.Ldarg_2);
+											instructions.Add(CilOpCodes.Ldarg_2);
 											needsConverter = true;
 										}
-										processor.Add(GetCallOpCode(copyMethodType), copyMethod);
+										instructions.Add(GetCallOpCode(copyMethodType), copyMethod);
 									}
 
-									processor.Add(CilOpCodes.Ldloc, iLocal);
-									processor.Add(CilOpCodes.Ldc_I4_1);
-									processor.Add(CilOpCodes.Add);
-									processor.Add(CilOpCodes.Stloc, iLocal);
+									instructions.Add(CilOpCodes.Ldloc, iLocal);
+									instructions.Add(CilOpCodes.Ldc_I4_1);
+									instructions.Add(CilOpCodes.Add);
+									instructions.Add(CilOpCodes.Stloc, iLocal);
 
-									conditionLabel.Instruction = processor.Add(CilOpCodes.Nop);
-									processor.Add(CilOpCodes.Ldloc, iLocal);
-									processor.Add(CilOpCodes.Ldloc, countLocal);
-									processor.Add(CilOpCodes.Clt);
-									processor.Add(CilOpCodes.Brtrue, forStartLabel);
+									conditionLabel.Instruction = instructions.Add(CilOpCodes.Nop);
+									instructions.Add(CilOpCodes.Ldloc, iLocal);
+									instructions.Add(CilOpCodes.Ldloc, countLocal);
+									instructions.Add(CilOpCodes.Clt);
+									instructions.Add(CilOpCodes.Brtrue, forStartLabel);
 
-									processor.Add(CilOpCodes.Br, returnLabel);
+									instructions.Add(CilOpCodes.Br, returnLabel);
 
-									isNullLabel.Instruction = processor.Add(CilOpCodes.Nop);
-									processor.Add(CilOpCodes.Ldarg_0);
-									processor.Add(CilOpCodes.Ldc_I4_0);
-									processor.Add(CilOpCodes.Callvirt, MakeListSetCapacityMethod(targetElementTypeSignature));
+									isNullLabel.Instruction = instructions.Add(CilOpCodes.Nop);
+									instructions.Add(CilOpCodes.Ldarg_0);
+									instructions.Add(CilOpCodes.Ldc_I4_0);
+									instructions.Add(CilOpCodes.Callvirt, MakeListSetCapacityMethod(targetElementTypeSignature));
 
-									returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+									returnLabel.Instruction = instructions.Add(CilOpCodes.Ret);
 								}
 								break;
 							case $"{nameof(AssetPair<int, int>)}`2" or $"{nameof(AccessPairBase<int, int>)}`2":
@@ -690,71 +690,71 @@ namespace AssetRipper.AssemblyDumper.Passes
 									TypeSignature sourceValueTypeSignature = sourceGenericSignature.TypeArguments[1];
 
 									CilInstructionLabel returnLabel = new();
-									processor.Add(CilOpCodes.Ldarg_1);
-									processor.Add(CilOpCodes.Ldnull);
-									processor.Add(CilOpCodes.Cgt_Un);
-									processor.Add(CilOpCodes.Brfalse, returnLabel);
+									instructions.Add(CilOpCodes.Ldarg_1);
+									instructions.Add(CilOpCodes.Ldnull);
+									instructions.Add(CilOpCodes.Cgt_Un);
+									instructions.Add(CilOpCodes.Brfalse, returnLabel);
 
 									if (targetKeyTypeSignature is CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
 									{
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Ldarg_1);
-										processor.Add(CilOpCodes.Callvirt, MakePairGetKeyMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
-										processor.Add(CilOpCodes.Callvirt, MakePairSetKeyMethod(targetKeyTypeSignature, targetValueTypeSignature));
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Ldarg_1);
+										instructions.Add(CilOpCodes.Callvirt, MakePairGetKeyMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
+										instructions.Add(CilOpCodes.Callvirt, MakePairSetKeyMethod(targetKeyTypeSignature, targetValueTypeSignature));
 									}
 									else if (targetKeyTypeSignature is SzArrayTypeSignature keyArrayTypeSignature)
 									{
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Ldarg_1);
-										processor.Add(CilOpCodes.Callvirt, MakePairGetKeyMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
-										processor.Add(CilOpCodes.Call, MakeDuplicateArrayMethod(keyArrayTypeSignature));
-										processor.Add(CilOpCodes.Callvirt, MakePairSetKeyMethod(targetKeyTypeSignature, targetValueTypeSignature));
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Ldarg_1);
+										instructions.Add(CilOpCodes.Callvirt, MakePairGetKeyMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
+										instructions.Add(CilOpCodes.Call, MakeDuplicateArrayMethod(keyArrayTypeSignature));
+										instructions.Add(CilOpCodes.Callvirt, MakePairSetKeyMethod(targetKeyTypeSignature, targetValueTypeSignature));
 									}
 									else
 									{
 										(IMethodDescriptor keyCopyMethod, CopyMethodType keyCopyMethodType) = GetOrMakeMethod(targetKeyTypeSignature, sourceKeyTypeSignature);
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Callvirt, MakePairGetKeyMethod(targetKeyTypeSignature, targetValueTypeSignature));
-										processor.Add(CilOpCodes.Ldarg_1);
-										processor.Add(CilOpCodes.Callvirt, MakePairGetKeyMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Callvirt, MakePairGetKeyMethod(targetKeyTypeSignature, targetValueTypeSignature));
+										instructions.Add(CilOpCodes.Ldarg_1);
+										instructions.Add(CilOpCodes.Callvirt, MakePairGetKeyMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
 										if (HasConverter(keyCopyMethodType))
 										{
-											processor.Add(CilOpCodes.Ldarg_2);
+											instructions.Add(CilOpCodes.Ldarg_2);
 											needsConverter = true;
 										}
-										processor.Add(GetCallOpCode(keyCopyMethodType), keyCopyMethod);
+										instructions.Add(GetCallOpCode(keyCopyMethodType), keyCopyMethod);
 									}
 
 									if (targetValueTypeSignature is CorLibTypeSignature or TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
 									{
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Ldarg_1);
-										processor.Add(CilOpCodes.Callvirt, MakePairGetValueMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
-										processor.Add(CilOpCodes.Callvirt, MakePairSetValueMethod(targetKeyTypeSignature, targetValueTypeSignature));
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Ldarg_1);
+										instructions.Add(CilOpCodes.Callvirt, MakePairGetValueMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
+										instructions.Add(CilOpCodes.Callvirt, MakePairSetValueMethod(targetKeyTypeSignature, targetValueTypeSignature));
 									}
 									else if (targetValueTypeSignature is SzArrayTypeSignature valueArrayTypeSignature)
 									{
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Ldarg_1);
-										processor.Add(CilOpCodes.Callvirt, MakePairGetValueMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
-										processor.Add(CilOpCodes.Call, MakeDuplicateArrayMethod(valueArrayTypeSignature));
-										processor.Add(CilOpCodes.Callvirt, MakePairSetValueMethod(targetKeyTypeSignature, targetValueTypeSignature));
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Ldarg_1);
+										instructions.Add(CilOpCodes.Callvirt, MakePairGetValueMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
+										instructions.Add(CilOpCodes.Call, MakeDuplicateArrayMethod(valueArrayTypeSignature));
+										instructions.Add(CilOpCodes.Callvirt, MakePairSetValueMethod(targetKeyTypeSignature, targetValueTypeSignature));
 									}
 									else
 									{
 										(IMethodDescriptor valueCopyMethod, CopyMethodType valueCopyMethodType) = GetOrMakeMethod(targetValueTypeSignature, sourceValueTypeSignature);
-										processor.Add(CilOpCodes.Ldarg_0);
-										processor.Add(CilOpCodes.Callvirt, MakePairGetValueMethod(targetKeyTypeSignature, targetValueTypeSignature));
-										processor.Add(CilOpCodes.Ldarg_1);
-										processor.Add(CilOpCodes.Callvirt, MakePairGetValueMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
+										instructions.Add(CilOpCodes.Ldarg_0);
+										instructions.Add(CilOpCodes.Callvirt, MakePairGetValueMethod(targetKeyTypeSignature, targetValueTypeSignature));
+										instructions.Add(CilOpCodes.Ldarg_1);
+										instructions.Add(CilOpCodes.Callvirt, MakePairGetValueMethod(sourceKeyTypeSignature, sourceValueTypeSignature));
 										if (HasConverter(valueCopyMethodType))
 										{
-											processor.Add(CilOpCodes.Ldarg_2);
+											instructions.Add(CilOpCodes.Ldarg_2);
 											needsConverter = true;
 										}
-										processor.Add(GetCallOpCode(valueCopyMethodType), valueCopyMethod);
+										instructions.Add(GetCallOpCode(valueCopyMethodType), valueCopyMethod);
 									}
-									returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+									returnLabel.Instruction = instructions.Add(CilOpCodes.Ret);
 								}
 								break;
 							default:

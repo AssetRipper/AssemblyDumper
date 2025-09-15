@@ -277,7 +277,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return fullName is not null;
 		}
 
-		private static CilInstruction? AddConversion(this CilInstructionCollection processor, ElementType from, ElementType to)
+		private static CilInstruction? AddConversion(this CilInstructionCollection instructions, ElementType from, ElementType to)
 		{
 			if (from == to)
 			{
@@ -305,24 +305,24 @@ namespace AssetRipper.AssemblyDumper.Passes
 				_ => throw new ArgumentOutOfRangeException(nameof(to)),
 			};
 
-			return processor.Add(opCode);
+			return instructions.Add(opCode);
 		}
 
-		private static void FillGetter(this CilInstructionCollection processor, FieldDefinition field, ElementType fieldType, ElementType enumType)
+		private static void FillGetter(this CilInstructionCollection instructions, FieldDefinition field, ElementType fieldType, ElementType enumType)
 		{
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, field);
-			processor.AddConversion(fieldType, enumType);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, field);
+			instructions.AddConversion(fieldType, enumType);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
-		private static void FillSetter(this CilInstructionCollection processor, FieldDefinition field, ElementType fieldType, ElementType enumType)
+		private static void FillSetter(this CilInstructionCollection instructions, FieldDefinition field, ElementType fieldType, ElementType enumType)
 		{
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.AddConversion(enumType, fieldType);
-			processor.Add(CilOpCodes.Stfld, field);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldarg_1);
+			instructions.AddConversion(enumType, fieldType);
+			instructions.Add(CilOpCodes.Stfld, field);
+			instructions.Add(CilOpCodes.Ret);
 		}
 	}
 }

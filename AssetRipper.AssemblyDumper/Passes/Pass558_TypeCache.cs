@@ -25,29 +25,29 @@ namespace AssetRipper.AssemblyDumper.Passes
 			field.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 
 			MethodDefinition staticConstructor = newTypeDef.AddEmptyConstructor(true);
-			CilInstructionCollection processor = staticConstructor.GetInstructions();
-			processor.Add(CilOpCodes.Newobj, dictionaryConstructor);
+			CilInstructionCollection instructions = staticConstructor.GetInstructions();
+			instructions.Add(CilOpCodes.Newobj, dictionaryConstructor);
 			foreach ((int id, ClassGroup group) in SharedState.Instance.ClassGroups)
 			{
-				processor.Add(CilOpCodes.Dup);
-				processor.Add(CilOpCodes.Ldtoken, group.Interface);
-				processor.Add(CilOpCodes.Call, getTypeFromHandleMethod);
-				processor.Add(CilOpCodes.Ldc_I4, id);
-				processor.Add(CilOpCodes.Call, addMethod);
+				instructions.Add(CilOpCodes.Dup);
+				instructions.Add(CilOpCodes.Ldtoken, group.Interface);
+				instructions.Add(CilOpCodes.Call, getTypeFromHandleMethod);
+				instructions.Add(CilOpCodes.Ldc_I4, id);
+				instructions.Add(CilOpCodes.Call, addMethod);
 
 				foreach (TypeDefinition type in group.Types)
 				{
-					processor.Add(CilOpCodes.Dup);
-					processor.Add(CilOpCodes.Ldtoken, type);
-					processor.Add(CilOpCodes.Call, getTypeFromHandleMethod);
-					processor.Add(CilOpCodes.Ldc_I4, id);
-					processor.Add(CilOpCodes.Call, addMethod);
+					instructions.Add(CilOpCodes.Dup);
+					instructions.Add(CilOpCodes.Ldtoken, type);
+					instructions.Add(CilOpCodes.Call, getTypeFromHandleMethod);
+					instructions.Add(CilOpCodes.Ldc_I4, id);
+					instructions.Add(CilOpCodes.Call, addMethod);
 				}
 			}
-			processor.Add(CilOpCodes.Stsfld, field);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Stsfld, field);
+			instructions.Add(CilOpCodes.Ret);
 
-			processor.OptimizeMacros();
+			instructions.OptimizeMacros();
 
 			newTypeDef.ImplementGetterProperty(
 					propertyName,

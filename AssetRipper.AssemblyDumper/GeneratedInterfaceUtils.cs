@@ -70,18 +70,18 @@ namespace AssetRipper.AssemblyDumper
 			return $"IsEditorOnly_{propertyNameWithTypeSuffix}";
 		}
 
-		public static void FillWithSimpleBooleanReturn(this CilInstructionCollection processor, bool returnTrue)
+		public static void FillWithSimpleBooleanReturn(this CilInstructionCollection instructions, bool returnTrue)
 		{
 			if (returnTrue)
 			{
-				processor.Add(CilOpCodes.Ldc_I4_1);
+				instructions.Add(CilOpCodes.Ldc_I4_1);
 			}
 			else
 			{
-				processor.Add(CilOpCodes.Ldc_I4_0);
+				instructions.Add(CilOpCodes.Ldc_I4_0);
 			}
 
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static bool IsBlackListed(string name, ClassGroupBase group)

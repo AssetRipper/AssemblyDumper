@@ -59,31 +59,31 @@ namespace AssetRipper.AssemblyDumper.Passes
 		private static void FillSubclassDefaultConstructor(this TypeDefinition type)
 		{
 			MethodDefinition constructor = type.GetDefaultConstructor();
-			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
-			processor.Clear();
+			CilInstructionCollection instructions = constructor.CilMethodBody!.Instructions;
+			instructions.Clear();
 			IMethodDefOrRef baseConstructor = SharedState.Instance.Importer.UnderlyingImporter.ImportMethod(type.GetResolvedBaseType().GetDefaultConstructor());
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, baseConstructor);
-			processor.AddFieldAssignments(type);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, baseConstructor);
+			instructions.AddFieldAssignments(type);
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 		}
 
 		private static void FillClassAssetInfoConstructor(this TypeDefinition type, MethodDefinition constructor)
 		{
-			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
-			processor.Clear();
+			CilInstructionCollection instructions = constructor.CilMethodBody!.Instructions;
+			instructions.Clear();
 			MethodDefinition baseConstructorDefinition = type.GetResolvedBaseType().GetAssetInfoConstructor();
 			IMethodDefOrRef baseConstructor = SharedState.Instance.Importer.UnderlyingImporter.ImportMethod(baseConstructorDefinition);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.Add(CilOpCodes.Call, baseConstructor);
-			processor.AddFieldAssignments(type);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldarg_1);
+			instructions.Add(CilOpCodes.Call, baseConstructor);
+			instructions.AddFieldAssignments(type);
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 		}
 
-		private static void AddFieldAssignments(this CilInstructionCollection processor, TypeDefinition type)
+		private static void AddFieldAssignments(this CilInstructionCollection instructions, TypeDefinition type)
 		{
 			foreach (FieldDefinition field in type.Fields)
 			{
@@ -94,28 +94,28 @@ namespace AssetRipper.AssemblyDumper.Passes
 
 				if (field.Signature.FieldType is GenericInstanceTypeSignature generic)
 				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Newobj, GetDefaultConstructor(generic));
-					processor.Add(CilOpCodes.Stfld, field);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Newobj, GetDefaultConstructor(generic));
+					instructions.Add(CilOpCodes.Stfld, field);
 				}
 				else if (field.Signature.FieldType is SzArrayTypeSignature array)
 				{
-					processor.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Ldarg_0);
 					MethodSpecification method = emptyArray.MakeGenericInstanceMethod(array.BaseType);
-					processor.Add(CilOpCodes.Call, method);
-					processor.Add(CilOpCodes.Stfld, field);
+					instructions.Add(CilOpCodes.Call, method);
+					instructions.Add(CilOpCodes.Stfld, field);
 				}
 				else if (field.Signature.FieldType.ToTypeDefOrRef() is TypeDefinition typeDef)
 				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Newobj, typeDef.GetDefaultConstructor());
-					processor.Add(CilOpCodes.Stfld, field);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Newobj, typeDef.GetDefaultConstructor());
+					instructions.Add(CilOpCodes.Stfld, field);
 				}
 				else if (field.Signature.FieldType is TypeDefOrRefSignature { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
 				{
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Call, emptyString);
-					processor.Add(CilOpCodes.Stfld, field);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Call, emptyString);
+					instructions.Add(CilOpCodes.Stfld, field);
 				}
 				else
 				{

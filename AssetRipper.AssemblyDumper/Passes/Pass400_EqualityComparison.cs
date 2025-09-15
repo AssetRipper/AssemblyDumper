@@ -85,14 +85,14 @@ internal static class Pass400_EqualityComparison
 					method.AddParameter(iunityAssetBase.ToTypeSignature(), "other");
 					method.AddParameter(assetEqualityComparer.ToTypeSignature(), "comparer");
 
-					CilInstructionCollection processor = method.GetInstructions();
+					CilInstructionCollection instructions = method.GetInstructions();
 
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Castclass, type);
-					processor.Add(CilOpCodes.Ldarg_2);
-					processor.Add(CilOpCodes.Call, pptrMethod);
-					processor.Add(CilOpCodes.Ret);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Ldarg_1);
+					instructions.Add(CilOpCodes.Castclass, type);
+					instructions.Add(CilOpCodes.Ldarg_2);
+					instructions.Add(CilOpCodes.Call, pptrMethod);
+					instructions.Add(CilOpCodes.Ret);
 
 					//We're generating these methods for AssetList<T>, but the following method avoids a cast.
 					addToEqualityComparerMethods.Add(type.ToTypeSignature(), pptrMethod);
@@ -153,59 +153,59 @@ internal static class Pass400_EqualityComparison
 		MethodDefinition isFalseMethod = equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.IsFalse));
 		MethodDefinition isNullMethod = equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.IsNull));
 
-		CilInstructionCollection processor = method.GetInstructions();
+		CilInstructionCollection instructions = method.GetInstructions();
 
-		CilLocalVariable otherLocal = processor.AddLocalVariable(type.ToTypeSignature());
-		processor.Add(CilOpCodes.Ldarg_1);
-		processor.Add(CilOpCodes.Castclass, type);
-		processor.Add(CilOpCodes.Stloc, otherLocal);
+		CilLocalVariable otherLocal = instructions.AddLocalVariable(type.ToTypeSignature());
+		instructions.Add(CilOpCodes.Ldarg_1);
+		instructions.Add(CilOpCodes.Castclass, type);
+		instructions.Add(CilOpCodes.Stloc, otherLocal);
 
-		CilLocalVariable resultLocal = processor.AddLocalVariable(trileanTypeSignature);
-		processor.Add(CilOpCodes.Call, getTrueMethod);
-		processor.Add(CilOpCodes.Stloc, resultLocal);
+		CilLocalVariable resultLocal = instructions.AddLocalVariable(trileanTypeSignature);
+		instructions.Add(CilOpCodes.Call, getTrueMethod);
+		instructions.Add(CilOpCodes.Stloc, resultLocal);
 
 		foreach (FieldNode field in root.Children)
 		{
 			if (!field.AnyPPtrs)
 			{
 				CilInstructionLabel nextFieldLabel = new();
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldfld, field.Field);
-				processor.Add(CilOpCodes.Ldloc, otherLocal);
-				processor.Add(CilOpCodes.Ldfld, field.Field);
-				processor.Add(CilOpCodes.Call, GetEqualsMethod(equalityComparisonHelper, field));
-				processor.Add(CilOpCodes.Brtrue, nextFieldLabel);
-				processor.Add(CilOpCodes.Call, getFalseMethod);
-				processor.Add(CilOpCodes.Ret);
-				nextFieldLabel.Instruction = processor.Add(CilOpCodes.Nop);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldfld, field.Field);
+				instructions.Add(CilOpCodes.Ldloc, otherLocal);
+				instructions.Add(CilOpCodes.Ldfld, field.Field);
+				instructions.Add(CilOpCodes.Call, GetEqualsMethod(equalityComparisonHelper, field));
+				instructions.Add(CilOpCodes.Brtrue, nextFieldLabel);
+				instructions.Add(CilOpCodes.Call, getFalseMethod);
+				instructions.Add(CilOpCodes.Ret);
+				nextFieldLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 			}
 			else
 			{
-				CilLocalVariable fieldResultLocal = processor.AddLocalVariable(trileanTypeSignature);
+				CilLocalVariable fieldResultLocal = instructions.AddLocalVariable(trileanTypeSignature);
 
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldfld, field.Field);
-				processor.Add(CilOpCodes.Ldloc, otherLocal);
-				processor.Add(CilOpCodes.Ldfld, field.Field);
-				processor.Add(CilOpCodes.Ldarg_2);
-				processor.Add(CilOpCodes.Call, GetAddToEqualityComparerMethod(equalityComparisonHelper, field));
-				processor.Add(CilOpCodes.Stloc, fieldResultLocal);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldfld, field.Field);
+				instructions.Add(CilOpCodes.Ldloc, otherLocal);
+				instructions.Add(CilOpCodes.Ldfld, field.Field);
+				instructions.Add(CilOpCodes.Ldarg_2);
+				instructions.Add(CilOpCodes.Call, GetAddToEqualityComparerMethod(equalityComparisonHelper, field));
+				instructions.Add(CilOpCodes.Stloc, fieldResultLocal);
 
 				CilInstructionLabel notFalseLabel = new();
-				processor.Add(CilOpCodes.Ldloc, fieldResultLocal);
-				processor.Add(CilOpCodes.Call, isFalseMethod);
-				processor.Add(CilOpCodes.Brfalse, notFalseLabel);
-				processor.Add(CilOpCodes.Call, getFalseMethod);
-				processor.Add(CilOpCodes.Ret);
-				notFalseLabel.Instruction = processor.Add(CilOpCodes.Nop);
+				instructions.Add(CilOpCodes.Ldloc, fieldResultLocal);
+				instructions.Add(CilOpCodes.Call, isFalseMethod);
+				instructions.Add(CilOpCodes.Brfalse, notFalseLabel);
+				instructions.Add(CilOpCodes.Call, getFalseMethod);
+				instructions.Add(CilOpCodes.Ret);
+				notFalseLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 
 				CilInstructionLabel nextFieldLabel = new();
-				processor.Add(CilOpCodes.Ldloc, fieldResultLocal);
-				processor.Add(CilOpCodes.Call, isNullMethod);
-				processor.Add(CilOpCodes.Brfalse, nextFieldLabel);
-				processor.Add(CilOpCodes.Call, getNullMethod);
-				processor.Add(CilOpCodes.Stloc, resultLocal);
-				nextFieldLabel.Instruction = processor.Add(CilOpCodes.Nop);
+				instructions.Add(CilOpCodes.Ldloc, fieldResultLocal);
+				instructions.Add(CilOpCodes.Call, isNullMethod);
+				instructions.Add(CilOpCodes.Brfalse, nextFieldLabel);
+				instructions.Add(CilOpCodes.Call, getNullMethod);
+				instructions.Add(CilOpCodes.Stloc, resultLocal);
+				nextFieldLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 			}
 		}
 
@@ -216,35 +216,35 @@ internal static class Pass400_EqualityComparison
 			// The structure field doesn't exist yet, so we work around that by creating a MemberReference.
 			MemberReference structureField = new MemberReference(type, "m_Structure", new FieldSignature(structureEqualsMethod.Signature!.ParameterTypes[0]));
 
-			CilLocalVariable fieldResultLocal = processor.AddLocalVariable(trileanTypeSignature);
+			CilLocalVariable fieldResultLocal = instructions.AddLocalVariable(trileanTypeSignature);
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, structureField);
-			processor.Add(CilOpCodes.Ldloc, otherLocal);
-			processor.Add(CilOpCodes.Ldfld, structureField);
-			processor.Add(CilOpCodes.Ldarg_2);
-			processor.Add(CilOpCodes.Call, structureEqualsMethod);
-			processor.Add(CilOpCodes.Stloc, fieldResultLocal);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, structureField);
+			instructions.Add(CilOpCodes.Ldloc, otherLocal);
+			instructions.Add(CilOpCodes.Ldfld, structureField);
+			instructions.Add(CilOpCodes.Ldarg_2);
+			instructions.Add(CilOpCodes.Call, structureEqualsMethod);
+			instructions.Add(CilOpCodes.Stloc, fieldResultLocal);
 
 			CilInstructionLabel notFalseLabel = new();
-			processor.Add(CilOpCodes.Ldloc, fieldResultLocal);
-			processor.Add(CilOpCodes.Call, isFalseMethod);
-			processor.Add(CilOpCodes.Brfalse, notFalseLabel);
-			processor.Add(CilOpCodes.Call, getFalseMethod);
-			processor.Add(CilOpCodes.Ret);
-			notFalseLabel.Instruction = processor.Add(CilOpCodes.Nop);
+			instructions.Add(CilOpCodes.Ldloc, fieldResultLocal);
+			instructions.Add(CilOpCodes.Call, isFalseMethod);
+			instructions.Add(CilOpCodes.Brfalse, notFalseLabel);
+			instructions.Add(CilOpCodes.Call, getFalseMethod);
+			instructions.Add(CilOpCodes.Ret);
+			notFalseLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 
 			CilInstructionLabel nextFieldLabel = new();
-			processor.Add(CilOpCodes.Ldloc, fieldResultLocal);
-			processor.Add(CilOpCodes.Call, isNullMethod);
-			processor.Add(CilOpCodes.Brfalse, nextFieldLabel);
-			processor.Add(CilOpCodes.Call, getNullMethod);
-			processor.Add(CilOpCodes.Stloc, resultLocal);
-			nextFieldLabel.Instruction = processor.Add(CilOpCodes.Nop);
+			instructions.Add(CilOpCodes.Ldloc, fieldResultLocal);
+			instructions.Add(CilOpCodes.Call, isNullMethod);
+			instructions.Add(CilOpCodes.Brfalse, nextFieldLabel);
+			instructions.Add(CilOpCodes.Call, getNullMethod);
+			instructions.Add(CilOpCodes.Stloc, resultLocal);
+			nextFieldLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 		}
 
-		processor.Add(CilOpCodes.Ldloc, resultLocal);
-		processor.Add(CilOpCodes.Ret);
+		instructions.Add(CilOpCodes.Ldloc, resultLocal);
+		instructions.Add(CilOpCodes.Ret);
 	}
 
 	private static void OverrideAddToEqualityComparer(GeneratedClassInstance instance, MethodDefinition objectEqualsMethod, ITypeDefOrRef iunityAssetBase, ITypeDefOrRef assetEqualityComparer, TypeDefinition equalityComparisonHelper)
@@ -256,13 +256,13 @@ internal static class Pass400_EqualityComparison
 			equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.GetTrue)).Signature!.ReturnType);
 		method.AddParameter(iunityAssetBase.ToTypeSignature(), "other");
 		method.AddParameter(assetEqualityComparer.ToTypeSignature(), "comparer");
-		CilInstructionCollection processor = method.GetInstructions();
+		CilInstructionCollection instructions = method.GetInstructions();
 
-		processor.Add(CilOpCodes.Ldarg_0);
-		processor.Add(CilOpCodes.Ldarg_1);
-		processor.Add(CilOpCodes.Callvirt, objectEqualsMethod);
-		processor.Add(CilOpCodes.Call, equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.ToTrilean)));
-		processor.Add(CilOpCodes.Ret);
+		instructions.Add(CilOpCodes.Ldarg_0);
+		instructions.Add(CilOpCodes.Ldarg_1);
+		instructions.Add(CilOpCodes.Callvirt, objectEqualsMethod);
+		instructions.Add(CilOpCodes.Call, equalityComparisonHelper.GetMethodByName(nameof(EqualityComparisonHelper.ToTrilean)));
+		instructions.Add(CilOpCodes.Ret);
 	}
 
 	private static MethodDefinition GenerateEqualsMethod(GeneratedClassInstance instance, TypeNode root, TypeDefinition equalityComparisonHelper)
@@ -273,36 +273,36 @@ internal static class Pass400_EqualityComparison
 			InterfaceUtils.InterfaceMethodImplementation,
 			SharedState.Instance.Importer.Boolean);
 		method.AddParameter(type.ToTypeSignature(), "other");
-		CilInstructionCollection processor = method.GetInstructions();
+		CilInstructionCollection instructions = method.GetInstructions();
 
 		CilInstructionLabel falseLabel = new();
 
-		processor.Add(CilOpCodes.Ldarg_1);
-		processor.Add(CilOpCodes.Brfalse, falseLabel);
+		instructions.Add(CilOpCodes.Ldarg_1);
+		instructions.Add(CilOpCodes.Brfalse, falseLabel);
 
 		for (int i = 0; i < root.Children.Count; i++)
 		{
 			FieldNode field = root.Children[i];
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, field.Field);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.Add(CilOpCodes.Ldfld, field.Field);
-			processor.Add(CilOpCodes.Call, GetEqualsMethod(equalityComparisonHelper, field));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, field.Field);
+			instructions.Add(CilOpCodes.Ldarg_1);
+			instructions.Add(CilOpCodes.Ldfld, field.Field);
+			instructions.Add(CilOpCodes.Call, GetEqualsMethod(equalityComparisonHelper, field));
 
 			if (i < root.Children.Count - 1)
 			{
-				processor.Add(CilOpCodes.Brfalse, falseLabel);
+				instructions.Add(CilOpCodes.Brfalse, falseLabel);
 			}
 		}
 
 		CilInstructionLabel returnLabel = new();
-		processor.Add(CilOpCodes.Br, returnLabel);
+		instructions.Add(CilOpCodes.Br, returnLabel);
 
-		falseLabel.Instruction = processor.Add(CilOpCodes.Ldc_I4_0);
+		falseLabel.Instruction = instructions.Add(CilOpCodes.Ldc_I4_0);
 
-		returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+		returnLabel.Instruction = instructions.Add(CilOpCodes.Ret);
 
-		processor.OptimizeMacros();
+		instructions.OptimizeMacros();
 
 		return method;
 	}
@@ -469,13 +469,13 @@ internal static class Pass400_EqualityComparison
 			MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual,
 			SharedState.Instance.Importer.Boolean);
 		method.AddParameter(SharedState.Instance.Importer.Object, "obj");
-		CilInstructionCollection processor = method.GetInstructions();
+		CilInstructionCollection instructions = method.GetInstructions();
 
-		processor.Add(CilOpCodes.Ldarg_0);
-		processor.Add(CilOpCodes.Ldarg_1);
-		processor.Add(CilOpCodes.Isinst, type);
-		processor.Add(CilOpCodes.Callvirt, equalsMethod);
-		processor.Add(CilOpCodes.Ret);
+		instructions.Add(CilOpCodes.Ldarg_0);
+		instructions.Add(CilOpCodes.Ldarg_1);
+		instructions.Add(CilOpCodes.Isinst, type);
+		instructions.Add(CilOpCodes.Callvirt, equalsMethod);
+		instructions.Add(CilOpCodes.Ret);
 
 		return method;
 	}
@@ -487,33 +487,33 @@ internal static class Pass400_EqualityComparison
 			nameof(object.GetHashCode),
 			MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual,
 			SharedState.Instance.Importer.Int32);
-		CilInstructionCollection processor = method.GetInstructions();
+		CilInstructionCollection instructions = method.GetInstructions();
 
-		CilLocalVariable variable = processor.AddLocalVariable(hashCodeType.ToTypeSignature());
+		CilLocalVariable variable = instructions.AddLocalVariable(hashCodeType.ToTypeSignature());
 
-		processor.Add(CilOpCodes.Ldloca, variable);
-		processor.Add(CilOpCodes.Initobj, hashCodeType);
+		instructions.Add(CilOpCodes.Ldloca, variable);
+		instructions.Add(CilOpCodes.Initobj, hashCodeType);
 
 		foreach (FieldNode field in root.Children)
 		{
-			processor.Add(CilOpCodes.Ldloca, variable);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, field.Field);
+			instructions.Add(CilOpCodes.Ldloca, variable);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, field.Field);
 			switch (field.Child)
 			{
 				case DictionaryNode dictionary:
-					processor.Add(CilOpCodes.Callvirt, dictionary.GetCount);
-					processor.Add(CilOpCodes.Call, addMethod.MakeGenericInstanceMethod(SharedState.Instance.Importer.Int32));
+					instructions.Add(CilOpCodes.Callvirt, dictionary.GetCount);
+					instructions.Add(CilOpCodes.Call, addMethod.MakeGenericInstanceMethod(SharedState.Instance.Importer.Int32));
 					break;
 				case ListNode list:
-					processor.Add(CilOpCodes.Callvirt, list.GetCount);
-					processor.Add(CilOpCodes.Call, addMethod.MakeGenericInstanceMethod(SharedState.Instance.Importer.Int32));
+					instructions.Add(CilOpCodes.Callvirt, list.GetCount);
+					instructions.Add(CilOpCodes.Call, addMethod.MakeGenericInstanceMethod(SharedState.Instance.Importer.Int32));
 					break;
 				case PrimitiveNode primitive:
 					if (primitive.TypeSignature is SzArrayTypeSignature)
 					{
-						processor.Add(CilOpCodes.Ldlen);
-						processor.Add(CilOpCodes.Call, addMethod.MakeGenericInstanceMethod(SharedState.Instance.Importer.Int32));
+						instructions.Add(CilOpCodes.Ldlen);
+						instructions.Add(CilOpCodes.Call, addMethod.MakeGenericInstanceMethod(SharedState.Instance.Importer.Int32));
 						break;
 					}
 					else
@@ -521,16 +521,16 @@ internal static class Pass400_EqualityComparison
 						goto default;
 					}
 				default:
-					processor.Add(CilOpCodes.Call, addMethod.MakeGenericInstanceMethod(field.TypeSignature));
+					instructions.Add(CilOpCodes.Call, addMethod.MakeGenericInstanceMethod(field.TypeSignature));
 					break;
 			}
 		}
 
-		processor.Add(CilOpCodes.Ldloca, variable);
-		processor.Add(CilOpCodes.Call, toHashCodeMethod);
-		processor.Add(CilOpCodes.Ret);
+		instructions.Add(CilOpCodes.Ldloca, variable);
+		instructions.Add(CilOpCodes.Call, toHashCodeMethod);
+		instructions.Add(CilOpCodes.Ret);
 
-		processor.OptimizeMacros();
+		instructions.OptimizeMacros();
 	}
 
 	private static void AddEqualityOperators(GeneratedClassInstance instance, TypeNode root, MethodDefinition equalsMethod)

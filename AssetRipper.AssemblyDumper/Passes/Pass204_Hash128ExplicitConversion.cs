@@ -23,31 +23,31 @@ namespace AssetRipper.AssemblyDumper.Passes
 			method.AddParameter(type.ToTypeSignature(), "value");
 			method.CilMethodBody!.InitializeLocals = true;
 
-			CilInstructionCollection processor = method.CilMethodBody.Instructions;
+			CilInstructionCollection instructions = method.CilMethodBody.Instructions;
 			SzArrayTypeSignature arrayType = SharedState.Instance.Importer.UInt8.MakeSzArrayType();
 
-			processor.Add(CilOpCodes.Ldc_I4, 16);
-			processor.Add(CilOpCodes.Newarr, SharedState.Instance.Importer.UInt8.ToTypeDefOrRef());
+			instructions.Add(CilOpCodes.Ldc_I4, 16);
+			instructions.Add(CilOpCodes.Newarr, SharedState.Instance.Importer.UInt8.ToTypeDefOrRef());
 
-			CilLocalVariable array = processor.AddLocalVariable(arrayType);
-			processor.Add(CilOpCodes.Stloc, array);
+			CilLocalVariable array = instructions.AddLocalVariable(arrayType);
+			instructions.Add(CilOpCodes.Stloc, array);
 
 			for (int i = 0; i < 16; i++)
 			{
 				FieldDefinition field = type.GetFieldByName(GetFieldName(i));
-				processor.Add(CilOpCodes.Ldloc, array);
-				processor.Add(CilOpCodes.Ldc_I4, i);
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldfld, field);
-				processor.Add(CilOpCodes.Stelem, SharedState.Instance.Importer.UInt8.ToTypeDefOrRef());
+				instructions.Add(CilOpCodes.Ldloc, array);
+				instructions.Add(CilOpCodes.Ldc_I4, i);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldfld, field);
+				instructions.Add(CilOpCodes.Stelem, SharedState.Instance.Importer.UInt8.ToTypeDefOrRef());
 			}
 
-			processor.Add(CilOpCodes.Ldloc, array);
+			instructions.Add(CilOpCodes.Ldloc, array);
 
 			IMethodDefOrRef constructor = SharedState.Instance.Importer.ImportMethod<Hash128>(m => m.IsConstructor && m.Parameters.Count == 1 && m.Parameters[0].ParameterType is SzArrayTypeSignature);
-			processor.Add(CilOpCodes.Newobj, constructor);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			instructions.Add(CilOpCodes.Newobj, constructor);
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 		}
 
 		private static string GetFieldName(int i)

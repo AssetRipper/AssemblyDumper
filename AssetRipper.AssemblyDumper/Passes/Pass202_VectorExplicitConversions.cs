@@ -50,27 +50,27 @@ namespace AssetRipper.AssemblyDumper.Passes
 			IMethodDefOrRef constructor = SharedState.Instance.Importer.ImportConstructor<T>(size);
 
 			MethodDefinition method = type.AddEmptyConversion(type.ToTypeSignature(), commonType, true);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, type.Fields.Single(field => field.Name == "m_X"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, type.Fields.Single(field => field.Name == "m_X"));
 
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, type.Fields.Single(field => field.Name == "m_Y"));
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, type.Fields.Single(field => field.Name == "m_Y"));
 
 			if (size > 2)
 			{
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldfld, type.Fields.Single(field => field.Name == "m_Z"));
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldfld, type.Fields.Single(field => field.Name == "m_Z"));
 			}
 			if (size > 3)
 			{
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldfld, type.Fields.Single(field => field.Name == "m_W"));
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldfld, type.Fields.Single(field => field.Name == "m_W"));
 			}
 
-			processor.Add(CilOpCodes.Newobj, constructor);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Newobj, constructor);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddReverseConversion<T>(TypeDefinition type, int size)
@@ -80,36 +80,36 @@ namespace AssetRipper.AssemblyDumper.Passes
 			MethodDefinition constructor = type.GetDefaultConstructor();
 
 			MethodDefinition method = type.AddEmptyConversion(commonType, type.ToTypeSignature(), false);
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
-			processor.Add(CilOpCodes.Newobj, constructor);
+			instructions.Add(CilOpCodes.Newobj, constructor);
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, SharedState.Instance.Importer.ImportField<T>("X"));
-			processor.Add(CilOpCodes.Stfld, type.Fields.Single(field => field.Name == "m_X"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, SharedState.Instance.Importer.ImportField<T>("X"));
+			instructions.Add(CilOpCodes.Stfld, type.Fields.Single(field => field.Name == "m_X"));
 
-			processor.Add(CilOpCodes.Dup);
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, SharedState.Instance.Importer.ImportField<T>("Y"));
-			processor.Add(CilOpCodes.Stfld, type.Fields.Single(field => field.Name == "m_Y"));
+			instructions.Add(CilOpCodes.Dup);
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, SharedState.Instance.Importer.ImportField<T>("Y"));
+			instructions.Add(CilOpCodes.Stfld, type.Fields.Single(field => field.Name == "m_Y"));
 
 			if (size > 2)
 			{
-				processor.Add(CilOpCodes.Dup);
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldfld, SharedState.Instance.Importer.ImportField<T>("Z"));
-				processor.Add(CilOpCodes.Stfld, type.Fields.Single(field => field.Name == "m_Z"));
+				instructions.Add(CilOpCodes.Dup);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldfld, SharedState.Instance.Importer.ImportField<T>("Z"));
+				instructions.Add(CilOpCodes.Stfld, type.Fields.Single(field => field.Name == "m_Z"));
 			}
 			if (size > 3)
 			{
-				processor.Add(CilOpCodes.Dup);
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldfld, SharedState.Instance.Importer.ImportField<T>("W"));
-				processor.Add(CilOpCodes.Stfld, type.Fields.Single(field => field.Name == "m_W"));
+				instructions.Add(CilOpCodes.Dup);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldfld, SharedState.Instance.Importer.ImportField<T>("W"));
+				instructions.Add(CilOpCodes.Stfld, type.Fields.Single(field => field.Name == "m_W"));
 			}
 
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddInterface<T>(SubclassGroup group, int size)

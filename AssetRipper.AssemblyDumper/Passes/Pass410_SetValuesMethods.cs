@@ -36,7 +36,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			foreach (GeneratedClassInstance instance in group.Instances)
 			{
 				MethodDefinition method = instance.Type.AddMethod(SetValuesName, InterfaceUtils.InterfaceMethodImplementation, SharedState.Instance.Importer.Void);
-				CilInstructionCollection processor = method.GetInstructions();
+				CilInstructionCollection instructions = method.GetInstructions();
 				IEnumerable<PropertyDefinition> properties = group.IsVector4()
 					? new Vector4PropertyEnumerable_Instance(instance)
 					: group.IsColorRGBAf()
@@ -45,12 +45,12 @@ namespace AssetRipper.AssemblyDumper.Passes
 				foreach (PropertyDefinition property in properties)
 				{
 					Parameter parameter = method.AddParameter(property.Signature!.ReturnType, GetParameterName(property.Name));
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Ldarg, parameter);
-					processor.Add(CilOpCodes.Call, property.SetMethod ?? throw new Exception("Set method can't be null"));
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Ldarg, parameter);
+					instructions.Add(CilOpCodes.Call, property.SetMethod ?? throw new Exception("Set method can't be null"));
 				}
-				processor.Add(CilOpCodes.Ret);
-				processor.OptimizeMacros();
+				instructions.Add(CilOpCodes.Ret);
+				instructions.OptimizeMacros();
 			}
 		}
 

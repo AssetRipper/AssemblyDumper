@@ -4,19 +4,19 @@ namespace AssetRipper.AssemblyDumper.Extensions
 {
 	internal static class ProcessorExtensions
 	{
-		public static void AddNotSupportedException(this CilInstructionCollection processor)
+		public static void AddNotSupportedException(this CilInstructionCollection instructions)
 		{
 			IMethodDefOrRef constructor = SharedState.Instance.Importer.ImportDefaultConstructor<NotSupportedException>();
-			processor.Add(CilOpCodes.Newobj, constructor);
-			processor.Add(CilOpCodes.Throw);
+			instructions.Add(CilOpCodes.Newobj, constructor);
+			instructions.Add(CilOpCodes.Throw);
 		}
 
-		/*public static void AddLogStatement(this CilInstructionCollection processor, string text)
+		/*public static void AddLogStatement(this CilInstructionCollection instructions, string text)
 		{
 			Func<MethodDefinition, bool> func = m => m.IsStatic && m.Name == nameof(Logger.Info) && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.Name == "String";
 			IMethodDefOrRef writeMethod = SharedState.Instance.Importer.ImportMethod(typeof(Logger), func);
-			processor.Add(CilOpCodes.Ldstr, text);
-			processor.Add(CilOpCodes.Call, writeMethod);
+			instructions.Add(CilOpCodes.Ldstr, text);
+			instructions.Add(CilOpCodes.Call, writeMethod);
 		}*/
 	}
 }

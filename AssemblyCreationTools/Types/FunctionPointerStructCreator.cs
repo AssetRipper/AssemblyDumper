@@ -34,11 +34,11 @@ namespace AssetRipper.AssemblyCreationTools.Types
 
 			constructor.AddParameter(type.DeclaringModule.CorLibTypeFactory.IntPtr, "address");
 
-			CilInstructionCollection processor = constructor.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldarg_1);
-			processor.Add(CilOpCodes.Stfld, field);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = constructor.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldarg_1);
+			instructions.Add(CilOpCodes.Stfld, field);
+			instructions.Add(CilOpCodes.Ret);
 			return constructor;
 		}
 
@@ -49,11 +49,11 @@ namespace AssetRipper.AssemblyCreationTools.Types
 			IMethodDefOrRef genericMarshalMethod = importer.ImportMethod(typeof(Marshal), m => m.Name == nameof(Marshal.GetDelegateForFunctionPointer) && m.GenericParameters.Count == 1);
 			MethodSpecification instanceMarshalMethod = genericMarshalMethod.MakeGenericInstanceMethod(managedDelegateSignature);
 
-			CilInstructionCollection processor = conversion.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, field);
-			processor.Add(CilOpCodes.Call, instanceMarshalMethod);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = conversion.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, field);
+			instructions.Add(CilOpCodes.Call, instanceMarshalMethod);
+			instructions.Add(CilOpCodes.Ret);
 			return conversion;
 		}
 
@@ -66,13 +66,13 @@ namespace AssetRipper.AssemblyCreationTools.Types
 
 			IMethodDefOrRef intPtrConversionMethod = importer.ImportMethod(typeof(IntPtr), m => m.Name == "op_Explicit" && m.Signature!.ReturnType is PointerTypeSignature);
 
-			CilInstructionCollection processor = conversion.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, field);
-			processor.Add(CilOpCodes.Call, intPtrConversionMethod);
-			processor.Add(CilOpCodes.Stloc, local);
-			processor.Add(CilOpCodes.Ldloc, local);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = conversion.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, field);
+			instructions.Add(CilOpCodes.Call, intPtrConversionMethod);
+			instructions.Add(CilOpCodes.Stloc, local);
+			instructions.Add(CilOpCodes.Ldloc, local);
+			instructions.Add(CilOpCodes.Ret);
 			return conversion;
 		}
 
@@ -85,13 +85,13 @@ namespace AssetRipper.AssemblyCreationTools.Types
 
 			IMethodDefOrRef intPtrConversionMethod = importer.ImportMethod(typeof(IntPtr), m => m.Name == "op_Explicit" && m.Parameters.Count == 1 && m.Parameters[0].ParameterType is PointerTypeSignature);
 
-			CilInstructionCollection processor = conversion.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Call, intPtrConversionMethod);
-			processor.Add(CilOpCodes.Newobj, constructor);
-			//processor.Add(CilOpCodes.Stloc, local);
-			//processor.Add(CilOpCodes.Ldloc, local);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = conversion.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Call, intPtrConversionMethod);
+			instructions.Add(CilOpCodes.Newobj, constructor);
+			//instructions.Add(CilOpCodes.Stloc, local);
+			//instructions.Add(CilOpCodes.Ldloc, local);
+			instructions.Add(CilOpCodes.Ret);
 			return conversion;
 		}
 
@@ -99,10 +99,10 @@ namespace AssetRipper.AssemblyCreationTools.Types
 		{
 			MethodDefinition conversion = type.AddEmptyConversion(type.ToTypeSignature(), importer.IntPtr, false);
 
-			CilInstructionCollection processor = conversion.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldfld, field);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = conversion.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldfld, field);
+			instructions.Add(CilOpCodes.Ret);
 			return conversion;
 		}
 
@@ -113,10 +113,10 @@ namespace AssetRipper.AssemblyCreationTools.Types
 			CilLocalVariable local = new CilLocalVariable(type.ToTypeSignature());
 			conversion.CilMethodBody!.LocalVariables.Add(local);
 
-			CilInstructionCollection processor = conversion.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Newobj, constructor);
-			processor.Add(CilOpCodes.Ret);
+			CilInstructionCollection instructions = conversion.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Newobj, constructor);
+			instructions.Add(CilOpCodes.Ret);
 			return conversion;
 		}
 
@@ -151,19 +151,19 @@ namespace AssetRipper.AssemblyCreationTools.Types
 				invokeMethod = importer.ImportMethod<Action>(m => m.Name == "Invoke");
 			}
 
-			CilInstructionCollection processor = conversion.CilMethodBody!.Instructions;
-			processor.Add(CilOpCodes.Ldarg_0);
-			processor.Add(CilOpCodes.Ldobj, type);
-			processor.Add(CilOpCodes.Call, explicitConversion);
+			CilInstructionCollection instructions = conversion.CilMethodBody!.Instructions;
+			instructions.Add(CilOpCodes.Ldarg_0);
+			instructions.Add(CilOpCodes.Ldobj, type);
+			instructions.Add(CilOpCodes.Call, explicitConversion);
 			for (int j = 0; j < parameters.Length; j++)
 			{
-				processor.Add(CilOpCodes.Ldarg, parameters[j]);
+				instructions.Add(CilOpCodes.Ldarg, parameters[j]);
 			}
-			processor.Add(CilOpCodes.Callvirt, invokeMethod);
-			//processor.Add(CilOpCodes.Stloc, local);
-			//processor.Add(CilOpCodes.Ldloc, local);
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			instructions.Add(CilOpCodes.Callvirt, invokeMethod);
+			//instructions.Add(CilOpCodes.Stloc, local);
+			//instructions.Add(CilOpCodes.Ldloc, local);
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 			return conversion;
 		}
 

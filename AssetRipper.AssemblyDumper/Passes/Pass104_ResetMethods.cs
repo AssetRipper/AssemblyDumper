@@ -18,13 +18,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 				foreach (GeneratedClassInstance instance in group.Instances)
 				{
 					MethodDefinition method = instance.Type.GetMethodByName(nameof(UnityAssetBase.Reset));
-					CilInstructionCollection processor = method.GetInstructions();
-					processor.FillProcessor(instance);
+					CilInstructionCollection instructions = method.GetInstructions();
+					instructions.FillProcessor(instance);
 				}
 			}
 		}
 
-		private static void FillProcessor(this CilInstructionCollection processor, GeneratedClassInstance instance)
+		private static void FillProcessor(this CilInstructionCollection instructions, GeneratedClassInstance instance)
 		{
 			foreach (ClassProperty classProperty in instance.Properties)
 			{
@@ -33,34 +33,34 @@ namespace AssetRipper.AssemblyDumper.Passes
 					TypeSignature fieldTypeSignature = field.Signature!.FieldType;
 					if (fieldTypeSignature is CorLibTypeSignature corLibTypeSignature)
 					{
-						processor.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Ldarg_0);
 						ElementType elementType = corLibTypeSignature.ElementType;
-						LoadDefaultPrimitiveValue(processor, elementType);
-						processor.Add(CilOpCodes.Stfld, field);
+						LoadDefaultPrimitiveValue(instructions, elementType);
+						instructions.Add(CilOpCodes.Stfld, field);
 					}
 					else if (fieldTypeSignature is TypeDefOrRefSignature typeDefOrRefSignature)
 					{
 						if (typeDefOrRefSignature is { Namespace: "AssetRipper.Primitives", Name: nameof(Utf8String) })
 						{
-							processor.Add(CilOpCodes.Ldarg_0);
-							processor.Add(CilOpCodes.Call, emptyString);
-							processor.Add(CilOpCodes.Stfld, field);
+							instructions.Add(CilOpCodes.Ldarg_0);
+							instructions.Add(CilOpCodes.Call, emptyString);
+							instructions.Add(CilOpCodes.Stfld, field);
 						}
 						else
 						{
 							TypeDefinition fieldType = (TypeDefinition)typeDefOrRefSignature.Type;
 
-							processor.Add(CilOpCodes.Ldarg_0);
-							processor.Add(CilOpCodes.Ldfld, field);
-							processor.Add(CilOpCodes.Callvirt, fieldType.GetMethodByName(nameof(UnityAssetBase.Reset)));
+							instructions.Add(CilOpCodes.Ldarg_0);
+							instructions.Add(CilOpCodes.Ldfld, field);
+							instructions.Add(CilOpCodes.Callvirt, fieldType.GetMethodByName(nameof(UnityAssetBase.Reset)));
 						}
 					}
 					else if (fieldTypeSignature is SzArrayTypeSignature arrayTypeSignature)
 					{
 						MethodSpecification emptyArray = MakeEmptyArrayMethod(arrayTypeSignature);
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Call, emptyArray);
-						processor.Add(CilOpCodes.Stfld, field);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Call, emptyArray);
+						instructions.Add(CilOpCodes.Stfld, field);
 					}
 					else
 					{
@@ -68,16 +68,16 @@ namespace AssetRipper.AssemblyDumper.Passes
 						if (genericSignature.GenericType.Name == $"{nameof(AssetDictionary<int, int>)}`2")
 						{
 							IMethodDefOrRef clearMethod = MakeDictionaryClearMethod(genericSignature);
-							processor.Add(CilOpCodes.Ldarg_0);
-							processor.Add(CilOpCodes.Ldfld, field);
-							processor.Add(CilOpCodes.Call, clearMethod);
+							instructions.Add(CilOpCodes.Ldarg_0);
+							instructions.Add(CilOpCodes.Ldfld, field);
+							instructions.Add(CilOpCodes.Call, clearMethod);
 						}
 						else if (genericSignature.GenericType.Name == $"{nameof(AssetList<int>)}`1")
 						{
 							IMethodDefOrRef clearMethod = MakeListClearMethod(genericSignature);
-							processor.Add(CilOpCodes.Ldarg_0);
-							processor.Add(CilOpCodes.Ldfld, field);
-							processor.Add(CilOpCodes.Call, clearMethod);
+							instructions.Add(CilOpCodes.Ldarg_0);
+							instructions.Add(CilOpCodes.Ldfld, field);
+							instructions.Add(CilOpCodes.Call, clearMethod);
 						}
 						else if (genericSignature.GenericType.Name == $"{nameof(AssetPair<int, int>)}`2")
 						{
@@ -85,21 +85,21 @@ namespace AssetRipper.AssemblyDumper.Passes
 							if (keySignature is CorLibTypeSignature keyCorLibTypeSignature)
 							{
 								IMethodDefOrRef setKeyMethod = MakeSetKeyMethod(genericSignature);
-								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Ldfld, field);
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Ldfld, field);
 								ElementType elementType = keyCorLibTypeSignature.ElementType;
-								LoadDefaultPrimitiveValue(processor, elementType);
-								processor.Add(CilOpCodes.Call, setKeyMethod);
+								LoadDefaultPrimitiveValue(instructions, elementType);
+								instructions.Add(CilOpCodes.Call, setKeyMethod);
 							}
 							else if (keySignature is TypeDefOrRefSignature keyTypeDefOrRefSignature)
 							{
 								TypeDefinition keyType = (TypeDefinition)keyTypeDefOrRefSignature.Type;
 
 								IMethodDefOrRef getKeyMethod = MakeGetKeyMethod(genericSignature);
-								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Ldfld, field);
-								processor.Add(CilOpCodes.Call, getKeyMethod);
-								processor.Add(CilOpCodes.Callvirt, keyType.GetMethodByName(nameof(UnityAssetBase.Reset)));
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Ldfld, field);
+								instructions.Add(CilOpCodes.Call, getKeyMethod);
+								instructions.Add(CilOpCodes.Callvirt, keyType.GetMethodByName(nameof(UnityAssetBase.Reset)));
 							}
 							else
 							{
@@ -110,21 +110,21 @@ namespace AssetRipper.AssemblyDumper.Passes
 							if (valueSignature is CorLibTypeSignature valueCorLibTypeSignature)
 							{
 								IMethodDefOrRef setValueMethod = MakeSetValueMethod(genericSignature);
-								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Ldfld, field);
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Ldfld, field);
 								ElementType elementType = valueCorLibTypeSignature.ElementType;
-								LoadDefaultPrimitiveValue(processor, elementType);
-								processor.Add(CilOpCodes.Call, setValueMethod);
+								LoadDefaultPrimitiveValue(instructions, elementType);
+								instructions.Add(CilOpCodes.Call, setValueMethod);
 							}
 							else if (valueSignature is TypeDefOrRefSignature valueTypeDefOrRefSignature)
 							{
 								TypeDefinition valueType = (TypeDefinition)valueTypeDefOrRefSignature.Type;
 
 								IMethodDefOrRef getValueMethod = MakeGetValueMethod(genericSignature);
-								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Ldfld, field);
-								processor.Add(CilOpCodes.Call, getValueMethod);
-								processor.Add(CilOpCodes.Callvirt, valueType.GetMethodByName(nameof(UnityAssetBase.Reset)));
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Ldfld, field);
+								instructions.Add(CilOpCodes.Call, getValueMethod);
+								instructions.Add(CilOpCodes.Callvirt, valueType.GetMethodByName(nameof(UnityAssetBase.Reset)));
 							}
 							else
 							{
@@ -138,7 +138,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 					}
 				}
 			}
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static IMethodDefOrRef MakeDictionaryClearMethod(GenericInstanceTypeSignature genericSignature)
@@ -204,24 +204,24 @@ namespace AssetRipper.AssemblyDumper.Passes
 			return emptyArray;
 		}
 
-		private static void LoadDefaultPrimitiveValue(CilInstructionCollection processor, ElementType elementType)
+		private static void LoadDefaultPrimitiveValue(CilInstructionCollection instructions, ElementType elementType)
 		{
 			switch (elementType)
 			{
 				case ElementType.String:
 					throw new NotSupportedException();
 				case ElementType.R4:
-					processor.Add(CilOpCodes.Ldc_R4, 0f);
+					instructions.Add(CilOpCodes.Ldc_R4, 0f);
 					break;
 				case ElementType.R8:
-					processor.Add(CilOpCodes.Ldc_R8, 0d);
+					instructions.Add(CilOpCodes.Ldc_R8, 0d);
 					break;
 				case ElementType.I8 or ElementType.U8:
-					processor.Add(CilOpCodes.Ldc_I4_0);
-					processor.Add(CilOpCodes.Conv_I8);
+					instructions.Add(CilOpCodes.Ldc_I4_0);
+					instructions.Add(CilOpCodes.Conv_I8);
 					break;
 				default:
-					processor.Add(CilOpCodes.Ldc_I4_0);
+					instructions.Add(CilOpCodes.Ldc_I4_0);
 					break;
 			}
 		}

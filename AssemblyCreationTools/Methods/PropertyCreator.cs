@@ -81,11 +81,11 @@ namespace AssetRipper.AssemblyCreationTools.Methods
 		{
 			MethodDefinition getter = property.GetMethod!;
 
-			CilInstructionCollection processor = getter.CilMethodBody!.Instructions;
+			CilInstructionCollection instructions = getter.CilMethodBody!.Instructions;
 			if (field != null)
 			{
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldfld, field);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldfld, field);
 				if (returnType is SzArrayTypeSignature arrayType)
 				{
 					SignatureComparer comparer = new SignatureComparer();
@@ -93,17 +93,17 @@ namespace AssetRipper.AssemblyCreationTools.Methods
 					{
 						CilLocalVariable local = new CilLocalVariable(arrayType);
 						getter.CilMethodBody.LocalVariables.Add(local);
-						processor.Add(CilOpCodes.Stloc, local);
-						processor.Add(CilOpCodes.Ldloc, local);
+						instructions.Add(CilOpCodes.Stloc, local);
+						instructions.Add(CilOpCodes.Ldloc, local);
 					}
 				}
 			}
 			else
 			{
-				processor.AddDefaultValue(returnType);
+				instructions.AddDefaultValue(returnType);
 			}
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 			return getter;
 		}
 
@@ -111,15 +111,15 @@ namespace AssetRipper.AssemblyCreationTools.Methods
 		{
 			MethodDefinition setter = property.SetMethod!;
 
-			CilInstructionCollection processor = setter.CilMethodBody!.Instructions;
+			CilInstructionCollection instructions = setter.CilMethodBody!.Instructions;
 			if (field != null)
 			{
-				processor.Add(CilOpCodes.Ldarg_0);
-				processor.Add(CilOpCodes.Ldarg_1); //value
-				processor.Add(CilOpCodes.Stfld, field);
+				instructions.Add(CilOpCodes.Ldarg_0);
+				instructions.Add(CilOpCodes.Ldarg_1); //value
+				instructions.Add(CilOpCodes.Stfld, field);
 			}
-			processor.Add(CilOpCodes.Ret);
-			processor.OptimizeMacros();
+			instructions.Add(CilOpCodes.Ret);
+			instructions.OptimizeMacros();
 			return setter;
 		}
 

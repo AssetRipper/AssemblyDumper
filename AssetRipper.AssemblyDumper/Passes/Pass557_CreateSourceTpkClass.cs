@@ -70,25 +70,25 @@ namespace AssetRipper.AssemblyDumper.Passes
 			field.AddCompilerGeneratedAttribute(SharedState.Instance.Importer);
 
 			MethodDefinition staticConstructor = type.GetOrCreateStaticConstructor();
-			CilInstructionCollection processor = staticConstructor.CilMethodBody!.Instructions;
-			processor.Pop();//pop the ret
-			processor.Add(CilOpCodes.Newobj, hashsetConstructor);
+			CilInstructionCollection instructions = staticConstructor.CilMethodBody!.Instructions;
+			instructions.Pop();//pop the ret
+			instructions.Add(CilOpCodes.Newobj, hashsetConstructor);
 			foreach (UnityVersion version in versions)
 			{
-				processor.Add(CilOpCodes.Dup);
-				processor.Add(CilOpCodes.Ldc_I4, (int)version.Major);
-				processor.Add(CilOpCodes.Ldc_I4, (int)version.Minor);
-				processor.Add(CilOpCodes.Ldc_I4, (int)version.Build);
-				processor.Add(CilOpCodes.Ldc_I4, (int)version.Type);
-				processor.Add(CilOpCodes.Ldc_I4, (int)version.TypeNumber);
-				processor.Add(CilOpCodes.Newobj, unityVersionConstructor);
-				processor.Add(CilOpCodes.Call, addMethod);
-				processor.Add(CilOpCodes.Pop);
+				instructions.Add(CilOpCodes.Dup);
+				instructions.Add(CilOpCodes.Ldc_I4, (int)version.Major);
+				instructions.Add(CilOpCodes.Ldc_I4, (int)version.Minor);
+				instructions.Add(CilOpCodes.Ldc_I4, (int)version.Build);
+				instructions.Add(CilOpCodes.Ldc_I4, (int)version.Type);
+				instructions.Add(CilOpCodes.Ldc_I4, (int)version.TypeNumber);
+				instructions.Add(CilOpCodes.Newobj, unityVersionConstructor);
+				instructions.Add(CilOpCodes.Call, addMethod);
+				instructions.Add(CilOpCodes.Pop);
 			}
-			processor.Add(CilOpCodes.Stsfld, field);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Stsfld, field);
+			instructions.Add(CilOpCodes.Ret);
 
-			processor.OptimizeMacros();
+			instructions.OptimizeMacros();
 
 			type.ImplementGetterProperty(
 					propertyName,
@@ -108,13 +108,13 @@ namespace AssetRipper.AssemblyDumper.Passes
 			PropertyDefinition property = type.AddGetterProperty("Data", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, propertySignature);
 
 			MethodDefinition method = property.GetMethod!;
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
 			MemberReference reference = new MemberReference(propertySignature.ToTypeDefOrRef(), ".ctor", SharedState.Instance.Importer.ImportMethod(typeof(ReadOnlySpan<>),
 				m => m.IsConstructor && m.Parameters.Count == 1 && m.Parameters[0].ParameterType is SzArrayTypeSignature).Signature);
-			processor.Add(CilOpCodes.Ldsfld, field);
-			processor.Add(CilOpCodes.Newobj, reference);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ldsfld, field);
+			instructions.Add(CilOpCodes.Newobj, reference);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static void AddGetStreamMethod(TypeDefinition type, FieldDefinition field)
@@ -122,7 +122,7 @@ namespace AssetRipper.AssemblyDumper.Passes
 			ITypeDefOrRef returnType = SharedState.Instance.Importer.ImportType(typeof(MemoryStream));
 
 			MethodDefinition method = type.AddMethod("GetStream", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, returnType.ToTypeSignature());
-			CilInstructionCollection processor = method.GetInstructions();
+			CilInstructionCollection instructions = method.GetInstructions();
 
 			MemberReference reference = new MemberReference(returnType, ".ctor", SharedState.Instance.Importer.ImportMethod(typeof(MemoryStream), m =>
 			{
@@ -132,10 +132,10 @@ namespace AssetRipper.AssemblyDumper.Passes
 					&& m.Parameters[1].ParameterType is CorLibTypeSignature;
 			})
 				.Signature);
-			processor.Add(CilOpCodes.Ldsfld, field);
-			processor.Add(CilOpCodes.Ldc_I4_0);//Not writable
-			processor.Add(CilOpCodes.Newobj, reference);
-			processor.Add(CilOpCodes.Ret);
+			instructions.Add(CilOpCodes.Ldsfld, field);
+			instructions.Add(CilOpCodes.Ldc_I4_0);//Not writable
+			instructions.Add(CilOpCodes.Newobj, reference);
+			instructions.Add(CilOpCodes.Ret);
 		}
 
 		private static FieldDefinition CreateInternalStorageClass(string className, byte[] data)
@@ -152,15 +152,15 @@ namespace AssetRipper.AssemblyDumper.Passes
 			//Static Constructor
 			{
 				MethodDefinition staticConstructor = internalType.GetOrCreateStaticConstructor();
-				CilInstructionCollection processor = staticConstructor.CilMethodBody!.Instructions;
-				processor.Pop();//pop the ret
-				processor.Add(CilOpCodes.Ldc_I4, data.Length);
-				processor.Add(CilOpCodes.Newarr, SharedState.Instance.Importer.UInt8.ToTypeDefOrRef());
-				processor.Add(CilOpCodes.Dup);
-				processor.Add(CilOpCodes.Ldtoken, privateImplementationField);
-				processor.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod(typeof(RuntimeHelpers), m => m.Name == nameof(RuntimeHelpers.InitializeArray)));
-				processor.Add(CilOpCodes.Stsfld, field);
-				processor.Add(CilOpCodes.Ret);
+				CilInstructionCollection instructions = staticConstructor.CilMethodBody!.Instructions;
+				instructions.Pop();//pop the ret
+				instructions.Add(CilOpCodes.Ldc_I4, data.Length);
+				instructions.Add(CilOpCodes.Newarr, SharedState.Instance.Importer.UInt8.ToTypeDefOrRef());
+				instructions.Add(CilOpCodes.Dup);
+				instructions.Add(CilOpCodes.Ldtoken, privateImplementationField);
+				instructions.Add(CilOpCodes.Call, SharedState.Instance.Importer.ImportMethod(typeof(RuntimeHelpers), m => m.Name == nameof(RuntimeHelpers.InitializeArray)));
+				instructions.Add(CilOpCodes.Stsfld, field);
+				instructions.Add(CilOpCodes.Ret);
 			}
 
 			return field;

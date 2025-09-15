@@ -122,23 +122,23 @@ internal static class Pass108_WalkMethods
 					TypeDefinition type = instance.Type;
 					TypeSignature typeSignature = type.ToTypeSignature();
 
-					CilInstructionCollection processor = type.GetMethodByName(MethodName).GetInstructions();
+					CilInstructionCollection instructions = type.GetMethodByName(MethodName).GetInstructions();
 
 					if (group.IsPPtr)
 					{
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Callvirt, visitPPtrMethod.MakeGenericInstanceMethod(Pass080_PPtrConversions.PPtrsToParameters[type].ToTypeSignature()));
-						processor.Add(CilOpCodes.Ret);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Callvirt, visitPPtrMethod.MakeGenericInstanceMethod(Pass080_PPtrConversions.PPtrsToParameters[type].ToTypeSignature()));
+						instructions.Add(CilOpCodes.Ret);
 					}
 					else
 					{
 						CilInstructionLabel returnLabel = new();
 
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Callvirt, enterAssetMethod);
-						processor.Add(CilOpCodes.Brfalse, returnLabel);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Callvirt, enterAssetMethod);
+						instructions.Add(CilOpCodes.Brfalse, returnLabel);
 
 						List<FieldNode> usableChildren = rootNode.Children.Where(IsUsable).ToOrderedList();
 						for (int i = 0; i < usableChildren.Count; i++)
@@ -148,9 +148,9 @@ internal static class Pass108_WalkMethods
 
 							if (i > 0)
 							{
-								processor.Add(CilOpCodes.Ldarg_1);
-								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Callvirt, divideAssetMethod);
+								instructions.Add(CilOpCodes.Ldarg_1);
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Callvirt, divideAssetMethod);
 							}
 
 							string fieldName;
@@ -165,28 +165,28 @@ internal static class Pass108_WalkMethods
 
 								CilInstructionLabel lengthLabel = new();
 
-								processor.Add(CilOpCodes.Ldarg_1);
-								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Ldstr, lengthName);
-								processor.Add(CilOpCodes.Callvirt, enterFieldMethod);
-								processor.Add(CilOpCodes.Brfalse, lengthLabel);
+								instructions.Add(CilOpCodes.Ldarg_1);
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Ldstr, lengthName);
+								instructions.Add(CilOpCodes.Callvirt, enterFieldMethod);
+								instructions.Add(CilOpCodes.Brfalse, lengthLabel);
 
-								processor.Add(CilOpCodes.Ldarg_1);
-								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Ldfld, fieldNode.Field);
-								processor.Add(CilOpCodes.Ldlen);
-								processor.Add(CilOpCodes.Callvirt, visitPrimitiveMethod.MakeGenericInstanceMethod(SharedState.Instance.Importer.Int32));
+								instructions.Add(CilOpCodes.Ldarg_1);
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Ldfld, fieldNode.Field);
+								instructions.Add(CilOpCodes.Ldlen);
+								instructions.Add(CilOpCodes.Callvirt, visitPrimitiveMethod.MakeGenericInstanceMethod(SharedState.Instance.Importer.Int32));
 
-								processor.Add(CilOpCodes.Ldarg_1);
-								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Ldstr, lengthName);
-								processor.Add(CilOpCodes.Callvirt, exitFieldMethod);
+								instructions.Add(CilOpCodes.Ldarg_1);
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Ldstr, lengthName);
+								instructions.Add(CilOpCodes.Callvirt, exitFieldMethod);
 
-								lengthLabel.Instruction = processor.Add(CilOpCodes.Nop);
+								lengthLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 
-								processor.Add(CilOpCodes.Ldarg_1);
-								processor.Add(CilOpCodes.Ldarg_0);
-								processor.Add(CilOpCodes.Callvirt, divideAssetMethod);
+								instructions.Add(CilOpCodes.Ldarg_1);
+								instructions.Add(CilOpCodes.Ldarg_0);
+								instructions.Add(CilOpCodes.Callvirt, divideAssetMethod);
 
 								fieldName = "_typelessdata";
 							}
@@ -195,30 +195,30 @@ internal static class Pass108_WalkMethods
 								fieldName = GetName(fieldNode);
 							}
 
-							processor.Add(CilOpCodes.Ldarg_1);
-							processor.Add(CilOpCodes.Ldarg_0);
-							processor.Add(CilOpCodes.Ldstr, fieldName);
-							processor.Add(CilOpCodes.Callvirt, enterFieldMethod);
-							processor.Add(CilOpCodes.Brfalse, finishLabel);
+							instructions.Add(CilOpCodes.Ldarg_1);
+							instructions.Add(CilOpCodes.Ldarg_0);
+							instructions.Add(CilOpCodes.Ldstr, fieldName);
+							instructions.Add(CilOpCodes.Callvirt, enterFieldMethod);
+							instructions.Add(CilOpCodes.Brfalse, finishLabel);
 
-							processor.Add(CilOpCodes.Ldarg_0);
-							processor.Add(CilOpCodes.Ldfld, fieldNode.Field);
-							processor.Add(CilOpCodes.Ldarg_1);
-							processor.AddCall(GetOrMakeMethod(fieldNode.Child));
+							instructions.Add(CilOpCodes.Ldarg_0);
+							instructions.Add(CilOpCodes.Ldfld, fieldNode.Field);
+							instructions.Add(CilOpCodes.Ldarg_1);
+							instructions.AddCall(GetOrMakeMethod(fieldNode.Child));
 
-							processor.Add(CilOpCodes.Ldarg_1);
-							processor.Add(CilOpCodes.Ldarg_0);
-							processor.Add(CilOpCodes.Ldstr, fieldName);
-							processor.Add(CilOpCodes.Callvirt, exitFieldMethod);
+							instructions.Add(CilOpCodes.Ldarg_1);
+							instructions.Add(CilOpCodes.Ldarg_0);
+							instructions.Add(CilOpCodes.Ldstr, fieldName);
+							instructions.Add(CilOpCodes.Callvirt, exitFieldMethod);
 
-							finishLabel.Instruction = processor.Add(CilOpCodes.Nop);
+							finishLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 						}
 
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Callvirt, exitAssetMethod);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Callvirt, exitAssetMethod);
 
-						returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+						returnLabel.Instruction = instructions.Add(CilOpCodes.Ret);
 					}
 				}
 			}
@@ -238,124 +238,124 @@ internal static class Pass108_WalkMethods
 			case PrimitiveNode:
 				{
 					MethodDefinition method = NewMethod(node);
-					CilInstructionCollection processor = method.GetInstructions();
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Callvirt, visitPrimitiveMethod.MakeGenericInstanceMethod(node.TypeSignature));
-					processor.Add(CilOpCodes.Ret);
+					CilInstructionCollection instructions = method.GetInstructions();
+					instructions.Add(CilOpCodes.Ldarg_1);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Callvirt, visitPrimitiveMethod.MakeGenericInstanceMethod(node.TypeSignature));
+					instructions.Add(CilOpCodes.Ret);
 					result = method;
 				}
 				break;
 			case ListNode listNode:
 				{
 					MethodDefinition method = NewMethod(node);
-					CilInstructionCollection processor = method.GetInstructions();
+					CilInstructionCollection instructions = method.GetInstructions();
 
 					CilInstructionLabel returnLabel = new();
 					CilInstructionLabel exitLabel = new();
 
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Callvirt, enterListMethod.MakeGenericInstanceMethod(listNode.Child.TypeSignature));
-					processor.Add(CilOpCodes.Brfalse, returnLabel);
+					instructions.Add(CilOpCodes.Ldarg_1);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Callvirt, enterListMethod.MakeGenericInstanceMethod(listNode.Child.TypeSignature));
+					instructions.Add(CilOpCodes.Brfalse, returnLabel);
 
 					{
 						IMethodDescriptor elementMethod = GetOrMakeMethod(listNode.Child);
 
 						//Make local and store length in it
-						CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-						processor.Add(CilOpCodes.Ldarg_0); //Load list
-						processor.Add(CilOpCodes.Call, listNode.GetCount); //Get count
-						processor.Add(CilOpCodes.Stloc, countLocal); //Store it
+						CilLocalVariable countLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32); //Create local
+						instructions.Add(CilOpCodes.Ldarg_0); //Load list
+						instructions.Add(CilOpCodes.Call, listNode.GetCount); //Get count
+						instructions.Add(CilOpCodes.Stloc, countLocal); //Store it
 
 						//Avoid the loop if count is less than 1
-						processor.Add(CilOpCodes.Ldloc, countLocal);
-						processor.Add(CilOpCodes.Ldc_I4_1);
-						processor.Add(CilOpCodes.Blt, exitLabel);
+						instructions.Add(CilOpCodes.Ldloc, countLocal);
+						instructions.Add(CilOpCodes.Ldc_I4_1);
+						instructions.Add(CilOpCodes.Blt, exitLabel);
 
 						//Make an i
-						CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-						processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
-						processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
+						CilLocalVariable iLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
+						instructions.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+						instructions.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
 						//Jump over dividing for i == 0
 						CilInstructionLabel visitItemLabel = new();
-						processor.Add(CilOpCodes.Br, visitItemLabel);
+						instructions.Add(CilOpCodes.Br, visitItemLabel);
 
 						//Divide List
-						ICilLabel loopStartLabel = processor.Add(CilOpCodes.Nop).CreateLabel();
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Callvirt, divideListMethod.MakeGenericInstanceMethod([.. listNode.TypeSignature.TypeArguments]));
+						ICilLabel loopStartLabel = instructions.Add(CilOpCodes.Nop).CreateLabel();
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Callvirt, divideListMethod.MakeGenericInstanceMethod([.. listNode.TypeSignature.TypeArguments]));
 
 						//Visit Item
-						visitItemLabel.Instruction = processor.Add(CilOpCodes.Nop);
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Ldloc, iLocal);
-						processor.Add(CilOpCodes.Call, listNode.GetItem);
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.AddCall(elementMethod);
+						visitItemLabel.Instruction = instructions.Add(CilOpCodes.Nop);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Ldloc, iLocal);
+						instructions.Add(CilOpCodes.Call, listNode.GetItem);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.AddCall(elementMethod);
 
 						//Increment i
-						processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-						processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
-						processor.Add(CilOpCodes.Add); //Add 
-						processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
+						instructions.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+						instructions.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+						instructions.Add(CilOpCodes.Add); //Add 
+						instructions.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 						//Jump to start of loop if i < count
-						processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
-						processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-						processor.Add(CilOpCodes.Blt, loopStartLabel); //Jump back up if less than
+						instructions.Add(CilOpCodes.Ldloc, iLocal); //Load i
+						instructions.Add(CilOpCodes.Ldloc, countLocal); //Load count
+						instructions.Add(CilOpCodes.Blt, loopStartLabel); //Jump back up if less than
 					}
 
-					exitLabel.Instruction = processor.Add(CilOpCodes.Nop);
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Callvirt, exitListMethod.MakeGenericInstanceMethod(listNode.Child.TypeSignature));
+					exitLabel.Instruction = instructions.Add(CilOpCodes.Nop);
+					instructions.Add(CilOpCodes.Ldarg_1);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Callvirt, exitListMethod.MakeGenericInstanceMethod(listNode.Child.TypeSignature));
 
-					returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+					returnLabel.Instruction = instructions.Add(CilOpCodes.Ret);
 					result = method;
 				}
 				break;
 			case DictionaryNode dictionaryNode:
 				{
 					MethodDefinition method = NewMethod(node);
-					CilInstructionCollection processor = method.GetInstructions();
+					CilInstructionCollection instructions = method.GetInstructions();
 
 					CilInstructionLabel returnLabel = new();
 					CilInstructionLabel exitLabel = new();
 
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Callvirt, enterDictionaryMethod.MakeGenericInstanceMethod([.. dictionaryNode.TypeSignature.TypeArguments]));
-					processor.Add(CilOpCodes.Brfalse, returnLabel);
+					instructions.Add(CilOpCodes.Ldarg_1);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Callvirt, enterDictionaryMethod.MakeGenericInstanceMethod([.. dictionaryNode.TypeSignature.TypeArguments]));
+					instructions.Add(CilOpCodes.Brfalse, returnLabel);
 
 					{
 						//Make local and store length in it
-						CilLocalVariable countLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32); //Create local
-						processor.Add(CilOpCodes.Ldarg_0); //Load collection
-						processor.Add(CilOpCodes.Call, dictionaryNode.GetCount); //Get count
-						processor.Add(CilOpCodes.Stloc, countLocal); //Store it
+						CilLocalVariable countLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32); //Create local
+						instructions.Add(CilOpCodes.Ldarg_0); //Load collection
+						instructions.Add(CilOpCodes.Call, dictionaryNode.GetCount); //Get count
+						instructions.Add(CilOpCodes.Stloc, countLocal); //Store it
 
 						//Avoid the loop if count is less than 1
-						processor.Add(CilOpCodes.Ldloc, countLocal);
-						processor.Add(CilOpCodes.Ldc_I4_1);
-						processor.Add(CilOpCodes.Blt, exitLabel);
+						instructions.Add(CilOpCodes.Ldloc, countLocal);
+						instructions.Add(CilOpCodes.Ldc_I4_1);
+						instructions.Add(CilOpCodes.Blt, exitLabel);
 
 						//Make an i
-						CilLocalVariable iLocal = processor.AddLocalVariable(SharedState.Instance.Importer.Int32);
-						processor.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
-						processor.Add(CilOpCodes.Stloc, iLocal); //Store in count
+						CilLocalVariable iLocal = instructions.AddLocalVariable(SharedState.Instance.Importer.Int32);
+						instructions.Add(CilOpCodes.Ldc_I4_0); //Load 0 as an int32
+						instructions.Add(CilOpCodes.Stloc, iLocal); //Store in count
 
 						//Jump over dividing for i == 0
 						CilInstructionLabel visitPairLabel = new();
-						processor.Add(CilOpCodes.Br, visitPairLabel);
+						instructions.Add(CilOpCodes.Br, visitPairLabel);
 
 						//Divide Dictionary
-						ICilLabel loopStartLabel = processor.Add(CilOpCodes.Nop).CreateLabel();
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Callvirt, divideDictionaryMethod.MakeGenericInstanceMethod([.. dictionaryNode.TypeSignature.TypeArguments]));
+						ICilLabel loopStartLabel = instructions.Add(CilOpCodes.Nop).CreateLabel();
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Callvirt, divideDictionaryMethod.MakeGenericInstanceMethod([.. dictionaryNode.TypeSignature.TypeArguments]));
 
 						//Visit Pair
 						{
@@ -364,104 +364,104 @@ internal static class Pass108_WalkMethods
 							IMethodDescriptor keyMethod = GetOrMakeMethod(pairNode.Key);
 							IMethodDescriptor valueMethod = GetOrMakeMethod(pairNode.Value);
 
-							visitPairLabel.Instruction = processor.Add(CilOpCodes.Nop);
+							visitPairLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 
-							CilLocalVariable pairLocal = processor.AddLocalVariable(pairNode.TypeSignature);
-							processor.Add(CilOpCodes.Ldarg_0);
-							processor.Add(CilOpCodes.Ldloc, iLocal);
-							processor.Add(CilOpCodes.Call, dictionaryNode.GetPair);
-							processor.Add(CilOpCodes.Stloc, pairLocal);
+							CilLocalVariable pairLocal = instructions.AddLocalVariable(pairNode.TypeSignature);
+							instructions.Add(CilOpCodes.Ldarg_0);
+							instructions.Add(CilOpCodes.Ldloc, iLocal);
+							instructions.Add(CilOpCodes.Call, dictionaryNode.GetPair);
+							instructions.Add(CilOpCodes.Stloc, pairLocal);
 
 							CilInstructionLabel afterPairLabel = new();
-							processor.Add(CilOpCodes.Ldarg_1);
-							processor.Add(CilOpCodes.Ldloc, pairLocal);
-							processor.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
-							processor.Add(CilOpCodes.Callvirt, enterDictionaryPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
-							processor.Add(CilOpCodes.Brfalse, afterPairLabel);
+							instructions.Add(CilOpCodes.Ldarg_1);
+							instructions.Add(CilOpCodes.Ldloc, pairLocal);
+							instructions.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
+							instructions.Add(CilOpCodes.Callvirt, enterDictionaryPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
+							instructions.Add(CilOpCodes.Brfalse, afterPairLabel);
 
-							processor.Add(CilOpCodes.Ldloc, pairLocal);
-							processor.Add(CilOpCodes.Call, pairNode.GetKey);
-							processor.Add(CilOpCodes.Ldarg_1);
-							processor.AddCall(keyMethod);
+							instructions.Add(CilOpCodes.Ldloc, pairLocal);
+							instructions.Add(CilOpCodes.Call, pairNode.GetKey);
+							instructions.Add(CilOpCodes.Ldarg_1);
+							instructions.AddCall(keyMethod);
 
-							processor.Add(CilOpCodes.Ldarg_1);
-							processor.Add(CilOpCodes.Ldloc, pairLocal);
-							processor.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
-							processor.Add(CilOpCodes.Callvirt, divideDictionaryPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
+							instructions.Add(CilOpCodes.Ldarg_1);
+							instructions.Add(CilOpCodes.Ldloc, pairLocal);
+							instructions.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
+							instructions.Add(CilOpCodes.Callvirt, divideDictionaryPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
 
-							processor.Add(CilOpCodes.Ldloc, pairLocal);
-							processor.Add(CilOpCodes.Call, pairNode.GetValue);
-							processor.Add(CilOpCodes.Ldarg_1);
-							processor.AddCall(valueMethod);
+							instructions.Add(CilOpCodes.Ldloc, pairLocal);
+							instructions.Add(CilOpCodes.Call, pairNode.GetValue);
+							instructions.Add(CilOpCodes.Ldarg_1);
+							instructions.AddCall(valueMethod);
 
-							processor.Add(CilOpCodes.Ldarg_1);
-							processor.Add(CilOpCodes.Ldloc, pairLocal);
-							processor.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
-							processor.Add(CilOpCodes.Callvirt, exitDictionaryPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
+							instructions.Add(CilOpCodes.Ldarg_1);
+							instructions.Add(CilOpCodes.Ldloc, pairLocal);
+							instructions.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
+							instructions.Add(CilOpCodes.Callvirt, exitDictionaryPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
 
-							afterPairLabel.Instruction = processor.Add(CilOpCodes.Nop);
+							afterPairLabel.Instruction = instructions.Add(CilOpCodes.Nop);
 						}
 
 						//Increment i
-						processor.Add(CilOpCodes.Ldloc, iLocal); //Load i local
-						processor.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
-						processor.Add(CilOpCodes.Add); //Add 
-						processor.Add(CilOpCodes.Stloc, iLocal); //Store in i local
+						instructions.Add(CilOpCodes.Ldloc, iLocal); //Load i local
+						instructions.Add(CilOpCodes.Ldc_I4_1); //Load constant 1 as int32
+						instructions.Add(CilOpCodes.Add); //Add 
+						instructions.Add(CilOpCodes.Stloc, iLocal); //Store in i local
 
 						//Jump to start of loop if i < count
-						processor.Add(CilOpCodes.Ldloc, iLocal); //Load i
-						processor.Add(CilOpCodes.Ldloc, countLocal); //Load count
-						processor.Add(CilOpCodes.Blt, loopStartLabel); //Jump back up if less than
+						instructions.Add(CilOpCodes.Ldloc, iLocal); //Load i
+						instructions.Add(CilOpCodes.Ldloc, countLocal); //Load count
+						instructions.Add(CilOpCodes.Blt, loopStartLabel); //Jump back up if less than
 					}
 
-					exitLabel.Instruction = processor.Add(CilOpCodes.Nop);
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Callvirt, exitDictionaryMethod.MakeGenericInstanceMethod([.. dictionaryNode.TypeSignature.TypeArguments]));
+					exitLabel.Instruction = instructions.Add(CilOpCodes.Nop);
+					instructions.Add(CilOpCodes.Ldarg_1);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Callvirt, exitDictionaryMethod.MakeGenericInstanceMethod([.. dictionaryNode.TypeSignature.TypeArguments]));
 
-					returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+					returnLabel.Instruction = instructions.Add(CilOpCodes.Ret);
 					result = method;
 				}
 				break;
 			case PairNode pairNode:
 				{
 					MethodDefinition method = NewMethod(node);
-					CilInstructionCollection processor = method.GetInstructions();
+					CilInstructionCollection instructions = method.GetInstructions();
 
 					CilInstructionLabel returnLabel = new();
 
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
-					processor.Add(CilOpCodes.Callvirt, enterPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
-					processor.Add(CilOpCodes.Brfalse, returnLabel);
+					instructions.Add(CilOpCodes.Ldarg_1);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
+					instructions.Add(CilOpCodes.Callvirt, enterPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
+					instructions.Add(CilOpCodes.Brfalse, returnLabel);
 
 					{
 						IMethodDescriptor keyMethod = GetOrMakeMethod(pairNode.Key);
 						IMethodDescriptor valueMethod = GetOrMakeMethod(pairNode.Value);
 
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Call, pairNode.GetKey);
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.AddCall(keyMethod);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Call, pairNode.GetKey);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.AddCall(keyMethod);
 
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
-						processor.Add(CilOpCodes.Callvirt, dividePairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
+						instructions.Add(CilOpCodes.Callvirt, dividePairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
 
-						processor.Add(CilOpCodes.Ldarg_0);
-						processor.Add(CilOpCodes.Call, pairNode.GetValue);
-						processor.Add(CilOpCodes.Ldarg_1);
-						processor.AddCall(valueMethod);
+						instructions.Add(CilOpCodes.Ldarg_0);
+						instructions.Add(CilOpCodes.Call, pairNode.GetValue);
+						instructions.Add(CilOpCodes.Ldarg_1);
+						instructions.AddCall(valueMethod);
 					}
 
-					processor.Add(CilOpCodes.Ldarg_1);
-					processor.Add(CilOpCodes.Ldarg_0);
-					processor.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
-					processor.Add(CilOpCodes.Callvirt, exitPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
+					instructions.Add(CilOpCodes.Ldarg_1);
+					instructions.Add(CilOpCodes.Ldarg_0);
+					instructions.Add(CilOpCodes.Call, pairNode.ImplicitConversion);
+					instructions.Add(CilOpCodes.Callvirt, exitPairMethod.MakeGenericInstanceMethod([.. pairNode.TypeSignature.TypeArguments]));
 
-					returnLabel.Instruction = processor.Add(CilOpCodes.Ret);
+					returnLabel.Instruction = instructions.Add(CilOpCodes.Ret);
 					result = method;
 				}
 				break;
@@ -560,10 +560,10 @@ internal static class Pass108_WalkMethods
 		});
 	}
 
-	private static CilInstruction AddCall(this CilInstructionCollection processor, IMethodDescriptor method)
+	private static CilInstruction AddCall(this CilInstructionCollection instructions, IMethodDescriptor method)
 	{
 		return method is MethodDefinition { IsStatic: true }
-			? processor.Add(CilOpCodes.Call, method)
-			: processor.Add(CilOpCodes.Callvirt, method);
+			? instructions.Add(CilOpCodes.Call, method)
+			: instructions.Add(CilOpCodes.Callvirt, method);
 	}
 }
