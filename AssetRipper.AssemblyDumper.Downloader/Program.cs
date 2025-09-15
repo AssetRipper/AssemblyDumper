@@ -10,16 +10,16 @@ internal static class Program
 		const string ProjectDirectory = RepositoryRootDirectory + "AssetRipper.AssemblyDumper/";
 		const string BinDirectory = ProjectDirectory + "bin/";
 		const string DotNet = "net9.0";
-		string[] outputFolders = new string[]
-		{
+		string[] outputFolders =
+		[
 			BinDirectory + $"Debug/{DotNet}/",
 			BinDirectory + $"Release/{DotNet}/",
-		};
-		(string, string)[] files = new (string, string)[]
-		{
+		];
+		(string, string)[] files =
+		[
 			("type_tree.tpk", @"https://nightly.link/AssetRipper/Tpk/workflows/type_tree_tpk/master/brotli_file.zip"),
 			("engine_assets.tpk", @"https://nightly.link/AssetRipper/Tpk/workflows/engine_assets_tpk/master/brotli_file.zip"),
-		};
+		];
 
 		foreach ((string fileName, string url) in files)
 		{

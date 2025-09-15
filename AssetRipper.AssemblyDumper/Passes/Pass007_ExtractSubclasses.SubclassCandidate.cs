@@ -27,15 +27,16 @@ internal static partial class Pass007_ExtractSubclasses
 			Name = releaseNode?.TypeName ?? editorNode?.TypeName ?? throw new Exception("All type names were null");
 			if (releaseNode is null)
 			{
-				NodesToBeAltered = new UniversalNode[] { editorNode! };
+				Debug.Assert(editorNode is not null);
+				NodesToBeAltered = [editorNode];
 			}
 			else if (editorNode is null)
 			{
-				NodesToBeAltered = new UniversalNode[] { releaseNode };
+				NodesToBeAltered = [releaseNode];
 			}
 			else
 			{
-				NodesToBeAltered = new UniversalNode[] { releaseNode, editorNode };
+				NodesToBeAltered = [releaseNode, editorNode];
 			}
 		}
 

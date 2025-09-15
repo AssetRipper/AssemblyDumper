@@ -19,11 +19,10 @@ public class VersionedListConverterFactory : JsonConverterFactory
 		Type valueType = type.GetGenericArguments()[0];
 
 		JsonConverter converter = (JsonConverter)Activator.CreateInstance(
-			typeof(VersionedListConverterInner<>).MakeGenericType(
-				new Type[] { valueType }),
+			typeof(VersionedListConverterInner<>).MakeGenericType([valueType]),
 			BindingFlags.Instance | BindingFlags.Public,
 			binder: null,
-			args: new object[] { options },
+			args: [options],
 			culture: null)!;
 
 		return converter;
