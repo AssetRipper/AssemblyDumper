@@ -29,9 +29,4 @@ public static class MethodUtils
 	{
 		return importer.UnderlyingImporter.ImportMethod(new MethodSpecification(method, instanceMethodSignature));
 	}
-
-	public static CilInstructionCollection GetInstructions(this MethodDefinition method)
-	{
-		return method.CilMethodBody?.Instructions ?? throw new ArgumentException("CilMethodBody was null", nameof(method));
-	}
 }
